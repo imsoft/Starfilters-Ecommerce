@@ -1,8 +1,17 @@
 import { query, getConnection } from '../config/database';
-import { randomUUID } from 'crypto';
 
 // Función utilitaria para generar UUID
-export const generateUUID = (): string => randomUUID();
+export const generateUUID = (): string => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback para entornos que no soportan crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 // Tipos de datos
 export interface Product {
@@ -15,6 +24,7 @@ export interface Product {
   stock: number;
   image_url: string;
   status: 'active' | 'inactive' | 'draft';
+  tags?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -604,11 +614,12 @@ export const getDashboardStats = async () => {
 
 export async function getRecentProducts(limit = 5): Promise<Product[]> {
   try {
-    const rows = await query(
-      'SELECT * FROM products ORDER BY created_at DESC LIMIT ?',
-      [limit]
-    );
-    return rows as Product[];
+    // Obtener todos los productos y aplicar limit en JavaScript
+    const sql = 'SELECT * FROM products ORDER BY created_at DESC';
+    const allProducts = await query(sql, []) as Product[];
+    
+    // Aplicar limit en JavaScript
+    return allProducts.slice(0, limit);
   } catch (error) {
     console.error('Error obteniendo productos recientes:', error);
     return [];

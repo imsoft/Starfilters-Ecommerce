@@ -25,7 +25,7 @@ if (Astro.request.method === 'POST') {
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
       stock: parseInt(formData.get('stock')?.toString() || '0'),
-      image_url: formData.get('image_url')?.toString() || '/images/placeholder-product.jpg',
+      image_url: '/images/placeholder-product.jpg', // Se actualizará con Cloudinary
       status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || 'active')
     };
 
@@ -184,21 +184,6 @@ if (Astro.request.method === 'POST') {
               />
             </div>
 
-            <div class="sm:col-span-2">
-              <label for="image_url" class="block text-sm font-medium text-foreground mb-2">
-                URL de la imagen
-              </label>
-              <input
-                type="url"
-                id="image_url"
-                name="image_url"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="https://ejemplo.com/imagen.jpg"
-              />
-              <p class="mt-1 text-sm text-muted-foreground">
-                URL de la imagen principal del producto
-              </p>
-            </div>
           </div>
 
           <div class="mt-6">
@@ -260,16 +245,20 @@ if (Astro.request.method === 'POST') {
             <label for="tags" class="block text-sm font-medium text-foreground mb-2">
               Etiquetas
             </label>
-            <input
-              type="text"
-              id="tags"
-              name="tags"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Etiquetas separadas por comas (ej: premium, hepa, industrial)"
-            />
-            <p class="mt-1 text-sm text-muted-foreground">
-              Separa las etiquetas con comas para facilitar la búsqueda
-            </p>
+            <div class="tags-input-container">
+              <div id="tags-display" class="flex flex-wrap gap-2 min-h-[42px] p-3 border border-border rounded-md bg-background focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
+                <input
+                  type="text"
+                  id="tags-input-field"
+                  class="flex-1 min-w-[120px] bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
+                  placeholder="Escribe etiquetas y presiona Enter o coma... (ej: premium, hepa, industrial)"
+                />
+              </div>
+              <input type="hidden" id="tags-hidden" name="tags" />
+              <p class="mt-1 text-sm text-muted-foreground">
+                Presiona Enter o escribe una coma para agregar etiquetas
+              </p>
+            </div>
           </div>
         </div>
 
@@ -308,10 +297,12 @@ if (Astro.request.method === 'POST') {
             <!-- Vista previa de imágenes -->
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               <!-- Placeholder para vista previa -->
-              <div class="relative group">
-                <img class="h-24 w-24 rounded-lg object-cover border border-border" src="https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-03-product-01.jpg" alt="Vista previa">
-                <button type="button" class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  ×
+              <div class="relative w-24 h-24">
+                <img class="w-full h-full rounded-lg object-cover border border-border" src="https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-03-product-01.jpg" alt="Vista previa">
+                <button type="button" class="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10">
+                  <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -396,3 +387,89 @@ if (Astro.request.method === 'POST') {
       </form>
   </div>
 </AdminLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tagsDisplay = document.getElementById('tags-display');
+    const tagsInputField = document.getElementById('tags-input-field');
+    const tagsHidden = document.getElementById('tags-hidden');
+    
+    if (!tagsDisplay || !tagsInputField || !tagsHidden) return;
+    
+    let tags: string[] = [];
+    
+    // Función para crear un badge de etiqueta
+    function createTagBadge(tag: string): HTMLElement {
+      const badge = document.createElement('span');
+      badge.className = 'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-md';
+      badge.innerHTML = `
+        ${tag}
+        <button type="button" class="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5 transition-colors remove-tag">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+      
+      // Agregar event listener para eliminar etiqueta
+      const removeBtn = badge.querySelector('.remove-tag');
+      removeBtn?.addEventListener('click', () => {
+        removeTag(tag);
+      });
+      
+      return badge;
+    }
+    
+    // Función para actualizar la visualización
+    function updateDisplay() {
+      if (!tagsDisplay || !tagsInputField || !tagsHidden) return;
+      
+      // Limpiar display
+      const existingBadges = tagsDisplay.querySelectorAll('.inline-flex');
+      existingBadges.forEach(badge => badge.remove());
+      
+      // Agregar badges de etiquetas
+      tags.forEach(tag => {
+        const badge = createTagBadge(tag);
+        tagsDisplay.insertBefore(badge, tagsInputField);
+      });
+      
+      // Actualizar input hidden
+      (tagsHidden as HTMLInputElement).value = tags.join(',');
+    }
+    
+    // Función para agregar etiqueta
+    function addTag(tag: string) {
+      const trimmedTag = tag.trim().toLowerCase();
+      if (trimmedTag && !tags.includes(trimmedTag)) {
+        tags.push(trimmedTag);
+        updateDisplay();
+        (tagsInputField as HTMLInputElement).value = '';
+      }
+    }
+    
+    // Función para eliminar etiqueta
+    function removeTag(tagToRemove: string) {
+      tags = tags.filter(tag => tag !== tagToRemove);
+      updateDisplay();
+    }
+    
+    // Event listeners
+    tagsInputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const value = (e.target as HTMLInputElement).value;
+        if (value.trim()) {
+          addTag(value);
+        }
+      }
+    });
+    
+    tagsInputField.addEventListener('blur', () => {
+      const value = (tagsInputField as HTMLInputElement).value;
+      if (value.trim()) {
+        addTag(value);
+      }
+    });
+  });
+</script>

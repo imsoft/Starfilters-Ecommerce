@@ -299,18 +299,25 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div class="flex space-x-2">
                         <a href={`/admin/orders/${order.uuid}`}>
-                          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" title="Ver detalles">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                             </svg>
                           </Button>
                         </a>
-                        <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                        <button
+                          type="button"
+                          class="change-status-btn inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
+                          data-order-id={order.id}
+                          data-order-number={order.order_number}
+                          data-current-status={order.status}
+                          title="Cambiar estado"
+                        >
                           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                           </svg>
-                        </Button>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -343,4 +350,131 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
         )}
       </div>
   </div>
+
+  <!-- Diálogo para cambiar estado -->
+  <dialog id="status-dialog" class="backdrop:bg-black/80 bg-background border border-border rounded-lg p-6 max-w-md">
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-foreground">Cambiar Estado de Orden</h2>
+      <p id="dialog-order-info" class="text-sm text-muted-foreground"></p>
+      
+      <form id="status-form" method="POST" class="space-y-4">
+        <input type="hidden" name="action" value="change_status" />
+        <input type="hidden" name="orderId" id="dialog-order-id" />
+        
+        <div>
+          <label class="block text-sm font-medium text-foreground mb-2">Nuevo Estado</label>
+          <select
+            name="newStatus"
+            id="dialog-new-status"
+            class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          >
+            <option value="pending">Pendiente</option>
+            <option value="processing">En Proceso</option>
+            <option value="shipped">Enviado</option>
+            <option value="delivered">Entregado</option>
+            <option value="cancelled">Cancelado</option>
+          </select>
+        </div>
+
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
+          <button
+            type="button"
+            id="dialog-cancel"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+          >
+            Cambiar Estado
+          </button>
+        </div>
+      </form>
+    </div>
+  </dialog>
 </AdminLayout>
+
+<script>
+  import { updateOrderStatus } from '@/lib/database';
+
+  // Manejar cambio de estado
+  document.addEventListener('DOMContentLoaded', () => {
+    const dialog = document.getElementById('status-dialog') as HTMLDialogElement;
+    const dialogOrderInfo = document.getElementById('dialog-order-info');
+    const dialogOrderId = document.getElementById('dialog-order-id') as HTMLInputElement;
+    const dialogNewStatus = document.getElementById('dialog-new-status') as HTMLSelectElement;
+    const dialogCancel = document.getElementById('dialog-cancel');
+    const statusForm = document.getElementById('status-form') as HTMLFormElement;
+
+    // Abrir diálogo al hacer clic en botón de cambiar estado
+    document.querySelectorAll('.change-status-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const orderId = button.getAttribute('data-order-id');
+        const orderNumber = button.getAttribute('data-order-number');
+        const currentStatus = button.getAttribute('data-current-status');
+
+        if (orderId && orderNumber && currentStatus && dialogOrderInfo && dialogOrderId && dialogNewStatus) {
+          dialogOrderInfo.textContent = `Orden: ${orderNumber}`;
+          dialogOrderId.value = orderId;
+          dialogNewStatus.value = currentStatus;
+          dialog?.showModal();
+        }
+      });
+    });
+
+    // Cerrar diálogo
+    dialogCancel?.addEventListener('click', () => {
+      dialog?.close();
+    });
+
+    // Cerrar al hacer clic fuera del diálogo
+    dialog?.addEventListener('click', (e) => {
+      const rect = dialog.getBoundingClientRect();
+      if (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      ) {
+        dialog.close();
+      }
+    });
+
+    // Manejar envío del formulario
+    statusForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(statusForm);
+      const orderId = formData.get('orderId');
+      const newStatus = formData.get('newStatus');
+
+      if (!orderId || !newStatus) return;
+
+      try {
+        const response = await fetch('/api/orders/update-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: parseInt(orderId as string),
+            status: newStatus
+          })
+        });
+
+        if (response.ok) {
+          dialog?.close();
+          window.location.reload();
+        } else {
+          alert('Error al actualizar el estado de la orden');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al actualizar el estado de la orden');
+      }
+    });
+  });
+</script>
