@@ -8,6 +8,7 @@ import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://starfilters.com', // Actualiza con tu dominio real
   output: 'server',
   adapter: node({
     mode: 'standalone'

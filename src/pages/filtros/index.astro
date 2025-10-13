@@ -1,6 +1,8 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
 import { getProducts } from "@/lib/database";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
 // Obtener productos de la base de datos
 const products = await getProducts(12, 0);
@@ -15,9 +17,41 @@ const formatPrice = (price: number): string => {
 
 // Obtener categorías únicas
 const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+
+// Generar datos SEO
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Inicio', url: siteUrl },
+  { name: 'Productos', url: `${siteUrl}/filtros` }
+]);
 ---
 
-<WebsiteLayout title="Filtros y Productos">
+<WebsiteLayout 
+  title="Filtros y Productos"
+  seoTitle="Filtros Industriales y Productos - Catálogo StarFilters"
+  description="Explora nuestro catálogo completo de filtros industriales, filtros HEPA, cuartos limpios y accesorios. Productos de alta calidad con envío a toda la República Mexicana."
+  keywords={[
+    'catálogo filtros',
+    'comprar filtros industriales',
+    'filtros HEPA precio',
+    'productos filtración',
+    'tienda filtros México'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Filtros Industriales y Productos"
+    description="Explora nuestro catálogo completo de filtros industriales, filtros HEPA, cuartos limpios y accesorios. Productos de alta calidad con envío a toda la República Mexicana."
+    ogType="website"
+    keywords={[
+      'catálogo filtros',
+      'comprar filtros industriales',
+      'filtros HEPA precio'
+    ]}
+  />
+  
+  <!-- Breadcrumb Schema -->
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <div class="bg-background py-24">
     <!-- Breadcrumb -->
     <div class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">

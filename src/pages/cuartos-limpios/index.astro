@@ -1,8 +1,42 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Inicio', url: siteUrl },
+  { name: 'Cuartos Limpios', url: `${siteUrl}/cuartos-limpios` }
+]);
 ---
 
-<WebsiteLayout title="Cuartos Limpios">
+<WebsiteLayout 
+  title="Cuartos Limpios"
+  seoTitle="Cuartos Limpios Industriales - Diseño e Instalación | StarFilters"
+  description="Diseño, fabricación e instalación de cuartos limpios industriales. Soluciones profesionales con certificación ISO para industrias farmacéutica, electrónica y alimentaria en México."
+  keywords={[
+    'cuartos limpios',
+    'salas limpias',
+    'cuartos limpios industriales',
+    'diseño cuartos limpios',
+    'instalación salas limpias',
+    'cuartos limpios México',
+    'certificación ISO cuartos limpios'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Cuartos Limpios Industriales"
+    description="Diseño, fabricación e instalación de cuartos limpios industriales. Soluciones profesionales con certificación ISO para industrias farmacéutica, electrónica y alimentaria en México."
+    ogType="website"
+    keywords={[
+      'cuartos limpios',
+      'salas limpias',
+      'cuartos limpios industriales'
+    ]}
+  />
+  
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <div class="overflow-hidden bg-white py-24 sm:py-32">
     <div class="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
       <div class="max-w-4xl">

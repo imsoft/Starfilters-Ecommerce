@@ -1,7 +1,9 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
 import { getProductByUuid, getProducts } from "@/lib/database";
 import type { Product } from "@/lib/database";
+import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 
 // Obtener UUID del producto de la URL
 const { id: uuid } = Astro.params;
@@ -38,9 +40,47 @@ const productImages = [
   'https://via.placeholder.com/600x600?text=Vista+3',
   'https://via.placeholder.com/600x600?text=Vista+4'
 ];
+
+// Generar datos SEO
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const productKeywords = generateProductKeywords(product);
+const productDescription = extractTextFromHTML(product.description || '', 160);
+const productSchema = generateProductSchema(product, siteUrl);
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Inicio', url: siteUrl },
+  { name: 'Productos', url: `${siteUrl}/filtros` },
+  { name: product.name, url: `${siteUrl}/product/${product.uuid}` }
+]);
 ---
 
-<WebsiteLayout title={product.name}>
+<WebsiteLayout 
+  title={product.name}
+  seoTitle={`${product.name} - Comprar en StarFilters`}
+  description={productDescription}
+  keywords={productKeywords}
+  ogImage={product.image_url}
+>
+  <SEO 
+    slot="seo"
+    title={product.name}
+    description={productDescription}
+    ogType="product"
+    ogImage={product.image_url}
+    ogImageAlt={product.name}
+    keywords={productKeywords}
+    product={{
+      price: product.price,
+      currency: 'MXN',
+      availability: product.stock > 0 ? 'in stock' : 'out of stock',
+      brand: 'StarFilters'
+    }}
+  />
+  
+  <!-- Product Schema -->
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(productSchema)} />
+  
+  <!-- Breadcrumb Schema -->
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <div class="bg-background py-24">
     <!-- Breadcrumb -->
     <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">

@@ -1,0 +1,51 @@
+# robots.txt para StarFilters E-commerce
+
+# Permitir todos los bots
+User-agent: *
+Allow: /
+
+# Páginas específicas permitidas
+Allow: /filtros
+Allow: /cuartos-limpios
+Allow: /services
+Allow: /blog
+Allow: /product/
+Allow: /blog/
+
+# Páginas bloqueadas (admin, auth, APIs)
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login
+Disallow: /signup
+Disallow: /logout
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /change-password
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /profile
+Disallow: /purchase-success
+
+# Archivos y directorios bloqueados
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /scripts/
+Disallow: /database/
+
+# Sitemap
+Sitemap: https://starfilters.com/sitemap.xml
+
+# Configuración para bots específicos
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Crawl-delay para bots agresivos
+User-agent: *
+Crawl-delay: 1

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import SEO from '@/components/shared/SEO.astro';
 import HeroSection from '@/components/shared/HeroSection.astro';
 import Stats from '@/components/shared/Stats.astro';
 import BentoGrid from '@/components/shared/BentoGrid.astro';
@@ -7,6 +8,9 @@ import LogoSection from '@/components/shared/LogoSection.astro';
 import TestimonialSections from '@/components/shared/TestimonialSections.astro';
 import FaqSection from '@/components/shared/FaqSection.astro';
 import FooterSection from '@/components/shared/FooterSection.astro';
+import { generateOrganizationSchema } from '@/lib/seo-utils';
+
+const siteUrl = Astro.site?.href || Astro.url.origin;
 ---
 
 <html lang="es">
@@ -15,7 +19,26 @@ import FooterSection from '@/components/shared/FooterSection.astro';
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>StarFilters</title>
+		
+		<SEO 
+			title="Filtros Industriales y Cuartos Limpios de Alta Calidad"
+			description="StarFilters es líder en filtros industriales, filtros HEPA y cuartos limpios en México. Calidad garantizada, envío rápido y servicio profesional. Mejora la calidad del aire en tu industria."
+			ogType="website"
+			keywords={[
+				'filtros industriales',
+				'filtros HEPA',
+				'cuartos limpios',
+				'purificación de aire',
+				'filtros México',
+				'filtros de aire industrial',
+				'sistemas de filtración',
+				'calidad del aire',
+				'filtros profesionales'
+			]}
+		/>
+		
+		<!-- Organization Schema -->
+		<script type="application/ld+json" set:html={JSON.stringify(generateOrganizationSchema(siteUrl))} />
 	</head>
 
 	<body>

@@ -2,14 +2,36 @@
 import FooterSection from "@/components/shared/FooterSection.astro";
 import "../styles/global.css";
 import Navbar from "@/components/shared/Navbar.astro";
-const { title } = Astro.props;
+
+export interface Props {
+  title: string;
+  seoTitle?: string;
+  description?: string;
+  ogImage?: string;
+  keywords?: string[];
+  noindex?: boolean;
+}
+
+const { 
+  title, 
+  seoTitle, 
+  description, 
+  ogImage, 
+  keywords,
+  noindex = false 
+} = Astro.props;
 ---
 
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{seoTitle || title}</title>
+    {description && <meta name="description" content={description} />}
+    {keywords && keywords.length > 0 && <meta name="keywords" content={keywords.join(', ')} />}
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
+    <slot name="seo" />
   </head>
   <body>
     <Navbar />

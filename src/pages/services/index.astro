@@ -2,9 +2,42 @@
 import FeatureServiceSection from "@/components/shared/FeatureServiceSection.astro";
 import PricingSection from "@/components/shared/PricingSection.astro";
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Inicio', url: siteUrl },
+  { name: 'Servicios', url: `${siteUrl}/services` }
+]);
 ---
 
-<WebsiteLayout title="Servicios">
+<WebsiteLayout 
+  title="Servicios"
+  seoTitle="Servicios de Filtración Industrial y Mantenimiento | StarFilters"
+  description="Servicios profesionales de instalación, mantenimiento y consultoría en sistemas de filtración industrial. Soporte técnico especializado y planes de mantenimiento preventivo en México."
+  keywords={[
+    'servicios filtración',
+    'mantenimiento filtros',
+    'instalación cuartos limpios',
+    'consultoría industrial',
+    'soporte técnico filtros',
+    'mantenimiento preventivo'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Servicios de Filtración Industrial"
+    description="Servicios profesionales de instalación, mantenimiento y consultoría en sistemas de filtración industrial. Soporte técnico especializado y planes de mantenimiento preventivo en México."
+    ogType="website"
+    keywords={[
+      'servicios filtración',
+      'mantenimiento filtros',
+      'instalación cuartos limpios'
+    ]}
+  />
+  
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <FeatureServiceSection />
   <PricingSection />
 </WebsiteLayout>

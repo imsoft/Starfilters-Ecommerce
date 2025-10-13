@@ -1,7 +1,9 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
 import { getBlogPosts } from "@/lib/database";
 import type { BlogPost } from "@/lib/database";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
 // Obtener posts del blog desde la base de datos
 const blogPosts = await getBlogPosts(6, 0);
@@ -34,9 +36,43 @@ const getTagsArray = (tags: string): string[] => {
   if (!tags) return [];
   return tags.split(',').map(tag => tag.trim()).filter(Boolean);
 };
+
+// Generar datos SEO
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Inicio', url: siteUrl },
+  { name: 'Blog', url: `${siteUrl}/blog` }
+]);
 ---
 
-<WebsiteLayout title="Blog">
+<WebsiteLayout 
+  title="Blog"
+  seoTitle="Blog de StarFilters - Artículos sobre Filtros Industriales y Cuartos Limpios"
+  description="Descubre artículos, guías y consejos sobre filtros industriales, filtros HEPA, cuartos limpios y purificación de aire. Información técnica y profesional de expertos."
+  keywords={[
+    'blog filtros',
+    'artículos filtros industriales',
+    'guías cuartos limpios',
+    'información filtros HEPA',
+    'blog industrial',
+    'purificación aire'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Blog de StarFilters"
+    description="Descubre artículos, guías y consejos sobre filtros industriales, filtros HEPA, cuartos limpios y purificación de aire. Información técnica y profesional de expertos."
+    ogType="website"
+    keywords={[
+      'blog filtros',
+      'artículos filtros industriales',
+      'guías cuartos limpios',
+      'información filtros HEPA'
+    ]}
+  />
+  
+  <!-- Breadcrumb Schema -->
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <div class="bg-background py-24 sm:py-32">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
       <div class="mx-auto max-w-2xl text-center">
