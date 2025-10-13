@@ -141,6 +141,38 @@ export async function uploadGeneralImage(
 }
 
 /**
+ * Sube una imagen general a Cloudinary con resultado estructurado
+ * @param file - Buffer del archivo
+ * @param folder - Carpeta donde subir la imagen
+ * @param imageName - Nombre de la imagen
+ * @returns Objeto con success y url
+ */
+export async function uploadToCloudinary(
+  file: Buffer,
+  folder: string,
+  imageName: string
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const url = await uploadImage(file, {
+      folder,
+      public_id: imageName,
+      resource_type: 'image'
+    });
+    
+    return {
+      success: true,
+      url
+    };
+  } catch (error) {
+    console.error('Error en uploadToCloudinary:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
+  }
+}
+
+/**
  * Elimina una imagen de Cloudinary
  * @param publicId - ID público de la imagen en Cloudinary
  * @returns true si se eliminó correctamente

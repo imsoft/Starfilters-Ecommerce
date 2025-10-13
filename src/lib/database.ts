@@ -379,6 +379,18 @@ export const updateUserPassword = async (userId: number, passwordHash: string): 
   return result.affectedRows > 0;
 };
 
+// Función para actualizar la imagen de perfil de un administrador
+export const updateAdminProfileImage = async (adminId: number, imageUrl: string): Promise<boolean> => {
+  try {
+    const sql = 'UPDATE admin_users SET profile_image = ?, updated_at = NOW() WHERE id = ?';
+    const result = await query(sql, [imageUrl, adminId]) as any;
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Error actualizando imagen de perfil del administrador:', error);
+    return false;
+  }
+};
+
 // Función para promover un usuario a administrador
 export const promoteUserToAdmin = async (userId: number): Promise<boolean> => {
   try {

@@ -216,19 +216,20 @@ function getStatusText(status: string): string {
               </div>
               <input
                 type="text"
+                id="search-blog"
                 placeholder="Buscar artículos..."
                 class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:w-64"
               />
             </div>
             
-            <select class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            <select id="status-filter-blog" class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
               <option value="">Todos los estados</option>
               <option value="published">Publicado</option>
               <option value="draft">Borrador</option>
               <option value="scheduled">Programado</option>
             </select>
 
-            <select class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            <select id="category-filter-blog" class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
               <option value="">Todas las categorías</option>
               <option value="filtros">Filtros</option>
               <option value="cuartos-limpios">Cuartos Limpios</option>
@@ -266,7 +267,7 @@ function getStatusText(status: string): string {
                 <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-border">
+            <tbody id="blog-table-body" class="divide-y divide-border">
               {allBlogPosts.length === 0 ? (
                 <tr>
                   <td colspan="8" class="px-6 py-12 text-center">
@@ -387,3 +388,69 @@ function getStatusText(status: string): string {
       </div>
   </div>
 </AdminLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-blog');
+    const statusFilter = document.getElementById('status-filter-blog');
+    const categoryFilter = document.getElementById('category-filter-blog');
+    const tableBody = document.getElementById('blog-table-body');
+    
+    // Función para filtrar artículos del blog
+    function filterBlogPosts() {
+      const searchTerm = (searchInput as HTMLInputElement)?.value.toLowerCase() || '';
+      const selectedStatus = (statusFilter as HTMLSelectElement)?.value || '';
+      const selectedCategory = (categoryFilter as HTMLSelectElement)?.value || '';
+      
+      console.log('🔍 Filtros del blog aplicados:', { searchTerm, selectedStatus, selectedCategory });
+      
+      if (!tableBody) return;
+      
+      const rows = tableBody.querySelectorAll('tr');
+      let visibleCount = 0;
+      
+      rows.forEach((row) => {
+        // Obtener datos de la fila
+        const titleElement = row.querySelector('td:nth-child(2) .text-sm.font-medium');
+        const excerptElement = row.querySelector('td:nth-child(2) .text-sm.text-muted-foreground');
+        const categoryElement = row.querySelector('td:nth-child(4) .text-sm');
+        const statusBadge = row.querySelector('td:nth-child(6) span');
+        
+        const title = titleElement?.textContent?.toLowerCase() || '';
+        const excerpt = excerptElement?.textContent?.toLowerCase() || '';
+        const category = categoryElement?.textContent?.toLowerCase() || '';
+        const statusText = statusBadge?.textContent?.toLowerCase() || '';
+        
+        // Mapear texto de estado a valor
+        let postStatus = '';
+        if (statusText.includes('publicado')) postStatus = 'published';
+        else if (statusText.includes('borrador')) postStatus = 'draft';
+        else if (statusText.includes('programado')) postStatus = 'scheduled';
+        else if (statusText.includes('archivado')) postStatus = 'archived';
+        
+        // Aplicar filtros
+        const matchesSearch = searchTerm === '' || 
+          title.includes(searchTerm) || 
+          excerpt.includes(searchTerm);
+        const matchesStatus = !selectedStatus || postStatus === selectedStatus;
+        const matchesCategory = !selectedCategory || category.includes(selectedCategory);
+        
+        if (matchesSearch && matchesStatus && matchesCategory) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      
+      console.log(`✅ ${visibleCount} artículos mostrados después del filtrado`);
+    }
+    
+    // Event listeners para filtros
+    searchInput?.addEventListener('input', filterBlogPosts);
+    statusFilter?.addEventListener('change', filterBlogPosts);
+    categoryFilter?.addEventListener('change', filterBlogPosts);
+    
+    console.log('🎯 Filtros del blog inicializados');
+  });
+</script>
