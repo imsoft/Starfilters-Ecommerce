@@ -1,6 +1,7 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
+import { BlogImageUploader } from "@/components/ui/BlogImageUploader";
 import { getBlogPostByUuid, updateBlogPost, generateSlug } from "@/lib/database";
 
 const { id } = Astro.params;
@@ -311,41 +312,18 @@ const error = url.searchParams.get('error');
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Imagen Destacada</h2>
           
-          <div class="space-y-4">
-            <div class="border-2 border-dashed border-border rounded-lg p-6 text-center">
-              <svg class="mx-auto h-12 w-12 text-muted-foreground" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <div class="mt-4">
-                <label for="featured-image" class="cursor-pointer">
-                  <span class="mt-2 block text-sm font-medium text-foreground">
-                    Arrastra y suelta la imagen aquí, o
-                  </span>
-                  <span class="mt-1 block text-sm text-primary hover:text-primary/90">
-                    haz clic para seleccionar archivo
-                  </span>
-                </label>
-                <input
-                  id="featured-image"
-                  name="featured-image"
-                  type="file"
-                  accept="image/*"
-                  class="sr-only"
-                />
-              </div>
-              <p class="mt-2 text-xs text-muted-foreground">
-                PNG, JPG, GIF hasta 5MB. Recomendado: 1200x630px
-              </p>
-            </div>
-
-            <!-- Vista previa de imagen existente -->
-            <div class="relative group">
-              <img class="h-32 w-full rounded-lg object-cover border border-border" src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Vista previa">
-              <button type="button" class="absolute top-2 right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                ×
-              </button>
-            </div>
-          </div>
+          <BlogImageUploader 
+            client:load
+            blogId={blogPost.uuid}
+            initialImage={blogPost.featured_image || undefined}
+          />
+          
+          <input 
+            type="hidden" 
+            id="featured-image-url" 
+            name="featured_image_url" 
+            value={blogPost.featured_image || ''} 
+          />
         </div>
 
         <!-- SEO -->
@@ -537,5 +515,14 @@ const error = url.searchParams.get('error');
         }
       });
     }
+    
+    // Escuchar cambios en la imagen destacada desde el componente React
+    window.addEventListener('blog-image-changed', ((event: CustomEvent) => {
+      const featuredImageUrl = document.getElementById('featured-image-url') as HTMLInputElement;
+      if (featuredImageUrl) {
+        featuredImageUrl.value = event.detail.imageUrl || '';
+        console.log('✅ URL de imagen actualizada:', event.detail.imageUrl);
+      }
+    }) as EventListener);
   });
 </script>

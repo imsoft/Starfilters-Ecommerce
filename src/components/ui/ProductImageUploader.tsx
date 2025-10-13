@@ -94,6 +94,11 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
       setImages(updatedImages);
       onImagesChange?.(updatedImages);
       
+      // Emitir evento personalizado
+      window.dispatchEvent(new CustomEvent('product-images-changed', { 
+        detail: { images: updatedImages } 
+      }));
+      
       // Limpiar input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -126,6 +131,11 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
         const updatedImages = images.filter(img => img.id !== imageId);
         setImages(updatedImages);
         onImagesChange?.(updatedImages);
+        
+        // Emitir evento personalizado
+        window.dispatchEvent(new CustomEvent('product-images-changed', { 
+          detail: { images: updatedImages } 
+        }));
       } else {
         alert(`Error al eliminar la imagen: ${result.message}`);
       }
@@ -143,6 +153,11 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     
     setImages(updatedImages);
     onImagesChange?.(updatedImages);
+    
+    // Emitir evento personalizado
+    window.dispatchEvent(new CustomEvent('product-images-changed', { 
+      detail: { images: updatedImages } 
+    }));
     
     // Actualizar en el servidor
     try {
