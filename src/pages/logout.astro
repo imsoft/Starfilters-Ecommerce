@@ -1,0 +1,9 @@
+---
+import { logout } from '@/lib/auth-utils';
+
+// Cerrar sesión
+logout(Astro.cookies);
+
+// Redirigir a la página principal
+return Astro.redirect('/');
+---

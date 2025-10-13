@@ -1,0 +1,102 @@
+---
+import AuthLayout from "@/layouts/authLayout.astro";
+
+// Obtener el email de la URL
+const url = new URL(Astro.request.url);
+const email = url.searchParams.get('email');
+---
+
+<AuthLayout title="Registro Exitoso">
+  <div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+      <!-- Icono de éxito -->
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      
+      <h2 class="mt-6 text-center text-2xl/9 font-bold tracking-tight text-foreground">
+        ¡Registro Exitoso!
+      </h2>
+      
+      <p class="mt-4 text-center text-sm text-muted-foreground">
+        Tu cuenta ha sido creada correctamente
+      </p>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+      <div class="rounded-md bg-background border border-border p-6">
+        <div class="text-center">
+          <h3 class="text-lg font-medium text-foreground mb-4">
+            Próximos pasos
+          </h3>
+          
+          <div class="space-y-4 text-sm text-muted-foreground">
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0">
+                <div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+                  <span class="text-xs font-medium text-primary">1</span>
+                </div>
+              </div>
+              <div>
+                <p class="font-medium text-foreground">Verifica tu email</p>
+                <p>Hemos enviado un enlace de verificación a:</p>
+                <p class="font-medium text-primary">{email}</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0">
+                <div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+                  <span class="text-xs font-medium text-primary">2</span>
+                </div>
+              </div>
+              <div>
+                <p class="font-medium text-foreground">Revisa tu bandeja de entrada</p>
+                <p>Haz clic en el enlace para activar tu cuenta</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0">
+                <div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+                  <span class="text-xs font-medium text-primary">3</span>
+                </div>
+              </div>
+              <div>
+                <p class="font-medium text-foreground">¡Comienza a comprar!</p>
+                <p>Una vez verificado, podrás acceder a todos nuestros productos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-4">
+        <a
+          href="/login"
+          class="flex w-full justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Ir a Iniciar Sesión
+        </a>
+        
+        <a
+          href="/"
+          class="flex w-full justify-center rounded-md bg-background border border-border px-3 py-2 text-sm font-semibold text-foreground shadow-sm hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Volver al Inicio
+        </a>
+      </div>
+
+      <div class="mt-6 text-center">
+        <p class="text-xs text-muted-foreground">
+          ¿No recibiste el email? 
+          <a href="/signup" class="font-medium text-primary hover:text-primary/90">
+            Intenta registrarte nuevamente
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</AuthLayout>

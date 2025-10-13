@@ -1,0 +1,389 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { Button } from "@/components/ui/button";
+import { getAllBlogPosts } from "@/lib/database";
+import type { BlogPost } from "@/lib/database";
+
+// Obtener mensajes de la URL
+const url = new URL(Astro.request.url);
+const success = url.searchParams.get('success');
+
+// Obtener todos los posts del blog con logs para debug y manejo de errores
+let allBlogPosts: BlogPost[] = [];
+
+try {
+  console.log('🔍 Obteniendo posts del blog desde la base de datos...');
+  allBlogPosts = await getAllBlogPosts(100, 0) as BlogPost[];
+  console.log('📝 Posts obtenidos:', allBlogPosts.length);
+  console.log('📝 Datos de posts:', allBlogPosts);
+} catch (error) {
+  console.error('❌ Error obteniendo posts del blog:', error);
+  allBlogPosts = [];
+}
+
+// Estadísticas
+const totalPosts = allBlogPosts.length;
+const publishedPosts = allBlogPosts.filter(post => post.status === 'published').length;
+const draftPosts = allBlogPosts.filter(post => post.status === 'draft').length;
+const scheduledPosts = allBlogPosts.filter(post => post.status === 'scheduled').length;
+
+console.log('📊 Estadísticas del blog calculadas:', {
+  totalPosts,
+  publishedPosts,
+  draftPosts,
+  scheduledPosts
+});
+
+// Función para formatear fecha
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat('es-ES', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(date);
+}
+
+// Función para obtener el color del badge según el estado
+function getStatusColor(status: string): string {
+  switch (status) {
+    case 'published':
+      return 'bg-green-100 text-green-800';
+    case 'draft':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'scheduled':
+      return 'bg-blue-100 text-blue-800';
+    case 'archived':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
+
+// Función para obtener el texto del estado
+function getStatusText(status: string): string {
+  switch (status) {
+    case 'published':
+      return 'Publicado';
+    case 'draft':
+      return 'Borrador';
+    case 'scheduled':
+      return 'Programado';
+    case 'archived':
+      return 'Archivado';
+    default:
+      return status;
+  }
+}
+---
+
+<AdminLayout title="Gestión del Blog">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="mt-10 mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">Gestión del Blog</h1>
+            <p class="mt-2 text-muted-foreground">
+              Administra todos los artículos y contenido del blog
+            </p>
+          </div>
+          <a href="/admin/blog/add">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Nuevo Artículo
+            </Button>
+          </a>
+        </div>
+        
+        <!-- Indicador de datos -->
+        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 class="text-sm font-medium text-blue-800">📊 Estado de los datos del blog:</h3>
+          <div class="mt-2 text-sm text-blue-600">
+            <p>• Posts cargados: {allBlogPosts.length}</p>
+            <p>• Posts publicados: {publishedPosts}</p>
+            <p>• Posts en borrador: {draftPosts}</p>
+            <p>• Posts programados: {scheduledPosts}</p>
+          </div>
+        </div>
+      </div>
+
+    <!-- Mensajes de éxito -->
+    {success === 'created' && (
+      <div class="mb-6 rounded-md bg-green-50 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-green-800">
+              Artículo creado exitosamente.
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {success === 'updated' && (
+      <div class="mb-6 rounded-md bg-green-50 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-green-800">
+              Artículo actualizado exitosamente.
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+
+      <!-- Estadísticas del blog -->
+      <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-lg border border-border bg-background p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <svg class="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-muted-foreground">Total Artículos</p>
+              <p class="text-2xl font-semibold text-foreground">{totalPosts}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-border bg-background p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-muted-foreground">Publicados</p>
+              <p class="text-2xl font-semibold text-foreground">{publishedPosts}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-border bg-background p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-muted-foreground">Borradores</p>
+              <p class="text-2xl font-semibold text-foreground">{draftPosts}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-border bg-background p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-muted-foreground">Programados</p>
+              <p class="text-2xl font-semibold text-foreground">{scheduledPosts}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros y búsqueda -->
+      <div class="mb-6 rounded-lg border border-border bg-background p-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar artículos..."
+                class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:w-64"
+              />
+            </div>
+            
+            <select class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+              <option value="">Todos los estados</option>
+              <option value="published">Publicado</option>
+              <option value="draft">Borrador</option>
+              <option value="scheduled">Programado</option>
+            </select>
+
+            <select class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+              <option value="">Todas las categorías</option>
+              <option value="filtros">Filtros</option>
+              <option value="cuartos-limpios">Cuartos Limpios</option>
+              <option value="tecnologia">Tecnología</option>
+              <option value="industria">Industria</option>
+            </select>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              Exportar
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de artículos -->
+      <div class="rounded-lg border border-border bg-background">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-muted">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <input type="checkbox" class="rounded border-border text-primary focus:ring-primary">
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Artículo</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Autor</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Categoría</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Vistas</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              {allBlogPosts.length === 0 ? (
+                <tr>
+                  <td colspan="8" class="px-6 py-12 text-center">
+                    <div class="flex flex-col items-center">
+                      <svg class="h-12 w-12 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      <h3 class="text-lg font-medium text-foreground mb-2">No hay artículos</h3>
+                      <p class="text-muted-foreground mb-4">Comienza creando tu primer artículo del blog.</p>
+                      <a href="/admin/blog/add">
+                        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                          </svg>
+                          Crear Artículo
+                        </Button>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                allBlogPosts.map((post) => (
+                  <tr class="hover:bg-muted/50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <input type="checkbox" class="rounded border-border text-primary focus:ring-primary">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="h-12 w-12 flex-shrink-0">
+                          {post.featured_image ? (
+                            <img class="h-12 w-12 rounded-md object-cover" src={post.featured_image} alt={post.title}>
+                          ) : (
+                            <div class="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                              <svg class="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div class="ml-4">
+                          <div class="text-sm font-medium text-foreground">{post.title}</div>
+                          <div class="text-sm text-muted-foreground">{post.excerpt}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{post.author}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{post.category}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                      {formatDate(post.publish_date)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(post.status)}`}>
+                        {getStatusText(post.status)}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div class="flex space-x-2">
+                        <a href={`/admin/blog/edit/${post.uuid}`}>
+                          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                          </Button>
+                        </a>
+                        {post.status === 'published' ? (
+                          <a href={`/blog/${post.uuid}`}>
+                            <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                              </svg>
+                            </Button>
+                          </a>
+                        ) : (
+                          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" disabled>
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" className="border-border text-red-600 hover:bg-red-50">
+                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                          </svg>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginación -->
+        {allBlogPosts.length > 0 && (
+          <div class="px-6 py-4 border-t border-border">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-muted-foreground">
+                Mostrando <span class="font-medium text-foreground">{allBlogPosts.length}</span> artículo{allBlogPosts.length !== 1 ? 's' : ''}
+              </div>
+              <div class="flex items-center space-x-2">
+                <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" disabled>
+                  Anterior
+                </Button>
+                <Button variant="outline" size="sm" className="border-border hover:bg-muted bg-primary text-primary-foreground">
+                  1
+                </Button>
+                <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" disabled>
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+  </div>
+</AdminLayout>

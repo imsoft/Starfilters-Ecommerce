@@ -1,25 +1,30 @@
 ---
 import '../styles/global.css';
-// Component Imports
-import Button from '../components/Button.astro';
-
-// Full Astro Component Syntax:
-// https://docs.astro.build/basics/astro-components/
+import HeroSection from '@/components/shared/HeroSection.astro';
+import Stats from '@/components/shared/Stats.astro';
+import BentoGrid from '@/components/shared/BentoGrid.astro';
+import LogoSection from '@/components/shared/LogoSection.astro';
+import TestimonialSections from '@/components/shared/TestimonialSections.astro';
+import FaqSection from '@/components/shared/FaqSection.astro';
+import FooterSection from '@/components/shared/FooterSection.astro';
 ---
 
-<html lang="en">
+<html lang="es">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro + TailwindCSS</title>
+		<title>StarFilters</title>
 	</head>
 
 	<body>
-		<div class="grid place-items-center h-screen content-center">
-			<Button>Tailwind Button in Astro!</Button>
-			<a href="/markdown-page" class="p-4 underline">Markdown is also supported...</a>
-		</div>
+		<HeroSection />
+		<Stats />
+		<BentoGrid />
+		<LogoSection />
+		<TestimonialSections />
+		<FaqSection />
+		<FooterSection />
 	</body>
 </html>

@@ -1,0 +1,575 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { getProducts } from "@/lib/database";
+
+// Obtener algunos productos para mostrar como recomendados
+const recommendedProducts = await getProducts(4, 0);
+
+// Función para formatear precio
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+  }).format(price);
+};
+---
+
+<WebsiteLayout title="Carrito de Compras">
+  <div class="bg-background py-24">
+    <!-- Breadcrumb -->
+    <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+          <li>
+            <a href="/" class="hover:text-foreground transition-colors"
+              >Inicio</a
+            >
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li class="text-foreground font-medium">Carrito</li>
+        </ol>
+      </nav>
+    </div>
+
+    <main class="mx-auto max-w-2xl px-4 pb-24 sm:px-6 lg:max-w-7xl lg:px-8">
+      <h1
+        class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-12"
+      >
+        Carrito de Compras
+      </h1>
+
+      <!-- Contenedor principal del carrito -->
+      <div id="cart-container">
+        <!-- Estado de carga -->
+        <div id="cart-loading" class="text-center py-12">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"
+          >
+          </div>
+          <p class="mt-4 text-muted-foreground">Cargando carrito...</p>
+        </div>
+
+        <!-- Estado vacío -->
+        <div id="cart-empty" class="text-center py-12 hidden">
+          <svg
+            class="mx-auto h-24 w-24 text-muted-foreground"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1"
+              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+          <h3 class="mt-6 text-lg font-medium text-foreground">
+            Tu carrito está vacío
+          </h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Agrega algunos productos para continuar
+          </p>
+          <div class="mt-6">
+            <a
+              href="/filtros"
+              class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Explorar Productos
+            </a>
+          </div>
+        </div>
+
+        <!-- Carrito con items -->
+        <div id="cart-content" class="hidden">
+          <div
+            class="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12 xl:gap-x-16"
+          >
+            <!-- Lista de productos -->
+            <section aria-labelledby="cart-heading" class="lg:col-span-7">
+              <h2 id="cart-heading" class="sr-only">
+                Artículos en tu carrito de compras
+              </h2>
+
+              <ul
+                id="cart-items"
+                role="list"
+                class="divide-y divide-border border-t border-b border-border"
+              >
+                <!-- Items se cargarán dinámicamente -->
+              </ul>
+            </section>
+
+            <!-- Resumen del pedido -->
+            <section
+              aria-labelledby="summary-heading"
+              class="mt-16 rounded-lg bg-card border border-border px-4 py-6 sm:p-6 lg:col-span-5 lg:mt-0 lg:p-8"
+            >
+              <h2
+                id="summary-heading"
+                class="text-lg font-medium text-foreground"
+              >
+                Resumen del pedido
+              </h2>
+
+              <dl class="mt-6 space-y-4" id="cart-summary">
+                <!-- Resumen se cargará dinámicamente -->
+              </dl>
+
+              <div class="mt-6">
+                <a
+                  href="/checkout"
+                  id="checkout-btn"
+                  class="block w-full text-center rounded-md border border-transparent bg-primary px-4 py-3 text-base font-medium text-primary-foreground shadow-xs hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden transition-colors cursor-pointer"
+                >
+                  Finalizar compra
+                </a>
+              </div>
+
+              <div class="mt-6 text-center text-sm text-muted-foreground">
+                <p>
+                  o
+                  <a
+                    href="/filtros"
+                    class="font-medium text-primary hover:text-primary/90"
+                  >
+                    Continuar comprando
+                    <span aria-hidden="true"> &rarr;</span>
+                  </a>
+                </p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <!-- Productos relacionados -->
+      <section aria-labelledby="related-heading" class="mt-24">
+        <h2 id="related-heading" class="text-lg font-medium text-foreground">
+          También te puede gustar...
+        </h2>
+
+        <div
+          class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8"
+        >
+          {
+            recommendedProducts.map((product) => (
+              <div class="group relative flex flex-col">
+                <a
+                  href={`/product/${product.uuid}`}
+                  class="block flex-shrink-0"
+                >
+                  <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
+                    <img
+                      src={
+                        product.image_url ||
+                        "https://via.placeholder.com/300x300?text=Producto"
+                      }
+                      alt={product.name}
+                      class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
+                    />
+                  </div>
+                </a>
+                <div class="mt-4 flex justify-between">
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-sm text-foreground line-clamp-2 min-h-[2.5rem]">
+                      <a
+                        href={`/product/${product.uuid}`}
+                        class="hover:text-primary transition-colors"
+                      >
+                        {product.name}
+                      </a>
+                    </h3>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                      {product.category}
+                    </p>
+                  </div>
+                  <p class="text-sm font-medium text-foreground ml-2 flex-shrink-0">
+                    {formatPrice(product.price)}
+                  </p>
+                </div>
+                <div class="mt-auto pt-3">
+                  <button
+                    type="button"
+                    class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    onclick={`event.stopPropagation(); addProductToCart('${product.uuid}', '${product.name}', ${product.price}, '${product.image_url || ""}', '${product.category || ""}')`}
+                  >
+                    Agregar al Carrito
+                  </button>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Diálogo de confirmación -->
+  <dialog
+    id="confirm-dialog"
+    class="backdrop:bg-black/80 bg-background border border-border rounded-lg p-6 max-w-md"
+  >
+    <div class="space-y-4">
+      <h2 id="dialog-title" class="text-lg font-semibold text-foreground"></h2>
+      <p id="dialog-description" class="text-sm text-muted-foreground"></p>
+      <div
+        class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2"
+      >
+        <button
+          id="dialog-cancel"
+          class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+        >
+          Cancelar
+        </button>
+        <button
+          id="dialog-confirm"
+          class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </dialog>
+</WebsiteLayout>
+
+<script>
+  // Gestión del carrito
+  const CART_STORAGE_KEY = "starfilters_cart";
+
+  interface CartItem {
+    uuid: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image_url?: string;
+    color?: string;
+    size?: string;
+    category?: string;
+  }
+
+  interface Cart {
+    items: CartItem[];
+    total: number;
+    itemCount: number;
+  }
+
+  function getCart(): Cart {
+    try {
+      const cartData = localStorage.getItem(CART_STORAGE_KEY);
+      if (cartData) {
+        const cart = JSON.parse(cartData) as Cart;
+        return {
+          ...cart,
+          total: calculateTotal(cart.items),
+          itemCount: calculateItemCount(cart.items),
+        };
+      }
+    } catch (error) {
+      console.error("Error al leer carrito:", error);
+    }
+    return { items: [], total: 0, itemCount: 0 };
+  }
+
+  function saveCart(cart: Cart): void {
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      window.dispatchEvent(new CustomEvent("cartUpdated", { detail: cart }));
+    } catch (error) {
+      console.error("Error al guardar carrito:", error);
+    }
+  }
+
+  function calculateTotal(items: CartItem[]): number {
+    return items.reduce((total, item) => total + item.price * item.quantity, 0);
+  }
+
+  function calculateItemCount(items: CartItem[]): number {
+    return items.reduce((count, item) => count + item.quantity, 0);
+  }
+
+  function formatPrice(price: number): string {
+    return new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+    }).format(price);
+  }
+
+  function addProductToCart(
+    uuid: string,
+    name: string,
+    price: number,
+    image_url: string,
+    category: string
+  ): void {
+    const cart = getCart();
+
+    const existingItemIndex = cart.items.findIndex(
+      (item) => item.uuid === uuid
+    );
+
+    if (existingItemIndex >= 0) {
+      cart.items[existingItemIndex].quantity += 1;
+    } else {
+      cart.items.push({
+        uuid,
+        name,
+        price,
+        quantity: 1,
+        image_url,
+        category,
+      });
+    }
+
+    cart.total = calculateTotal(cart.items);
+    cart.itemCount = calculateItemCount(cart.items);
+    saveCart(cart);
+
+    showNotification(`${name} agregado al carrito`);
+    renderCart();
+  }
+
+  function removeFromCart(uuid: string): void {
+    showConfirmDialog(
+      "Eliminar producto",
+      "¿Estás seguro de que quieres eliminar este producto del carrito?",
+      () => {
+        const cart = getCart();
+        cart.items = cart.items.filter((item) => item.uuid !== uuid);
+        cart.total = calculateTotal(cart.items);
+        cart.itemCount = calculateItemCount(cart.items);
+        saveCart(cart);
+        renderCart();
+      }
+    );
+  }
+
+  function updateQuantity(uuid: string, quantity: number): void {
+    const cart = getCart();
+    const itemIndex = cart.items.findIndex((item) => item.uuid === uuid);
+
+    if (itemIndex >= 0) {
+      if (quantity <= 0) {
+        cart.items.splice(itemIndex, 1);
+      } else {
+        cart.items[itemIndex].quantity = quantity;
+      }
+    }
+
+    cart.total = calculateTotal(cart.items);
+    cart.itemCount = calculateItemCount(cart.items);
+    saveCart(cart);
+    renderCart();
+  }
+
+  function renderCart(): void {
+    const cart = getCart();
+    const cartLoading = document.getElementById("cart-loading");
+    const cartEmpty = document.getElementById("cart-empty");
+    const cartContent = document.getElementById("cart-content");
+    const cartItems = document.getElementById("cart-items");
+    const cartSummary = document.getElementById("cart-summary");
+
+    if (
+      !cartLoading ||
+      !cartEmpty ||
+      !cartContent ||
+      !cartItems ||
+      !cartSummary
+    )
+      return;
+
+    // Ocultar loading
+    cartLoading.classList.add("hidden");
+
+    if (cart.items.length === 0) {
+      cartEmpty.classList.remove("hidden");
+      cartContent.classList.add("hidden");
+    } else {
+      cartEmpty.classList.add("hidden");
+      cartContent.classList.remove("hidden");
+
+      // Renderizar items
+      cartItems.innerHTML = cart.items
+        .map(
+          (item) => `
+        <li class="flex py-6 sm:py-10">
+          <div class="shrink-0">
+            <img
+              src="${item.image_url || "https://via.placeholder.com/200x200?text=Producto"}"
+              alt="${item.name}"
+              class="size-24 rounded-md object-cover sm:size-48"
+            />
+          </div>
+          <div class="ml-4 flex flex-1 flex-col justify-between sm:ml-6">
+            <div class="relative pr-9 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:pr-0">
+              <div>
+                <h3 class="text-sm font-medium text-foreground">${item.name}</h3>
+                ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">${item.category}</p>` : ""}
+                <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
+              </div>
+              <div class="mt-4 sm:mt-0 sm:pr-9">
+                <select
+                  onchange="updateQuantity('${item.uuid}', parseInt(this.value))"
+                  class="rounded-md bg-background py-1.5 pr-8 pl-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                >
+                  ${[1, 2, 3, 4, 5, 6, 7, 8]
+                    .map(
+                      (num) =>
+                        `<option value="${num}" ${item.quantity === num ? "selected" : ""}>${num}</option>`
+                    )
+                    .join("")}
+                </select>
+                <div class="absolute top-0 right-0">
+                  <button
+                    type="button"
+                    onclick="removeFromCart('${item.uuid}')"
+                    class="-m-2 inline-flex p-2 text-muted-foreground hover:text-red-600 transition-colors"
+                  >
+                    <span class="sr-only">Eliminar</span>
+                    <svg class="size-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"></path>
+                    </svg>
+                  </button>
+          </div>
+              </div>
+            </div>
+            <p class="mt-4 flex space-x-2 text-sm text-green-600">
+              <svg class="size-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+              </svg>
+              <span>En stock</span>
+            </p>
+          </div>
+        </li>
+      `
+        )
+        .join("");
+
+      // Renderizar resumen
+      const subtotal = cart.total;
+      const shipping = subtotal > 500 ? 0 : 99;
+      const tax = subtotal * 0.16;
+      const total = subtotal + shipping + tax;
+
+      cartSummary.innerHTML = `
+        <div class="flex items-center justify-between">
+          <dt class="text-sm text-muted-foreground">Subtotal</dt>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(subtotal)}</dd>
+        </div>
+        <div class="flex items-center justify-between border-t border-border pt-4">
+          <dt class="text-sm text-muted-foreground">Envío</dt>
+          <dd class="text-sm font-medium text-foreground">${shipping === 0 ? "Gratis" : formatPrice(shipping)}</dd>
+        </div>
+        <div class="flex items-center justify-between border-t border-border pt-4">
+          <dt class="text-sm text-muted-foreground">IVA (16%)</dt>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(tax)}</dd>
+        </div>
+        <div class="flex items-center justify-between border-t border-border pt-4">
+          <dt class="text-base font-medium text-foreground">Total</dt>
+          <dd class="text-base font-medium text-foreground">${formatPrice(total)}</dd>
+        </div>
+      `;
+    }
+  }
+
+  function showNotification(message: string): void {
+    const notification = document.createElement("div");
+    notification.className =
+      "fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
+    notification.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>${message}</span>
+  </div>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.remove(), 3000);
+  }
+
+  // Diálogo de confirmación nativo
+  let confirmCallback: (() => void) | null = null;
+
+  function showConfirmDialog(
+    title: string,
+    description: string,
+    onConfirm: () => void
+  ): void {
+    const dialog = document.getElementById(
+      "confirm-dialog"
+    ) as HTMLDialogElement;
+    const dialogTitle = document.getElementById("dialog-title");
+    const dialogDescription = document.getElementById("dialog-description");
+    const confirmBtn = document.getElementById("dialog-confirm");
+    const cancelBtn = document.getElementById("dialog-cancel");
+
+    if (!dialog || !dialogTitle || !dialogDescription) return;
+
+    dialogTitle.textContent = title;
+    dialogDescription.textContent = description;
+    confirmCallback = onConfirm;
+
+    dialog.showModal();
+
+    // Event listeners para los botones
+    const handleConfirm = () => {
+      if (confirmCallback) {
+        confirmCallback();
+        confirmCallback = null;
+      }
+      dialog.close();
+    };
+
+    const handleCancel = () => {
+      confirmCallback = null;
+      dialog.close();
+    };
+
+    // Remover listeners anteriores y agregar nuevos
+    const newConfirmBtn = confirmBtn?.cloneNode(true) as HTMLButtonElement;
+    const newCancelBtn = cancelBtn?.cloneNode(true) as HTMLButtonElement;
+
+    confirmBtn?.parentNode?.replaceChild(newConfirmBtn, confirmBtn);
+    cancelBtn?.parentNode?.replaceChild(newCancelBtn, cancelBtn);
+
+    newConfirmBtn?.addEventListener("click", handleConfirm);
+    newCancelBtn?.addEventListener("click", handleCancel);
+
+    // Cerrar al hacer clic fuera del diálogo
+    dialog.addEventListener(
+      "click",
+      (e) => {
+        const rect = dialog.getBoundingClientRect();
+        if (
+          e.clientX < rect.left ||
+          e.clientX > rect.right ||
+          e.clientY < rect.top ||
+          e.clientY > rect.bottom
+        ) {
+          handleCancel();
+        }
+      },
+      { once: true }
+    );
+  }
+
+  // Funciones globales (antes de DOMContentLoaded para que estén disponibles)
+  (window as any).addProductToCart = addProductToCart;
+  (window as any).removeFromCart = removeFromCart;
+  (window as any).updateQuantity = updateQuantity;
+
+  // Inicializar carrito
+  document.addEventListener("DOMContentLoaded", () => {
+    renderCart();
+  });
+</script>

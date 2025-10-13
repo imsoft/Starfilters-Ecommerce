@@ -1,0 +1,242 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { getProducts } from "@/lib/database";
+
+// Obtener productos de la base de datos
+const products = await getProducts(12, 0);
+
+// Función para formatear precio
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  }).format(price);
+};
+
+// Obtener categorías únicas
+const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+---
+
+<WebsiteLayout title="Filtros y Productos">
+  <div class="bg-background py-24">
+    <!-- Breadcrumb -->
+    <div class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+          <li>
+            <a href="/" class="hover:text-foreground transition-colors">Inicio</a>
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li class="text-foreground font-medium">Productos</li>
+        </ol>
+      </nav>
+    </div>
+
+    <section
+      aria-labelledby="collection-heading"
+      class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8"
+    >
+      <div class="mb-12">
+        <h1
+          id="collection-heading"
+          class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+        >
+          Filtros y Productos StarFilters
+        </h1>
+        <p class="mt-4 text-lg text-muted-foreground">
+          Encuentra los mejores filtros para tu vehículo. Calidad garantizada y envío rápido.
+        </p>
+      </div>
+
+      <!-- Filtros -->
+      {categories.length > 0 && (
+        <div class="mb-8">
+          <h3 class="text-lg font-medium text-foreground mb-4">Filtrar por categoría</h3>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="filter-btn inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors active"
+              data-category="all"
+              onclick="filterProducts('all')"
+            >
+              Todos ({products.length})
+            </button>
+            {categories.map(category => {
+              const count = products.filter(p => p.category === category).length;
+              return (
+                <button
+                  type="button"
+                  class="filter-btn inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  data-category={category}
+                  onclick={`filterProducts('${category}')`}
+                >
+                  {category} ({count})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <!-- Grid de productos -->
+      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="products-grid">
+        {products.map((product) => (
+          <div class="group product-card relative flex flex-col" data-category={product.category}>
+            <a href={`/product/${product.uuid}`} class="block flex-shrink-0">
+              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
+                <img
+                  src={product.image_url || 'https://via.placeholder.com/300x300?text=' + encodeURIComponent(product.name)}
+                  alt={product.name}
+                  class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
+                />
+              </div>
+              <h3 class="mt-4 text-sm text-foreground font-medium hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">
+                {product.name}
+              </h3>
+            </a>
+            <p class="mt-1 text-sm text-muted-foreground">{product.category}</p>
+            <div class="mt-2 flex items-center justify-between">
+              <p class="text-lg font-medium text-foreground">
+                {formatPrice(product.price)}
+              </p>
+              {product.stock > 0 ? (
+                <span class="text-xs text-green-600 font-medium">
+                  En stock
+                </span>
+              ) : (
+                <span class="text-xs text-red-600 font-medium">
+                  Agotado
+                </span>
+              )}
+            </div>
+            
+            <div class="mt-auto pt-3">
+              {product.stock > 0 ? (
+                <button
+                  type="button"
+                  class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
+                >
+                  Agregar al Carrito
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  class="relative z-10 w-full rounded-md bg-gray-300 px-3 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed"
+                >
+                  No Disponible
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {products.length === 0 && (
+        <div class="text-center py-12">
+          <h3 class="text-lg font-medium text-foreground">
+            No hay productos disponibles
+          </h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Vuelve pronto para ver nuevos productos
+          </p>
+        </div>
+      )}
+    </section>
+  </div>
+</WebsiteLayout>
+
+<script>
+  // Funciones de filtrado
+  function filterProducts(category: string): void {
+    const productCards = document.querySelectorAll('.product-card');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    // Actualizar botones activos
+    filterBtns.forEach(btn => {
+      if (btn.getAttribute('data-category') === category) {
+        btn.classList.add('bg-primary', 'text-primary-foreground');
+        btn.classList.remove('bg-background', 'text-foreground');
+      } else {
+        btn.classList.remove('bg-primary', 'text-primary-foreground');
+        btn.classList.add('bg-background', 'text-foreground');
+      }
+    });
+
+    // Mostrar/ocultar productos
+    productCards.forEach(card => {
+      const productCategory = card.getAttribute('data-category');
+      if (category === 'all' || productCategory === category) {
+        (card as HTMLElement).style.display = 'block';
+      } else {
+        (card as HTMLElement).style.display = 'none';
+      }
+    });
+  }
+
+  // Función para agregar al carrito desde la grid
+  function addToCartQuick(uuid: string, name: string, price: number, image_url: string, category: string): void {
+    // Obtener carrito actual
+    const cartData = localStorage.getItem('starfilters_cart');
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
+
+    // Buscar si el producto ya existe
+    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
+
+    if (existingItemIndex >= 0) {
+      cart.items[existingItemIndex].quantity += 1;
+    } else {
+      cart.items.push({
+        uuid,
+        name,
+        price,
+        quantity: 1,
+        image_url,
+        category
+      });
+    }
+
+    // Recalcular totales
+    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
+
+    // Guardar en localStorage
+    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
+
+    // Mostrar notificación
+    showNotification(`${name} agregado al carrito`);
+
+    // Disparar evento para actualizar navbar
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
+  }
+
+  function showNotification(message: string): void {
+    // Crear notificación temporal
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
+    notification.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>${message}</span>
+      </div>
+    `;
+    document.body.appendChild(notification);
+
+    // Remover después de 3 segundos
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+
+  // Hacer funciones globales
+  (window as any).filterProducts = filterProducts;
+  (window as any).addToCartQuick = addToCartQuick;
+</script>

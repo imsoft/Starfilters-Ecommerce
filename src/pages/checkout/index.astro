@@ -1,0 +1,547 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { formatPrice } from "@/lib/cart";
+import StripePaymentForm from "@/components/ui/StripePaymentForm.tsx";
+
+// Verificar que el usuario esté autenticado
+const user = getAuthenticatedUser(Astro.cookies);
+if (!user) {
+  return Astro.redirect('/login');
+}
+---
+
+<WebsiteLayout title="Checkout">
+  <div class="bg-background">
+    <main class="mx-auto max-w-7xl px-4 pt-16 pb-24 sm:px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl lg:max-w-none">
+        <h1 class="sr-only">Checkout</h1>
+  
+        <div class="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
+          <div>
+            <div>
+              <h2 class="mt-10 text-lg font-medium text-foreground">
+                Información de contacto
+              </h2>
+  
+              <div class="mt-4">
+                <label
+                  for="email-address"
+                  class="block text-sm/6 font-medium text-foreground"
+                  >Dirección de correo electrónico</label
+                >
+                <div class="mt-2">
+                  <input
+                    id="email-address"
+                    type="email"
+                    name="email-address"
+                    value={user.email}
+                    readonly
+                    class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                  />
+                </div>
+              </div>
+            </div>
+  
+            <div class="mt-10 border-t border-border pt-10">
+              <h2 class="text-lg font-medium text-foreground">
+                Información de envío
+              </h2>
+
+              <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                <div>
+                  <label for="first-name" class="block text-sm/6 font-medium text-foreground">Nombre</label>
+                  <div class="mt-2">
+                    <input
+                      id="first-name"
+                      type="text"
+                      name="first-name"
+                      value={user.firstName}
+                      readonly
+                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+  
+                <div>
+                  <label for="last-name" class="block text-sm/6 font-medium text-foreground">Apellido</label>
+                  <div class="mt-2">
+                    <input
+                      id="last-name"
+                      type="text"
+                      name="last-name"
+                      value={user.lastName}
+                      readonly
+                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+  
+                <div class="sm:col-span-2">
+                  <label for="address" class="block text-sm/6 font-medium text-foreground">Dirección</label>
+                  <div class="mt-2">
+                    <input
+                      id="address"
+                      type="text"
+                      name="address"
+                      required
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+  
+                <div>
+                  <label for="city" class="block text-sm/6 font-medium text-foreground">Ciudad</label>
+                  <div class="mt-2">
+                    <input
+                      id="city"
+                      type="text"
+                      name="city"
+                      required
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+  
+                <div>
+                  <label for="state" class="block text-sm/6 font-medium text-foreground">Estado</label>
+                  <div class="mt-2">
+                    <input
+                      id="state"
+                      type="text"
+                      name="state"
+                      required
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+  
+                <div>
+                  <label for="postal-code" class="block text-sm/6 font-medium text-foreground">Código postal</label>
+                  <div class="mt-2">
+                    <input
+                      id="postal-code"
+                      type="text"
+                      name="postal-code"
+                      required
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+  
+                <div>
+                  <label for="country" class="block text-sm/6 font-medium text-foreground">País</label>
+                  <div class="mt-2">
+                    <input
+                      id="country"
+                      type="text"
+                      name="country"
+                      value="México"
+                      readonly
+                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Payment -->
+            <div class="mt-10 border-t border-border pt-10">
+              <h2 class="text-lg font-medium text-foreground">Pago</h2>
+  
+              <div class="mt-6">
+                <div id="stripe-payment-form" class="space-y-4">
+                  <!-- El componente Stripe se cargará aquí -->
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Order summary -->
+          <div class="mt-10 lg:mt-0">
+            <h2 class="mt-10 text-lg font-medium text-foreground">Resumen del pedido</h2>
+  
+            <div class="mt-4 rounded-lg border border-border bg-background shadow-xs">
+              <h3 class="sr-only">Items in your cart</h3>
+              <ul role="list" class="divide-y divide-border" id="order-items-list">
+                <!-- Los items se cargarán dinámicamente -->
+              </ul>
+              
+              <dl class="space-y-6 border-t border-border px-4 py-6 sm:px-6" id="order-summary">
+                <!-- El resumen se cargará dinámicamente -->
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    import { getCart } from '@/lib/cart';
+
+    // Función para formatear precio
+    function formatPrice(price: number): string {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+      }).format(price);
+    }
+
+    // Función para cargar Stripe Elements directamente
+    async function loadStripeForm(container: HTMLElement, clientSecret: string, amount: number) {
+      try {
+        // Cargar Stripe desde CDN
+        const stripeScript = document.createElement('script');
+        stripeScript.src = 'https://js.stripe.com/v3/';
+        stripeScript.onload = () => {
+          initializeStripe(container, clientSecret, amount);
+        };
+        document.head.appendChild(stripeScript);
+      } catch (error) {
+        console.error('Error cargando Stripe:', error);
+        container.innerHTML = '<p class="text-red-600">Error al cargar Stripe. Por favor intenta de nuevo.</p>';
+      }
+    }
+
+    // Función para inicializar Stripe
+    function initializeStripe(container: HTMLElement, clientSecret: string, amount: number) {
+      try {
+        // Verificar si es un client_secret simulado
+        const isMockSecret = clientSecret.includes('pi_mock_');
+        
+        if (isMockSecret) {
+          // Modo desarrollo - mostrar formulario simulado
+          container.innerHTML = `
+            <div class="space-y-6">
+              <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 class="text-lg font-medium text-blue-800 mb-2">🧪 Modo Desarrollo</h3>
+                <p class="text-sm text-blue-600 mb-4">
+                  Para procesar pagos reales, configura la API de Stripe.
+                </p>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">
+                  Información de la tarjeta (Simulado)
+                </label>
+                <div class="p-4 border border-border rounded-md bg-background">
+                  <div class="space-y-3">
+                    <input 
+                      type="text" 
+                      placeholder="4242 4242 4242 4242" 
+                      class="w-full p-3 border border-border rounded-md"
+                      readonly
+                    />
+                    <div class="grid grid-cols-2 gap-3">
+                      <input 
+                        type="text" 
+                        placeholder="MM/AA" 
+                        class="p-3 border border-border rounded-md"
+                        readonly
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="CVC" 
+                        class="p-3 border border-border rounded-md"
+                        readonly
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-muted-foreground">Total a pagar:</span>
+                <span class="font-semibold text-foreground">${formatPrice(amount)}</span>
+              </div>
+
+              <button 
+                id="submit-payment" 
+                class="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
+              >
+                Simular Pago ${formatPrice(amount)}
+              </button>
+
+              <div id="payment-message" class="hidden"></div>
+            </div>
+          `;
+
+          const submitButton = document.getElementById('submit-payment');
+          const messageDiv = document.getElementById('payment-message');
+
+          if (submitButton) {
+            submitButton.addEventListener('click', () => {
+              if (messageDiv) {
+                messageDiv.textContent = '✅ Pago simulado exitoso! Redirigiendo...';
+                messageDiv.className = 'text-green-600 text-sm mt-2';
+                messageDiv.classList.remove('hidden');
+              }
+              
+              setTimeout(() => {
+                window.location.href = '/purchase-success';
+              }, 1500);
+            });
+          }
+          
+          return;
+        }
+
+        // Modo producción - usar Stripe real
+        const stripe = (window as any).Stripe(import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY);
+        
+        const elements = stripe.elements({
+          clientSecret: clientSecret,
+          appearance: {
+            theme: 'stripe',
+            variables: {
+              colorPrimary: '#3b82f6',
+              colorBackground: 'transparent',
+              colorText: '#1f2937',
+            }
+          }
+        });
+
+        const paymentElement = elements.create('payment');
+        
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-2">
+                Información de la tarjeta
+              </label>
+              <div id="payment-element" class="p-4 border border-border rounded-md bg-background">
+                <!-- Stripe Elements se cargará aquí -->
+              </div>
+            </div>
+            
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">Total a pagar:</span>
+              <span class="font-semibold text-foreground">${formatPrice(amount)}</span>
+            </div>
+
+            <button 
+              id="submit-payment" 
+              class="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              Pagar ${formatPrice(amount)}
+            </button>
+
+            <div id="payment-message" class="hidden"></div>
+          </div>
+        `;
+
+        const paymentElementDiv = document.getElementById('payment-element');
+        if (paymentElementDiv) {
+          paymentElement.mount(paymentElementDiv);
+        }
+
+        const submitButton = document.getElementById('submit-payment');
+        const messageDiv = document.getElementById('payment-message');
+
+        if (submitButton) {
+          submitButton.addEventListener('click', async () => {
+            (submitButton as HTMLButtonElement).disabled = true;
+            
+            const { error } = await stripe.confirmPayment({
+              elements,
+              confirmParams: {
+                return_url: `${window.location.origin}/purchase-success`,
+              },
+            });
+
+            if (error) {
+              if (messageDiv) {
+                messageDiv.textContent = error.message || 'Ocurrió un error inesperado.';
+                messageDiv.className = 'text-red-600 text-sm mt-2';
+                messageDiv.classList.remove('hidden');
+              }
+              (submitButton as HTMLButtonElement).disabled = false;
+            } else {
+              if (messageDiv) {
+                messageDiv.textContent = '¡Pago exitoso! Redirigiendo...';
+                messageDiv.className = 'text-green-600 text-sm mt-2';
+                messageDiv.classList.remove('hidden');
+              }
+            }
+          });
+        }
+
+      } catch (error) {
+        console.error('Error inicializando Stripe:', error);
+        container.innerHTML = '<p class="text-red-600">Error al inicializar Stripe. Por favor intenta de nuevo.</p>';
+      }
+    }
+
+    // Función para renderizar el resumen del pedido
+    function renderOrderSummary() {
+      console.log('🔍 Iniciando renderOrderSummary...');
+      const cart = getCart();
+      console.log('🛒 Carrito obtenido:', cart);
+      
+      // Si el carrito está vacío, redirigir a la página del carrito
+      if (cart.items.length === 0) {
+        console.log('🛒 Carrito vacío, redirigiendo...');
+        window.location.href = '/cart';
+        return null;
+      }
+
+      const orderItemsList = document.getElementById('order-items-list');
+      const orderSummary = document.getElementById('order-summary');
+      console.log('🎯 Elementos encontrados:', { orderItemsList, orderSummary });
+
+      if (!orderItemsList || !orderSummary) {
+        console.log('❌ No se encontraron los elementos del DOM');
+        return cart;
+      }
+
+      // Renderizar items
+      orderItemsList.innerHTML = cart.items.map(item => `
+        <li class="flex px-4 py-6 sm:px-6">
+          <div class="shrink-0">
+            ${item.image_url ? 
+              `<img src="${item.image_url}" alt="${item.name}" class="w-20 rounded-md" />` :
+              `<div class="w-20 h-20 bg-muted rounded-md flex items-center justify-center">
+                <span class="text-muted-foreground text-xs">Sin imagen</span>
+              </div>`
+            }
+          </div>
+          <div class="ml-6 flex flex-1 flex-col">
+            <div class="flex">
+              <div class="min-w-0 flex-1">
+                <h4 class="text-sm">
+                  <span class="font-medium text-foreground">${item.name}</span>
+                </h4>
+                ${item.color ? `<p class="mt-1 text-sm text-muted-foreground">Color: ${item.color}</p>` : ''}
+                ${item.size ? `<p class="mt-1 text-sm text-muted-foreground">Talla: ${item.size}</p>` : ''}
+                ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">Categoría: ${item.category}</p>` : ''}
+              </div>
+            </div>
+            <div class="flex flex-1 items-end justify-between pt-2">
+              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
+              <div class="ml-4">
+                <span class="text-sm text-muted-foreground">Cantidad: ${item.quantity}</span>
+              </div>
+            </div>
+          </div>
+        </li>
+      `).join('');
+
+      // Calcular totales
+      const subtotal = cart.total;
+      const shipping = 5.00; // Envío estándar
+      const tax = subtotal * 0.16;
+      const total = subtotal + shipping + tax;
+
+      // Renderizar resumen
+      orderSummary.innerHTML = `
+        <div class="flex items-center justify-between">
+          <dt class="text-sm text-muted-foreground">Subtotal</dt>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(subtotal)}</dd>
+        </div>
+        <div class="flex items-center justify-between">
+          <dt class="text-sm text-muted-foreground">Envío (4-10 días hábiles)</dt>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(shipping)}</dd>
+        </div>
+        <div class="flex items-center justify-between">
+          <dt class="text-sm text-muted-foreground">Impuestos (IVA 16%)</dt>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(tax)}</dd>
+        </div>
+        <div class="flex items-center justify-between border-t border-border pt-6">
+          <dt class="text-base font-medium text-foreground">Total</dt>
+          <dd class="text-base font-medium text-foreground">${formatPrice(total)}</dd>
+        </div>
+      `;
+
+      console.log('✅ Resumen del pedido renderizado correctamente');
+      return cart;
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      console.log('🚀 DOMContentLoaded iniciado');
+      
+      // Primero renderizar el resumen del pedido
+      console.log('📦 Renderizando resumen del pedido...');
+      const cart = renderOrderSummary();
+      console.log('📦 Cart después de renderizar:', cart);
+      
+      if (!cart) {
+        console.log('❌ No hay cart, retornando');
+        return; // Si el carrito está vacío, ya redirigió
+      }
+
+      const paymentFormContainer = document.getElementById('stripe-payment-form');
+      console.log('💳 Payment form container:', paymentFormContainer);
+      
+      if (!paymentFormContainer) {
+        console.log('❌ No se encontró el contenedor de pago');
+        return;
+      }
+
+      // Mostrar mensaje inicial mientras se espera que el usuario complete los campos
+      paymentFormContainer.innerHTML = '<div class="p-4 bg-muted rounded-lg"><p class="text-sm text-muted-foreground">Por favor completa todos los campos de información de envío para continuar con el pago.</p></div>';
+      console.log('✅ Mensaje inicial mostrado');
+
+      // Función para intentar cargar el formulario de pago
+      const loadPaymentForm = async () => {
+        try {
+          // Obtener datos del formulario
+          const email = (document.getElementById('email-address') as HTMLInputElement)?.value;
+          const firstName = (document.getElementById('first-name') as HTMLInputElement)?.value;
+          const lastName = (document.getElementById('last-name') as HTMLInputElement)?.value;
+          const address = (document.getElementById('address') as HTMLInputElement)?.value;
+          const city = (document.getElementById('city') as HTMLInputElement)?.value;
+          const state = (document.getElementById('state') as HTMLInputElement)?.value;
+          const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value;
+          const country = (document.getElementById('country') as HTMLInputElement)?.value;
+
+          // Validar que todos los campos requeridos estén llenos
+          if (!email || !firstName || !lastName || !address || !city || !state || !postalCode || !country) {
+            return;
+          }
+
+          // Mostrar loading
+          paymentFormContainer.innerHTML = '<div class="flex items-center justify-center p-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>';
+
+          const checkoutData = {
+            email,
+            firstName,
+            lastName,
+            address,
+            city,
+            state,
+            postalCode,
+            country,
+          };
+
+          // Calcular total directamente (sin API por ahora)
+          const cart = getCart();
+          const subtotal = cart.total;
+          const shipping = 5.00;
+          const tax = subtotal * 0.16;
+          const order_total = subtotal + shipping + tax;
+
+          // Crear un client_secret simulado para desarrollo
+          const mockClientSecret = `pi_mock_${Date.now()}_secret_mock`;
+
+          // Cargar Stripe y crear formulario de pago
+          await loadStripeForm(paymentFormContainer, mockClientSecret, order_total);
+
+        } catch (error) {
+          console.error('Error:', error);
+          paymentFormContainer.innerHTML = '<p class="text-red-600">Error al inicializar el pago. Por favor intenta de nuevo.</p>';
+        }
+      };
+
+      // Agregar listeners a todos los campos requeridos
+      const requiredFields = ['address', 'city', 'state', 'postal-code'];
+      requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+          field.addEventListener('blur', loadPaymentForm);
+          field.addEventListener('change', loadPaymentForm);
+        }
+      });
+    });
+  </script>
+</WebsiteLayout>

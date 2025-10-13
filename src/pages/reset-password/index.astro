@@ -1,0 +1,158 @@
+---
+import AuthLayout from "@/layouts/authLayout.astro";
+import PasswordInput from "@/components/ui/PasswordInput.astro";
+import { resetPassword, getUserByResetToken } from "@/lib/database";
+import { hashPassword, validatePassword } from "@/lib/auth";
+
+// Obtener token de la URL
+const url = new URL(Astro.request.url);
+const token = url.searchParams.get('token');
+
+// Si no hay token, redirigir
+if (!token) {
+  return Astro.redirect('/forgot-password');
+}
+
+// Verificar si el token es válido
+const userWithToken = await getUserByResetToken(token);
+if (!userWithToken) {
+  return Astro.redirect('/forgot-password?error=' + encodeURIComponent('El enlace de recuperación es inválido o ha expirado'));
+}
+
+let error: string | null = null;
+let success: string | null = null;
+
+// Manejar el formulario de reset password
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    const newPassword = formData.get("newPassword") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    // Validar contraseñas
+    if (!newPassword || !confirmPassword) {
+      error = "Todos los campos son requeridos";
+    } else if (newPassword !== confirmPassword) {
+      error = "Las contraseñas no coinciden";
+    } else {
+      // Validar fortaleza de la contraseña
+      const passwordValidation = validatePassword(newPassword);
+      if (!passwordValidation.isValid) {
+        error = passwordValidation.errors.join(', ');
+      } else {
+        // Intentar cambiar la contraseña
+        const newPasswordHash = await hashPassword(newPassword);
+        const resetSuccess = await resetPassword(token, newPasswordHash);
+        
+        if (resetSuccess) {
+          success = "Contraseña cambiada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.";
+        } else {
+          error = "El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo.";
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error en reset password:', err);
+    error = "Error interno del servidor";
+  }
+}
+---
+
+<AuthLayout title="Cambiar Contraseña">
+  <div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+      <img
+        src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+        alt="StarFilters"
+        class="mx-auto h-10 w-auto"
+      />
+      <h2
+        class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-foreground"
+      >
+        Cambiar Contraseña
+      </h2>
+      <p class="mt-2 text-center text-sm text-muted-foreground">
+        Ingresa tu nueva contraseña para completar la recuperación
+      </p>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+      {error && (
+        <div class="mb-4 rounded-md bg-red-50 p-4">
+          <div class="text-sm text-red-700">{error}</div>
+        </div>
+      )}
+      
+      {success && (
+        <div class="mb-4 rounded-md bg-green-50 p-4">
+          <div class="text-sm text-green-700">{success}</div>
+          <div class="mt-3">
+            <a
+              href="/login"
+              class="inline-flex items-center rounded-md bg-green-100 px-3 py-1 text-sm font-medium text-green-800 hover:bg-green-200"
+            >
+              Ir a iniciar sesión →
+            </a>
+          </div>
+        </div>
+      )}
+      
+      {!success && (
+        <form method="POST" class="space-y-6">
+          <input type="hidden" name="token" value={token} />
+          
+          <!-- Nueva Contraseña -->
+          <div>
+            <label for="newPassword" class="block text-sm/6 font-medium text-foreground">
+              Nueva Contraseña
+            </label>
+            <div class="mt-2">
+              <PasswordInput
+                id="newPassword"
+                name="newPassword"
+                required
+                autocomplete="new-password"
+              />
+            </div>
+            <p class="mt-1 text-xs text-muted-foreground">
+              Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números
+            </p>
+          </div>
+
+          <!-- Confirmar Nueva Contraseña -->
+          <div>
+            <label for="confirmPassword" class="block text-sm/6 font-medium text-foreground">
+              Confirmar Nueva Contraseña
+            </label>
+            <div class="mt-2">
+              <PasswordInput
+                id="confirmPassword"
+                name="confirmPassword"
+                required
+                autocomplete="new-password"
+              />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              class="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm/6 font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Cambiar Contraseña
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div class="mt-6 text-center">
+        <a
+          href="/forgot-password"
+          class="text-sm text-primary hover:text-primary/90 font-semibold"
+        >
+          ← Solicitar nuevo enlace
+        </a>
+      </div>
+    </div>
+  </div>
+</AuthLayout>

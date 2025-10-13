@@ -1,0 +1,431 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { requireAdmin } from "@/lib/auth-utils";
+import { getRegularUsers, getAdminUsers, promoteUserToAdmin } from "@/lib/database";
+
+// Verificar autenticación y permisos de administrador
+const authResult = await requireAdmin(Astro.cookies);
+
+if (authResult.redirect) {
+  return Astro.redirect(authResult.redirect);
+}
+
+const user = authResult.user;
+
+// Obtener usuarios regulares y administradores con logs para debug y manejo de errores
+let regularUsers: any[] = [];
+let adminUsers: any[] = [];
+
+try {
+  console.log('🔍 Obteniendo usuarios regulares desde la base de datos...');
+  regularUsers = await getRegularUsers(50, 0);
+  console.log('👥 Usuarios regulares obtenidos:', regularUsers.length);
+  console.log('👥 Datos de usuarios regulares:', regularUsers);
+} catch (error) {
+  console.error('❌ Error obteniendo usuarios regulares:', error);
+  regularUsers = [];
+}
+
+try {
+  console.log('🔍 Obteniendo administradores desde la base de datos...');
+  adminUsers = await getAdminUsers();
+  console.log('👑 Administradores obtenidos:', adminUsers.length);
+  console.log('👑 Datos de administradores:', adminUsers);
+} catch (error) {
+  console.error('❌ Error obteniendo administradores:', error);
+  adminUsers = [];
+}
+
+console.log('📊 Estadísticas de usuarios calculadas:', {
+  regularUsers: regularUsers.length,
+  adminUsers: adminUsers.length,
+  totalUsers: regularUsers.length + adminUsers.length
+});
+
+// Función para formatear fecha
+const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('es-MX', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(date));
+};
+
+// Función para obtener iniciales
+const getInitials = (firstName: string, lastName: string): string => {
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+};
+
+// Manejar promoción de usuario
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const action = formData.get('action');
+  const userId = formData.get('userId');
+
+  if (action === 'promote' && userId) {
+    try {
+      const success = await promoteUserToAdmin(parseInt(userId as string));
+      
+      if (success) {
+        // Redirigir para evitar reenvío del formulario
+        return Astro.redirect('/admin/users?success=promoted');
+      } else {
+        return Astro.redirect('/admin/users?error=promote_failed');
+      }
+    } catch (error) {
+      console.error('Error promoviendo usuario:', error);
+      return Astro.redirect('/admin/users?error=promote_failed');
+    }
+  }
+}
+
+// Obtener mensajes de la URL
+const url = new URL(Astro.request.url);
+const success = url.searchParams.get('success');
+const error = url.searchParams.get('error');
+---
+
+<AdminLayout title="Gestión de Usuarios">
+  <div class="py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-foreground">Gestión de Usuarios</h1>
+        <p class="mt-2 text-muted-foreground">
+          Administra los usuarios del sistema y promueve usuarios a administradores.
+        </p>
+        
+        <!-- Indicador de datos -->
+        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 class="text-sm font-medium text-blue-800">📊 Estado de los datos de usuarios:</h3>
+          <div class="mt-2 text-sm text-blue-600">
+            <p>• Usuarios regulares cargados: {regularUsers.length}</p>
+            <p>• Administradores cargados: {adminUsers.length}</p>
+            <p>• Total de usuarios: {regularUsers.length + adminUsers.length}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensajes -->
+      {success === 'promoted' && (
+        <div class="mb-6 rounded-md bg-green-50 p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-green-800">
+                Usuario promovido a administrador exitosamente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error === 'promote_failed' && (
+        <div class="mb-6 rounded-md bg-red-50 p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-red-800">
+                Error al promover el usuario. Inténtalo de nuevo.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Usuarios Regulares -->
+        <div class="bg-background rounded-lg border border-border p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-semibold text-foreground">Usuarios Regulares</h2>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {regularUsers.length} usuarios
+            </span>
+          </div>
+
+          {regularUsers.length > 0 ? (
+            <div class="space-y-4">
+              {regularUsers.map((regularUser) => (
+                <div class="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                      <div class="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                        {getInitials(regularUser.first_name, regularUser.last_name)}
+                      </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-foreground truncate">
+                        {regularUser.first_name} {regularUser.last_name}
+                      </p>
+                      <p class="text-sm text-muted-foreground truncate">
+                        {regularUser.email}
+                      </p>
+                      <p class="text-xs text-muted-foreground">
+                        Registrado: {formatDate(regularUser.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <span class={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      regularUser.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : regularUser.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {regularUser.status === 'active' ? 'Activo' : 
+                       regularUser.status === 'pending' ? 'Pendiente' : 'Inactivo'}
+                    </span>
+                    <form method="POST" class="inline promote-form" data-user-id={regularUser.id}>
+                      <input type="hidden" name="action" value="promote" />
+                      <input type="hidden" name="userId" value={regularUser.id} />
+                      <button
+                        type="button"
+                        class="promote-button inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                        data-user-id={regularUser.id}
+                        data-user-name={`${regularUser.first_name} ${regularUser.last_name}`}
+                      >
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                        </svg>
+                        Promover
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div class="text-center py-8">
+              <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+              <h3 class="mt-2 text-sm font-medium text-foreground">No hay usuarios regulares</h3>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Todos los usuarios registrados son administradores.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <!-- Administradores -->
+        <div class="bg-background rounded-lg border border-border p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-semibold text-foreground">Administradores</h2>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              {adminUsers.length} administradores
+            </span>
+          </div>
+
+          {adminUsers.length > 0 ? (
+            <div class="space-y-4">
+              {adminUsers.map((admin) => (
+                <div class="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                      <div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                        {admin.full_name ? admin.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'A'}
+                      </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-foreground truncate">
+                        {admin.full_name || admin.username}
+                      </p>
+                      <p class="text-sm text-muted-foreground truncate">
+                        {admin.email}
+                      </p>
+                      <p class="text-xs text-muted-foreground">
+                        Rol: {admin.role === 'admin' ? 'Administrador' : 'Editor'}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <span class={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      admin.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {admin.status === 'active' ? 'Activo' : 'Inactivo'}
+                    </span>
+                    {admin.role === 'admin' && (
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        Super Admin
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div class="text-center py-8">
+              <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <h3 class="mt-2 text-sm font-medium text-foreground">No hay administradores</h3>
+              <p class="mt-1 text-sm text-muted-foreground">
+                No se han encontrado administradores en el sistema.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <!-- Estadísticas -->
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-background rounded-lg border border-border p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-muted-foreground">Usuarios Regulares</p>
+              <p class="text-2xl font-semibold text-foreground">{regularUsers.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-background rounded-lg border border-border p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-muted-foreground">Administradores</p>
+              <p class="text-2xl font-semibold text-foreground">{adminUsers.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-background rounded-lg border border-border p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-muted-foreground">Total Usuarios</p>
+              <p class="text-2xl font-semibold text-foreground">{regularUsers.length + adminUsers.length}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diálogo de confirmación -->
+  <dialog id="confirm-dialog" class="backdrop:bg-black/80 bg-background border border-border rounded-lg p-6 max-w-md">
+    <div class="space-y-4">
+      <h2 id="dialog-title" class="text-lg font-semibold text-foreground"></h2>
+      <p id="dialog-description" class="text-sm text-muted-foreground"></p>
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
+        <button id="dialog-cancel" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+          Cancelar
+        </button>
+        <button id="dialog-confirm" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+          Promover
+        </button>
+      </div>
+    </div>
+  </dialog>
+</AdminLayout>
+
+<script>
+  // Diálogo de confirmación nativo
+  let confirmCallback: (() => void) | null = null;
+  
+  function showConfirmDialog(title: string, description: string, onConfirm: () => void): void {
+    const dialog = document.getElementById('confirm-dialog') as HTMLDialogElement;
+    const dialogTitle = document.getElementById('dialog-title');
+    const dialogDescription = document.getElementById('dialog-description');
+    const confirmBtn = document.getElementById('dialog-confirm');
+    const cancelBtn = document.getElementById('dialog-cancel');
+    
+    if (!dialog || !dialogTitle || !dialogDescription) return;
+    
+    dialogTitle.textContent = title;
+    dialogDescription.textContent = description;
+    confirmCallback = onConfirm;
+    
+    dialog.showModal();
+    
+    const handleConfirm = () => {
+      if (confirmCallback) {
+        confirmCallback();
+        confirmCallback = null;
+      }
+      dialog.close();
+    };
+    
+    const handleCancel = () => {
+      confirmCallback = null;
+      dialog.close();
+    };
+    
+    const newConfirmBtn = confirmBtn?.cloneNode(true) as HTMLButtonElement;
+    const newCancelBtn = cancelBtn?.cloneNode(true) as HTMLButtonElement;
+    
+    confirmBtn?.parentNode?.replaceChild(newConfirmBtn, confirmBtn);
+    cancelBtn?.parentNode?.replaceChild(newCancelBtn, cancelBtn);
+    
+    newConfirmBtn?.addEventListener('click', handleConfirm);
+    newCancelBtn?.addEventListener('click', handleCancel);
+    
+    dialog.addEventListener('click', (e) => {
+      const rect = dialog.getBoundingClientRect();
+      if (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      ) {
+        handleCancel();
+      }
+    }, { once: true });
+  }
+
+  // Event listener para los botones de promover
+  document.addEventListener('DOMContentLoaded', () => {
+    const promoteButtons = document.querySelectorAll('.promote-button');
+    
+    promoteButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        
+        const btn = event.currentTarget as HTMLButtonElement;
+        const userName = btn.dataset.userName || 'este usuario';
+        const form = btn.closest('form');
+        
+        showConfirmDialog(
+          'Promover a administrador',
+          `¿Estás seguro de que quieres promover a ${userName} a administrador?`,
+          () => {
+            if (form) {
+              form.submit();
+            }
+          }
+        );
+      });
+    });
+  });
+</script>

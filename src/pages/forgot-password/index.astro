@@ -1,0 +1,133 @@
+---
+import AuthLayout from "@/layouts/authLayout.astro";
+import { getUserByEmail, setPasswordResetToken } from "@/lib/database";
+import { generateResetToken, validateEmail } from "@/lib/auth";
+import { sendEmail, createPasswordResetEmail } from "@/lib/email";
+
+// Obtener mensaje de error de la URL
+const url = new URL(Astro.request.url);
+let error: string | null = url.searchParams.get('error');
+let success: string | null = null;
+
+// Manejar el formulario de forgot password
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    const email = formData.get("email") as string;
+
+    // Validar email
+    if (!email || !validateEmail(email)) {
+      error = "Por favor ingresa un email válido";
+    } else {
+      // Verificar si el usuario existe
+      const user = await getUserByEmail(email);
+      
+      if (user) {
+        // Generar token de reset
+        const resetToken = generateResetToken();
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+        
+        // Guardar token en base de datos
+        const tokenSaved = await setPasswordResetToken(email, resetToken, expiresAt);
+        
+        if (tokenSaved) {
+          // Crear enlace de reset
+          const resetUrl = `${Astro.url.origin}/reset-password?token=${resetToken}`;
+          
+          // Crear email
+          const emailData = createPasswordResetEmail(user.first_name, resetUrl);
+          emailData.to = email;
+          
+          // Enviar email
+          const emailSent = await sendEmail(emailData);
+          
+          if (emailSent) {
+            success = `Se ha enviado un enlace de recuperación a ${email}. Revisa tu bandeja de entrada.`;
+          } else {
+            error = "Error al enviar el correo electrónico. Inténtalo de nuevo.";
+          }
+        } else {
+          error = "Error al procesar la solicitud. Inténtalo de nuevo.";
+        }
+      } else {
+        // Por seguridad, no revelamos si el email existe o no
+        success = `Si el email ${email} está registrado, recibirás un enlace de recuperación.`;
+      }
+    }
+  } catch (err) {
+    console.error('Error en forgot password:', err);
+    error = "Error interno del servidor";
+  }
+}
+---
+
+<AuthLayout title="Recuperar Contraseña">
+  <div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+      <img
+        src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+        alt="StarFilters"
+        class="mx-auto h-10 w-auto"
+      />
+      <h2
+        class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-foreground"
+      >
+        Recuperar Contraseña
+      </h2>
+      <p class="mt-2 text-center text-sm text-muted-foreground">
+        Ingresa tu email y te enviaremos un enlace para cambiar tu contraseña
+      </p>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+      {error && (
+        <div class="mb-4 rounded-md bg-red-50 p-4">
+          <div class="text-sm text-red-700">{error}</div>
+        </div>
+      )}
+      
+      {success && (
+        <div class="mb-4 rounded-md bg-green-50 p-4">
+          <div class="text-sm text-green-700">{success}</div>
+        </div>
+      )}
+      
+      <form method="POST" class="space-y-6">
+        <div>
+          <label for="email" class="block text-sm/6 font-medium text-foreground">
+            Dirección de correo electrónico
+          </label>
+          <div class="mt-2">
+            <input
+              id="email"
+              type="email"
+              name="email"
+              required
+              autocomplete="email"
+              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+              placeholder="tu@email.com"
+            />
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            class="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm/6 font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Enviar enlace de recuperación
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-6 text-center">
+        <a
+          href="/login"
+          class="text-sm text-primary hover:text-primary/90 font-semibold"
+        >
+          ← Volver al inicio de sesión
+        </a>
+      </div>
+    </div>
+  </div>
+</AuthLayout>

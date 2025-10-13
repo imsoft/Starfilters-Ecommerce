@@ -1,0 +1,138 @@
+---
+import AuthLayout from "@/layouts/authLayout.astro";
+import PasswordInput from "@/components/ui/PasswordInput.astro";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { updateUserPassword } from "@/lib/database";
+import { hashPassword, validateChangePasswordData } from "@/lib/auth";
+import type { ChangePasswordData } from "@/lib/auth";
+
+// Verificar autenticación
+const user = getAuthenticatedUser(Astro.cookies);
+if (!user) {
+  return Astro.redirect('/login?redirect=' + encodeURIComponent(Astro.url.pathname));
+}
+
+let error: string | null = null;
+let success: string | null = null;
+
+// Manejar el formulario de cambio de contraseña
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    
+    const changePasswordData: ChangePasswordData = {
+      newPassword: formData.get("newPassword") as string,
+      confirmPassword: formData.get("confirmPassword") as string
+    };
+
+    // Validar datos
+    const validation = validateChangePasswordData(changePasswordData);
+    if (!validation.isValid) {
+      error = validation.errors.join(', ');
+    } else {
+      // Actualizar contraseña directamente
+      const newPasswordHash = await hashPassword(changePasswordData.newPassword);
+      const updateSuccess = await updateUserPassword(user.id, newPasswordHash);
+      
+      if (updateSuccess) {
+        success = 'Contraseña actualizada exitosamente';
+      } else {
+        error = 'Error al actualizar la contraseña';
+      }
+    }
+  } catch (err) {
+    console.error('Error en cambio de contraseña:', err);
+    error = 'Error interno del servidor';
+  }
+}
+---
+
+<AuthLayout title="Cambiar Contraseña">
+  <div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+      <img
+        src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+        alt="StarFilters"
+        class="mx-auto h-10 w-auto"
+      />
+      <h2
+        class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-foreground"
+      >
+        Cambiar Contraseña
+      </h2>
+      <p class="mt-2 text-center text-sm text-muted-foreground">
+        Actualiza tu contraseña para mantener tu cuenta segura
+      </p>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+      {error && (
+        <div class="mb-4 rounded-md bg-red-50 p-4">
+          <div class="text-sm text-red-700">{error}</div>
+        </div>
+      )}
+      
+      {success && (
+        <div class="mb-4 rounded-md bg-green-50 p-4">
+          <div class="text-sm text-green-700">{success}</div>
+        </div>
+      )}
+      
+      <form method="POST" class="space-y-6">
+        <!-- Nueva Contraseña -->
+        <div>
+          <label for="newPassword" class="block text-sm/6 font-medium text-foreground">
+            Nueva Contraseña
+          </label>
+          <div class="mt-2">
+            <PasswordInput
+              id="newPassword"
+              name="newPassword"
+              required
+              autocomplete="new-password"
+            />
+          </div>
+          <p class="mt-1 text-xs text-muted-foreground">
+            Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números
+          </p>
+        </div>
+
+        <!-- Confirmar Nueva Contraseña -->
+        <div>
+          <label for="confirmPassword" class="block text-sm/6 font-medium text-foreground">
+            Confirmar Nueva Contraseña
+          </label>
+          <div class="mt-2">
+            <PasswordInput
+              id="confirmPassword"
+              name="confirmPassword"
+              required
+              autocomplete="new-password"
+            />
+          </div>
+        </div>
+
+        <div class="flex gap-4">
+          <button
+            type="submit"
+            class="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm/6 font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Actualizar Contraseña
+          </button>
+          <a
+            href="/"
+            class="flex w-full justify-center rounded-md bg-secondary px-3 py-1.5 text-sm/6 font-semibold text-secondary-foreground shadow-xs hover:bg-secondary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary"
+          >
+            Cancelar
+          </a>
+        </div>
+      </form>
+
+      <p class="mt-6 text-center text-sm/6 text-muted-foreground">
+        <a href="/" class="font-semibold text-primary hover:text-primary/90">
+          ← Volver al inicio
+        </a>
+      </p>
+    </div>
+  </div>
+</AuthLayout>

@@ -1,0 +1,274 @@
+---
+import AuthLayout from "@/layouts/authLayout.astro";
+import PasswordInput from "@/components/ui/PasswordInput.astro";
+import { createUser, getUserByEmail } from "@/lib/database";
+import { hashPassword, generateVerificationToken, validateRegisterData } from "@/lib/auth";
+
+// Manejar el formulario de registro
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    
+    const registerData = {
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+      firstName: formData.get("firstName") as string,
+      lastName: formData.get("lastName") as string,
+      phone: formData.get("phone") as string || undefined,
+      address: formData.get("address") as string || undefined,
+      city: formData.get("city") as string || undefined,
+      postalCode: formData.get("postalCode") as string || undefined,
+      country: formData.get("country") as string || "México"
+    };
+
+    // Validar datos
+    const validation = validateRegisterData(registerData);
+    if (!validation.isValid) {
+      Astro.response.status = 400;
+      return Astro.redirect(`/signup?error=${encodeURIComponent(validation.errors.join(', '))}`);
+    }
+
+    // Verificar si el usuario ya existe
+    const existingUser = await getUserByEmail(registerData.email);
+    if (existingUser) {
+      return Astro.redirect(`/signup?error=${encodeURIComponent('Este email ya está registrado')}`);
+    }
+
+    // Hash de la contraseña
+    const passwordHash = await hashPassword(registerData.password);
+    
+    // Generar token de verificación
+    const verificationToken = generateVerificationToken();
+
+    // Crear usuario en la base de datos
+    const userId = await createUser({
+      email: registerData.email,
+      password_hash: passwordHash,
+      first_name: registerData.firstName,
+      last_name: registerData.lastName,
+      phone: registerData.phone,
+      address: registerData.address,
+      city: registerData.city,
+      postal_code: registerData.postalCode,
+      country: registerData.country,
+      status: 'pending',
+      email_verified: false,
+      verification_token: verificationToken
+    });
+
+    // Redirigir a página de éxito
+    return Astro.redirect(`/signup/success?email=${encodeURIComponent(registerData.email)}`);
+    
+  } catch (error) {
+    console.error('Error en registro:', error);
+    return Astro.redirect(`/signup?error=${encodeURIComponent('Error interno del servidor')}`);
+  }
+}
+
+// Obtener mensaje de error de la URL
+const url = new URL(Astro.request.url);
+const error = url.searchParams.get('error');
+---
+
+<AuthLayout title="Registrarse">
+  <div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+      <img
+        src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+        alt="Tu Empresa"
+        class="mx-auto h-10 w-auto"
+      />
+      <h2
+        class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-foreground"
+      >
+        Regístrate en tu cuenta
+      </h2>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
+      {error && (
+        <div class="mb-4 rounded-md bg-red-50 p-4">
+          <div class="text-sm text-red-700">{error}</div>
+        </div>
+      )}
+      
+      <form method="POST" class="space-y-6">
+        <!-- Nombres -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="firstName" class="block text-sm/6 font-medium text-foreground">
+              Nombre
+            </label>
+            <div class="mt-2">
+              <input
+                id="firstName"
+                type="text"
+                name="firstName"
+                required
+                autocomplete="given-name"
+                class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label for="lastName" class="block text-sm/6 font-medium text-foreground">
+              Apellido
+            </label>
+            <div class="mt-2">
+              <input
+                id="lastName"
+                type="text"
+                name="lastName"
+                required
+                autocomplete="family-name"
+                class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm/6 font-medium text-foreground">
+            Dirección de correo electrónico
+          </label>
+          <div class="mt-2">
+            <input
+              id="email"
+              type="email"
+              name="email"
+              required
+              autocomplete="email"
+              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+            />
+          </div>
+        </div>
+
+        <!-- Teléfono -->
+        <div>
+          <label for="phone" class="block text-sm/6 font-medium text-foreground">
+            Teléfono (opcional)
+          </label>
+          <div class="mt-2">
+            <input
+              id="phone"
+              type="tel"
+              name="phone"
+              autocomplete="tel"
+              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+            />
+          </div>
+        </div>
+
+        <!-- Contraseña -->
+        <div>
+          <label for="password" class="block text-sm/6 font-medium text-foreground">
+            Contraseña
+          </label>
+          <div class="mt-2">
+            <PasswordInput
+              id="password"
+              name="password"
+              required
+              autocomplete="new-password"
+            />
+          </div>
+          <p class="mt-1 text-xs text-muted-foreground">
+            Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números
+          </p>
+        </div>
+
+        <!-- Dirección -->
+        <div>
+          <label for="address" class="block text-sm/6 font-medium text-foreground">
+            Dirección (opcional)
+          </label>
+          <div class="mt-2">
+            <input
+              id="address"
+              type="text"
+              name="address"
+              autocomplete="street-address"
+              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+            />
+          </div>
+        </div>
+
+        <!-- Ciudad y Código Postal -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="city" class="block text-sm/6 font-medium text-foreground">
+              Ciudad
+            </label>
+            <div class="mt-2">
+              <input
+                id="city"
+                type="text"
+                name="city"
+                autocomplete="address-level2"
+                class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label for="postalCode" class="block text-sm/6 font-medium text-foreground">
+              Código Postal
+            </label>
+            <div class="mt-2">
+              <input
+                id="postalCode"
+                type="text"
+                name="postalCode"
+                autocomplete="postal-code"
+                class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- País -->
+        <div>
+          <label for="country" class="block text-sm/6 font-medium text-foreground">
+            País
+          </label>
+          <div class="mt-2">
+            <select
+              id="country"
+              name="country"
+              autocomplete="country"
+              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+            >
+              <option value="México">México</option>
+              <option value="Estados Unidos">Estados Unidos</option>
+              <option value="Canadá">Canadá</option>
+              <option value="España">España</option>
+              <option value="Argentina">Argentina</option>
+              <option value="Colombia">Colombia</option>
+              <option value="Chile">Chile</option>
+              <option value="Perú">Perú</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            class="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm/6 font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Crear cuenta
+          </button>
+        </div>
+      </form>
+
+      <p class="mt-10 text-center text-sm/6 text-muted-foreground">
+        ¿Ya tienes una cuenta?
+        <a href="/login" class="font-semibold text-primary hover:text-primary/90"
+          >Iniciar sesión</a
+        >
+      </p>
+
+    </div>
+  </div>
+</AuthLayout>

@@ -1,0 +1,541 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { Button } from "@/components/ui/button";
+import { getBlogPostByUuid, updateBlogPost, generateSlug } from "@/lib/database";
+
+const { id } = Astro.params;
+
+// Obtener el artículo por UUID
+const blogPost = id ? await getBlogPostByUuid(id) : null;
+
+// Si no existe el artículo, redirigir
+if (!blogPost) {
+  return Astro.redirect('/admin/blog?error=not_found');
+}
+
+// Manejar envío del formulario
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  
+  const title = formData.get('title') as string;
+  const slug = formData.get('slug') as string || generateSlug(title);
+  const excerpt = formData.get('excerpt') as string;
+  const content = formData.get('content') as string;
+  const category = formData.get('category') as string;
+  const author = formData.get('author') as string;
+  const status = formData.get('status') as 'draft' | 'published' | 'scheduled';
+  const publishDate = formData.get('publish-date') as string;
+  const tags = formData.get('tags') as string;
+  const metaTitle = formData.get('meta-title') as string;
+  const metaDescription = formData.get('meta-description') as string;
+  const action = formData.get('action') as string;
+
+  // Determinar el status basado en la acción
+  const finalStatus = action === 'draft' ? 'draft' : status;
+
+  try {
+    const updatedPost = await updateBlogPost(id!, {
+      title,
+      slug,
+      excerpt,
+      content,
+      category,
+      author,
+      status: finalStatus,
+      publish_date: publishDate ? new Date(publishDate) : undefined,
+      tags,
+      meta_title: metaTitle,
+      meta_description: metaDescription
+    });
+
+    if (updatedPost) {
+      return Astro.redirect('/admin/blog?success=updated');
+    } else {
+      return Astro.redirect(`/admin/blog/edit/${id}?error=update_failed`);
+    }
+  } catch (error) {
+    console.error('Error actualizando post del blog:', error);
+    return Astro.redirect(`/admin/blog/edit/${id}?error=update_failed`);
+  }
+}
+
+// Obtener mensajes de la URL
+const url = new URL(Astro.request.url);
+const error = url.searchParams.get('error');
+---
+
+<AdminLayout title="Editar Artículo">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">Editar Artículo</h1>
+            <p class="mt-2 text-muted-foreground">
+              {blogPost.title}
+            </p>
+          </div>
+          <a href="/admin/blog">
+            <Button variant="outline" className="border-border text-foreground hover:bg-muted">
+              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+              </svg>
+              Volver
+            </Button>
+          </a>
+        </div>
+      </div>
+
+      <!-- Mensajes de error -->
+      {error === 'update_failed' && (
+        <div class="mb-6 rounded-md bg-red-50 p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-red-800">
+                Error al actualizar el artículo. Inténtalo de nuevo.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <!-- Formulario -->
+      <form method="POST" class="space-y-8">
+        <!-- Información básica -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Información Básica</h2>
+          
+          <div class="space-y-6">
+            <div>
+              <label for="title" class="block text-sm font-medium text-foreground mb-2">
+                Título del artículo
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={blogPost.title}
+                required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Ej: Guía Completa de Filtros HEPA"
+              />
+            </div>
+
+            <div>
+              <label for="slug" class="block text-sm font-medium text-foreground mb-2">
+                URL del artículo (slug)
+              </label>
+              <div class="flex">
+                <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm">
+                  /blog/
+                </span>
+                <input
+                  type="text"
+                  id="slug"
+                  name="slug"
+                  value={blogPost.slug}
+                  required
+                  class="flex-1 rounded-r-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="guia-completa-filtros-hepa"
+                />
+              </div>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Se generará automáticamente basado en el título
+              </p>
+            </div>
+
+            <div>
+              <label for="excerpt" class="block text-sm font-medium text-foreground mb-2">
+                Resumen
+              </label>
+              <textarea
+                id="excerpt"
+                name="excerpt"
+                rows="3"
+                required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Breve descripción del artículo que aparecerá en la lista del blog..."
+              >{blogPost.excerpt}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenido -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Contenido</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <label for="content" class="block text-sm font-medium text-foreground mb-2">
+                Contenido del artículo
+              </label>
+              <div class="border border-border rounded-md">
+                <!-- Toolbar del editor -->
+                <div class="border-b border-border p-3 bg-muted">
+                  <div class="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </Button>
+                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                      </svg>
+                    </Button>
+                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+                      </svg>
+                    </Button>
+                    <div class="w-px h-6 bg-border"></div>
+                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                      </svg>
+                    </Button>
+                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
+                
+                <!-- Área de contenido -->
+                <textarea
+                  id="content"
+                  name="content"
+                  rows="15"
+                  required
+                  class="w-full rounded-b-md border-0 bg-background px-3 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 resize-none"
+                  placeholder="Escribe el contenido de tu artículo aquí..."
+                >{blogPost.content}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metadatos -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Metadatos</h2>
+          
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label for="category" class="block text-sm font-medium text-foreground mb-2">
+                Categoría
+              </label>
+              <select
+                id="category"
+                name="category"
+                required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="">Seleccionar categoría</option>
+                <option value="filtros" selected={blogPost.category === 'filtros'}>Filtros</option>
+                <option value="cuartos-limpios" selected={blogPost.category === 'cuartos-limpios'}>Cuartos Limpios</option>
+                <option value="tecnologia" selected={blogPost.category === 'tecnologia'}>Tecnología</option>
+                <option value="industria" selected={blogPost.category === 'industria'}>Industria</option>
+                <option value="mantenimiento" selected={blogPost.category === 'mantenimiento'}>Mantenimiento</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="author" class="block text-sm font-medium text-foreground mb-2">
+                Autor
+              </label>
+              <input
+                type="text"
+                id="author"
+                name="author"
+                value={blogPost.author}
+                required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label for="status" class="block text-sm font-medium text-foreground mb-2">
+                Estado
+              </label>
+              <select
+                id="status"
+                name="status"
+                required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="draft" selected={blogPost.status === 'draft'}>Borrador</option>
+                <option value="published" selected={blogPost.status === 'published'}>Publicado</option>
+                <option value="scheduled" selected={blogPost.status === 'scheduled'}>Programado</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="publish-date" class="block text-sm font-medium text-foreground mb-2">
+                Fecha de publicación
+              </label>
+              <input
+                type="datetime-local"
+                id="publish-date"
+                name="publish-date"
+                value={blogPost.publish_date ? new Date(blogPost.publish_date).toISOString().slice(0, 16) : ''}
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <label for="tags" class="block text-sm font-medium text-foreground mb-2">
+              Etiquetas
+            </label>
+            <input
+              type="text"
+              id="tags"
+              name="tags"
+              value={blogPost.tags || ''}
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Etiquetas separadas por comas (ej: filtros, hepa, purificación)"
+            />
+            <p class="mt-1 text-sm text-muted-foreground">
+              Separa las etiquetas con comas para facilitar la búsqueda
+            </p>
+          </div>
+        </div>
+
+        <!-- Imagen destacada -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Imagen Destacada</h2>
+          
+          <div class="space-y-4">
+            <div class="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <svg class="mx-auto h-12 w-12 text-muted-foreground" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <div class="mt-4">
+                <label for="featured-image" class="cursor-pointer">
+                  <span class="mt-2 block text-sm font-medium text-foreground">
+                    Arrastra y suelta la imagen aquí, o
+                  </span>
+                  <span class="mt-1 block text-sm text-primary hover:text-primary/90">
+                    haz clic para seleccionar archivo
+                  </span>
+                </label>
+                <input
+                  id="featured-image"
+                  name="featured-image"
+                  type="file"
+                  accept="image/*"
+                  class="sr-only"
+                />
+              </div>
+              <p class="mt-2 text-xs text-muted-foreground">
+                PNG, JPG, GIF hasta 5MB. Recomendado: 1200x630px
+              </p>
+            </div>
+
+            <!-- Vista previa de imagen existente -->
+            <div class="relative group">
+              <img class="h-32 w-full rounded-lg object-cover border border-border" src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Vista previa">
+              <button type="button" class="absolute top-2 right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEO -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-4">SEO</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <label for="meta-title" class="block text-sm font-medium text-foreground mb-2">
+                Meta Título
+              </label>
+              <input
+                type="text"
+                id="meta-title"
+                name="meta-title"
+                value={blogPost.meta_title || blogPost.title}
+                maxlength="60"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Título optimizado para motores de búsqueda"
+              />
+              <p class="mt-1 text-sm text-muted-foreground">
+                Máximo 60 caracteres. Actual: <span id="meta-title-count">{(blogPost.meta_title || blogPost.title).length}</span>
+              </p>
+            </div>
+
+            <div>
+              <label for="meta-description" class="block text-sm font-medium text-foreground mb-2">
+                Meta Descripción
+              </label>
+              <textarea
+                id="meta-description"
+                name="meta-description"
+                rows="3"
+                maxlength="160"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Descripción que aparecerá en los resultados de búsqueda"
+              >{blogPost.meta_description || blogPost.excerpt}</textarea>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Máximo 160 caracteres. Actual: <span id="meta-description-count">{(blogPost.meta_description || blogPost.excerpt).length}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estadísticas del artículo -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Estadísticas</h2>
+          
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <div class="text-center">
+              <p class="text-2xl font-semibold text-foreground">342</p>
+              <p class="text-sm text-muted-foreground">Vistas</p>
+            </div>
+            <div class="text-center">
+              <p class="text-2xl font-semibold text-foreground">15</p>
+              <p class="text-sm text-muted-foreground">Comentarios</p>
+            </div>
+            <div class="text-center">
+              <p class="text-2xl font-semibold text-foreground">8</p>
+              <p class="text-sm text-muted-foreground">Compartidos</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historial de cambios -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Historial de Cambios</h2>
+          
+          <div class="space-y-3">
+            <div class="flex items-center space-x-3 p-3 rounded-md bg-muted/50">
+              <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <svg class="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-foreground">Artículo actualizado</p>
+                <p class="text-sm text-muted-foreground">Contenido y metadatos modificados</p>
+              </div>
+              <div class="flex-shrink-0 text-sm text-muted-foreground">
+                Hace 2 horas
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 p-3 rounded-md bg-muted/50">
+              <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <svg class="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-foreground">Artículo publicado</p>
+                <p class="text-sm text-muted-foreground">Artículo publicado en el blog</p>
+              </div>
+              <div class="flex-shrink-0 text-sm text-muted-foreground">
+                15 de enero, 2024
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex justify-end space-x-4">
+          <a href="/admin/blog">
+            <Button type="button" variant="outline" className="border-border text-foreground hover:bg-muted">
+              Cancelar
+            </Button>
+          </a>
+          <Button type="submit" name="action" value="draft" variant="outline" className="border-border text-foreground hover:bg-muted">
+            Guardar como borrador
+          </Button>
+          <Button type="submit" name="action" value="update" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            Actualizar artículo
+          </Button>
+        </div>
+      </form>
+  </div>
+</AdminLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const titleInput = document.getElementById('title') as HTMLInputElement;
+    const slugInput = document.getElementById('slug') as HTMLInputElement;
+    const metaTitleInput = document.getElementById('meta-title') as HTMLInputElement;
+    const metaDescriptionInput = document.getElementById('meta-description') as HTMLTextAreaElement;
+    const metaTitleCount = document.getElementById('meta-title-count');
+    const metaDescriptionCount = document.getElementById('meta-description-count');
+
+    // Generar slug automáticamente desde el título
+    if (titleInput && slugInput) {
+      titleInput.addEventListener('input', function() {
+        if (!slugInput.value || slugInput.dataset.autoGenerated === 'true') {
+          const slug = titleInput.value
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+          slugInput.value = slug;
+          slugInput.dataset.autoGenerated = 'true';
+        }
+      });
+
+      // Marcar slug como manual si el usuario lo edita
+      slugInput.addEventListener('input', function() {
+        slugInput.dataset.autoGenerated = 'false';
+      });
+    }
+
+    // Contar caracteres en meta título
+    if (metaTitleInput && metaTitleCount) {
+      metaTitleInput.addEventListener('input', function() {
+        metaTitleCount.textContent = this.value.length.toString();
+      });
+    }
+
+    // Contar caracteres en meta descripción
+    if (metaDescriptionInput && metaDescriptionCount) {
+      metaDescriptionInput.addEventListener('input', function() {
+        metaDescriptionCount.textContent = this.value.length.toString();
+      });
+    }
+
+    // Auto-generar meta título desde el título principal
+    if (titleInput && metaTitleInput) {
+      titleInput.addEventListener('input', function() {
+        if (!metaTitleInput.value) {
+          metaTitleInput.value = this.value;
+          if (metaTitleCount) {
+            metaTitleCount.textContent = this.value.length.toString();
+          }
+        }
+      });
+    }
+
+    // Auto-generar meta descripción desde el excerpt
+    const excerptInput = document.getElementById('excerpt') as HTMLTextAreaElement;
+    if (excerptInput && metaDescriptionInput) {
+      excerptInput.addEventListener('input', function() {
+        if (!metaDescriptionInput.value) {
+          metaDescriptionInput.value = this.value;
+          if (metaDescriptionCount) {
+            metaDescriptionCount.textContent = this.value.length.toString();
+          }
+        }
+      });
+    }
+  });
+</script>

@@ -1,0 +1,167 @@
+---
+import type { AuthUser } from "@/lib/auth";
+import { isUserAdmin } from '@/lib/database';
+
+export interface Props {
+  user: AuthUser;
+}
+
+const { user } = Astro.props;
+
+// Verificar si el usuario es administrador
+let isAdmin = false;
+if (user) {
+  isAdmin = await isUserAdmin(user.id);
+}
+
+// Generar iniciales del usuario
+const getInitials = (firstName: string, lastName: string) => {
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+};
+
+const initials = getInitials(user.firstName, user.lastName);
+---
+
+<div class="relative">
+  <button
+    type="button"
+    id="user-menu-button"
+    class="flex items-center gap-x-3 text-sm font-semibold text-foreground hover:bg-muted rounded-md p-2 transition-colors"
+    aria-expanded="false"
+    aria-haspopup="true"
+  >
+    <div class="avatar-circle bg-primary text-primary-foreground text-sm font-medium">
+      {initials}
+    </div>
+    <span class="hidden lg:flex items-center">
+      <svg
+        class="h-4 w-4 text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 9l-7 7-7-7"
+        ></path>
+      </svg>
+    </span>
+  </button>
+
+  <!-- Dropdown menu -->
+  <div
+    id="user-menu"
+    class="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-background shadow-lg ring-1 ring-border ring-opacity-5 focus:outline-none hidden"
+    role="menu"
+    aria-orientation="vertical"
+    aria-labelledby="user-menu-button"
+    tabindex="-1"
+  >
+    <div class="py-1" role="none">
+      <!-- Información del usuario -->
+      <div class="px-4 py-2 border-b border-border">
+        <p class="text-sm font-medium text-foreground">{user.firstName} {user.lastName}</p>
+        <p class="text-xs text-muted-foreground">{user.email}</p>
+      </div>
+      
+      <!-- Opciones del menú -->
+      <a
+        href="/profile"
+        class="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Mi Perfil
+      </a>
+      <a
+        href="/change-password"
+        class="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Cambiar Contraseña
+      </a>
+      <a
+        href="/orders"
+        class="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Mis Pedidos
+      </a>
+      <a
+        href="/cart"
+        class="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Carrito
+      </a>
+      <!-- Enlace de administración (solo visible para admins) -->
+      {isAdmin && (
+        <a
+          href="/admin/users"
+          class="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+          role="menuitem"
+          tabindex="-1"
+        >
+          <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          Administración
+        </a>
+      )}
+      <div class="border-t border-border my-1"></div>
+      <a
+        href="/logout"
+        class="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Cerrar Sesión
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const button = document.getElementById("user-menu-button");
+    const menu = document.getElementById("user-menu");
+
+    if (button && menu) {
+      // Toggle del dropdown
+      button.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isVisible = !menu.classList.contains("hidden");
+        
+        if (isVisible) {
+          menu.classList.add("hidden");
+          button.setAttribute("aria-expanded", "false");
+        } else {
+          menu.classList.remove("hidden");
+          button.setAttribute("aria-expanded", "true");
+        }
+      });
+
+      // Cerrar dropdown al hacer clic fuera
+      document.addEventListener("click", (e) => {
+        if (!button.contains(e.target as Node) && !menu.contains(e.target as Node)) {
+          menu.classList.add("hidden");
+          button.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      // Cerrar dropdown con Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          menu.classList.add("hidden");
+          button.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
+  });
+</script>

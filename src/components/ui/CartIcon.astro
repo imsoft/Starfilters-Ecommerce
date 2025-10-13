@@ -1,0 +1,72 @@
+---
+// Componente para mostrar el icono del carrito con contador
+---
+
+<div class="relative">
+  <a
+    href="/cart"
+    class="flex items-center justify-center w-10 h-10 rounded-md text-foreground hover:bg-muted transition-colors"
+    aria-label="Ver carrito de compras"
+  >
+    <svg
+      class="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+      />
+    </svg>
+    
+    <!-- Contador de items -->
+    <span
+      id="cart-count"
+      class="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]"
+      style="display: none;"
+    >
+      0
+    </span>
+  </a>
+</div>
+
+<script>
+  // Función para actualizar el contador del carrito
+  function updateCartCount() {
+    try {
+      const cartData = localStorage.getItem('starfilters_cart');
+      const cartCountElement = document.getElementById('cart-count');
+      
+      if (cartData && cartCountElement) {
+        const cart = JSON.parse(cartData);
+        const itemCount = cart.items ? cart.items.reduce((total: number, item: any) => total + item.quantity, 0) : 0;
+        
+        if (itemCount > 0) {
+          cartCountElement.textContent = itemCount.toString();
+          cartCountElement.style.display = 'flex';
+        } else {
+          cartCountElement.style.display = 'none';
+        }
+      }
+    } catch (error) {
+      console.error('Error al actualizar contador del carrito:', error);
+    }
+  }
+
+  // Actualizar contador al cargar la página
+  document.addEventListener('DOMContentLoaded', updateCartCount);
+
+  // Escuchar eventos de actualización del carrito
+  window.addEventListener('cartUpdated', updateCartCount);
+
+  // Actualizar contador cuando se cambia el localStorage (para otras pestañas)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'starfilters_cart') {
+      updateCartCount();
+    }
+  });
+</script>

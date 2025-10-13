@@ -1,0 +1,250 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { getBlogPostByUuid } from "@/lib/database";
+import type { BlogPost } from "@/lib/database";
+
+// Obtener UUID del post del blog de la URL
+const { uuid } = Astro.params;
+
+// Verificar que el UUID sea válido
+if (!uuid || typeof uuid !== 'string') {
+  return Astro.redirect('/blog');
+}
+
+// Obtener post del blog de la base de datos por UUID
+const post = await getBlogPostByUuid(uuid);
+
+// Si no existe el post, redirigir
+if (!post) {
+  return Astro.redirect('/blog');
+}
+
+// Función para formatear fecha
+const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('es-MX', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(new Date(date));
+};
+
+// Función para obtener tags como array
+const getTagsArray = (tags: string): string[] => {
+  if (!tags) return [];
+  return tags.split(',').map(tag => tag.trim()).filter(Boolean);
+};
+
+const tags = getTagsArray(post.tags);
+---
+
+<WebsiteLayout title={post.title}>
+  <div class="bg-background py-24 sm:py-32">
+    <!-- Breadcrumb -->
+    <div class="mx-auto max-w-4xl px-6 lg:px-8">
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+          <li>
+            <a href="/" class="hover:text-foreground transition-colors">Inicio</a>
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li>
+            <a href="/blog" class="hover:text-foreground transition-colors">Blog</a>
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li class="text-foreground font-medium">{post.title}</li>
+        </ol>
+      </nav>
+    </div>
+
+    <article class="mx-auto max-w-4xl px-6 lg:px-8">
+      <header class="mx-auto max-w-2xl">
+        <h1 class="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          {post.title}
+        </h1>
+        
+        <div class="mt-6 flex items-center gap-x-4 text-sm">
+          <time datetime={post.created_at.toISOString()} class="text-muted-foreground">
+            {formatDate(post.created_at)}
+          </time>
+          {tags.map(tag => (
+            <a
+              href="#"
+              class="relative z-10 rounded-full bg-muted px-3 py-1.5 font-medium text-muted-foreground hover:bg-muted/80"
+            >
+              {tag}
+            </a>
+          ))}
+        </div>
+
+        <div class="mt-6 flex items-center gap-x-4">
+          <img
+            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+            alt={post.author}
+            class="size-10 rounded-full bg-muted"
+          />
+          <div class="text-sm">
+            <p class="font-semibold text-foreground">
+              {post.author}
+            </p>
+            <p class="text-muted-foreground">Autor</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Imagen destacada -->
+      {post.featured_image && (
+        <div class="mt-8">
+          <img
+            src={post.featured_image}
+            alt={post.title}
+            class="aspect-video w-full rounded-2xl bg-muted object-cover"
+          />
+        </div>
+      )}
+
+      <!-- Contenido del artículo -->
+      <div class="mt-8 prose prose-lg max-w-none">
+        <div class="text-lg leading-8 text-foreground" set:html={post.content}></div>
+      </div>
+
+      <!-- Meta información -->
+      <div class="mt-12 border-t border-border pt-8">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-x-4">
+            <img
+              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+              alt={post.author}
+              class="size-12 rounded-full bg-muted"
+            />
+            <div>
+              <p class="font-semibold text-foreground">{post.author}</p>
+              <p class="text-muted-foreground">Autor del artículo</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-x-2">
+            <span class="text-sm text-muted-foreground">Publicado el</span>
+            <time datetime={post.created_at.toISOString()} class="text-sm font-medium text-foreground">
+              {formatDate(post.created_at)}
+            </time>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navegación -->
+      <div class="mt-12 flex items-center justify-between border-t border-border pt-8">
+        <a
+          href="/blog"
+          class="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Volver al blog
+        </a>
+        
+        <a
+          href="/filtros"
+          class="inline-flex items-center text-sm font-medium text-primary hover:text-primary/90 transition-colors"
+        >
+          Ver productos
+          <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </article>
+  </div>
+</WebsiteLayout>
+
+<style>
+  /* Estilos para el contenido del artículo */
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    color: #111827;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .prose h1 {
+    font-size: 2.25rem;
+  }
+
+  .prose h2 {
+    font-size: 1.875rem;
+  }
+
+  .prose h3 {
+    font-size: 1.5rem;
+  }
+
+  .prose p {
+    margin-bottom: 1.5rem;
+    line-height: 1.75;
+  }
+
+  .prose ul,
+  .prose ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .prose li {
+    margin-bottom: 0.5rem;
+  }
+
+  .prose blockquote {
+    border-left: 4px solid #e5e7eb;
+    padding-left: 1rem;
+    font-style: italic;
+    color: #6b7280;
+    margin: 2rem 0;
+  }
+
+  .prose img {
+    border-radius: 0.5rem;
+    margin: 2rem 0;
+  }
+
+  .prose a {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+
+  .prose a:hover {
+    color: #1d4ed8;
+  }
+
+  .prose code {
+    background-color: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+  }
+
+  .prose pre {
+    background-color: #1f2937;
+    color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+
+  .prose pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+  }
+</style>

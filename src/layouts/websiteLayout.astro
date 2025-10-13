@@ -1,0 +1,21 @@
+---
+import FooterSection from "@/components/shared/FooterSection.astro";
+import "../styles/global.css";
+import Navbar from "@/components/shared/Navbar.astro";
+const { title } = Astro.props;
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <Navbar />
+    <main>
+      <slot />
+    </main>
+    <FooterSection />
+  </body>
+</html>
