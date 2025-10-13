@@ -1,6 +1,7 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
+import { ProductImageUploader } from "@/components/ui/ProductImageUploader";
 import { createProduct } from "@/lib/database";
 import { requireAdmin } from "@/lib/auth-utils";
 
@@ -266,46 +267,10 @@ if (Astro.request.method === 'POST') {
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Imágenes del Producto</h2>
           
-          <div class="space-y-4">
-            <div class="border-2 border-dashed border-border rounded-lg p-6 text-center">
-              <svg class="mx-auto h-12 w-12 text-muted-foreground" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <div class="mt-4">
-                <label for="images" class="cursor-pointer">
-                  <span class="mt-2 block text-sm font-medium text-foreground">
-                    Arrastra y suelta las imágenes aquí, o
-                  </span>
-                  <span class="mt-1 block text-sm text-primary hover:text-primary/90">
-                    haz clic para seleccionar archivos
-                  </span>
-                </label>
-                <input
-                  id="images"
-                  name="images"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  class="sr-only"
-                />
-              </div>
-              <p class="mt-2 text-xs text-muted-foreground">
-                PNG, JPG, GIF hasta 10MB cada una
-              </p>
-            </div>
-
-            <!-- Vista previa de imágenes -->
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              <!-- Placeholder para vista previa -->
-              <div class="relative w-24 h-24">
-                <img class="w-full h-full rounded-lg object-cover border border-border" src="https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-03-product-01.jpg" alt="Vista previa">
-                <button type="button" class="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10">
-                  <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
+          <div class="p-6 bg-muted/50 rounded-lg border border-border">
+            <p class="text-sm text-muted-foreground text-center">
+              💡 Guarda el producto primero para poder subir imágenes.
+            </p>
           </div>
         </div>
 
