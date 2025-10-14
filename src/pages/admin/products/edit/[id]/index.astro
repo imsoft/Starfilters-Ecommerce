@@ -473,7 +473,7 @@ if (Astro.request.method === 'POST') {
     const tagsInputField = document.getElementById('tags-input-field');
     const tagsHidden = document.getElementById('tags-hidden');
     
-    if (!tagsDisplay || !tagsInputField || !tagsHidden) return;
+    if (tagsDisplay && tagsInputField && tagsHidden) {
     
     // Obtener etiquetas existentes del input hidden
     let tags: string[] = (tagsHidden as HTMLInputElement).value ? 
@@ -555,6 +555,7 @@ if (Astro.request.method === 'POST') {
         addTag(value);
       }
     });
+    } // Cerrar el if de tags
     
     // ===== GESTIÓN DE IMÁGENES =====
     const productId = `{product.uuid}`;

@@ -22,7 +22,7 @@ if (Astro.request.method === 'POST') {
     
     // Obtener URLs de imágenes subidas
     const imagesUrls = formData.get('images_urls')?.toString() || '';
-    const firstImageUrl = imagesUrls.split(',')[0] || '/images/placeholder-product.jpg';
+    const firstImageUrl = imagesUrls.split(',').filter(Boolean)[0] || null;
     
     const productData = {
       name: formData.get('name')?.toString() || '',
