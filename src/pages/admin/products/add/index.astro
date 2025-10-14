@@ -22,7 +22,7 @@ if (Astro.request.method === 'POST') {
     
     // Obtener URLs de imágenes subidas
     const imagesUrls = formData.get('images_urls')?.toString() || '';
-    const firstImageUrl = imagesUrls.split(',').filter(Boolean)[0] || null;
+    const firstImageUrl = imagesUrls.split(',').filter(Boolean)[0] || '';
     
     const productData = {
       name: formData.get('name')?.toString() || '',
@@ -31,7 +31,7 @@ if (Astro.request.method === 'POST') {
       category: formData.get('category')?.toString() || '',
       stock: parseInt(formData.get('stock')?.toString() || '0'),
       tags: formData.get('tags')?.toString() || '',
-      image_url: firstImageUrl, // Primera imagen subida o placeholder
+      image_url: firstImageUrl, // Primera imagen subida o string vacío
       status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || 'active')
     };
     
