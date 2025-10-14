@@ -743,6 +743,9 @@ if (Astro.request.method === 'POST') {
       }
     }
     
+    // Inicializar vista previa con imágenes existentes
+    updateImagesPreview();
+    
     // Event listeners
     if (productImagesInput) {
       productImagesInput.addEventListener('change', (e) => {
@@ -757,15 +760,19 @@ if (Astro.request.method === 'POST') {
     if (uploadZone) {
       uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         uploadZone.classList.add('border-primary', 'bg-primary/5');
       });
       
-      uploadZone.addEventListener('dragleave', () => {
+      uploadZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         uploadZone.classList.remove('border-primary', 'bg-primary/5');
       });
       
       uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         uploadZone.classList.remove('border-primary', 'bg-primary/5');
         
         const files = e.dataTransfer?.files;
@@ -776,13 +783,17 @@ if (Astro.request.method === 'POST') {
       
       // Click en la zona para abrir selector
       uploadZone.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         // Evitar que se dispare si se hace clic en un botón
-        if ((e.target as HTMLElement).tagName !== 'BUTTON') {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'BUTTON' && !target.closest('button')) {
           productImagesInput?.click();
         }
       });
     }
     
     console.log('🎯 Sistema de imágenes de productos inicializado');
+    console.log('📸 Imágenes iniciales cargadas:', currentImages.length);
   });
 </script>
