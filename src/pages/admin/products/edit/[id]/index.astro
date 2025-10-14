@@ -117,7 +117,7 @@ if (Astro.request.method === 'POST') {
       )}
 
       <!-- Formulario -->
-      <form method="POST" class="space-y-8">
+      <form method="POST" class="space-y-8" id="edit-product-form">
         <!-- Información básica -->
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Información Básica</h2>
@@ -455,6 +455,20 @@ if (Astro.request.method === 'POST') {
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // ===== DEBUGGING DEL FORMULARIO =====
+    const editForm = document.getElementById('edit-product-form');
+    if (editForm) {
+      editForm.addEventListener('submit', function(e) {
+        console.log('📤 Formulario enviándose...');
+        const formData = new FormData(this as HTMLFormElement);
+        console.log('📝 Datos del formulario:');
+        for (const [key, value] of formData.entries()) {
+          console.log(`  ${key}: ${value}`);
+        }
+      });
+    }
+    
+    // ===== SISTEMA DE ETIQUETAS (TAGS) =====
     const tagsDisplay = document.getElementById('tags-display');
     const tagsInputField = document.getElementById('tags-input-field');
     const tagsHidden = document.getElementById('tags-hidden');

@@ -20,15 +20,22 @@ if (Astro.request.method === 'POST') {
     const formData = await Astro.request.formData();
     const action = formData.get('action')?.toString() || 'create';
     
+    // Obtener URLs de imágenes subidas
+    const imagesUrls = formData.get('images_urls')?.toString() || '';
+    const firstImageUrl = imagesUrls.split(',')[0] || '/images/placeholder-product.jpg';
+    
     const productData = {
       name: formData.get('name')?.toString() || '',
       description: formData.get('description')?.toString() || '',
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
       stock: parseInt(formData.get('stock')?.toString() || '0'),
-      image_url: '/images/placeholder-product.jpg', // Se actualizará con Cloudinary
+      tags: formData.get('tags')?.toString() || '',
+      image_url: firstImageUrl, // Primera imagen subida o placeholder
       status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || 'active')
     };
+    
+    console.log('📝 Creando producto con datos:', productData);
 
     // Validar datos requeridos (menos estricto para borradores)
     if (action === 'create' && (!productData.name || !productData.description || productData.price <= 0)) {
@@ -267,10 +274,42 @@ if (Astro.request.method === 'POST') {
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Imágenes del Producto</h2>
           
-          <div class="p-6 bg-muted/50 rounded-lg border border-border">
-            <p class="text-sm text-muted-foreground text-center">
-              💡 Guarda el producto primero para poder subir imágenes.
-            </p>
+          <div class="space-y-4">
+            <!-- Zona de carga -->
+            <div id="upload-zone-add" class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+              <svg class="mx-auto h-12 w-12 text-muted-foreground pointer-events-none" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <div class="mt-4">
+                <label for="product-images-add" class="cursor-pointer inline-block">
+                  <span class="mt-2 block text-sm font-medium text-foreground pointer-events-none">
+                    <span id="upload-status-add">Arrastra y suelta las imágenes aquí, o</span>
+                  </span>
+                  <span class="mt-1 block text-sm text-primary hover:text-primary/90 pointer-events-none">
+                    haz clic para seleccionar archivos
+                  </span>
+                </label>
+              </div>
+              <p class="mt-2 text-xs text-muted-foreground pointer-events-none">
+                PNG, JPG, GIF hasta 10MB cada una
+              </p>
+              <input
+                id="product-images-add"
+                name="product-images-add"
+                type="file"
+                multiple
+                accept="image/*"
+                class="hidden"
+              />
+            </div>
+
+            <!-- Vista previa de imágenes -->
+            <div id="images-preview-add" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              <!-- Las imágenes se mostrarán aquí -->
+            </div>
+            
+            <!-- Input oculto para guardar URLs de imágenes -->
+            <input type="hidden" id="images-urls" name="images_urls" value="" />
           </div>
         </div>
 
@@ -436,5 +475,207 @@ if (Astro.request.method === 'POST') {
         addTag(value);
       }
     });
+    
+    // ===== GESTIÓN DE IMÁGENES EN AGREGAR PRODUCTO =====
+    const tempProductId = `temp_${Date.now()}`;
+    const uploadZoneAdd = document.getElementById('upload-zone-add');
+    const productImagesInputAdd = document.getElementById('product-images-add');
+    const imagesPreviewAdd = document.getElementById('images-preview-add');
+    const uploadStatusAdd = document.getElementById('upload-status-add');
+    const imagesUrlsInput = document.getElementById('images-urls');
+    
+    let uploadedImages: any[] = [];
+    
+    // Función para crear elemento de imagen
+    function createImageElementAdd(image: any, index: number) {
+      const div = document.createElement('div');
+      div.className = 'relative w-full h-32 group image-item-add';
+      div.setAttribute('data-image-url', image.url);
+      
+      div.innerHTML = `
+        <img 
+          class="w-full h-full rounded-lg object-cover border border-border" 
+          src="${image.url}" 
+          alt="Imagen del producto"
+        />
+        
+        <button
+          type="button"
+          class="delete-image-btn-add absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10 opacity-0 group-hover:opacity-100"
+          data-image-url="${image.url}"
+        >
+          <svg class="h-3 w-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        
+        ${index === 0 ? `
+          <div class="absolute bottom-1 left-1 right-1 bg-primary text-primary-foreground text-xs p-1 rounded text-center font-medium">
+            Principal
+          </div>
+        ` : `
+          <button
+            type="button"
+            class="set-primary-btn-add absolute bottom-1 left-1 right-1 bg-black/50 text-white text-xs p-1 rounded text-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
+            data-image-url="${image.url}"
+          >
+            Hacer principal
+          </button>
+        `}
+      `;
+      
+      // Event listener para eliminar
+      const deleteBtn = div.querySelector('.delete-image-btn-add');
+      deleteBtn?.addEventListener('click', function(this: HTMLElement) {
+        const imageUrl = this.getAttribute('data-image-url');
+        if (imageUrl) deleteImageAdd(imageUrl);
+      });
+      
+      // Event listener para establecer como principal
+      const setPrimaryBtn = div.querySelector('.set-primary-btn-add');
+      setPrimaryBtn?.addEventListener('click', function(this: HTMLElement) {
+        const imageUrl = this.getAttribute('data-image-url');
+        if (imageUrl) setPrimaryImageAdd(imageUrl);
+      });
+      
+      return div;
+    }
+    
+    // Función para actualizar vista previa
+    function updateImagesPreviewAdd() {
+      if (!imagesPreviewAdd) return;
+      
+      imagesPreviewAdd.innerHTML = '';
+      uploadedImages.forEach((image: any, index: number) => {
+        imagesPreviewAdd.appendChild(createImageElementAdd(image, index));
+      });
+      
+      // Actualizar input oculto con las URLs (la primera es la principal)
+      if (imagesUrlsInput) {
+        const urls = uploadedImages.map((img: any) => img.url).join(',');
+        (imagesUrlsInput as HTMLInputElement).value = urls;
+      }
+      
+      console.log('📸 Imágenes en preview:', uploadedImages.length);
+    }
+    
+    // Función para subir imágenes
+    async function uploadImagesAdd(files: FileList) {
+      if (!uploadStatusAdd) return;
+      
+      uploadStatusAdd.textContent = 'Subiendo imágenes...';
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        if (!file.type.startsWith('image/')) {
+          alert(`${file.name} no es una imagen válida`);
+          continue;
+        }
+        
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`${file.name} es demasiado grande (máximo 10MB)`);
+          continue;
+        }
+        
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          formData.append('productId', tempProductId);
+          
+          console.log('📤 Subiendo imagen:', file.name);
+          
+          const response = await fetch('/api/products/upload-image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok && result.success) {
+            uploadedImages.push({
+              url: result.url,
+              id: result.imageId || `img-${Date.now()}-${i}`
+            });
+            console.log('✅ Imagen subida:', result.url);
+          } else {
+            alert(`Error al subir ${file.name}: ${result.message}`);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert(`Error al subir ${file.name}`);
+        }
+      }
+      
+      updateImagesPreviewAdd();
+      uploadStatusAdd.textContent = 'Arrastra y suelta las imágenes aquí, o';
+      
+      if (productImagesInputAdd) {
+        (productImagesInputAdd as HTMLInputElement).value = '';
+      }
+    }
+    
+    // Función para eliminar imagen
+    function deleteImageAdd(imageUrl: string) {
+      if (!confirm('¿Estás seguro de eliminar esta imagen?')) {
+        return;
+      }
+      
+      uploadedImages = uploadedImages.filter((img: any) => img.url !== imageUrl);
+      updateImagesPreviewAdd();
+      console.log('🗑️ Imagen eliminada');
+    }
+    
+    // Función para establecer imagen principal
+    function setPrimaryImageAdd(imageUrl: string) {
+      const imageIndex = uploadedImages.findIndex((img: any) => img.url === imageUrl);
+      if (imageIndex > -1) {
+        const [image] = uploadedImages.splice(imageIndex, 1);
+        uploadedImages.unshift(image);
+        updateImagesPreviewAdd();
+        console.log('⭐ Imagen principal establecida');
+      }
+    }
+    
+    // Event listeners
+    if (productImagesInputAdd) {
+      console.log('✅ Event listener agregado al input de archivos (agregar)');
+      productImagesInputAdd.addEventListener('change', function(e) {
+        console.log('📁 Archivo(s) seleccionado(s)');
+        const files = (this as HTMLInputElement).files;
+        if (files && files.length > 0) {
+          console.log('📁 Cantidad de archivos:', files.length);
+          uploadImagesAdd(files);
+        }
+      });
+    }
+    
+    // Drag and drop
+    if (uploadZoneAdd) {
+      uploadZoneAdd.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZoneAdd.classList.add('border-primary', 'bg-primary/5');
+      });
+      
+      uploadZoneAdd.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZoneAdd.classList.remove('border-primary', 'bg-primary/5');
+      });
+      
+      uploadZoneAdd.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZoneAdd.classList.remove('border-primary', 'bg-primary/5');
+        
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+          uploadImagesAdd(files);
+        }
+      });
+    }
+    
+    console.log('🎯 Sistema de imágenes (agregar producto) inicializado');
   });
 </script>
