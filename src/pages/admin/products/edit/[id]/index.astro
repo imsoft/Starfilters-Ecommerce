@@ -39,9 +39,12 @@ if (Astro.request.method === 'POST') {
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
       stock: parseInt(formData.get('stock')?.toString() || '0'),
+      tags: formData.get('tags')?.toString() || '',
       image_url: formData.get('image_url')?.toString() || product.image_url,
       status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || product.status)
     };
+    
+    console.log('📝 Datos del producto a actualizar:', productData);
 
     // Validar datos requeridos
     if (action === 'update' && (!productData.name || !productData.description || productData.price <= 0)) {
@@ -53,12 +56,16 @@ if (Astro.request.method === 'POST') {
     }
 
     // Actualizar el producto
+    console.log('💾 Intentando actualizar producto con ID:', product.id);
     const success = await updateProduct(product.id, productData);
+    console.log('📊 Resultado de actualización:', success);
     
     if (success) {
+      console.log('✅ Producto actualizado exitosamente');
       const redirectMessage = action === 'draft' ? 'draft_saved' : 'updated';
       return Astro.redirect(`/admin/products?success=${redirectMessage}`);
     } else {
+      console.error('❌ Error al actualizar el producto');
       errorMessage = 'Error al actualizar el producto';
     }
   } catch (error) {

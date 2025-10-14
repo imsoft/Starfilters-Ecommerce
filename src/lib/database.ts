@@ -151,22 +151,41 @@ export const createProduct = async (product: Omit<Product, 'id' | 'uuid' | 'crea
 };
 
 export const updateProduct = async (id: number, product: Partial<Product>): Promise<boolean> => {
-  const fields: string[] = [];
-  const values: any[] = [];
-  
-  Object.entries(product).forEach(([key, value]) => {
-    if (key !== 'id' && key !== 'created_at' && value !== undefined) {
-      fields.push(`${key} = ?`);
-      values.push(value);
+  try {
+    const fields: string[] = [];
+    const values: any[] = [];
+    
+    console.log('📝 updateProduct llamado con ID:', id);
+    console.log('📝 Datos a actualizar:', product);
+    
+    Object.entries(product).forEach(([key, value]) => {
+      if (key !== 'id' && key !== 'created_at' && value !== undefined) {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
+    });
+    
+    if (fields.length === 0) {
+      console.warn('⚠️ No hay campos para actualizar');
+      return false;
     }
-  });
-  
-  if (fields.length === 0) return false;
-  
-  values.push(id);
-  const sql = `UPDATE products SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
-  const result = await query(sql, values) as any;
-  return result.affectedRows > 0;
+    
+    values.push(id);
+    const sql = `UPDATE products SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
+    
+    console.log('🔍 SQL:', sql);
+    console.log('🔍 Valores:', values);
+    
+    const result = await query(sql, values) as any;
+    
+    console.log('📊 Resultado de query:', result);
+    console.log('📊 Filas afectadas:', result.affectedRows);
+    
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('❌ Error en updateProduct:', error);
+    throw error;
+  }
 };
 
 export const deleteProduct = async (id: number): Promise<boolean> => {
