@@ -274,31 +274,31 @@ if (Astro.request.method === 'POST') {
           
           <div class="space-y-4">
             <!-- Zona de carga -->
-            <div id="upload-zone" class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
-              <svg class="mx-auto h-12 w-12 text-muted-foreground" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+            <div id="upload-zone" class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+              <svg class="mx-auto h-12 w-12 text-muted-foreground pointer-events-none" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
               <div class="mt-4">
-                <label for="product-images" class="cursor-pointer">
-                  <span class="mt-2 block text-sm font-medium text-foreground">
+                <label for="product-images" class="cursor-pointer inline-block">
+                  <span class="mt-2 block text-sm font-medium text-foreground pointer-events-none">
                     <span id="upload-status">Arrastra y suelta las imágenes aquí, o</span>
                   </span>
-                  <span class="mt-1 block text-sm text-primary hover:text-primary/90">
+                  <span class="mt-1 block text-sm text-primary hover:text-primary/90 pointer-events-none">
                     haz clic para seleccionar archivos
                   </span>
                 </label>
-                <input
-                  id="product-images"
-                  name="product-images"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  class="sr-only"
-                />
               </div>
-              <p class="mt-2 text-xs text-muted-foreground">
+              <p class="mt-2 text-xs text-muted-foreground pointer-events-none">
                 PNG, JPG, GIF hasta 10MB cada una
               </p>
+              <input
+                id="product-images"
+                name="product-images"
+                type="file"
+                multiple
+                accept="image/*"
+                class="hidden"
+              />
             </div>
 
             <!-- Vista previa de imágenes -->
@@ -746,18 +746,25 @@ if (Astro.request.method === 'POST') {
     // Inicializar vista previa con imágenes existentes
     updateImagesPreview();
     
-    // Event listeners
+    // Event listener para el input de archivos
     if (productImagesInput) {
-      productImagesInput.addEventListener('change', (e) => {
-        const files = (e.target as HTMLInputElement).files;
+      console.log('✅ Event listener agregado al input de archivos');
+      productImagesInput.addEventListener('change', function(e) {
+        console.log('📁 Archivo(s) seleccionado(s)');
+        const files = (this as HTMLInputElement).files;
         if (files && files.length > 0) {
+          console.log('📁 Cantidad de archivos:', files.length);
           uploadImages(files);
         }
       });
+    } else {
+      console.error('❌ No se encontró el input de archivos');
     }
     
-    // Drag and drop
+    // Drag and drop en la zona de carga
     if (uploadZone) {
+      console.log('✅ Event listeners de drag & drop agregados');
+      
       uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -775,22 +782,15 @@ if (Astro.request.method === 'POST') {
         e.stopPropagation();
         uploadZone.classList.remove('border-primary', 'bg-primary/5');
         
+        console.log('🎯 Archivos soltados');
         const files = e.dataTransfer?.files;
         if (files && files.length > 0) {
+          console.log('📁 Cantidad de archivos soltados:', files.length);
           uploadImages(files);
         }
       });
-      
-      // Click en la zona para abrir selector
-      uploadZone.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // Evitar que se dispare si se hace clic en un botón
-        const target = e.target as HTMLElement;
-        if (target.tagName !== 'BUTTON' && !target.closest('button')) {
-          productImagesInput?.click();
-        }
-      });
+    } else {
+      console.error('❌ No se encontró la zona de carga');
     }
     
     console.log('🎯 Sistema de imágenes de productos inicializado');
