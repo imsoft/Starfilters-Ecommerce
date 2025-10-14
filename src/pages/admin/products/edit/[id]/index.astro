@@ -265,15 +265,61 @@ if (Astro.request.method === 'POST') {
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Imágenes del Producto</h2>
           
-          <ProductImageUploader 
-            client:load
-            productId={product.uuid}
-            initialImages={product.image_url ? [{
-              id: 'main',
-              url: product.image_url,
-              isPrimary: true
-            }] : []}
-          />
+          <div class="space-y-4">
+            <!-- Zona de carga -->
+            <div id="upload-zone" class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+              <svg class="mx-auto h-12 w-12 text-muted-foreground" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <div class="mt-4">
+                <label for="product-images" class="cursor-pointer">
+                  <span class="mt-2 block text-sm font-medium text-foreground">
+                    <span id="upload-status">Arrastra y suelta las imágenes aquí, o</span>
+                  </span>
+                  <span class="mt-1 block text-sm text-primary hover:text-primary/90">
+                    haz clic para seleccionar archivos
+                  </span>
+                </label>
+                <input
+                  id="product-images"
+                  name="product-images"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  class="sr-only"
+                />
+              </div>
+              <p class="mt-2 text-xs text-muted-foreground">
+                PNG, JPG, GIF hasta 10MB cada una
+              </p>
+            </div>
+
+            <!-- Vista previa de imágenes -->
+            <div id="images-preview" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {product.image_url && (
+                <div class="relative w-full h-32 group image-item" data-image-id="main" data-image-url={product.image_url}>
+                  <img 
+                    class="w-full h-full rounded-lg object-cover border border-border" 
+                    src={product.image_url} 
+                    alt={product.name}
+                  />
+                  
+                  <button
+                    type="button"
+                    class="delete-image-btn absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10 opacity-0 group-hover:opacity-100"
+                  >
+                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                  
+                  <div class="absolute bottom-1 left-1 right-1 bg-primary text-primary-foreground text-xs p-1 rounded text-center font-medium">
+                    Principal
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <!-- Especificaciones técnicas -->
@@ -488,5 +534,248 @@ if (Astro.request.method === 'POST') {
         addTag(value);
       }
     });
+    
+    // ===== GESTIÓN DE IMÁGENES =====
+    const productId = `{product.uuid}`;
+    const uploadZone = document.getElementById('upload-zone');
+    const productImagesInput = document.getElementById('product-images');
+    const imagesPreview = document.getElementById('images-preview');
+    const uploadStatus = document.getElementById('upload-status');
+    
+    let currentImages: any[] = [];
+    
+    // Cargar imágenes existentes
+    const hasInitialImage = `{product.image_url || ''}`;
+    if (hasInitialImage) {
+      currentImages.push({
+        id: 'main',
+        url: hasInitialImage,
+        isPrimary: true
+      });
+    }
+    
+    // Función para crear elemento de imagen
+    function createImageElement(image: any) {
+      const div = document.createElement('div');
+      div.className = 'relative w-full h-32 group image-item';
+      div.setAttribute('data-image-id', image.id);
+      div.setAttribute('data-image-url', image.url);
+      
+      div.innerHTML = `
+        <img 
+          class="w-full h-full rounded-lg object-cover border border-border" 
+          src="${image.url}" 
+          alt="Imagen del producto"
+        />
+        
+        <button
+          type="button"
+          class="delete-image-btn absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10 opacity-0 group-hover:opacity-100"
+        >
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        
+        ${image.isPrimary ? `
+          <div class="absolute bottom-1 left-1 right-1 bg-primary text-primary-foreground text-xs p-1 rounded text-center font-medium">
+            Principal
+          </div>
+        ` : `
+          <button
+            type="button"
+            class="set-primary-btn absolute bottom-1 left-1 right-1 bg-black/50 text-white text-xs p-1 rounded text-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
+          >
+            Hacer principal
+          </button>
+        `}
+      `;
+      
+      // Event listener para eliminar
+      const deleteBtn = div.querySelector('.delete-image-btn');
+      deleteBtn?.addEventListener('click', () => deleteImage(image.id));
+      
+      // Event listener para establecer como principal
+      const setPrimaryBtn = div.querySelector('.set-primary-btn');
+      setPrimaryBtn?.addEventListener('click', () => setPrimaryImage(image.id));
+      
+      return div;
+    }
+    
+    // Función para actualizar la vista previa
+    function updateImagesPreview() {
+      if (!imagesPreview) return;
+      
+      imagesPreview.innerHTML = '';
+      currentImages.forEach((image: any) => {
+        imagesPreview.appendChild(createImageElement(image));
+      });
+      
+      console.log('📸 Imágenes actualizadas:', currentImages.length);
+    }
+    
+    // Función para subir imágenes
+    async function uploadImages(files: FileList) {
+      if (!uploadStatus) return;
+      
+      uploadStatus.textContent = 'Subiendo imágenes...';
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validar
+        if (!file.type.startsWith('image/')) {
+          alert(`${file.name} no es una imagen válida`);
+          continue;
+        }
+        
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`${file.name} es demasiado grande (máximo 10MB)`);
+          continue;
+        }
+        
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          formData.append('productId', productId);
+          
+          console.log('📤 Subiendo imagen:', file.name);
+          
+          const response = await fetch('/api/products/upload-image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          console.log('📊 Respuesta:', result);
+          
+          if (response.ok && result.success) {
+            currentImages.push({
+              id: result.imageId || `img-${Date.now()}-${i}`,
+              url: result.url,
+              isPrimary: currentImages.length === 0
+            });
+            
+            console.log('✅ Imagen subida:', result.url);
+          } else {
+            alert(`Error al subir ${file.name}: ${result.message}`);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert(`Error al subir ${file.name}`);
+        }
+      }
+      
+      updateImagesPreview();
+      uploadStatus.textContent = 'Arrastra y suelta las imágenes aquí, o';
+      
+      // Limpiar input
+      if (productImagesInput) {
+        (productImagesInput as HTMLInputElement).value = '';
+      }
+    }
+    
+    // Función para eliminar imagen
+    async function deleteImage(imageId: string) {
+      if (!confirm('¿Estás seguro de eliminar esta imagen?')) {
+        return;
+      }
+      
+      try {
+        console.log('🗑️ Eliminando imagen:', imageId);
+        
+        const response = await fetch('/api/products/delete-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ imageId, productId })
+        });
+        
+        const result = await response.json();
+        
+        console.log('📊 Respuesta:', result);
+        
+        if (response.ok && result.success) {
+          currentImages = currentImages.filter((img: any) => img.id !== imageId);
+          updateImagesPreview();
+          console.log('✅ Imagen eliminada');
+        } else {
+          alert(`Error al eliminar: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar la imagen');
+      }
+    }
+    
+    // Función para establecer imagen principal
+    async function setPrimaryImage(imageId: string) {
+      currentImages = currentImages.map((img: any) => ({
+        ...img,
+        isPrimary: img.id === imageId
+      }));
+      
+      updateImagesPreview();
+      
+      try {
+        console.log('⭐ Estableciendo imagen principal:', imageId);
+        
+        await fetch('/api/products/set-primary-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ imageId, productId })
+        });
+        
+        console.log('✅ Imagen principal establecida');
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+    
+    // Event listeners
+    if (productImagesInput) {
+      productImagesInput.addEventListener('change', (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (files && files.length > 0) {
+          uploadImages(files);
+        }
+      });
+    }
+    
+    // Drag and drop
+    if (uploadZone) {
+      uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('border-primary', 'bg-primary/5');
+      });
+      
+      uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('border-primary', 'bg-primary/5');
+      });
+      
+      uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('border-primary', 'bg-primary/5');
+        
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+          uploadImages(files);
+        }
+      });
+      
+      // Click en la zona para abrir selector
+      uploadZone.addEventListener('click', (e) => {
+        // Evitar que se dispare si se hace clic en un botón
+        if ((e.target as HTMLElement).tagName !== 'BUTTON') {
+          productImagesInput?.click();
+        }
+      });
+    }
+    
+    console.log('🎯 Sistema de imágenes de productos inicializado');
   });
 </script>
