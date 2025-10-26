@@ -9,16 +9,22 @@ if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
   
   const title = formData.get('title') as string;
+  const title_en = formData.get('title_en') as string | null;
   const slug = formData.get('slug') as string || generateSlug(title);
+  const slug_en = formData.get('slug_en') as string | null;
   const excerpt = formData.get('excerpt') as string;
+  const excerpt_en = formData.get('excerpt_en') as string | null;
   const content = formData.get('content') as string;
+  const content_en = formData.get('content_en') as string | null;
   const category = formData.get('category') as string;
   const author = formData.get('author') as string;
   const status = formData.get('status') as 'draft' | 'published' | 'scheduled';
   const publishDate = formData.get('publish-date') as string;
   const tags = formData.get('tags') as string;
   const metaTitle = formData.get('meta-title') as string;
+  const metaTitle_en = formData.get('meta-title_en') as string | null;
   const metaDescription = formData.get('meta-description') as string;
+  const metaDescription_en = formData.get('meta-description_en') as string | null;
   const action = formData.get('action') as string;
 
   // Determinar el status basado en la acción
@@ -27,16 +33,22 @@ if (Astro.request.method === 'POST') {
   try {
     const blogPost = await createBlogPost({
       title,
+      title_en: title_en || undefined,
       slug,
+      slug_en: slug_en || undefined,
       excerpt,
+      excerpt_en: excerpt_en || undefined,
       content,
+      content_en: content_en || undefined,
       category,
       author,
       status: finalStatus,
       publish_date: publishDate ? new Date(publishDate) : undefined,
       tags,
       meta_title: metaTitle,
-      meta_description: metaDescription
+      meta_title_en: metaTitle_en || undefined,
+      meta_description: metaDescription,
+      meta_description_en: metaDescription_en || undefined
     });
 
     if (blogPost) {

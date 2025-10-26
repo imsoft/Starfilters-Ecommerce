@@ -143,18 +143,22 @@ export const getProductByUuid = async (uuid: string): Promise<Product | null> =>
 export const createProduct = async (product: Omit<Product, 'id' | 'uuid' | 'created_at' | 'updated_at'>): Promise<number> => {
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO products (uuid, name, description, price, category, stock, image_url, status) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO products (uuid, name, name_en, description, description_en, price, category, category_en, stock, image_url, status, tags) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
     product.name,
+    product.name_en || null,
     product.description,
+    product.description_en || null,
     product.price,
     product.category,
+    product.category_en || null,
     product.stock,
     product.image_url,
-    product.status
+    product.status,
+    product.tags || ''
   ]) as any;
   return result.insertId;
 };
@@ -836,9 +840,13 @@ export const getConversionFunnel = async (): Promise<ConversionFunnel> => {
 // Funciones para el blog
 export interface CreateBlogPostData {
   title: string;
+  title_en?: string;
   slug: string;
+  slug_en?: string;
   excerpt: string;
+  excerpt_en?: string;
   content: string;
+  content_en?: string;
   category: string;
   author: string;
   status: 'draft' | 'published' | 'scheduled';
@@ -846,7 +854,9 @@ export interface CreateBlogPostData {
   tags?: string;
   featured_image_url?: string;
   meta_title?: string;
+  meta_title_en?: string;
   meta_description?: string;
+  meta_description_en?: string;
 }
 
 export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost | null> {
@@ -856,16 +866,20 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
     
     const result = await query(
       `INSERT INTO blog_posts (
-        uuid, title, slug, excerpt, content, category, author, 
+        uuid, title, title_en, slug, slug_en, excerpt, excerpt_en, content, content_en, category, author, 
         status, publish_date, tags, featured_image_url, 
-        meta_title, meta_description, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        meta_title, meta_title_en, meta_description, meta_description_en, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         uuid,
         data.title,
+        data.title_en || null,
         data.slug,
+        data.slug_en || null,
         data.excerpt,
+        data.excerpt_en || null,
         data.content,
+        data.content_en || null,
         data.category,
         data.author,
         data.status,
@@ -873,7 +887,9 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
         data.tags || '',
         data.featured_image_url || null,
         data.meta_title || data.title,
+        data.meta_title_en || null,
         data.meta_description || data.excerpt,
+        data.meta_description_en || null,
         now,
         now
       ]

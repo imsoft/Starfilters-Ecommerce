@@ -26,9 +26,12 @@ if (Astro.request.method === 'POST') {
     
     const productData = {
       name: formData.get('name')?.toString() || '',
+      name_en: formData.get('name_en')?.toString() || undefined,
       description: formData.get('description')?.toString() || '',
+      description_en: formData.get('description_en')?.toString() || undefined,
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
+      category_en: formData.get('category_en')?.toString() || undefined,
       stock: parseInt(formData.get('stock')?.toString() || '0'),
       tags: formData.get('tags')?.toString() || '',
       image_url: firstImageUrl, // Primera imagen subida o string vacío
@@ -130,7 +133,7 @@ if (Astro.request.method === 'POST') {
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <label for="name" class="block text-sm font-medium text-foreground mb-2">
-                Nombre del producto
+                Nombre del producto (Español)
               </label>
               <input
                 type="text"
@@ -139,6 +142,19 @@ if (Astro.request.method === 'POST') {
                 required
                 class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Ej: Filtro HEPA Premium"
+              />
+            </div>
+
+            <div>
+              <label for="name_en" class="block text-sm font-medium text-foreground mb-2">
+                Product Name (English)
+              </label>
+              <input
+                type="text"
+                id="name_en"
+                name="name_en"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="E.g: Premium HEPA Filter"
               />
             </div>
 
@@ -196,7 +212,7 @@ if (Astro.request.method === 'POST') {
 
           <div class="mt-6">
             <label for="description" class="block text-sm font-medium text-foreground mb-2">
-              Descripción
+              Descripción (Español)
             </label>
             <textarea
               id="description"
@@ -205,6 +221,19 @@ if (Astro.request.method === 'POST') {
               required
               class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="Describe las características y beneficios del producto..."
+            ></textarea>
+          </div>
+
+          <div class="mt-6">
+            <label for="description_en" class="block text-sm font-medium text-foreground mb-2">
+              Description (English)
+            </label>
+            <textarea
+              id="description_en"
+              name="description_en"
+              rows="4"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Describe the features and benefits of the product..."
             ></textarea>
           </div>
         </div>
@@ -216,7 +245,7 @@ if (Astro.request.method === 'POST') {
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <label for="category" class="block text-sm font-medium text-foreground mb-2">
-                Categoría
+                Categoría (Español)
               </label>
               <select
                 id="category"
@@ -229,6 +258,23 @@ if (Astro.request.method === 'POST') {
                 <option value="cuartos-limpios">Cuartos Limpios</option>
                 <option value="accesorios">Accesorios</option>
                 <option value="servicios">Servicios</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="category_en" class="block text-sm font-medium text-foreground mb-2">
+                Category (English)
+              </label>
+              <select
+                id="category_en"
+                name="category_en"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="">Select category</option>
+                <option value="filters">Filters</option>
+                <option value="clean-rooms">Clean Rooms</option>
+                <option value="accessories">Accessories</option>
+                <option value="services">Services</option>
               </select>
             </div>
 
