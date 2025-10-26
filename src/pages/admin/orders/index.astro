@@ -318,7 +318,7 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
                           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                           </svg>
-                          <span class="hidden sm:inline">Estado</span>
+
                         </button>
                       </div>
                     </td>
@@ -474,10 +474,9 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
 </script>
 
 <script>
-  import { updateOrderStatus } from '@/lib/database';
-
   // Manejar cambio de estado
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Inicializando gestor de cambio de estado...');
     const dialog = document.getElementById('status-dialog') as HTMLDialogElement;
     const dialogOrderInfo = document.getElementById('dialog-order-info');
     const dialogOrderId = document.getElementById('dialog-order-id') as HTMLInputElement;
@@ -487,19 +486,30 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
 
     // Abrir diálogo al hacer clic en botón de cambiar estado
     document.querySelectorAll('.change-status-btn').forEach(button => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔘 Botón clickeado');
+        
         const orderId = button.getAttribute('data-order-id');
         const orderNumber = button.getAttribute('data-order-number');
         const currentStatus = button.getAttribute('data-current-status');
+
+        console.log('📋 Datos:', { orderId, orderNumber, currentStatus });
 
         if (orderId && orderNumber && currentStatus && dialogOrderInfo && dialogOrderId && dialogNewStatus) {
           dialogOrderInfo.textContent = `Orden: ${orderNumber}`;
           dialogOrderId.value = orderId;
           dialogNewStatus.value = currentStatus;
+          console.log('✅ Abriendo diálogo');
           dialog?.showModal();
+        } else {
+          console.error('❌ Faltan datos o elementos del diálogo');
         }
       });
     });
+
+    console.log(`✅ ${document.querySelectorAll('.change-status-btn').length} botones de cambio de estado encontrados`);
 
     // Cerrar diálogo
     dialogCancel?.addEventListener('click', () => {
