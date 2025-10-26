@@ -133,10 +133,11 @@ if (Astro.request.method === 'POST') {
             </div>
             
             <div class="space-y-4">
+              <!-- Orden recibida - Siempre completada -->
               <div class="flex items-center space-x-3">
                 <div class="flex-shrink-0">
-                  <div class="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                    <svg class="h-4 w-4 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                   </div>
@@ -147,45 +148,96 @@ if (Astro.request.method === 'POST') {
                 </div>
               </div>
 
+              <!-- Procesando -->
               <div class="flex items-center space-x-3">
                 <div class="flex-shrink-0">
-                  <div class="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                    <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class={`h-8 w-8 rounded-full flex items-center justify-center ${
+                    ['processing', 'shipped', 'delivered'].includes(order.status) 
+                      ? 'bg-green-500' 
+                      : 'bg-gray-300'
+                  }`}>
+                    <svg class={`h-4 w-4 ${
+                      ['processing', 'shipped', 'delivered'].includes(order.status) 
+                        ? 'text-white' 
+                        : 'text-gray-500'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                   </div>
                 </div>
                 <div class="flex-1">
-                  <p class="text-sm font-medium text-muted-foreground">Procesando</p>
-                  <p class="text-sm text-muted-foreground">Pendiente</p>
+                  <p class={`text-sm font-medium ${
+                    ['processing', 'shipped', 'delivered'].includes(order.status) 
+                      ? 'text-foreground' 
+                      : 'text-muted-foreground'
+                  }`}>Procesando</p>
+                  <p class="text-sm text-muted-foreground">
+                    {['processing', 'shipped', 'delivered'].includes(order.status) 
+                      ? 'Completado' 
+                      : 'Pendiente'}
+                  </p>
                 </div>
               </div>
 
+              <!-- Enviado -->
               <div class="flex items-center space-x-3">
                 <div class="flex-shrink-0">
-                  <div class="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                    <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class={`h-8 w-8 rounded-full flex items-center justify-center ${
+                    ['shipped', 'delivered'].includes(order.status) 
+                      ? 'bg-green-500' 
+                      : 'bg-gray-300'
+                  }`}>
+                    <svg class={`h-4 w-4 ${
+                      ['shipped', 'delivered'].includes(order.status) 
+                        ? 'text-white' 
+                        : 'text-gray-500'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                     </svg>
                   </div>
                 </div>
                 <div class="flex-1">
-                  <p class="text-sm font-medium text-muted-foreground">Enviado</p>
-                  <p class="text-sm text-muted-foreground">Pendiente</p>
+                  <p class={`text-sm font-medium ${
+                    ['shipped', 'delivered'].includes(order.status) 
+                      ? 'text-foreground' 
+                      : 'text-muted-foreground'
+                  }`}>Enviado</p>
+                  <p class="text-sm text-muted-foreground">
+                    {['shipped', 'delivered'].includes(order.status) 
+                      ? 'Completado' 
+                      : 'Pendiente'}
+                  </p>
                 </div>
               </div>
 
+              <!-- Entregado -->
               <div class="flex items-center space-x-3">
                 <div class="flex-shrink-0">
-                  <div class="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                    <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class={`h-8 w-8 rounded-full flex items-center justify-center ${
+                    order.status === 'delivered' 
+                      ? 'bg-green-500' 
+                      : 'bg-gray-300'
+                  }`}>
+                    <svg class={`h-4 w-4 ${
+                      order.status === 'delivered' 
+                        ? 'text-white' 
+                        : 'text-gray-500'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                   </div>
                 </div>
                 <div class="flex-1">
-                  <p class="text-sm font-medium text-muted-foreground">Entregado</p>
-                  <p class="text-sm text-muted-foreground">Pendiente</p>
+                  <p class={`text-sm font-medium ${
+                    order.status === 'delivered' 
+                      ? 'text-foreground' 
+                      : 'text-muted-foreground'
+                  }`}>Entregado</p>
+                  <p class="text-sm text-muted-foreground">
+                    {order.status === 'delivered' 
+                      ? 'Completado' 
+                      : 'Pendiente'}
+                  </p>
                 </div>
               </div>
             </div>
