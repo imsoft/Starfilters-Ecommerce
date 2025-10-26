@@ -1,16 +1,19 @@
 ---
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <div class="bg-background py-24 sm:py-32">
   <div class="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
     <h2 class="text-center text-base/7 font-semibold text-primary">
-      Deploy faster
+      {t('features.title')}
     </h2>
     <p
       class="mx-auto mt-2 max-w-lg text-center text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl"
     >
-      Everything you need to deploy your app
+      {t('features.subtitle')}
     </p>
     <div class="mt-10 grid gap-4 sm:mt-16 lg:grid-cols-3 lg:grid-rows-2">
       <div class="relative lg:row-span-2">
@@ -23,11 +26,10 @@
             <p
               class="mt-2 text-lg font-medium tracking-tight text-foreground max-lg:text-center"
             >
-              Mobile friendly
+              {t('features.certifications.title')}
             </p>
             <p class="mt-2 max-w-lg text-sm/6 text-muted-foreground max-lg:text-center">
-              Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui
-              lorem cupidatat commodo.
+              {t('features.certifications.description')}
             </p>
           </div>
           <div
@@ -59,11 +61,10 @@
             <p
               class="mt-2 text-lg font-medium tracking-tight text-foreground max-lg:text-center"
             >
-              Performance
+              {t('features.installation.title')}
             </p>
             <p class="mt-2 max-w-lg text-sm/6 text-muted-foreground max-lg:text-center">
-              Lorem ipsum, dolor sit amet consectetur adipisicing elit maiores
-              impedit.
+              {t('features.installation.description')}
             </p>
           </div>
           <div
@@ -90,11 +91,10 @@
             <p
               class="mt-2 text-lg font-medium tracking-tight text-foreground max-lg:text-center"
             >
-              Security
+              {t('features.technology.title')}
             </p>
             <p class="mt-2 max-w-lg text-sm/6 text-muted-foreground max-lg:text-center">
-              Morbi viverra dui mi arcu sed. Tellus semper adipiscing
-              suspendisse semper morbi.
+              {t('features.technology.description')}
             </p>
           </div>
           <div class="@container flex flex-1 items-center max-lg:py-6 lg:pb-2">
@@ -122,11 +122,10 @@
             <p
               class="mt-2 text-lg font-medium tracking-tight text-foreground max-lg:text-center"
             >
-              Powerful APIs
+              {t('features.support.title')}
             </p>
             <p class="mt-2 max-w-lg text-sm/6 text-muted-foreground max-lg:text-center">
-              Sit quis amet rutrum tellus ullamcorper ultricies libero dolor
-              eget sem sodales gravida.
+              {t('features.support.description')}
             </p>
           </div>
           <div class="relative min-h-120 w-full grow">
