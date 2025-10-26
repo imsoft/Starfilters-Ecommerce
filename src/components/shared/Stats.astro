@@ -1,32 +1,35 @@
 ---
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <div class="bg-background py-24 sm:py-32">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
     <dl class="grid grid-cols-1 gap-x-8 gap-y-16 text-center lg:grid-cols-3">
       <div class="mx-auto flex max-w-xs flex-col gap-y-4">
-        <dt class="text-base/7 text-muted-foreground">Proyectos completados exitosamente</dt>
+        <dt class="text-base/7 text-muted-foreground">{t('stats.projects')}</dt>
         <dd
           class="order-first text-3xl font-semibold tracking-tight text-foreground sm:text-5xl"
         >
-          +500
+          {t('stats.projectsNumber')}
         </dd>
       </div>
       <div class="mx-auto flex max-w-xs flex-col gap-y-4">
-        <dt class="text-base/7 text-muted-foreground">Años de experiencia en el sector</dt>
+        <dt class="text-base/7 text-muted-foreground">{t('stats.experience')}</dt>
         <dd
           class="order-first text-3xl font-semibold tracking-tight text-foreground sm:text-5xl"
         >
-          +15
+          {t('stats.experienceNumber')}
         </dd>
       </div>
       <div class="mx-auto flex max-w-xs flex-col gap-y-4">
-        <dt class="text-base/7 text-muted-foreground">Clientes satisfechos en México</dt>
+        <dt class="text-base/7 text-muted-foreground">{t('stats.clients')}</dt>
         <dd
           class="order-first text-3xl font-semibold tracking-tight text-foreground sm:text-5xl"
         >
-          +200
+          {t('stats.clientsNumber')}
         </dd>
       </div>
     </dl>

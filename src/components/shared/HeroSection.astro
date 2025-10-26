@@ -1,5 +1,9 @@
 ---
 import Navbar from "./Navbar.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <div class="bg-background">
@@ -23,10 +27,10 @@ import Navbar from "./Navbar.astro";
               <div
                 class="relative rounded-full px-3 py-1 text-sm/6 text-muted-foreground ring-1 ring-border hover:ring-border"
               >
-                Más de 15 años liderando la filtración industrial en México <a
+                {t('hero.badge')} <a
                   href="/cuartos-limpios"
                   class="font-semibold whitespace-nowrap text-primary"
-                  ><span aria-hidden="true" class="absolute inset-0"></span>Conocer más
+                  ><span aria-hidden="true" class="absolute inset-0"></span>{t('hero.badgeLink')}
                   <span aria-hidden="true">&rarr;</span></a
                 >
               </div>
@@ -34,21 +38,21 @@ import Navbar from "./Navbar.astro";
             <h1
               class="text-5xl font-semibold tracking-tight text-pretty text-foreground sm:text-7xl"
             >
-              Soluciones Avanzadas en Filtración Industrial
+              {t('hero.title')}
             </h1>
             <p
               class="mt-8 text-lg font-medium text-pretty text-muted-foreground sm:text-xl/8"
             >
-              Especialistas en filtros HEPA, cuartos limpios y sistemas de purificación de aire industrial. Calidad certificada, instalación profesional y soporte técnico continuo para proteger tu operación.
+              {t('hero.description')}
             </p>
             <div class="mt-10 flex items-center gap-x-6">
               <a
                 href="/filtros"
                 class="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                >Ver Productos</a
+                >{t('hero.cta')}</a
               >
               <a href="/services" class="text-sm/6 font-semibold text-foreground"
-                >Nuestros Servicios <span aria-hidden="true">→</span></a
+                >{t('hero.ctaSecondary')} <span aria-hidden="true">→</span></a
               >
             </div>
           </div>

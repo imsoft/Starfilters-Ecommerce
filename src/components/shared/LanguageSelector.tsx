@@ -4,7 +4,6 @@ export default function LanguageSelector() {
   const [currentLang, setCurrentLang] = useState('es');
 
   useEffect(() => {
-    // Detectar idioma actual de la URL
     const path = window.location.pathname;
     if (path.startsWith('/en')) {
       setCurrentLang('en');
@@ -18,40 +17,26 @@ export default function LanguageSelector() {
     let newPath: string;
 
     if (lang === 'en') {
-      // Cambiar a inglés
       if (currentPath.startsWith('/en')) {
         newPath = currentPath;
       } else if (currentPath === '/' || currentPath === '') {
         newPath = '/en';
       } else {
-        // Traducir rutas
-        const translations: { [key: string]: string } = {
-          '/cuartos-limpios': '/en/cleanrooms',
-          '/servicios': '/en/services',
-          '/services': '/en/services',
-          '/filtros': '/en/filters',
+        const routeTranslations: { [key: string]: string } = {
+          '/cuartos-limpios': '/en/cuartos-limpios',
+          '/servicios': '/en/servicios',
+          '/services': '/en/servicios',
+          '/filtros': '/en/filtros',
           '/blog': '/en/blog',
-          '/carrito': '/en/cart',
+          '/carrito': '/en/carrito',
           '/checkout': '/en/checkout',
-          '/perfil': '/en/profile',
+          '/perfil': '/en/perfil',
         };
-        newPath = translations[currentPath] || `/en${currentPath}`;
+        newPath = routeTranslations[currentPath] || `/en${currentPath}`;
       }
     } else {
-      // Cambiar a español
-      if (currentPath.startsWith('/en')) {
-        const pathWithoutLang = currentPath.replace('/en', '');
-        // Traducir rutas de vuelta
-        const translations: { [key: string]: string } = {
-          '/cleanrooms': '/cuartos-limpios',
-          '/services': '/servicios',
-          '/filters': '/filtros',
-          '/blog': '/blog',
-          '/cart': '/carrito',
-          '/checkout': '/checkout',
-          '/profile': '/perfil',
-        };
-        newPath = translations[pathWithoutLang] || pathWithoutLang || '/';
+      if (currentPath.startsWith('/en/')) {
+        newPath = currentPath.replace('/en', '') || '/';
       } else {
         newPath = currentPath;
       }

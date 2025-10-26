@@ -1,18 +1,21 @@
 ---
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <div class="bg-background py-24 sm:py-32">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
     <div class="mx-auto max-w-2xl lg:text-center">
-      <h2 class="text-base/7 font-semibold text-primary">Servicios Profesionales</h2>
+      <h2 class="text-base/7 font-semibold text-primary">{t('services.badge')}</h2>
       <p
         class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl lg:text-balance"
       >
-        Todo lo que necesitas para mantener tu sistema de filtración
+        {t('services.title')}
       </p>
       <p class="mt-6 text-lg/8 text-muted-foreground">
-        Desde la instalación inicial hasta el mantenimiento continuo, StarFilters ofrece servicios integrales para garantizar el óptimo funcionamiento de tus sistemas de filtración y cuartos limpios. Nuestro equipo técnico especializado está disponible para apoyarte en cada etapa.
+        {t('services.description')}
       </p>
     </div>
     <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
@@ -39,10 +42,10 @@
                   stroke-linejoin="round"></path>
               </svg>
             </div>
-            Instalación Profesional
+            {t('services.installation.title')}
           </dt>
           <dd class="mt-2 text-base/7 text-muted-foreground">
-            Instalación completa de sistemas de filtración y cuartos limpios con técnicos certificados. Puesta en marcha garantizada y capacitación de personal incluida.
+            {t('services.installation.description')}
           </dd>
         </div>
         <div class="relative pl-16">
@@ -65,10 +68,10 @@
                   stroke-linejoin="round"></path>
               </svg>
             </div>
-            Certificación y Validación
+            {t('services.certification.title')}
           </dt>
           <dd class="mt-2 text-base/7 text-muted-foreground">
-            Pruebas de certificación ISO 14644, validación de flujo de aire, conteo de partículas y emisión de documentación oficial para cumplimiento normativo.
+            {t('services.certification.description')}
           </dd>
         </div>
         <div class="relative pl-16">
@@ -91,10 +94,10 @@
                   stroke-linejoin="round"></path>
               </svg>
             </div>
-            Mantenimiento Preventivo
+            {t('services.maintenance.title')}
           </dt>
           <dd class="mt-2 text-base/7 text-muted-foreground">
-            Programas de mantenimiento preventivo personalizados. Cambio de filtros, inspecciones periódicas y ajustes para prolongar la vida útil de tu equipo.
+            {t('services.maintenance.description')}
           </dd>
         </div>
         <div class="relative pl-16">
@@ -117,10 +120,10 @@
                   stroke-linejoin="round"></path>
               </svg>
             </div>
-            Consultoría Técnica
+            {t('services.consulting.title')}
           </dt>
           <dd class="mt-2 text-base/7 text-muted-foreground">
-            Asesoría especializada para diseño de sistemas, selección de equipos, optimización de procesos y resolución de problemas. Soporte técnico disponible 24/7.
+            {t('services.consulting.description')}
           </dd>
         </div>
       </dl>

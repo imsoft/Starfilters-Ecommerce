@@ -7,11 +7,19 @@ import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://starfilters.com', // Actualiza con tu dominio real
+  site: 'https://starfilters.com',
   output: 'server',
   adapter: node({
     mode: 'standalone'
   }),
+
+  i18n: {
+    defaultLocale: 'es',
+    locales: ['es', 'en'],
+    routing: {
+      prefixDefaultLocale: false
+    }
+  },
 
   vite: {
       plugins: [tailwindcss()],
