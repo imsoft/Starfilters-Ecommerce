@@ -1,0 +1,27 @@
+{
+  "seo": {
+    "title": "Industrial Cleanrooms - Design & Installation | StarFilters",
+    "description": "Design, manufacturing, and installation of industrial cleanrooms. Professional ISO-certified solutions for pharmaceutical, electronics, and food industries in Mexico."
+  },
+  "hero": {
+    "badge": "StarFilters - Controlled Environment Experts",
+    "title": "World-Class Cleanrooms for Your Industry",
+    "description": "We design, manufacture, and install ISO 14644 certified industrial cleanrooms. Comprehensive solutions for pharmaceutical, electronics, food, and research industries that require the highest quality controlled environments."
+  },
+  "experience": {
+    "title": "Our Experience",
+    "paragraph1": "With over 15 years in the Mexican market, StarFilters has established itself as a leader in the design and construction of cleanrooms for industries demanding the highest purity standards. Our cleanrooms comply with classifications from ISO Class 1 to ISO Class 9, adapting to each client's specific needs.",
+    "paragraph2": "We work with state-of-the-art materials, high-density modular panels, HEPA/ULPA filtration systems, and advanced environmental controls. Each project includes complete validation, technical documentation, and certification in accordance with international regulations such as FDA, GMP, and EU GMP to ensure regulatory compliance for your operation."
+  },
+  "numbers": {
+    "title": "Our Numbers",
+    "installations": "Cleanrooms Installed",
+    "installationsNumber": "120+",
+    "area": "Square Meters Built",
+    "areaNumber": "25K+",
+    "certifications": "Certifications Issued",
+    "certificationsNumber": "95%",
+    "warranty": "Years of Warranty",
+    "warrantyNumber": "5"
+  }
+}

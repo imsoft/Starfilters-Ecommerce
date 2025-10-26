@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "home": "Home",
+    "filters": "Filters",
+    "cleanrooms": "Cleanrooms",
+    "services": "Services",
+    "blog": "Blog",
+    "cart": "Cart",
+    "profile": "Profile",
+    "login": "Log In",
+    "logout": "Log Out",
+    "admin": "Admin"
+  },
+  "hero": {
+    "badge": "Over 15 years leading industrial filtration in Mexico",
+    "badgeLink": "Learn more",
+    "title": "Advanced Industrial Filtration Solutions",
+    "description": "Specialists in HEPA filters, cleanrooms, and industrial air purification systems. Certified quality, professional installation, and continuous technical support to protect your operation.",
+    "cta": "View Products",
+    "ctaSecondary": "Our Services"
+  },
+  "stats": {
+    "projects": "Successfully completed projects",
+    "projectsNumber": "+500",
+    "experience": "Years of experience in the sector",
+    "experienceNumber": "+15",
+    "clients": "Satisfied clients in Mexico",
+    "clientsNumber": "+200"
+  },
+  "features": {
+    "title": "Why StarFilters",
+    "subtitle": "Everything you need to protect your industrial environment",
+    "certifications": {
+      "title": "International Certifications",
+      "description": "HEPA filters and cleanrooms with ISO 14644 certifications. Guaranteed compliance with international regulations for regulated industries."
+    },
+    "installation": {
+      "title": "Fast Installation",
+      "description": "Specialized technical team for agile installation without interruptions. Guaranteed commissioning in record time."
+    },
+    "technology": {
+      "title": "Cutting-Edge Technology",
+      "description": "Advanced monitoring systems and state-of-the-art materials. Total control over air quality in your facility."
+    },
+    "support": {
+      "title": "24/7 Technical Support",
+      "description": "Preventive and corrective maintenance service. Continuous technical advice and immediate response to any eventuality."
+    }
+  },
+  "footer": {
+    "company": "Company",
+    "about": "About",
+    "contact": "Contact",
+    "careers": "Careers",
+    "products": "Products",
+    "support": "Support",
+    "documentation": "Documentation",
+    "legal": "Legal",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copyright": "© 2025 StarFilters. All rights reserved."
+  }
+}

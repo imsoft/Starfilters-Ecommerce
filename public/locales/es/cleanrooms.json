@@ -1,0 +1,27 @@
+{
+  "seo": {
+    "title": "Cuartos Limpios Industriales - Diseño e Instalación | StarFilters",
+    "description": "Diseño, fabricación e instalación de cuartos limpios industriales. Soluciones profesionales con certificación ISO para industrias farmacéutica, electrónica y alimentaria en México."
+  },
+  "hero": {
+    "badge": "StarFilters - Expertos en ambientes controlados",
+    "title": "Cuartos Limpios de Clase Mundial para tu Industria",
+    "description": "Diseñamos, fabricamos e instalamos cuartos limpios industriales con certificación ISO 14644. Soluciones integrales para industrias farmacéutica, electrónica, alimentaria y de investigación que requieren ambientes controlados de la más alta calidad."
+  },
+  "experience": {
+    "title": "Nuestra Experiencia",
+    "paragraph1": "Con más de 15 años en el mercado mexicano, StarFilters se ha consolidado como líder en el diseño y construcción de cuartos limpios para industrias que demandan los más altos estándares de pureza. Nuestros cuartos limpios cumplen con clasificaciones desde ISO Clase 1 hasta ISO Clase 9, adaptándonos a las necesidades específicas de cada cliente.",
+    "paragraph2": "Trabajamos con materiales de última generación, paneles modulares de alta densidad, sistemas de filtración HEPA/ULPA y controles ambientales avanzados. Cada proyecto incluye validación completa, documentación técnica y certificación conforme a normativas internacionales como FDA, GMP y EU GMP para garantizar el cumplimiento regulatorio de tu operación."
+  },
+  "numbers": {
+    "title": "Nuestros Números",
+    "installations": "Cuartos Limpios Instalados",
+    "installationsNumber": "120+",
+    "area": "Metros Cuadrados Construidos",
+    "areaNumber": "25K+",
+    "certifications": "Certificaciones Emitidas",
+    "certificationsNumber": "95%",
+    "warranty": "Años de Garantía",
+    "warrantyNumber": "5"
+  }
+}

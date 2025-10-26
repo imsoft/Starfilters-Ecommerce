@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "filters": "Filtros",
+    "cleanrooms": "Cuartos Limpios",
+    "services": "Servicios",
+    "blog": "Blog",
+    "cart": "Carrito",
+    "profile": "Perfil",
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "admin": "Admin"
+  },
+  "hero": {
+    "badge": "Más de 15 años liderando la filtración industrial en México",
+    "badgeLink": "Conocer más",
+    "title": "Soluciones Avanzadas en Filtración Industrial",
+    "description": "Especialistas en filtros HEPA, cuartos limpios y sistemas de purificación de aire industrial. Calidad certificada, instalación profesional y soporte técnico continuo para proteger tu operación.",
+    "cta": "Ver Productos",
+    "ctaSecondary": "Nuestros Servicios"
+  },
+  "stats": {
+    "projects": "Proyectos completados exitosamente",
+    "projectsNumber": "+500",
+    "experience": "Años de experiencia en el sector",
+    "experienceNumber": "+15",
+    "clients": "Clientes satisfechos en México",
+    "clientsNumber": "+200"
+  },
+  "features": {
+    "title": "Por qué StarFilters",
+    "subtitle": "Todo lo que necesitas para proteger tu ambiente industrial",
+    "certifications": {
+      "title": "Certificaciones Internacionales",
+      "description": "Filtros HEPA y cuartos limpios con certificaciones ISO 14644. Cumplimiento garantizado con normativas internacionales para industrias reguladas."
+    },
+    "installation": {
+      "title": "Instalación Rápida",
+      "description": "Equipo técnico especializado para instalación ágil y sin interrupciones. Puesta en marcha garantizada en tiempo récord."
+    },
+    "technology": {
+      "title": "Tecnología de Vanguardia",
+      "description": "Sistemas de monitoreo avanzado y materiales de última generación. Control total sobre la calidad del aire en tu instalación."
+    },
+    "support": {
+      "title": "Soporte Técnico 24/7",
+      "description": "Servicio de mantenimiento preventivo y correctivo. Asesoría técnica continua y respuesta inmediata ante cualquier eventualidad."
+    }
+  },
+  "footer": {
+    "company": "Empresa",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "careers": "Carreras",
+    "products": "Productos",
+    "support": "Soporte",
+    "documentation": "Documentación",
+    "legal": "Legal",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "copyright": "© 2025 StarFilters. Todos los derechos reservados."
+  }
+}

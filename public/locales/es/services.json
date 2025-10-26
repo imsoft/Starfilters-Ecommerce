@@ -1,0 +1,29 @@
+{
+  "seo": {
+    "title": "Servicios de Filtración Industrial y Mantenimiento | StarFilters",
+    "description": "Servicios profesionales de instalación, mantenimiento y consultoría en sistemas de filtración industrial. Soporte técnico especializado y planes de mantenimiento preventivo en México."
+  },
+  "hero": {
+    "badge": "Servicios Profesionales",
+    "title": "Todo lo que necesitas para mantener tu sistema de filtración",
+    "description": "Desde la instalación inicial hasta el mantenimiento continuo, StarFilters ofrece servicios integrales para garantizar el óptimo funcionamiento de tus sistemas de filtración y cuartos limpios. Nuestro equipo técnico especializado está disponible para apoyarte en cada etapa."
+  },
+  "features": {
+    "installation": {
+      "title": "Instalación Profesional",
+      "description": "Instalación completa de sistemas de filtración y cuartos limpios con técnicos certificados. Puesta en marcha garantizada y capacitación de personal incluida."
+    },
+    "certification": {
+      "title": "Certificación y Validación",
+      "description": "Pruebas de certificación ISO 14644, validación de flujo de aire, conteo de partículas y emisión de documentación oficial para cumplimiento normativo."
+    },
+    "maintenance": {
+      "title": "Mantenimiento Preventivo",
+      "description": "Programas de mantenimiento preventivo personalizados. Cambio de filtros, inspecciones periódicas y ajustes para prolongar la vida útil de tu equipo."
+    },
+    "consulting": {
+      "title": "Consultoría Técnica",
+      "description": "Asesoría especializada para diseño de sistemas, selección de equipos, optimización de procesos y resolución de problemas. Soporte técnico disponible 24/7."
+    }
+  }
+}

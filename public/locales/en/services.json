@@ -1,0 +1,29 @@
+{
+  "seo": {
+    "title": "Industrial Filtration & Maintenance Services | StarFilters",
+    "description": "Professional installation, maintenance, and consulting services for industrial filtration systems. Specialized technical support and preventive maintenance plans in Mexico."
+  },
+  "hero": {
+    "badge": "Professional Services",
+    "title": "Everything you need to maintain your filtration system",
+    "description": "From initial installation to continuous maintenance, StarFilters offers comprehensive services to ensure optimal operation of your filtration systems and cleanrooms. Our specialized technical team is available to support you at every stage."
+  },
+  "features": {
+    "installation": {
+      "title": "Professional Installation",
+      "description": "Complete installation of filtration systems and cleanrooms with certified technicians. Guaranteed commissioning and staff training included."
+    },
+    "certification": {
+      "title": "Certification and Validation",
+      "description": "ISO 14644 certification testing, airflow validation, particle counting, and issuance of official documentation for regulatory compliance."
+    },
+    "maintenance": {
+      "title": "Preventive Maintenance",
+      "description": "Customized preventive maintenance programs. Filter changes, periodic inspections, and adjustments to extend your equipment's lifespan."
+    },
+    "consulting": {
+      "title": "Technical Consulting",
+      "description": "Specialized advice for system design, equipment selection, process optimization, and problem solving. 24/7 technical support available."
+    }
+  }
+}
