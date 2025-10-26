@@ -1,5 +1,8 @@
 ---
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
 
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <footer class="bg-background">
@@ -12,7 +15,7 @@
           class="h-20 w-auto"
         />
         <p class="text-sm/6 text-balance text-muted-foreground">
-          Soluciones integrales en filtración para aire y líquidos. Calidad garantizada para tu tranquilidad.
+          {t('footer.tagline')}
         </p>
         <div class="flex gap-x-6">
           <a href="#" class="text-muted-foreground hover:text-foreground">
@@ -89,51 +92,51 @@
       <div class="mt-16 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
         <div class="md:grid md:grid-cols-2 md:gap-8">
           <div>
-            <h3 class="text-sm/6 font-semibold text-foreground">Solutions</h3>
+            <h3 class="text-sm/6 font-semibold text-foreground">{t('footer.solutions')}</h3>
             <ul role="list" class="mt-6 space-y-4">
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Marketing</a
+                  >{t('footer.solutions.hepa')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Analytics</a
+                  >{t('footer.solutions.cleanrooms')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Automation</a
+                  >{t('footer.solutions.industrial')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Commerce</a
+                  >{t('footer.solutions.purification')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Insights</a
+                  >{t('footer.solutions.custom')}</a
                 >
               </li>
             </ul>
           </div>
           <div class="mt-10 md:mt-0">
-            <h3 class="text-sm/6 font-semibold text-foreground">Support</h3>
+            <h3 class="text-sm/6 font-semibold text-foreground">{t('footer.support')}</h3>
             <ul role="list" class="mt-6 space-y-4">
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Submit ticket</a
+                  >{t('footer.support.contact')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Documentation</a
+                  >{t('footer.support.documentation')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Guides</a
+                  >{t('footer.support.guides')}</a
                 >
               </li>
             </ul>
@@ -141,46 +144,46 @@
         </div>
         <div class="md:grid md:grid-cols-2 md:gap-8">
           <div>
-            <h3 class="text-sm/6 font-semibold text-foreground">Company</h3>
+            <h3 class="text-sm/6 font-semibold text-foreground">{t('footer.company')}</h3>
             <ul role="list" class="mt-6 space-y-4">
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >About</a
+                  >{t('footer.about')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Blog</a
+                  >{t('footer.blog')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Jobs</a
+                  >{t('footer.careers')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Press</a
+                  >{t('footer.press')}</a
                 >
               </li>
             </ul>
           </div>
           <div class="mt-10 md:mt-0">
-            <h3 class="text-sm/6 font-semibold text-foreground">Legal</h3>
+            <h3 class="text-sm/6 font-semibold text-foreground">{t('footer.legal')}</h3>
             <ul role="list" class="mt-6 space-y-4">
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Terms of service</a
+                  >{t('footer.terms')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Privacy policy</a
+                  >{t('footer.privacy')}</a
                 >
               </li>
               <li>
                 <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >License</a
+                  >{t('footer.license')}</a
                 >
               </li>
             </ul>
@@ -190,7 +193,7 @@
     </div>
     <div class="mt-16 border-t border-border pt-8 sm:mt-20 lg:mt-24">
       <p class="text-sm/6 text-muted-foreground">
-        &copy; 2024 Your Company, Inc. All rights reserved.
+        {t('footer.copyright')}
       </p>
     </div>
   </div>

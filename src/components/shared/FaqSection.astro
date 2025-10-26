@@ -1,5 +1,9 @@
 ---
 import { Button } from "../ui/button";
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <div class="bg-background">
@@ -8,7 +12,7 @@ import { Button } from "../ui/button";
       <h2
         class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl"
       >
-        Frequently asked questions
+        {t('faq.title')}
       </h2>
       <dl class="mt-16 divide-y divide-border">
         <div class="py-6 first:pt-0 last:pb-0">
@@ -20,7 +24,7 @@ import { Button } from "../ui/button";
               className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
             >
               <span class="text-base/7 font-semibold"
-                >What&#039;s the best thing about Switzerland?</span
+                >{t('faq.q1')}</span
               >
               <span class="ml-6 flex h-7 items-center">
                 <svg
@@ -57,9 +61,7 @@ import { Button } from "../ui/button";
           <el-disclosure id="faq-0" class="contents">
             <dd class="mt-2 pr-12">
               <p class="text-base/7 text-muted-foreground">
-                I don&#039;t know, but the flag is a big plus. Lorem ipsum dolor
-                sit amet consectetur adipisicing elit. Quas cupiditate
-                laboriosam fugiat.
+                {t('faq.a1')}
               </p>
             </dd>
           </el-disclosure>
@@ -73,7 +75,7 @@ import { Button } from "../ui/button";
               className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
             >
               <span class="text-base/7 font-semibold"
-                >How do you make holy water?</span
+                >{t('faq.q2')}</span
               >
               <span class="ml-6 flex h-7 items-center">
                 <svg
@@ -110,10 +112,7 @@ import { Button } from "../ui/button";
           <el-disclosure id="faq-1" hidden class="contents">
             <dd class="mt-2 pr-12">
               <p class="text-base/7 text-muted-foreground">
-                You boil the hell out of it. Lorem ipsum dolor sit amet
-                consectetur adipisicing elit. Magnam aut tempora vitae odio
-                inventore fuga aliquam nostrum quod porro. Delectus quia facere
-                id sequi expedita natus.
+                {t('faq.a2')}
               </p>
             </dd>
           </el-disclosure>
@@ -127,7 +126,7 @@ import { Button } from "../ui/button";
               className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
             >
               <span class="text-base/7 font-semibold"
-                >What do you call someone with no body and no nose?</span
+                >{t('faq.q3')}</span
               >
               <span class="ml-6 flex h-7 items-center">
                 <svg
@@ -164,9 +163,7 @@ import { Button } from "../ui/button";
           <el-disclosure id="faq-2" hidden class="contents">
             <dd class="mt-2 pr-12">
               <p class="text-base/7 text-muted-foreground">
-                Nobody knows. Lorem ipsum dolor sit amet consectetur adipisicing
-                elit. Culpa, voluptas ipsa quia excepturi, quibusdam natus
-                exercitationem sapiente tempore labore voluptatem.
+                {t('faq.a3')}
               </p>
             </dd>
           </el-disclosure>
@@ -180,7 +177,7 @@ import { Button } from "../ui/button";
               className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
             >
               <span class="text-base/7 font-semibold"
-                >Why do you never see elephants hiding in trees?</span
+                >{t('faq.q4')}</span
               >
               <span class="ml-6 flex h-7 items-center">
                 <svg
@@ -217,8 +214,7 @@ import { Button } from "../ui/button";
           <el-disclosure id="faq-3" hidden class="contents">
             <dd class="mt-2 pr-12">
               <p class="text-base/7 text-muted-foreground">
-                Because they&#039;re so good at it. Lorem ipsum dolor sit amet
-                consectetur adipisicing elit. Quas cupiditate laboriosam fugiat.
+                {t('faq.a4')}
               </p>
             </dd>
           </el-disclosure>
@@ -232,7 +228,7 @@ import { Button } from "../ui/button";
               className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
             >
               <span class="text-base/7 font-semibold"
-                >Why can&#039;t you hear a pterodactyl go to the bathroom?</span
+                >{t('faq.q5')}</span
               >
               <span class="ml-6 flex h-7 items-center">
                 <svg
@@ -269,11 +265,7 @@ import { Button } from "../ui/button";
           <el-disclosure id="faq-4" hidden class="contents">
             <dd class="mt-2 pr-12">
               <p class="text-base/7 text-muted-foreground">
-                Because the pee is silent. Lorem ipsum dolor sit amet,
-                consectetur adipisicing elit. Ipsam, quas voluptatibus ex culpa
-                ipsum, aspernatur blanditiis fugiat ullam magnam suscipit
-                deserunt illum natus facilis atque vero consequatur! Quisquam,
-                debitis error.
+                {t('faq.a5')}
               </p>
             </dd>
           </el-disclosure>
@@ -287,7 +279,7 @@ import { Button } from "../ui/button";
               className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
             >
               <span class="text-base/7 font-semibold"
-                >Why did the invisible man turn down the job offer?</span
+                >{t('faq.q6')}</span
               >
               <span class="ml-6 flex h-7 items-center">
                 <svg
@@ -324,10 +316,7 @@ import { Button } from "../ui/button";
           <el-disclosure id="faq-5" hidden class="contents">
             <dd class="mt-2 pr-12">
               <p class="text-base/7 text-muted-foreground">
-                He couldn&#039;t see himself doing it. Lorem ipsum dolor sit,
-                amet consectetur adipisicing elit. Eveniet perspiciatis officiis
-                corrupti tenetur. Temporibus ut voluptatibus, perferendis sed
-                unde rerum deserunt eius.
+                {t('faq.a6')}
               </p>
             </dd>
           </el-disclosure>
