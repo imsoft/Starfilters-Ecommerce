@@ -354,7 +354,7 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
   </div>
 
   <!-- Diálogo para cambiar estado -->
-  <dialog id="status-dialog" class="backdrop:bg-black/80 bg-background border border-border rounded-lg p-6 max-w-md">
+  <dialog id="status-dialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0;" class="backdrop:bg-black/80 bg-background border border-border rounded-lg p-6 max-w-md shadow-xl">
     <div class="space-y-4">
       <h2 class="text-lg font-semibold text-foreground">Cambiar Estado de Orden</h2>
       <p id="dialog-order-info" class="text-sm text-muted-foreground"></p>
