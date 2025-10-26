@@ -1,0 +1,467 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getProductByUuid, getProducts } from "@/lib/database";
+import type { Product } from "@/lib/database";
+import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
+
+// Get product UUID from URL
+const { id: uuid } = Astro.params;
+
+// Verify UUID is valid
+if (!uuid || typeof uuid !== 'string') {
+  return Astro.redirect('/en/filtros');
+}
+
+// Get product from database by UUID
+const product = await getProductByUuid(uuid);
+
+// If product doesn't exist, redirect
+if (!product) {
+  return Astro.redirect('/en/filtros');
+}
+
+// Get related products
+const relatedProducts = await getProducts(4, 0);
+const filteredRelated = relatedProducts.filter(p => p.uuid !== product.uuid).slice(0, 3);
+
+// Function to format price
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(price);
+};
+
+// Generate some example images (in the future these would come from database)
+const productImages = [
+  product.image_url || 'https://via.placeholder.com/600x600?text=Product',
+  'https://via.placeholder.com/600x600?text=View+2',
+  'https://via.placeholder.com/600x600?text=View+3',
+  'https://via.placeholder.com/600x600?text=View+4'
+];
+
+// Generate SEO data
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const productKeywords = generateProductKeywords(product);
+const productDescription = extractTextFromHTML(product.description || '', 160);
+const productSchema = generateProductSchema(product, siteUrl);
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Home', url: `${siteUrl}/en` },
+  { name: 'Products', url: `${siteUrl}/en/filtros` },
+  { name: product.name, url: `${siteUrl}/en/product/${product.uuid}` }
+]);
+---
+
+<WebsiteLayout
+  title={product.name}
+  seoTitle={`${product.name} - Buy at StarFilters`}
+  description={productDescription}
+  keywords={productKeywords}
+  ogImage={product.image_url}
+>
+  <SEO
+    slot="seo"
+    title={product.name}
+    description={productDescription}
+    ogType="product"
+    ogImage={product.image_url}
+    ogImageAlt={product.name}
+    keywords={productKeywords}
+    product={{
+      price: product.price,
+      currency: 'USD',
+      availability: product.stock > 0 ? 'in stock' : 'out of stock',
+      brand: 'StarFilters'
+    }}
+  />
+
+  <!-- Product Schema -->
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(productSchema)} />
+
+  <!-- Breadcrumb Schema -->
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  <div class="bg-background py-24">
+    <!-- Breadcrumb -->
+    <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+          <li>
+            <a href="/en" class="hover:text-foreground transition-colors">Home</a>
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li>
+            <a href="/en/filtros" class="hover:text-foreground transition-colors">Products</a>
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li class="text-foreground font-medium">{product.name}</li>
+        </ol>
+      </nav>
+    </div>
+
+    <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+      <div class="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8">
+        <!-- Image gallery -->
+        <div class="flex flex-col-reverse">
+          <!-- Image selector -->
+          <div class="mx-auto mt-6 hidden w-full max-w-2xl sm:block lg:max-w-none">
+            <div class="grid grid-cols-4 gap-6" id="image-thumbnails">
+              {productImages.map((image, index) => (
+                <button
+                  type="button"
+                  class={`relative flex cursor-pointer items-center justify-center rounded-md bg-background text-sm font-medium uppercase text-foreground hover:bg-muted focus:outline-none ${index === 0 ? 'ring-2 ring-primary' : ''}`}
+                  data-image-index={index}
+                  onclick={`showImage(${index})`}
+                >
+                  <span class="sr-only">View {index + 1}</span>
+                  <span class="absolute inset-0 overflow-hidden rounded-md">
+                    <img src={image} alt={`View ${index + 1} of ${product.name}`} class="h-full w-full object-cover object-center" />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <!-- Main image -->
+          <div class="aspect-h-1 aspect-w-1 w-full">
+            <img
+              id="main-image"
+              src={productImages[0]}
+              alt={product.name}
+              class="h-full w-full object-cover object-center sm:rounded-lg"
+            />
+          </div>
+        </div>
+
+        <!-- Product information -->
+        <div class="mt-10 px-4 sm:mt-16 sm:px-0 lg:mt-0">
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">
+            {product.name}
+          </h1>
+
+          <div class="mt-3">
+            <h2 class="sr-only">Product information</h2>
+            <p class="text-3xl tracking-tight text-foreground">
+              {formatPrice(product.price)}
+            </p>
+          </div>
+
+          <!-- Reviews (placeholder) -->
+          <div class="mt-3">
+            <h3 class="sr-only">Reviews</h3>
+            <div class="flex items-center">
+              <div class="flex items-center">
+                {[1,2,3,4,5].map(rating => (
+                  <svg
+                    class={`h-5 w-5 flex-shrink-0 ${rating <= 4 ? 'text-yellow-400' : 'text-gray-300'}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                ))}
+              </div>
+              <p class="sr-only">4 out of 5 stars</p>
+              <a href="#reviews" class="ml-3 text-sm font-medium text-primary hover:text-primary/90">
+                117 reviews
+              </a>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="sr-only">Description</h3>
+            <div class="space-y-6 text-base text-muted-foreground">
+              <p>{product.description}</p>
+            </div>
+          </div>
+
+          <form class="mt-6">
+            <!-- Availability -->
+            <div class="mt-10 flex">
+              {product.stock > 0 ? (
+                <p class="flex items-center text-sm text-green-600">
+                  <svg
+                    class="mr-2 h-5 w-5 flex-shrink-0"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                  In stock ({product.stock} available)
+                </p>
+              ) : (
+                <p class="flex items-center text-sm text-red-600">
+                  <svg
+                    class="mr-2 h-5 w-5 flex-shrink-0"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                  Out of stock
+                </p>
+              )}
+            </div>
+
+            <!-- Quantity -->
+            <div class="mt-6">
+              <div class="flex items-center">
+                <label for="quantity" class="text-sm font-medium text-foreground mr-4">
+                  Quantity:
+                </label>
+                <select
+                  id="quantity"
+                  name="quantity"
+                  class="rounded-md bg-background py-1.5 pr-8 pl-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                >
+                  {Array.from({ length: Math.min(product.stock, 10) }, (_, i) => i + 1).map(num => (
+                    <option value={num}>{num}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="mt-10 flex">
+              {product.stock > 0 ? (
+                <button
+                  type="button"
+                  id="add-to-cart-btn"
+                  class="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden sm:w-full transition-colors"
+                  onclick={`addToCartFromProduct('${product.uuid}', '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
+                >
+                  Add to Cart
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  class="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-gray-300 px-8 py-3 text-base font-medium text-gray-500 cursor-not-allowed sm:w-full"
+                >
+                  Not Available
+                </button>
+              )}
+
+              <button
+                type="button"
+                class="ml-4 flex items-center justify-center rounded-md px-3 py-3 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  aria-hidden="true"
+                  class="size-6 shrink-0"
+                >
+                  <path
+                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+                <span class="sr-only">Add to favorites</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Product details -->
+          <section aria-labelledby="details-heading" class="mt-12">
+            <h2 id="details-heading" class="text-lg font-medium text-foreground">
+              Product Details
+            </h2>
+
+            <div class="mt-4 space-y-6">
+              <div>
+                <h3 class="text-sm font-medium text-foreground">Category</h3>
+                <p class="mt-2 text-sm text-muted-foreground">{product.category}</p>
+              </div>
+
+              {product.description && (
+                <div>
+                  <h3 class="text-sm font-medium text-foreground">Description</h3>
+                  <div class="mt-2 prose prose-sm text-muted-foreground">
+                    <p>{product.description}</p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 class="text-sm font-medium text-foreground">Features</h3>
+                <div class="mt-2">
+                  <ul class="list-disc space-y-2 pl-4 text-sm text-muted-foreground">
+                    <li>High quality and durability</li>
+                    <li>Easy installation</li>
+                    <li>1 year warranty</li>
+                    <li>Free shipping on orders over $500</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Related products -->
+      {filteredRelated.length > 0 && (
+        <section aria-labelledby="related-heading" class="mt-24">
+          <h2 id="related-heading" class="text-lg font-medium text-foreground">
+            Related Products
+          </h2>
+
+          <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
+            {filteredRelated.map((relatedProduct) => (
+              <div class="group relative flex flex-col">
+                <a href={`/en/product/${relatedProduct.uuid}`} class="block flex-shrink-0">
+                  <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
+                    <img
+                      src={relatedProduct.image_url || 'https://via.placeholder.com/300x300?text=Product'}
+                      alt={relatedProduct.name}
+                      class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
+                    />
+                  </div>
+                </a>
+                <div class="mt-4 flex justify-between">
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-sm text-foreground line-clamp-2 min-h-[2.5rem]">
+                      <a href={`/en/product/${relatedProduct.uuid}`} class="hover:text-primary transition-colors">
+                        {relatedProduct.name}
+                      </a>
+                    </h3>
+                    <p class="mt-1 text-sm text-muted-foreground">{relatedProduct.category}</p>
+                  </div>
+                  <p class="text-sm font-medium text-foreground ml-2 flex-shrink-0">
+                    {formatPrice(relatedProduct.price)}
+                  </p>
+                </div>
+                <div class="mt-auto pt-3">
+                  <button
+                    type="button"
+                    class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.image_url || ''}', '${relatedProduct.category || ''}')`}
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  </div>
+</WebsiteLayout>
+
+<script>
+  // Image gallery functions
+  function showImage(index: number): void {
+    const mainImage = document.getElementById('main-image') as HTMLImageElement;
+    const thumbnails = document.querySelectorAll('[data-image-index]');
+
+    if (mainImage) {
+      const images = [
+        `${(window as any).productImages?.[0] || 'https://via.placeholder.com/600x600?text=Product'}`,
+        'https://via.placeholder.com/600x600?text=View+2',
+        'https://via.placeholder.com/600x600?text=View+3',
+        'https://via.placeholder.com/600x600?text=View+4'
+      ];
+      mainImage.src = images[index] || images[0];
+    }
+
+    // Update active state of thumbnails
+    thumbnails.forEach((thumb, i) => {
+      if (i === index) {
+        thumb.classList.add('ring-2', 'ring-primary');
+      } else {
+        thumb.classList.remove('ring-2', 'ring-primary');
+      }
+    });
+  }
+
+  // Cart functions
+  function addToCartFromProduct(uuid: string, name: string, price: number, image_url: string, category: string): void {
+    const quantitySelect = document.getElementById('quantity') as HTMLSelectElement;
+    const quantity = parseInt(quantitySelect?.value || '1');
+
+    // Get current cart
+    const cartData = localStorage.getItem('starfilters_cart');
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
+
+    // Check if product already exists
+    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
+
+    if (existingItemIndex >= 0) {
+      cart.items[existingItemIndex].quantity += quantity;
+    } else {
+      cart.items.push({
+        uuid,
+        name,
+        price,
+        quantity,
+        image_url,
+        category
+      });
+    }
+
+    // Recalculate totals
+    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
+
+    // Save to localStorage
+    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
+
+    // Show notification
+    showNotification(`${name} added to cart (${quantity})`);
+
+    // Trigger event to update navbar if it has a counter
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
+  }
+
+  function showNotification(message: string): void {
+    // Create temporary notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
+    notification.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>${message}</span>
+      </div>
+    `;
+    document.body.appendChild(notification);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+
+  // Make functions global
+  (window as any).showImage = showImage;
+  (window as any).addToCartFromProduct = addToCartFromProduct;
+</script>
