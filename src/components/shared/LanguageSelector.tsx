@@ -22,21 +22,32 @@ export default function LanguageSelector() {
       } else if (currentPath === '/' || currentPath === '') {
         newPath = '/en';
       } else {
+        // Map Spanish routes to English routes
         const routeTranslations: { [key: string]: string } = {
-          '/cuartos-limpios': '/en/cuartos-limpios',
-          '/servicios': '/en/servicios',
-          '/services': '/en/servicios',
-          '/filtros': '/en/filtros',
+          '/cuartos-limpios': '/en/cleanrooms',
+          '/servicios': '/en/services',
+          '/filtros': '/en/filters',
           '/blog': '/en/blog',
-          '/carrito': '/en/carrito',
+          '/carrito': '/en/cart',
           '/checkout': '/en/checkout',
-          '/perfil': '/en/perfil',
+          '/perfil': '/en/profile',
         };
         newPath = routeTranslations[currentPath] || `/en${currentPath}`;
       }
     } else {
       if (currentPath.startsWith('/en/')) {
-        newPath = currentPath.replace('/en', '') || '/';
+        // Map English routes back to Spanish routes
+        const reverseRouteTranslations: { [key: string]: string } = {
+          '/en/cleanrooms': '/cuartos-limpios',
+          '/en/services': '/servicios',
+          '/en/filters': '/filtros',
+          '/en/cart': '/carrito',
+          '/en/checkout': '/checkout',
+          '/en/profile': '/perfil',
+          '/en/blog': '/blog',
+          '/en': '/',
+        };
+        newPath = reverseRouteTranslations[currentPath] || currentPath.replace('/en', '') || '/';
       } else {
         newPath = currentPath;
       }

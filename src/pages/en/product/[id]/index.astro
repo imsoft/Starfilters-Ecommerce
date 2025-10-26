@@ -48,7 +48,7 @@ const productDescription = extractTextFromHTML(product.description || '', 160);
 const productSchema = generateProductSchema(product, siteUrl);
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: `${siteUrl}/en` },
-  { name: 'Products', url: `${siteUrl}/en/filtros` },
+  { name: 'Products', url: `${siteUrl}/en/filters` },
   { name: product.name, url: `${siteUrl}/en/product/${product.uuid}` }
 ]);
 ---
@@ -95,7 +95,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             </svg>
           </li>
           <li>
-            <a href="/en/filtros" class="hover:text-foreground transition-colors">Products</a>
+            <a href="/en/filters" class="hover:text-foreground transition-colors">Products</a>
           </li>
           <li>
             <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">

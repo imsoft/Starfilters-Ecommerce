@@ -22,7 +22,7 @@ const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: `${siteUrl}/en` },
-  { name: 'Products', url: `${siteUrl}/en/filtros` }
+  { name: 'Products', url: `${siteUrl}/en/filters` }
 ]);
 ---
 
