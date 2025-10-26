@@ -3,6 +3,7 @@ import { verifyWebhookSignature, STRIPE_CONFIG } from '@/lib/stripe';
 import { clearCart } from '@/lib/cart';
 import { createOrder, createOrderItem } from '@/lib/database';
 import { query } from '@/config/database';
+import { sendEmail, createOrderConfirmationEmail } from '@/lib/email';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -98,8 +99,42 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       email: metadata.customer_email
     });
 
-    // TODO: Enviar email de confirmación
-    // await sendOrderConfirmationEmail(paymentIntent, orderId);
+    // 4. Enviar email de confirmación
+    if (metadata.cart_items) {
+      const items = JSON.parse(metadata.cart_items);
+      const orderDate = new Date().toLocaleDateString('es-MX', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      const emailData = createOrderConfirmationEmail(
+        metadata.customer_name,
+        orderNumber,
+        orderDate,
+        paymentIntent.amount / 100,
+        items.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        metadata.shipping_address
+      );
+      
+      emailData.to = metadata.customer_email;
+      
+      const emailSent = await sendEmail(emailData);
+      
+      if (emailSent) {
+        console.log('✅ Email de confirmación enviado');
+      } else {
+        console.log('⚠️ Error al enviar email de confirmación');
+      }
+    }
 
   } catch (error) {
     console.error('Error handling payment succeeded:', error);
