@@ -172,6 +172,58 @@ const getStatusText = (status: string) => {
         </div>
       )}
 
+      <!-- Filtros y búsqueda -->
+      {orders.length > 0 && (
+        <div class="mb-8 rounded-lg border border-border bg-card p-4">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <!-- Búsqueda -->
+            <div class="relative flex-1 max-w-md">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <input
+                type="text"
+                id="search-orders"
+                placeholder="Buscar por número de pedido..."
+                class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            <!-- Filtro por estado -->
+            <select
+              id="filter-status"
+              class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="pending">Pendiente</option>
+              <option value="processing">Procesando</option>
+              <option value="shipped">Enviado</option>
+              <option value="delivered">Entregado</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+
+            <!-- Filtro por fecha -->
+            <select
+              id="filter-date"
+              class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="all">Todas las fechas</option>
+              <option value="week">Última semana</option>
+              <option value="month">Último mes</option>
+              <option value="3months">Últimos 3 meses</option>
+              <option value="year">Último año</option>
+            </select>
+
+            <!-- Contador de resultados -->
+            <div class="text-sm text-muted-foreground">
+              Mostrando <span id="filter-count" class="font-semibold text-foreground">{orders.length}</span> de {orders.length} pedidos
+            </div>
+          </div>
+        </div>
+      )}
+
       {orders.length === 0 ? (
         <!-- Estado vacío -->
         <div class="text-center py-12">
@@ -208,9 +260,14 @@ const getStatusText = (status: string) => {
         </div>
       ) : (
         <!-- Lista de pedidos -->
-        <div class="space-y-8">
+        <div id="orders-list" class="space-y-8">
           {orders.map((order: Order) => (
-            <div class="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+            <div 
+              class="order-card bg-card rounded-lg border border-border shadow-sm overflow-hidden"
+              data-order-number={order.order_number}
+              data-status={order.status}
+              data-date={order.created_at.toISOString()}
+            >
               <!-- Header del pedido -->
               <div class="bg-muted/50 px-6 py-4 border-b border-border">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -357,6 +414,82 @@ const getStatusText = (status: string) => {
 </WebsiteLayout>
 
 <script>
+  // Funcionalidad de filtrado y búsqueda
+  function filterOrders(): void {
+    const searchInput = document.getElementById('search-orders') as HTMLInputElement;
+    const statusFilter = document.getElementById('filter-status') as HTMLSelectElement;
+    const dateFilter = document.getElementById('filter-date') as HTMLSelectElement;
+    const ordersList = document.getElementById('orders-list');
+    const filterCount = document.getElementById('filter-count');
+    
+    if (!ordersList || !filterCount) return;
+    
+    const searchTerm = searchInput?.value.toLowerCase() || '';
+    const statusValue = statusFilter?.value || 'all';
+    const dateValue = dateFilter?.value || 'all';
+    
+    const orderCards = ordersList.querySelectorAll('.order-card');
+    let visibleCount = 0;
+    
+    orderCards.forEach((card) => {
+      const htmlCard = card as HTMLElement;
+      const orderNumber = htmlCard.dataset.orderNumber?.toLowerCase() || '';
+      const status = htmlCard.dataset.status || '';
+      const dateStr = htmlCard.dataset.date || '';
+      
+      // Filtro de búsqueda
+      const matchesSearch = !searchTerm || orderNumber.includes(searchTerm);
+      
+      // Filtro de estado
+      const matchesStatus = statusValue === 'all' || status === statusValue;
+      
+      // Filtro de fecha
+      let matchesDate = true;
+      if (dateValue !== 'all' && dateStr) {
+        const orderDate = new Date(dateStr);
+        const now = new Date();
+        const diffTime = now.getTime() - orderDate.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        
+        switch (dateValue) {
+          case 'week':
+            matchesDate = diffDays <= 7;
+            break;
+          case 'month':
+            matchesDate = diffDays <= 30;
+            break;
+          case '3months':
+            matchesDate = diffDays <= 90;
+            break;
+          case 'year':
+            matchesDate = diffDays <= 365;
+            break;
+        }
+      }
+      
+      if (matchesSearch && matchesStatus && matchesDate) {
+        htmlCard.style.display = '';
+        visibleCount++;
+      } else {
+        htmlCard.style.display = 'none';
+      }
+    });
+    
+    // Actualizar contador
+    filterCount.textContent = visibleCount.toString();
+  }
+  
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-orders');
+    const statusFilter = document.getElementById('filter-status');
+    const dateFilter = document.getElementById('filter-date');
+    
+    searchInput?.addEventListener('input', filterOrders);
+    statusFilter?.addEventListener('change', filterOrders);
+    dateFilter?.addEventListener('change', filterOrders);
+  });
+  
   // Diálogo de confirmación nativo
   let confirmCallback: (() => void) | null = null;
   
