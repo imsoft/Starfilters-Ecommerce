@@ -401,10 +401,38 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     });
   }
 
+  // Función para verificar stock en tiempo real
+  async function checkStock(uuid: string, quantity: number): Promise<boolean> {
+    try {
+      const response = await fetch(`/api/check-stock?uuid=${uuid}&quantity=${quantity}`);
+      const data = await response.json();
+      
+      if (!data.available) {
+        if (data.stock === 0) {
+          showErrorNotification('Este producto está agotado');
+        } else {
+          showErrorNotification(`Solo quedan ${data.stock} unidades disponibles`);
+        }
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error verificando stock:', error);
+      return true; // Continuar si hay error en la verificación
+    }
+  }
+
   // Funciones del carrito
-  function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): void {
+  async function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): Promise<void> {
     const quantitySelect = document.getElementById('quantity') as HTMLSelectElement;
     const quantity = parseInt(quantitySelect?.value || '1');
+
+    // Verificar stock en tiempo real
+    const stockAvailable = await checkStock(uuid, quantity);
+    if (!stockAvailable) {
+      return;
+    }
 
     // Obtener carrito actual
     const cartData = localStorage.getItem('starfilters_cart');
@@ -412,6 +440,16 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
     // Buscar si el producto ya existe
     const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
+
+    // Calcular la cantidad total que tendría en el carrito
+    const currentCartQuantity = existingItemIndex >= 0 ? cart.items[existingItemIndex].quantity : 0;
+    const newTotalQuantity = currentCartQuantity + quantity;
+
+    // Verificar stock para la cantidad total
+    const totalStockAvailable = await checkStock(uuid, newTotalQuantity);
+    if (!totalStockAvailable) {
+      return;
+    }
 
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += quantity;
@@ -460,6 +498,27 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       notification.style.opacity = '0';
       setTimeout(() => notification.remove(), 300);
     }, 3000);
+  }
+
+  function showErrorNotification(message: string): void {
+    // Crear notificación de error
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-20 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
+    notification.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        <span>${message}</span>
+      </div>
+    `;
+    document.body.appendChild(notification);
+
+    // Remover después de 4 segundos
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => notification.remove(), 300);
+    }, 4000);
   }
 
   // Hacer funciones globales
