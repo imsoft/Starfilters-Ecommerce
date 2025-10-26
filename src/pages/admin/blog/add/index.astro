@@ -135,7 +135,7 @@ const error = url.searchParams.get('error');
               for="title"
               class="block text-sm font-medium text-foreground mb-2"
             >
-              Título del artículo
+              Título del artículo (Español)
             </label>
             <input
               type="text"
@@ -149,10 +149,26 @@ const error = url.searchParams.get('error');
 
           <div>
             <label
+              for="title_en"
+              class="block text-sm font-medium text-foreground mb-2"
+            >
+              Article Title (English)
+            </label>
+            <input
+              type="text"
+              id="title_en"
+              name="title_en"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="E.g: Complete Guide to HEPA Filters"
+            />
+          </div>
+
+          <div>
+            <label
               for="slug"
               class="block text-sm font-medium text-foreground mb-2"
             >
-              URL del artículo (slug)
+              URL del artículo - Slug (Español)
             </label>
             <div class="flex">
               <span
@@ -176,10 +192,33 @@ const error = url.searchParams.get('error');
 
           <div>
             <label
+              for="slug_en"
+              class="block text-sm font-medium text-foreground mb-2"
+            >
+              Article URL - Slug (English)
+            </label>
+            <div class="flex">
+              <span
+                class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm"
+              >
+                /en/blog/
+              </span>
+              <input
+                type="text"
+                id="slug_en"
+                name="slug_en"
+                class="flex-1 rounded-r-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="complete-guide-to-hepa-filters"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
               for="excerpt"
               class="block text-sm font-medium text-foreground mb-2"
             >
-              Resumen
+              Resumen (Español)
             </label>
             <textarea
               id="excerpt"
@@ -188,6 +227,22 @@ const error = url.searchParams.get('error');
               required
               class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="Breve descripción del artículo que aparecerá en la lista del blog..."
+            ></textarea>
+          </div>
+
+          <div>
+            <label
+              for="excerpt_en"
+              class="block text-sm font-medium text-foreground mb-2"
+            >
+              Excerpt (English)
+            </label>
+            <textarea
+              id="excerpt_en"
+              name="excerpt_en"
+              rows="3"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Brief description of the article that will appear in the blog list..."
             ></textarea>
           </div>
         </div>
@@ -199,11 +254,11 @@ const error = url.searchParams.get('error');
 
         <div class="space-y-4">
           <div>
-            <label
+                          <label
               for="content"
               class="block text-sm font-medium text-foreground mb-2"
             >
-              Contenido del artículo
+              Contenido del artículo (Español)
             </label>
             <div class="border border-border rounded-md">
               <!-- Toolbar del editor -->
@@ -334,6 +389,67 @@ Puedes usar Markdown para formatear el texto:
               ></textarea>
             </div>
           </div>
+
+          <!-- Contenido en inglés -->
+          <div>
+            <label
+              for="content_en"
+              class="block text-sm font-medium text-foreground mb-2"
+            >
+              Article Content (English)
+            </label>
+            <div class="border border-border rounded-md">
+              <!-- Toolbar del editor -->
+              <div class="border-b border-border p-3 bg-muted">
+                <div class="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-border text-foreground hover:bg-muted"
+                  >
+                    <svg
+                      class="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </Button>
+                </div>
+              </div>
+
+              <!-- Área de contenido -->
+              <textarea
+                id="content_en"
+                name="content_en"
+                rows="15"
+                class="w-full rounded-b-md border-0 bg-background px-3 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 resize-none"
+                placeholder="Write the content of your article here...
+
+You can use Markdown to format the text:
+
+# Main Title
+## Subtitle
+**Bold text**
+*Italic text*
+
+- List of items
+- Another item
+
+1. Numbered list
+2. Second item
+
+[Link](https://example.com)
+
+![Image](https://example.com/image.jpg)"
+              ></textarea>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -459,7 +575,7 @@ Puedes usar Markdown para formatear el texto:
               for="meta-title"
               class="block text-sm font-medium text-foreground mb-2"
             >
-              Meta Título
+              Meta Título (Español)
             </label>
             <input
               type="text"
@@ -476,10 +592,30 @@ Puedes usar Markdown para formatear el texto:
 
           <div>
             <label
+              for="meta-title_en"
+              class="block text-sm font-medium text-foreground mb-2"
+            >
+              Meta Title (English)
+            </label>
+            <input
+              type="text"
+              id="meta-title_en"
+              name="meta-title_en"
+              maxlength="60"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="SEO-optimized title"
+            />
+            <p class="mt-1 text-sm text-muted-foreground">
+              Maximum 60 characters
+            </p>
+          </div>
+
+          <div>
+            <label
               for="meta-description"
               class="block text-sm font-medium text-foreground mb-2"
             >
-              Meta Descripción
+              Meta Descripción (Español)
             </label>
             <textarea
               id="meta-description"
@@ -493,6 +629,26 @@ Puedes usar Markdown para formatear el texto:
               Máximo 160 caracteres. Actual: <span id="meta-description-count"
                 >0</span
               >
+            </p>
+          </div>
+
+          <div>
+            <label
+              for="meta-description_en"
+              class="block text-sm font-medium text-foreground mb-2"
+            >
+              Meta Description (English)
+            </label>
+            <textarea
+              id="meta-description_en"
+              name="meta-description_en"
+              rows="3"
+              maxlength="160"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Description that will appear in search results"
+            ></textarea>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Maximum 160 characters
             </p>
           </div>
         </div>
