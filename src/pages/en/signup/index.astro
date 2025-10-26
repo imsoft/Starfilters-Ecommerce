@@ -22,20 +22,20 @@ if (Astro.request.method === "POST") {
       address: formData.get("address") as string || undefined,
       city: formData.get("city") as string || undefined,
       postalCode: formData.get("postalCode") as string || undefined,
-      country: formData.get("country") as string || "México"
+      country: formData.get("country") as string || "United States"
     };
 
     // Validar datos
     const validation = validateRegisterData(registerData);
     if (!validation.isValid) {
       Astro.response.status = 400;
-      return Astro.redirect(`/signup?error=${encodeURIComponent(validation.errors.join(', '))}`);
+      return Astro.redirect(`/en/signup?error=${encodeURIComponent(validation.errors.join(', '))}`);
     }
 
     // Verificar si el usuario ya existe
     const existingUser = await getUserByEmail(registerData.email);
     if (existingUser) {
-      return Astro.redirect(`/signup?error=${encodeURIComponent(t('auth.register.emailExists'))}`);
+      return Astro.redirect(`/en/signup?error=${encodeURIComponent(t('auth.register.emailExists'))}`);
     }
 
     // Hash de la contraseña
@@ -61,11 +61,11 @@ if (Astro.request.method === "POST") {
     });
 
     // Redirigir a página de éxito
-    return Astro.redirect(`/signup/success?email=${encodeURIComponent(registerData.email)}`);
+    return Astro.redirect(`/en/signup/success?email=${encodeURIComponent(registerData.email)}`);
     
   } catch (error) {
     console.error('Error en registro:', error);
-    return Astro.redirect(`/signup?error=${encodeURIComponent('Error interno del servidor')}`);
+    return Astro.redirect(`/en/signup?error=${encodeURIComponent('Internal server error')}`);
   }
 }
 
@@ -177,7 +177,7 @@ const error = url.searchParams.get('error');
             />
           </div>
           <p class="mt-1 text-xs text-muted-foreground">
-            Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números
+            Minimum 8 characters, must include uppercase, lowercase and numbers
           </p>
         </div>
 
@@ -242,8 +242,8 @@ const error = url.searchParams.get('error');
               autocomplete="country"
               class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
             >
+              <option value="United States">United States</option>
               <option value="México">México</option>
-              <option value="Estados Unidos">Estados Unidos</option>
               <option value="Canadá">Canadá</option>
               <option value="España">España</option>
               <option value="Argentina">Argentina</option>
@@ -266,7 +266,7 @@ const error = url.searchParams.get('error');
 
       <p class="mt-10 text-center text-sm/6 text-muted-foreground">
         {t('auth.register.hasAccount')}
-        <a href="/login" class="font-semibold text-primary hover:text-primary/90">
+        <a href="/en/login" class="font-semibold text-primary hover:text-primary/90">
           {t('auth.register.signIn')}
         </a>
       </p>
