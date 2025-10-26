@@ -21,7 +21,7 @@ if (Astro.request.method === "POST") {
 
     // Validar email
     if (!email || !validateEmail(email)) {
-      error = "Por favor ingresa un email válido";
+      error = "Please enter a valid email address";
     } else {
       // Verificar si el usuario existe
       const user = await getUserByEmail(email);
@@ -36,7 +36,7 @@ if (Astro.request.method === "POST") {
         
         if (tokenSaved) {
           // Crear enlace de reset
-          const resetUrl = `${Astro.url.origin}/reset-password?token=${resetToken}`;
+          const resetUrl = `${Astro.url.origin}/en/reset-password?token=${resetToken}`;
           
           // Crear email
           const emailData = createPasswordResetEmail(user.first_name, resetUrl);
@@ -46,21 +46,21 @@ if (Astro.request.method === "POST") {
           const emailSent = await sendEmail(emailData);
           
           if (emailSent) {
-            success = `Se ha enviado un enlace de recuperación a ${email}. Revisa tu bandeja de entrada.`;
+            success = `A reset link has been sent to ${email}. Check your inbox.`;
           } else {
-            error = "Error al enviar el correo electrónico. Inténtalo de nuevo.";
+            error = "Error sending email. Please try again.";
           }
         } else {
-          error = "Error al procesar la solicitud. Inténtalo de nuevo.";
+          error = "Error processing request. Please try again.";
         }
       } else {
         // Por seguridad, no revelamos si el email existe o no
-        success = `Si el email ${email} está registrado, recibirás un enlace de recuperación.`;
+        success = `If the email ${email} is registered, you will receive a reset link.`;
       }
     }
   } catch (err) {
     console.error('Error en forgot password:', err);
-    error = "Error interno del servidor";
+    error = "Internal server error";
   }
 }
 ---
@@ -107,7 +107,7 @@ if (Astro.request.method === "POST") {
               required
               autocomplete="email"
               class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-              placeholder="tu@email.com"
+              placeholder="you@example.com"
             />
           </div>
         </div>
@@ -124,10 +124,10 @@ if (Astro.request.method === "POST") {
 
       <div class="mt-6 text-center">
         <a
-          href="/login"
+          href="/en/login"
           class="text-sm text-primary hover:text-primary/90 font-semibold"
         >
-          ← Volver al inicio de sesión
+          ← Back to sign in
         </a>
       </div>
     </div>

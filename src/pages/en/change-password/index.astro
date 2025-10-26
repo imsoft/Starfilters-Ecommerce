@@ -13,7 +13,7 @@ const t = useTranslations(lang);
 // Verificar autenticación
 const user = getAuthenticatedUser(Astro.cookies);
 if (!user) {
-  return Astro.redirect('/login?redirect=' + encodeURIComponent(Astro.url.pathname));
+  return Astro.redirect('/en/login?redirect=' + encodeURIComponent(Astro.url.pathname));
 }
 
 let error: string | null = null;
@@ -41,12 +41,12 @@ if (Astro.request.method === "POST") {
       if (updateSuccess) {
         success = t('auth.changePassword.success');
       } else {
-        error = 'Error al actualizar la contraseña';
+        error = 'Error updating password';
       }
     }
   } catch (err) {
     console.error('Error en cambio de contraseña:', err);
-    error = 'Error interno del servidor';
+    error = 'Internal server error';
   }
 }
 ---
@@ -63,7 +63,7 @@ if (Astro.request.method === "POST") {
         {t('auth.changePassword.title')}
       </h2>
       <p class="mt-2 text-center text-sm text-muted-foreground">
-        Actualiza tu contraseña para mantener tu cuenta segura
+        Update your password to keep your account secure
       </p>
     </div>
 
@@ -95,7 +95,7 @@ if (Astro.request.method === "POST") {
             />
           </div>
           <p class="mt-1 text-xs text-muted-foreground">
-            Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números
+            Minimum 8 characters, must include uppercase, lowercase and numbers
           </p>
         </div>
 
@@ -122,17 +122,17 @@ if (Astro.request.method === "POST") {
             {t('auth.changePassword.submit')}
           </button>
           <a
-            href="/"
+            href="/en"
             class="flex w-full justify-center rounded-md bg-secondary px-3 py-1.5 text-sm/6 font-semibold text-secondary-foreground shadow-xs hover:bg-secondary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary"
           >
-            Cancelar
+            Cancel
           </a>
         </div>
       </form>
 
       <p class="mt-6 text-center text-sm/6 text-muted-foreground">
-        <a href="/" class="font-semibold text-primary hover:text-primary/90">
-          ← Volver al inicio
+        <a href="/en" class="font-semibold text-primary hover:text-primary/90">
+          ← Back to home
         </a>
       </p>
     </div>
