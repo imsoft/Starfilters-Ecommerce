@@ -5,6 +5,7 @@ import CartIcon from "../ui/CartIcon.astro";
 import LanguageSelector from "./LanguageSelector";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { isUserAdmin } from '@/lib/database';
 
 // Obtener idioma actual
 const lang = getLangFromUrl(Astro.url);
@@ -12,6 +13,12 @@ const t = useTranslations(lang);
 
 // Obtener usuario autenticado
 const user = getAuthenticatedUser(Astro.cookies);
+
+// Verificar si es admin
+let userIsAdmin = false;
+if (user) {
+  userIsAdmin = await isUserAdmin(user.id);
+}
 ---
 
 <header class="absolute inset-x-0 top-0 z-50">
@@ -199,6 +206,17 @@ const user = getAuthenticatedUser(Astro.cookies);
                       class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
                       >{t('nav.cart')}</a
                     >
+                    {userIsAdmin && (
+                      <a
+                        href="/admin/dashboard"
+                        class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted flex items-center gap-2"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Dashboard Admin
+                      </a>
+                    )}
                     <a
                       href="/logout"
                       class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
