@@ -76,12 +76,24 @@ function getStatusText(status: string): string {
 
 // Manejar actualización de estado
 if (Astro.request.method === 'POST') {
+  console.log('📝 POST recibido para actualizar estado');
   const formData = await Astro.request.formData();
   const newStatus = formData.get('status') as string;
   
+  console.log('📋 Nuevo estado:', newStatus, 'Estado actual:', order.status);
+  
   if (newStatus && newStatus !== order.status) {
-    await updateOrderStatus(order.id, newStatus);
-    return Astro.redirect(`/admin/orders/${id}?success=status_updated`);
+    console.log('✅ Actualizando estado...');
+    const success = await updateOrderStatus(order.id, newStatus);
+    console.log('✅ Resultado:', success);
+    
+    if (success) {
+      return Astro.redirect(`/admin/orders/${id}?success=status_updated`);
+    } else {
+      console.error('❌ Error al actualizar estado');
+    }
+  } else {
+    console.log('⚠️ No se actualizó el estado (mismo estado o estado inválido)');
   }
 }
 ---
