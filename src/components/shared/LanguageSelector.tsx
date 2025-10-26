@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function LanguageSelector() {
   const [currentLang, setCurrentLang] = useState('es');
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -10,6 +12,18 @@ export default function LanguageSelector() {
     } else {
       setCurrentLang('es');
     }
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const switchLanguage = (lang: string) => {
@@ -32,7 +46,19 @@ export default function LanguageSelector() {
           '/checkout': '/en/checkout',
           '/perfil': '/en/profile',
         };
-        newPath = routeTranslations[currentPath] || `/en${currentPath}`;
+
+        // Check for exact match first
+        if (routeTranslations[currentPath]) {
+          newPath = routeTranslations[currentPath];
+        }
+        // Handle dynamic routes like /blog/[uuid] or /product/[id]
+        else if (currentPath.startsWith('/blog/')) {
+          newPath = currentPath.replace('/blog/', '/en/blog/');
+        } else if (currentPath.startsWith('/product/')) {
+          newPath = currentPath.replace('/product/', '/en/product/');
+        } else {
+          newPath = `/en${currentPath}`;
+        }
       }
     } else {
       if (currentPath.startsWith('/en/')) {
@@ -47,7 +73,19 @@ export default function LanguageSelector() {
           '/en/blog': '/blog',
           '/en': '/',
         };
-        newPath = reverseRouteTranslations[currentPath] || currentPath.replace('/en', '') || '/';
+
+        // Check for exact match first
+        if (reverseRouteTranslations[currentPath]) {
+          newPath = reverseRouteTranslations[currentPath];
+        }
+        // Handle dynamic routes like /en/blog/[uuid] or /en/product/[id]
+        else if (currentPath.startsWith('/en/blog/')) {
+          newPath = currentPath.replace('/en/blog/', '/blog/');
+        } else if (currentPath.startsWith('/en/product/')) {
+          newPath = currentPath.replace('/en/product/', '/product/');
+        } else {
+          newPath = currentPath.replace('/en', '') || '/';
+        }
       } else {
         newPath = currentPath;
       }
@@ -56,30 +94,71 @@ export default function LanguageSelector() {
     window.location.href = newPath;
   };
 
+  const languages = [
+    { code: 'es', name: 'Español', flag: '🇪🇸' },
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+  ];
+
+  const currentLanguage = languages.find(lang => lang.code === currentLang) || languages[0];
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => switchLanguage('es')}
-        className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-          currentLang === 'es'
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-        }`}
-        aria-label="Cambiar a Español"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
+        aria-label="Select language"
+        aria-expanded={isOpen}
       >
-        ES
+        <span className="text-lg">{currentLanguage.flag}</span>
+        <span className="hidden sm:inline">{currentLanguage.name}</span>
+        <span className="sm:hidden">{currentLanguage.code.toUpperCase()}</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
       </button>
-      <button
-        onClick={() => switchLanguage('en')}
-        className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-          currentLang === 'en'
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-        }`}
-        aria-label="Switch to English"
-      >
-        EN
-      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-background border border-border z-50">
+          <div className="py-1" role="menu">
+            {languages.map((language) => (
+              <button
+                key={language.code}
+                onClick={() => {
+                  switchLanguage(language.code);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted transition-colors ${
+                  currentLang === language.code
+                    ? 'bg-muted text-foreground font-medium'
+                    : 'text-muted-foreground'
+                }`}
+                role="menuitem"
+              >
+                <span className="text-lg">{language.flag}</span>
+                <span>{language.name}</span>
+                {currentLang === language.code && (
+                  <svg
+                    className="ml-auto w-4 h-4 text-primary"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
