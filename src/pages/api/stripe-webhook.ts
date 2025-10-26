@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import { verifyWebhookSignature, STRIPE_CONFIG } from '@/lib/stripe';
 import { clearCart } from '@/lib/cart';
+import { createOrder, createOrderItem } from '@/lib/database';
+import { query } from '@/config/database';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -50,30 +52,58 @@ export const POST: APIRoute = async ({ request }) => {
 async function handlePaymentSucceeded(paymentIntent: any) {
   try {
     console.log('Payment succeeded:', paymentIntent.id);
+    const metadata = paymentIntent.metadata;
     
-    // Aquí puedes:
-    // 1. Guardar la orden en la base de datos
-    // 2. Enviar email de confirmación
-    // 3. Actualizar inventario
-    // 4. Limpiar carrito del usuario
-    
-    // Por ahora, solo logueamos el evento
-    console.log('Payment details:', {
-      id: paymentIntent.id,
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-      customer_email: paymentIntent.receipt_email,
-      metadata: paymentIntent.metadata,
+    // 1. Crear la orden en la base de datos
+    const orderId = await createOrder({
+      order_number: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      customer_name: metadata.customer_name,
+      customer_email: metadata.customer_email,
+      total_amount: paymentIntent.amount / 100, // Convertir de centavos a dólares
+      status: 'processing',
+      shipping_address: metadata.shipping_address,
+      user_id: metadata.user_id ? parseInt(metadata.user_id) : null
     });
 
-    // TODO: Implementar lógica de guardado de orden
-    // await saveOrderToDatabase(paymentIntent);
-    
+    console.log('✅ Orden creada con ID:', orderId);
+
+    // 2. Guardar items de la orden
+    if (metadata.cart_items) {
+      const items = JSON.parse(metadata.cart_items);
+      
+      for (const item of items) {
+        await createOrderItem({
+          order_id: orderId,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.price,
+          product_name: item.name,
+          image_url: item.image_url
+        });
+
+        // 3. Actualizar inventario
+        await query(
+          'UPDATE products SET stock = stock - ? WHERE id = ?',
+          [item.quantity, item.product_id]
+        );
+      }
+
+      console.log('✅ Items de orden guardados y inventario actualizado');
+    }
+
+    console.log('✅ Orden procesada correctamente:', {
+      order_id: orderId,
+      payment_intent_id: paymentIntent.id,
+      amount: paymentIntent.amount / 100,
+      email: metadata.customer_email
+    });
+
     // TODO: Enviar email de confirmación
-    // await sendOrderConfirmationEmail(paymentIntent);
+    // await sendOrderConfirmationEmail(paymentIntent, orderId);
 
   } catch (error) {
     console.error('Error handling payment succeeded:', error);
+    throw error; // Re-throw para que Stripe intente de nuevo
   }
 }
 

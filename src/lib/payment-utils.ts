@@ -68,7 +68,8 @@ export const calculateOrderTotal = (
 // Crear Payment Intent para el checkout
 export const createCheckoutPaymentIntent = async (
   checkoutData: CheckoutData,
-  shippingMethod: 'standard' | 'express' = 'standard'
+  shippingMethod: 'standard' | 'express' = 'standard',
+  userId?: number
 ): Promise<{ client_secret: string; payment_intent_id: string; order_total: number }> => {
   try {
     // Obtener carrito actual
@@ -81,6 +82,18 @@ export const createCheckoutPaymentIntent = async (
     // Calcular totales
     const orderTotals = calculateOrderTotal(cart.items, shippingMethod);
 
+    // Serializar items del carrito para el metadata
+    const cartItemsJSON = JSON.stringify(
+      cart.items.map(item => ({
+        product_id: item.product_id,
+        uuid: item.uuid,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        image_url: item.image_url
+      }))
+    );
+
     // Crear metadata para el Payment Intent
     const metadata = {
       customer_email: checkoutData.email,
@@ -91,6 +104,8 @@ export const createCheckoutPaymentIntent = async (
       subtotal: orderTotals.subtotal.toString(),
       shipping_cost: orderTotals.shipping.toString(),
       tax_amount: orderTotals.tax.toString(),
+      ...(userId && { user_id: userId.toString() }),
+      cart_items: cartItemsJSON,
     };
 
     // Crear Payment Intent
