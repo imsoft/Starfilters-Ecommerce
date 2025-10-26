@@ -18,9 +18,12 @@ export interface Product {
   id: number;
   uuid: string;
   name: string;
+  name_en?: string;
   description: string;
+  description_en?: string;
   price: number;
   category: string;
+  category_en?: string;
   stock: number;
   image_url: string;
   status: 'active' | 'inactive' | 'draft';
@@ -33,17 +36,23 @@ export interface BlogPost {
   id: number;
   uuid: string;
   title: string;
+  title_en?: string;
   slug: string;
+  slug_en?: string;
   content: string;
+  content_en?: string;
   excerpt: string;
+  excerpt_en?: string;
   category: string;
   featured_image: string;
   author: string;
   status: 'published' | 'draft' | 'scheduled' | 'archived';
   meta_title: string;
+  meta_title_en?: string;
   meta_description: string;
+  meta_description_en?: string;
   tags: string;
-  publish_date: Date;
+  publish_date: Date | null;
   created_at: Date;
   updated_at: Date;
 }

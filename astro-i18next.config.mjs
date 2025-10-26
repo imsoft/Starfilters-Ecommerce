@@ -11,7 +11,13 @@ export default {
       "carrito": "cart",
       "checkout": "checkout",
       "perfil": "profile",
+      "cambiar-contraseña": "change-password",
+      "pedidos": "orders",
       "admin": "admin",
+      "login": "login",
+      "signup": "signup",
+      "forgot-password": "forgot-password",
+      "reset-password": "reset-password",
     }
   },
   showDefaultLocale: false,

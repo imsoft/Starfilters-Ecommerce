@@ -216,10 +216,15 @@ export function generateArticleSchema(post: {
   content: string;
   featured_image?: string;
   author?: string;
-  publish_date: Date;
-  updated_at: Date;
+  publish_date: Date | null;
+  updated_at: Date | null;
+  created_at?: Date;
   uuid: string;
 }, siteUrl: string) {
+  // Handle null dates
+  const publishDate = post.publish_date || post.created_at || new Date();
+  const updatedDate = post.updated_at || post.created_at || new Date();
+  
   return {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -238,8 +243,8 @@ export function generateArticleSchema(post: {
         "url": `${siteUrl}/logos/logo-starfilters.png`
       }
     },
-    "datePublished": post.publish_date.toISOString(),
-    "dateModified": post.updated_at.toISOString(),
+    "datePublished": new Date(publishDate).toISOString(),
+    "dateModified": new Date(updatedDate).toISOString(),
     "mainEntityOfPage": {
       "@type": "WebPage",
       "@id": `${siteUrl}/blog/${post.uuid}`

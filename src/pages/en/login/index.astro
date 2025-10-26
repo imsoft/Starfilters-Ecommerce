@@ -21,24 +21,24 @@ if (Astro.request.method === "POST") {
     // Validar datos
     const validation = validateLoginData(loginData);
     if (!validation.isValid) {
-      return Astro.redirect(`/login?error=${encodeURIComponent(validation.errors.join(', '))}`);
+      return Astro.redirect(`/en/login?error=${encodeURIComponent(validation.errors.join(', '))}`);
     }
 
     // Buscar usuario en la base de datos
     const user = await getUserByEmail(loginData.email);
     if (!user) {
-      return Astro.redirect(`/login?error=${encodeURIComponent(t('auth.login.error'))}`);
+      return Astro.redirect(`/en/login?error=${encodeURIComponent(t('auth.login.error'))}`);
     }
 
     // Verificar contraseña
     const isPasswordValid = await verifyPassword(loginData.password, user.password_hash);
     if (!isPasswordValid) {
-      return Astro.redirect(`/login?error=${encodeURIComponent(t('auth.login.error'))}`);
+      return Astro.redirect(`/en/login?error=${encodeURIComponent(t('auth.login.error'))}`);
     }
 
     // Verificar que el usuario esté activo
     if (user.status !== 'active') {
-      return Astro.redirect(`/login?error=${encodeURIComponent(t('auth.login.inactive'))}`);
+      return Astro.redirect(`/en/login?error=${encodeURIComponent(t('auth.login.inactive'))}`);
     }
 
     // Generar JWT
@@ -63,12 +63,12 @@ if (Astro.request.method === "POST") {
     });
 
     // Redirigir al dashboard o página principal
-    const redirectTo = Astro.url.searchParams.get('redirect') || '/';
+    const redirectTo = Astro.url.searchParams.get('redirect') || '/en';
     return Astro.redirect(redirectTo);
     
   } catch (error) {
     console.error('Error en login:', error);
-    return Astro.redirect(`/login?error=${encodeURIComponent('Error interno del servidor')}`);
+    return Astro.redirect(`/en/login?error=${encodeURIComponent('Internal server error')}`);
   }
 }
 
@@ -100,7 +100,7 @@ const message = url.searchParams.get('message');
       
       {message === 'sesion-cerrada' && (
         <div class="mb-4 rounded-md bg-green-50 p-4">
-          <div class="text-sm text-green-700">Sesión cerrada correctamente</div>
+          <div class="text-sm text-green-700">Session closed successfully</div>
         </div>
       )}
       
@@ -128,7 +128,7 @@ const message = url.searchParams.get('message');
             </label>
             <div class="text-sm">
               <a
-                href="/forgot-password"
+                href="/en/forgot-password"
                 class="font-semibold text-primary hover:text-primary/90"
               >
                 {t('auth.login.forgotPassword')}
@@ -157,7 +157,7 @@ const message = url.searchParams.get('message');
 
       <p class="mt-10 text-center text-sm/6 text-muted-foreground">
         {t('auth.login.noAccount')}
-        <a href="/signup" class="font-semibold text-primary hover:text-primary/90">
+        <a href="/en/signup" class="font-semibold text-primary hover:text-primary/90">
           {t('auth.login.createAccount')}
         </a>
       </p>

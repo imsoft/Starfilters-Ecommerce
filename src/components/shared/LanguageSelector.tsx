@@ -28,13 +28,13 @@ export default function LanguageSelector() {
 
   const switchLanguage = (lang: string) => {
     const currentPath = window.location.pathname;
-    let newPath: string;
+    let newPath: string = '';
 
     // Don't do anything if we're already in the target language
-    if (lang === 'en' && currentPath.startsWith('/en')) {
+    if (lang === 'en' && (currentPath.startsWith('/en') || currentPath === '/en')) {
       return;
     }
-    if (lang === 'es' && !currentPath.startsWith('/en')) {
+    if (lang === 'es' && !currentPath.startsWith('/en') && currentPath !== '/en') {
       return;
     }
 
@@ -52,6 +52,8 @@ export default function LanguageSelector() {
           '/carrito': '/en/cart',
           '/checkout': '/en/checkout',
           '/perfil': '/en/profile',
+          '/pedidos': '/en/orders',
+          '/cambiar-contraseña': '/en/change-password',
         };
 
         // Check for exact match first
@@ -69,7 +71,12 @@ export default function LanguageSelector() {
       }
     } else {
       // Converting from English to Spanish
-      if (currentPath.startsWith('/en/')) {
+      // Handle /en specifically
+      if (currentPath === '/en') {
+        newPath = '/';
+      }
+      // Handle /en/ routes
+      else if (currentPath.startsWith('/en/')) {
         // Map English routes back to Spanish routes
         const reverseRouteTranslations: { [key: string]: string } = {
           '/en/cleanrooms': '/cuartos-limpios',
@@ -79,7 +86,8 @@ export default function LanguageSelector() {
           '/en/checkout': '/checkout',
           '/en/profile': '/perfil',
           '/en/blog': '/blog',
-          '/en': '/',
+          '/en/orders': '/pedidos',
+          '/en/change-password': '/cambiar-contraseña',
         };
 
         // Check for exact match first
@@ -91,10 +99,8 @@ export default function LanguageSelector() {
           newPath = currentPath.replace('/en/blog/', '/blog/');
         } else if (currentPath.startsWith('/en/product/')) {
           newPath = currentPath.replace('/en/product/', '/product/');
-        } else if (currentPath === '/en') {
-          newPath = '/';
         } else {
-          // Remove /en prefix
+          // Remove /en prefix for other routes
           newPath = currentPath.replace(/^\/en/, '') || '/';
         }
       } else {
@@ -103,7 +109,13 @@ export default function LanguageSelector() {
       }
     }
 
-    console.log('Switching from', currentPath, 'to', newPath);
+    console.log('Switching from', currentPath, 'to', newPath, 'lang:', lang);
+    
+    if (!newPath) {
+      console.error('No path generated for', currentPath, 'lang:', lang);
+      return;
+    }
+    
     window.location.href = newPath;
   };
 
@@ -123,8 +135,6 @@ export default function LanguageSelector() {
         aria-expanded={isOpen}
       >
         <span className="text-lg">{currentLanguage.flag}</span>
-        <span className="hidden sm:inline">{currentLanguage.name}</span>
-        <span className="sm:hidden">{currentLanguage.code.toUpperCase()}</span>
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"

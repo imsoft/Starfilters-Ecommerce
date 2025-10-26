@@ -4,6 +4,11 @@ import UserDropdown from "../ui/UserDropdown.astro";
 import CartIcon from "../ui/CartIcon.astro";
 import LanguageSelector from "./LanguageSelector";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+// Obtener idioma actual
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 
 // Obtener usuario autenticado
 const user = getAuthenticatedUser(Astro.cookies);
@@ -14,14 +19,17 @@ const user = getAuthenticatedUser(Astro.cookies);
     <div class="px-6 pt-6 lg:max-w-2xl lg:pr-0 lg:pl-8">
       <nav
         aria-label="Global"
-        class="flex items-center justify-between lg:justify-start"
+        class="flex items-center justify-between"
       >
-        <a href="/" class="-m-1.5 p-1.5">
+        <a href={lang === 'en' ? '/en' : '/'} class="-m-1.5 p-1.5 flex-shrink-0 w-48">
           <span class="sr-only">Starfilters</span>
           <img
             src="/logos/logo-starfilters.png"
             alt="Starfilters"
-            class="h-16 w-auto"
+            class="h-14 w-auto object-contain"
+            loading="eager"
+            fetchpriority="high"
+            style="image-rendering: -webkit-optimize-contrast; height: 56px; width: auto;"
           />
         </a>
         <Button
@@ -46,27 +54,29 @@ const user = getAuthenticatedUser(Astro.cookies);
               stroke-linejoin="round"></path>
           </svg>
         </Button>
-        <div class="hidden lg:ml-12 lg:flex lg:gap-x-8 lg:items-center">
+        <div class="hidden lg:flex lg:flex-1 lg:justify-center lg:items-center lg:gap-x-8">
           <a
-            href="/filtros"
+            href={lang === 'en' ? '/en/filters' : '/filtros'}
             class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
-            >Filtros</a
+            >{t('nav.filters')}</a
           >
           <a
-            href="/cuartos-limpios"
+            href={lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios'}
             class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
-            >Cuartos Limpios</a
+            >{t('nav.cleanrooms')}</a
           >
           <a
-            href="/services"
+            href={lang === 'en' ? '/en/services' : '/servicios'}
             class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
-            >Servicios</a
+            >{t('nav.services')}</a
           >
           <a
-            href="/blog"
+            href={lang === 'en' ? '/en/blog' : '/blog'}
             class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
-            >Blog</a
+            >{t('nav.blog')}</a
           >
+        </div>
+        <div class="hidden lg:flex lg:items-center lg:gap-x-4 lg:w-48 lg:justify-end">
           <LanguageSelector client:load />
           {user ? (
             <>
@@ -75,9 +85,9 @@ const user = getAuthenticatedUser(Astro.cookies);
             </>
           ) : (
             <a
-              href="/login"
+              href={lang === 'en' ? '/en/login' : '/login'}
               class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
-              >Iniciar sesión</a
+              >{t('nav.login')}</a
             >
           )}
         </div>
@@ -91,12 +101,15 @@ const user = getAuthenticatedUser(Astro.cookies);
           class="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-background p-6 sm:max-w-sm sm:ring-1 sm:ring-border"
         >
           <div class="flex items-center justify-between">
-            <a href="/" class="-m-1.5 p-1.5">
+            <a href={lang === 'en' ? '/en' : '/'} class="-m-1.5 p-1.5">
               <span class="sr-only">Starfilters</span>
               <img
                 src="/logos/logo-starfilters.png"
                 alt="Starfilters"
-                class="h-16 w-auto"
+                class="h-14 w-auto object-contain"
+                loading="eager"
+                fetchpriority="high"
+                style="image-rendering: -webkit-optimize-contrast; height: 56px;"
               />
             </a>
             <Button
@@ -126,24 +139,24 @@ const user = getAuthenticatedUser(Astro.cookies);
             <div class="-my-6 divide-y divide-border">
               <div class="space-y-2 py-6">
                 <a
-                  href="/filtros"
+                  href={lang === 'en' ? '/en/filters' : '/filtros'}
                   class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >Filtros</a
+                  >{t('nav.filters')}</a
                 >
                 <a
-                  href="/cuartos-limpios"
+                  href={lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios'}
                   class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >Cuartos Limpios</a
+                  >{t('nav.cleanrooms')}</a
                 >
                 <a
-                  href="/services"
+                  href={lang === 'en' ? '/en/services' : '/servicios'}
                   class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >Servicios</a
+                  >{t('nav.services')}</a
                 >
                 <a
-                  href="/blog"
+                  href={lang === 'en' ? '/en/blog' : '/blog'}
                   class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >Blog</a
+                  >{t('nav.blog')}</a
                 >
               </div>
               <div class="py-6">
@@ -161,42 +174,42 @@ const user = getAuthenticatedUser(Astro.cookies);
                       </div>
                     </div>
                     <div class="-mx-3 block rounded-lg px-3 py-2">
-                      <div class="flex items-center gap-x-3">
+                      <a href={lang === 'en' ? '/en/cart' : '/carrito'} class="flex items-center gap-x-3">
                         <CartIcon />
-                        <span class="text-base/7 font-semibold text-foreground">Carrito de compras</span>
-                      </div>
+                        <span class="text-base/7 font-semibold text-foreground">{t('nav.cart')}</span>
+                      </a>
                     </div>
                     <a
-                      href="/profile"
+                      href={lang === 'en' ? '/en/profile' : '/perfil'}
                       class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                      >Mi Perfil</a
+                      >{t('nav.profile')}</a
                     >
                     <a
-                      href="/change-password"
+                      href={lang === 'en' ? '/en/change-password' : '/cambiar-contraseña'}
                       class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                      >Cambiar Contraseña</a
+                      >{t('nav.changePassword')}</a
                     >
                     <a
-                      href="/orders"
+                      href={lang === 'en' ? '/en/orders' : '/pedidos'}
                       class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                      >Mis Pedidos</a
+                      >{t('nav.myOrders')}</a
                     >
                     <a
-                      href="/cart"
+                      href={lang === 'en' ? '/en/cart' : '/carrito'}
                       class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                      >Carrito</a
+                      >{t('nav.cart')}</a
                     >
                     <a
                       href="/logout"
                       class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                      >Cerrar Sesión</a
+                      >{t('nav.logout')}</a
                     >
                   </div>
                 ) : (
                   <a
-                    href="/login"
+                    href={lang === 'en' ? '/en/login' : '/login'}
                     class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-muted"
-                    >Iniciar sesión</a
+                    >{t('nav.login')}</a
                   >
                 )}
               </div>

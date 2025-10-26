@@ -21,6 +21,17 @@ if (!post) {
   return Astro.redirect('/en/blog');
 }
 
+// Use English fields if available, otherwise fall back to Spanish
+const postData = {
+  ...post,
+  title: post.title_en || post.title,
+  slug: post.slug_en || post.slug,
+  content: post.content_en || post.content,
+  excerpt: post.excerpt_en || post.excerpt,
+  meta_title: post.meta_title_en || post.meta_title,
+  meta_description: post.meta_description_en || post.meta_description,
+};
+
 // Function to format date
 const formatDate = (date: Date): string => {
   return new Intl.DateTimeFormat('en-US', {
@@ -40,33 +51,33 @@ const tags = getTagsArray(post.tags);
 
 // Generate SEO data
 const siteUrl = Astro.site?.href || Astro.url.origin;
-const blogKeywords = generateBlogKeywords(post);
-const articleSchema = generateArticleSchema(post, siteUrl);
+const blogKeywords = generateBlogKeywords(postData);
+const articleSchema = generateArticleSchema(postData, siteUrl);
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: `${siteUrl}/en` },
   { name: 'Blog', url: `${siteUrl}/en/blog` },
-  { name: post.title, url: `${siteUrl}/en/blog/${post.uuid}` }
+  { name: postData.title, url: `${siteUrl}/en/blog/${postData.uuid}` }
 ]);
 ---
 
 <WebsiteLayout
-  title={post.title}
-  seoTitle={post.meta_title || post.title}
-  description={post.meta_description || post.excerpt}
+  title={postData.title}
+  seoTitle={postData.meta_title || postData.title}
+  description={postData.meta_description || postData.excerpt}
   keywords={blogKeywords}
   ogImage={post.featured_image}
 >
   <SEO
     slot="seo"
-    title={post.meta_title || post.title}
-    description={post.meta_description || post.excerpt}
+    title={postData.meta_title || postData.title}
+    description={postData.meta_description || postData.excerpt}
     ogType="article"
     ogImage={post.featured_image}
-    ogImageAlt={post.title}
+    ogImageAlt={postData.title}
     keywords={blogKeywords}
     article={{
-      publishedTime: new Date(post.publish_date).toISOString(),
-      modifiedTime: new Date(post.updated_at).toISOString(),
+      publishedTime: post.publish_date ? new Date(post.publish_date).toISOString() : new Date(post.created_at).toISOString(),
+      modifiedTime: post.updated_at ? new Date(post.updated_at).toISOString() : new Date(post.created_at).toISOString(),
       author: post.author,
       tags: tags
     }}
@@ -77,7 +88,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
   <!-- Breadcrumb Schema -->
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
-  <div class="bg-background py-24 sm:py-32">
+  <div class="bg-background">
     <!-- Breadcrumb -->
     <div class="mx-auto max-w-4xl px-6 lg:px-8">
       <nav class="mb-8" aria-label="Breadcrumb">
@@ -98,7 +109,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
             </svg>
           </li>
-          <li class="text-foreground font-medium">{post.title}</li>
+          <li class="text-foreground font-medium">{postData.title}</li>
         </ol>
       </nav>
     </div>
@@ -106,7 +117,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     <article class="mx-auto max-w-4xl px-6 lg:px-8">
       <header class="mx-auto max-w-2xl">
         <h1 class="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          {post.title}
+          {postData.title}
         </h1>
 
         <div class="mt-6 flex items-center gap-x-4 text-sm">
@@ -143,7 +154,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         <div class="mt-8">
           <img
             src={post.featured_image}
-            alt={post.title}
+            alt={postData.title}
             class="aspect-video w-full rounded-2xl bg-muted object-cover"
           />
         </div>
@@ -151,7 +162,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
       <!-- Article content -->
       <div class="mt-8 prose prose-lg max-w-none">
-        <div class="text-lg leading-8 text-foreground" set:html={post.content}></div>
+        <div class="text-lg leading-8 text-foreground" set:html={postData.content}></div>
       </div>
 
       <!-- Meta information -->
