@@ -30,10 +30,17 @@ export default function LanguageSelector() {
     const currentPath = window.location.pathname;
     let newPath: string;
 
+    // Don't do anything if we're already in the target language
+    if (lang === 'en' && currentPath.startsWith('/en')) {
+      return;
+    }
+    if (lang === 'es' && !currentPath.startsWith('/en')) {
+      return;
+    }
+
     if (lang === 'en') {
-      if (currentPath.startsWith('/en')) {
-        newPath = currentPath;
-      } else if (currentPath === '/' || currentPath === '') {
+      // Converting from Spanish to English
+      if (currentPath === '/' || currentPath === '') {
         newPath = '/en';
       } else {
         // Map Spanish routes to English routes
@@ -61,6 +68,7 @@ export default function LanguageSelector() {
         }
       }
     } else {
+      // Converting from English to Spanish
       if (currentPath.startsWith('/en/')) {
         // Map English routes back to Spanish routes
         const reverseRouteTranslations: { [key: string]: string } = {
@@ -83,19 +91,24 @@ export default function LanguageSelector() {
           newPath = currentPath.replace('/en/blog/', '/blog/');
         } else if (currentPath.startsWith('/en/product/')) {
           newPath = currentPath.replace('/en/product/', '/product/');
+        } else if (currentPath === '/en') {
+          newPath = '/';
         } else {
-          newPath = currentPath.replace('/en', '') || '/';
+          // Remove /en prefix
+          newPath = currentPath.replace(/^\/en/, '') || '/';
         }
       } else {
-        newPath = currentPath;
+        // Already in Spanish, no need to change
+        return;
       }
     }
 
+    console.log('Switching from', currentPath, 'to', newPath);
     window.location.href = newPath;
   };
 
   const languages = [
-    { code: 'es', name: 'Español', flag: '🇪🇸' },
+    { code: 'es', name: 'Español', flag: '🇲🇽' },
     { code: 'en', name: 'English', flag: '🇺🇸' },
   ];
 
