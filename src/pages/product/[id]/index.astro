@@ -361,7 +361,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   <button
                     type="button"
                     class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.image_url || ''}', '${relatedProduct.category || ''}')`}
+                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.image_url || ''}', '${relatedProduct.category || ''}')`}
                   >
                     Agregar al Carrito
                   </button>

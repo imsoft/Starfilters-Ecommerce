@@ -251,7 +251,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   type="button"
                   id="add-to-cart-btn"
                   class="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden sm:w-full transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
                 >
                   Add to Cart
                 </button>
@@ -361,7 +361,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   <button
                     type="button"
                     class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.image_url || ''}', '${relatedProduct.category || ''}')`}
+                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.image_url || ''}', '${relatedProduct.category || ''}')`}
                   >
                     Add to Cart
                   </button>
@@ -402,7 +402,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   }
 
   // Cart functions
-  function addToCartFromProduct(uuid: string, name: string, price: number, image_url: string, category: string): void {
+  function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): void {
     const quantitySelect = document.getElementById('quantity') as HTMLSelectElement;
     const quantity = parseInt(quantitySelect?.value || '1');
 
@@ -418,6 +418,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     } else {
       cart.items.push({
         uuid,
+        product_id,
         name,
         price,
         quantity,

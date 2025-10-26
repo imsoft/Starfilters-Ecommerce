@@ -199,7 +199,7 @@ const formatPrice = (price: number): string => {
                   <button
                     type="button"
                     class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onclick={`event.stopPropagation(); addProductToCart('${product.uuid}', '${product.name}', ${product.price}, '${product.image_url || ""}', '${product.category || ""}')`}
+                    onclick={`event.stopPropagation(); addProductToCart('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.image_url || ""}', '${product.category || ""}')`}
                   >
                     Agregar al Carrito
                   </button>
@@ -246,6 +246,7 @@ const formatPrice = (price: number): string => {
 
   interface CartItem {
     uuid: string;
+    product_id: number;
     name: string;
     price: number;
     quantity: number;
@@ -304,6 +305,7 @@ const formatPrice = (price: number): string => {
 
   function addProductToCart(
     uuid: string,
+    product_id: number,
     name: string,
     price: number,
     image_url: string,
@@ -320,6 +322,7 @@ const formatPrice = (price: number): string => {
     } else {
       cart.items.push({
         uuid,
+        product_id,
         name,
         price,
         quantity: 1,

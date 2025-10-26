@@ -239,7 +239,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 <button
                   type="button"
                   class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
+                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
                 >
                   Agregar al Carrito
                 </button>
@@ -384,7 +384,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   }
 
   // Función para agregar al carrito desde la grid
-  function addToCartQuick(uuid: string, name: string, price: number, image_url: string, category: string): void {
+  function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): void {
     // Obtener carrito actual
     const cartData = localStorage.getItem('starfilters_cart');
     let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
@@ -397,6 +397,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     } else {
       cart.items.push({
         uuid,
+        product_id,
         name,
         price,
         quantity: 1,
