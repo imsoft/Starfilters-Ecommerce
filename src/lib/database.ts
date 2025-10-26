@@ -666,6 +666,173 @@ export async function getRecentProducts(limit = 5): Promise<Product[]> {
   }
 }
 
+// Funciones para Analytics
+export interface SalesStats {
+  today: number;
+  week: number;
+  month: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+export interface TopProduct {
+  product_id: number;
+  product_name: string;
+  total_sold: number;
+  total_revenue: number;
+}
+
+export interface UserStats {
+  total: number;
+  active: number;
+  newThisMonth: number;
+}
+
+export interface ConversionFunnel {
+  visitors: number;
+  cartAdds: number;
+  checkouts: number;
+  completed: number;
+}
+
+export const getSalesStats = async (): Promise<SalesStats> => {
+  try {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const lastMonthAgo = new Date(now.getFullYear(), now.getMonth() - 2, now.getDate());
+
+    // Ventas de hoy
+    const todayResult = await query(
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND created_at >= ?',
+      [today]
+    );
+
+    // Ventas de esta semana
+    const weekResult = await query(
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND created_at >= ?',
+      [weekAgo]
+    );
+
+    // Ventas de este mes
+    const monthResult = await query(
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND created_at >= ?',
+      [monthAgo]
+    );
+
+    // Ventas del mes pasado para calcular tendencia
+    const lastMonthResult = await query(
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND created_at >= ? AND created_at < ?',
+      [lastMonthAgo, monthAgo]
+    );
+
+    const currentMonth = (monthResult as any)[0]?.total || 0;
+    const lastMonth = (lastMonthResult as any)[0]?.total || 0;
+
+    let trend: 'up' | 'down' | 'stable' = 'stable';
+    if (currentMonth > lastMonth * 1.05) trend = 'up';
+    else if (currentMonth < lastMonth * 0.95) trend = 'down';
+
+    return {
+      today: (todayResult as any)[0]?.total || 0,
+      week: (weekResult as any)[0]?.total || 0,
+      month: currentMonth,
+      trend
+    };
+  } catch (error) {
+    console.error('Error obteniendo estadísticas de ventas:', error);
+    return { today: 0, week: 0, month: 0, trend: 'stable' };
+  }
+};
+
+export const getTopProducts = async (limit = 5): Promise<TopProduct[]> => {
+  try {
+    const result = await query(
+      `SELECT 
+        oi.product_id,
+        oi.product_name,
+        SUM(oi.quantity) as total_sold,
+        SUM(oi.quantity * oi.price) as total_revenue
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      WHERE o.status IN ("delivered", "shipped", "processing")
+      GROUP BY oi.product_id, oi.product_name
+      ORDER BY total_sold DESC
+      LIMIT ?`,
+      [limit]
+    );
+
+    return (result as any[]).map(item => ({
+      product_id: item.product_id,
+      product_name: item.product_name,
+      total_sold: item.total_sold,
+      total_revenue: item.total_revenue
+    }));
+  } catch (error) {
+    console.error('Error obteniendo productos más vendidos:', error);
+    return [];
+  }
+};
+
+export const getUserStats = async (): Promise<UserStats> => {
+  try {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [totalResult, activeResult, newThisMonthResult] = await Promise.all([
+      query('SELECT COUNT(*) as total FROM users'),
+      query('SELECT COUNT(*) as total FROM users WHERE status = "active"'),
+      query('SELECT COUNT(*) as total FROM users WHERE created_at >= ?', [firstDayOfMonth])
+    ]);
+
+    return {
+      total: (totalResult as any)[0]?.total || 0,
+      active: (activeResult as any)[0]?.total || 0,
+      newThisMonth: (newThisMonthResult as any)[0]?.total || 0
+    };
+  } catch (error) {
+    console.error('Error obteniendo estadísticas de usuarios:', error);
+    return { total: 0, active: 0, newThisMonth: 0 };
+  }
+};
+
+export const getConversionFunnel = async (): Promise<ConversionFunnel> => {
+  try {
+    const now = new Date();
+    const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Estimaciones simples basadas en datos disponibles
+    const ordersResult = await query(
+      'SELECT COUNT(*) as total FROM orders WHERE created_at >= ?',
+      [last30Days]
+    );
+
+    const completedResult = await query(
+      'SELECT COUNT(*) as total FROM orders WHERE status = "delivered" AND created_at >= ?',
+      [last30Days]
+    );
+
+    // Estimaciones (en producción usarías Google Analytics o similar)
+    const totalOrders = (ordersResult as any)[0]?.total || 0;
+    const completed = (completedResult as any)[0]?.total || 0;
+    
+    // Estimaciones conservadoras para embudo
+    const estimatedCheckouts = Math.round(totalOrders * 1.2); // Asumiendo 20% abandono
+    const estimatedCartAdds = Math.round(totalOrders * 3); // Asumiendo 3:1 ratio
+    const estimatedVisitors = Math.round(totalOrders * 10); // Asumiendo 1% conversión
+
+    return {
+      visitors: estimatedVisitors,
+      cartAdds: estimatedCartAdds,
+      checkouts: estimatedCheckouts,
+      completed: completed
+    };
+  } catch (error) {
+    console.error('Error obteniendo embudo de conversión:', error);
+    return { visitors: 0, cartAdds: 0, checkouts: 0, completed: 0 };
+  }
+};
+
 // Funciones para el blog
 export interface CreateBlogPostData {
   title: string;
