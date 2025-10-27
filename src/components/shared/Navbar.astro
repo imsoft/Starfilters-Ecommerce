@@ -23,22 +23,27 @@ if (user) {
 
 <header class="absolute inset-x-0 top-0 z-50">
   <div class="mx-auto max-w-7xl">
-    <div class="px-6 pt-6 lg:max-w-2xl lg:pr-0 lg:pl-8">
+    <div class="px-6 pt-6 lg:px-8">
       <nav
         aria-label="Global"
-        class="flex items-center justify-between"
+        class="flex items-center justify-between lg:gap-x-12"
       >
-        <a href={lang === 'en' ? '/en' : '/'} class="-m-1.5 p-1.5 flex-shrink-0 w-48">
-          <span class="sr-only">Starfilters</span>
-          <img
-            src="/logos/logo-starfilters.png"
-            alt="Starfilters"
-            class="h-14 w-auto object-contain"
-            loading="eager"
-            fetchpriority="high"
-            style="image-rendering: -webkit-optimize-contrast; height: 56px; width: auto;"
-          />
-        </a>
+        <!-- Logo - fijo a la izquierda -->
+        <div class="flex lg:flex-1">
+          <a href={lang === 'en' ? '/en' : '/'} class="-m-1.5 p-1.5 flex-shrink-0">
+            <span class="sr-only">Starfilters</span>
+            <img
+              src="/logos/logo-starfilters.png"
+              alt="Starfilters"
+              class="h-14 w-auto object-contain"
+              loading="eager"
+              fetchpriority="high"
+              style="image-rendering: -webkit-optimize-contrast; height: 56px; width: auto;"
+            />
+          </a>
+        </div>
+
+        <!-- Mobile menu button -->
         <Button
           type="button"
           data-action="show-modal"
@@ -61,29 +66,33 @@ if (user) {
               stroke-linejoin="round"></path>
           </svg>
         </Button>
-        <div class="hidden lg:flex lg:flex-1 lg:justify-center lg:items-center lg:gap-x-8">
+
+        <!-- Menú de navegación - centrado -->
+        <div class="hidden lg:flex lg:gap-x-8">
           <a
             href={lang === 'en' ? '/en/filters' : '/filtros'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
+            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
             >{t('nav.filters')}</a
           >
           <a
             href={lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
+            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
             >{t('nav.cleanrooms')}</a
           >
           <a
             href={lang === 'en' ? '/en/services' : '/servicios'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
+            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
             >{t('nav.services')}</a
           >
           <a
             href={lang === 'en' ? '/en/blog' : '/blog'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
+            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
             >{t('nav.blog')}</a
           >
         </div>
-        <div class="hidden lg:flex lg:items-center lg:gap-x-4 lg:w-48 lg:justify-end">
+
+        <!-- Controles del lado derecho - idioma, carrito, usuario -->
+        <div class="hidden lg:flex lg:flex-1 lg:items-center lg:gap-x-4 lg:justify-end">
           <LanguageSelector client:load />
           {user ? (
             <>
@@ -93,7 +102,7 @@ if (user) {
           ) : (
             <a
               href={lang === 'en' ? '/en/login' : '/login'}
-              class="text-sm/6 font-semibold text-foreground whitespace-nowrap"
+              class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
               >{t('nav.login')}</a
             >
           )}

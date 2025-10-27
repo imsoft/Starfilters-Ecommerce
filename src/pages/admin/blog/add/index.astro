@@ -2,6 +2,7 @@
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
 import { BlogImageUploader } from "@/components/ui/BlogImageUploader";
+import { BlogContentEditor } from "@/components/ui/BlogContentEditor";
 import { createBlogPost, generateSlug } from "@/lib/database";
 
 // Manejar envío del formulario
@@ -21,6 +22,7 @@ if (Astro.request.method === 'POST') {
   const status = formData.get('status') as 'draft' | 'published' | 'scheduled';
   const publishDate = formData.get('publish-date') as string;
   const tags = formData.get('tags') as string;
+  const featuredImage = formData.get('featured_image') as string | null;
   const metaTitle = formData.get('meta-title') as string;
   const metaTitle_en = formData.get('meta-title_en') as string | null;
   const metaDescription = formData.get('meta-description') as string;
@@ -45,6 +47,7 @@ if (Astro.request.method === 'POST') {
       status: finalStatus,
       publish_date: publishDate ? new Date(publishDate) : undefined,
       tags,
+      featured_image_url: featuredImage || undefined,
       meta_title: metaTitle,
       meta_title_en: metaTitle_en || undefined,
       meta_description: metaDescription,
@@ -181,12 +184,13 @@ const error = url.searchParams.get('error');
                 id="slug"
                 name="slug"
                 required
-                class="flex-1 rounded-r-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                readonly
+                class="flex-1 rounded-r-md border border-border bg-muted px-3 py-2 text-muted-foreground cursor-not-allowed"
                 placeholder="guia-completa-filtros-hepa"
               />
             </div>
             <p class="mt-1 text-sm text-muted-foreground">
-              Se generará automáticamente basado en el título
+              Se genera automáticamente basado en el título
             </p>
           </div>
 
@@ -207,10 +211,14 @@ const error = url.searchParams.get('error');
                 type="text"
                 id="slug_en"
                 name="slug_en"
-                class="flex-1 rounded-r-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                readonly
+                class="flex-1 rounded-r-md border border-border bg-muted px-3 py-2 text-muted-foreground cursor-not-allowed"
                 placeholder="complete-guide-to-hepa-filters"
               />
             </div>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Se genera automáticamente basado en el título en inglés
+            </p>
           </div>
 
           <div>
@@ -252,204 +260,21 @@ const error = url.searchParams.get('error');
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-4">Contenido</h2>
 
-        <div class="space-y-4">
-          <div>
-                          <label
-              for="content"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Contenido del artículo (Español)
-            </label>
-            <div class="border border-border rounded-md">
-              <!-- Toolbar del editor -->
-              <div class="border-b border-border p-3 bg-muted">
-                <div class="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-border text-foreground hover:bg-muted"
-                  >
-                    <svg
-                      class="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-border text-foreground hover:bg-muted"
-                  >
-                    <svg
-                      class="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                      ></path>
-                    </svg>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-border text-foreground hover:bg-muted"
-                  >
-                    <svg
-                      class="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M4 6h16M4 12h16M4 18h7"></path>
-                    </svg>
-                  </Button>
-                  <div class="w-px h-6 bg-border"></div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-border text-foreground hover:bg-muted"
-                  >
-                    <svg
-                      class="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      ></path>
-                    </svg>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-border text-foreground hover:bg-muted"
-                  >
-                    <svg
-                      class="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                      ></path>
-                    </svg>
-                  </Button>
-                </div>
-              </div>
+        <div class="space-y-12">
+          <BlogContentEditor
+            client:load
+            name="content"
+            label="Contenido del artículo (Español)"
+            required={true}
+            placeholder="Escribe el contenido de tu artículo aquí..."
+          />
 
-              <!-- Área de contenido -->
-              <textarea
-                id="content"
-                name="content"
-                rows="15"
-                required
-                class="w-full rounded-b-md border-0 bg-background px-3 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 resize-none"
-                placeholder="Escribe el contenido de tu artículo aquí...
-
-Puedes usar Markdown para formatear el texto:
-
-# Título Principal
-## Subtítulo
-**Texto en negrita**
-*Texto en cursiva*
-
-- Lista de elementos
-- Otro elemento
-
-1. Lista numerada
-2. Segundo elemento
-
-[Enlace](https://ejemplo.com)
-
-![Imagen](https://ejemplo.com/imagen.jpg)"
-              ></textarea>
-            </div>
-          </div>
-
-          <!-- Contenido en inglés -->
-          <div>
-            <label
-              for="content_en"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Article Content (English)
-            </label>
-            <div class="border border-border rounded-md">
-              <!-- Toolbar del editor -->
-              <div class="border-b border-border p-3 bg-muted">
-                <div class="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-border text-foreground hover:bg-muted"
-                  >
-                    <svg
-                      class="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </Button>
-                </div>
-              </div>
-
-              <!-- Área de contenido -->
-              <textarea
-                id="content_en"
-                name="content_en"
-                rows="15"
-                class="w-full rounded-b-md border-0 bg-background px-3 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 resize-none"
-                placeholder="Write the content of your article here...
-
-You can use Markdown to format the text:
-
-# Main Title
-## Subtitle
-**Bold text**
-*Italic text*
-
-- List of items
-- Another item
-
-1. Numbered list
-2. Second item
-
-[Link](https://example.com)
-
-![Image](https://example.com/image.jpg)"
-              ></textarea>
-            </div>
-          </div>
+          <BlogContentEditor
+            client:load
+            name="content_en"
+            label="Article Content (English)"
+            placeholder="Write the content of your article here..."
+          />
         </div>
       </div>
 
@@ -558,11 +383,8 @@ You can use Markdown to format the text:
           Imagen Destacada
         </h2>
 
-        <div class="p-6 bg-muted/50 rounded-lg border border-border">
-          <p class="text-sm text-muted-foreground text-center">
-            💡 Guarda el artículo primero para poder subir la imagen destacada.
-          </p>
-        </div>
+        <BlogImageUploader client:load blogId="temp-blog-id" />
+        <input type="hidden" id="featured-image-input" name="featured_image" value="" />
       </div>
 
       <!-- SEO -->
@@ -690,30 +512,37 @@ You can use Markdown to format the text:
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const titleInput = document.getElementById('title') as HTMLInputElement;
+    const titleEnInput = document.getElementById('title_en') as HTMLInputElement;
     const slugInput = document.getElementById('slug') as HTMLInputElement;
+    const slugEnInput = document.getElementById('slug_en') as HTMLInputElement;
     const metaTitleInput = document.getElementById('meta-title') as HTMLInputElement;
     const metaDescriptionInput = document.getElementById('meta-description') as HTMLTextAreaElement;
     const metaTitleCount = document.getElementById('meta-title-count');
     const metaDescriptionCount = document.getElementById('meta-description-count');
 
-    // Generar slug automáticamente desde el título
+    // Función para generar slug desde un texto
+    const generateSlug = (text: string): string => {
+      return text
+        .toLowerCase()
+        .trim()
+        .normalize('NFD') // Normalizar caracteres especiales
+        .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+        .replace(/[^\w\s-]/g, '') // Remover caracteres especiales
+        .replace(/[\s_-]+/g, '-') // Reemplazar espacios/guiones por un solo guión
+        .replace(/^-+|-+$/g, ''); // Remover guiones al inicio/final
+    };
+
+    // Generar slug en español automáticamente desde el título
     if (titleInput && slugInput) {
       titleInput.addEventListener('input', function() {
-        if (!slugInput.value || slugInput.dataset.autoGenerated === 'true') {
-          const slug = titleInput.value
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_-]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-          slugInput.value = slug;
-          slugInput.dataset.autoGenerated = 'true';
-        }
+        slugInput.value = generateSlug(this.value);
       });
+    }
 
-      // Marcar slug como manual si el usuario lo edita
-      slugInput.addEventListener('input', function() {
-        slugInput.dataset.autoGenerated = 'false';
+    // Generar slug en inglés automáticamente desde el título en inglés
+    if (titleEnInput && slugEnInput) {
+      titleEnInput.addEventListener('input', function() {
+        slugEnInput.value = generateSlug(this.value);
       });
     }
 
@@ -755,5 +584,14 @@ You can use Markdown to format the text:
         }
       });
     }
+
+    // Escuchar el evento de cambio de imagen destacada
+    document.addEventListener('blog-image-changed', (event: any) => {
+      const featuredImageInput = document.getElementById('featured-image-input') as HTMLInputElement;
+      if (featuredImageInput && event.detail) {
+        featuredImageInput.value = event.detail.imageUrl || '';
+        console.log('Imagen destacada actualizada:', event.detail.imageUrl);
+      }
+    });
   });
 </script>

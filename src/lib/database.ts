@@ -933,9 +933,13 @@ export function generateSlug(title: string): string {
 
 export interface UpdateBlogPostData {
   title: string;
+  title_en?: string;
   slug: string;
+  slug_en?: string;
   excerpt: string;
+  excerpt_en?: string;
   content: string;
+  content_en?: string;
   category: string;
   author: string;
   status: 'draft' | 'published' | 'scheduled';
@@ -943,24 +947,34 @@ export interface UpdateBlogPostData {
   tags?: string;
   featured_image_url?: string;
   meta_title?: string;
+  meta_title_en?: string;
   meta_description?: string;
+  meta_description_en?: string;
 }
 
 export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Promise<BlogPost | null> {
   try {
     const now = new Date();
-    
+
     const result = await query(
-      `UPDATE blog_posts SET 
-        title = ?, slug = ?, excerpt = ?, content = ?, category = ?, author = ?, 
-        status = ?, publish_date = ?, tags = ?, featured_image_url = ?, 
-        meta_title = ?, meta_description = ?, updated_at = ?
+      `UPDATE blog_posts SET
+        title = ?, title_en = ?, slug = ?, slug_en = ?,
+        excerpt = ?, excerpt_en = ?, content = ?, content_en = ?,
+        category = ?, author = ?, status = ?, publish_date = ?,
+        tags = ?, featured_image = ?,
+        meta_title = ?, meta_title_en = ?,
+        meta_description = ?, meta_description_en = ?,
+        updated_at = ?
       WHERE uuid = ?`,
       [
         data.title,
+        data.title_en || null,
         data.slug,
+        data.slug_en || null,
         data.excerpt,
+        data.excerpt_en || null,
         data.content,
+        data.content_en || null,
         data.category,
         data.author,
         data.status,
@@ -968,7 +982,9 @@ export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Pr
         data.tags || '',
         data.featured_image_url || null,
         data.meta_title || data.title,
+        data.meta_title_en || null,
         data.meta_description || data.excerpt,
+        data.meta_description_en || null,
         now,
         uuid
       ]
@@ -980,7 +996,7 @@ export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Pr
       const rows = await query('SELECT * FROM blog_posts WHERE uuid = ?', [uuid]);
       return (rows as BlogPost[])[0] || null;
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error actualizando post del blog:', error);

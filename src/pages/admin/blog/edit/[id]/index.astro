@@ -2,6 +2,7 @@
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
 import { BlogImageUploader } from "@/components/ui/BlogImageUploader";
+import { BlogContentEditor } from "@/components/ui/BlogContentEditor";
 import { getBlogPostByUuid, updateBlogPost, generateSlug } from "@/lib/database";
 
 const { id } = Astro.params;
@@ -17,18 +18,25 @@ if (!blogPost) {
 // Manejar envío del formulario
 if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
-  
+
   const title = formData.get('title') as string;
+  const title_en = formData.get('title_en') as string | null;
   const slug = formData.get('slug') as string || generateSlug(title);
+  const slug_en = formData.get('slug_en') as string | null;
   const excerpt = formData.get('excerpt') as string;
+  const excerpt_en = formData.get('excerpt_en') as string | null;
   const content = formData.get('content') as string;
+  const content_en = formData.get('content_en') as string | null;
   const category = formData.get('category') as string;
   const author = formData.get('author') as string;
   const status = formData.get('status') as 'draft' | 'published' | 'scheduled';
   const publishDate = formData.get('publish-date') as string;
   const tags = formData.get('tags') as string;
   const metaTitle = formData.get('meta-title') as string;
+  const metaTitle_en = formData.get('meta-title_en') as string | null;
   const metaDescription = formData.get('meta-description') as string;
+  const metaDescription_en = formData.get('meta-description_en') as string | null;
+  const featuredImage = formData.get('featured_image') as string | null;
   const action = formData.get('action') as string;
 
   // Determinar el status basado en la acción
@@ -37,16 +45,23 @@ if (Astro.request.method === 'POST') {
   try {
     const updatedPost = await updateBlogPost(id!, {
       title,
+      title_en: title_en || undefined,
       slug,
+      slug_en: slug_en || undefined,
       excerpt,
+      excerpt_en: excerpt_en || undefined,
       content,
+      content_en: content_en || undefined,
       category,
       author,
       status: finalStatus,
       publish_date: publishDate ? new Date(publishDate) : undefined,
       tags,
+      featured_image_url: featuredImage || undefined,
       meta_title: metaTitle,
-      meta_description: metaDescription
+      meta_title_en: metaTitle_en || undefined,
+      meta_description: metaDescription,
+      meta_description_en: metaDescription_en || undefined
     });
 
     if (updatedPost) {
@@ -169,56 +184,24 @@ const error = url.searchParams.get('error');
         <!-- Contenido -->
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Contenido</h2>
-          
-          <div class="space-y-4">
-            <div>
-              <label for="content" class="block text-sm font-medium text-foreground mb-2">
-                Contenido del artículo
-              </label>
-              <div class="border border-border rounded-md">
-                <!-- Toolbar del editor -->
-                <div class="border-b border-border p-3 bg-muted">
-                  <div class="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                      </svg>
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                      </svg>
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
-                      </svg>
-                    </Button>
-                    <div class="w-px h-6 bg-border"></div>
-                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                      </svg>
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                      </svg>
-                    </Button>
-                  </div>
-                </div>
-                
-                <!-- Área de contenido -->
-                <textarea
-                  id="content"
-                  name="content"
-                  rows="15"
-                  required
-                  class="w-full rounded-b-md border-0 bg-background px-3 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 resize-none"
-                  placeholder="Escribe el contenido de tu artículo aquí..."
-                >{blogPost.content}</textarea>
-              </div>
-            </div>
+
+          <div class="space-y-6">
+            <BlogContentEditor
+              client:load
+              name="content"
+              label="Contenido del artículo (Español)"
+              initialContent={blogPost.content}
+              required={true}
+              placeholder="Escribe el contenido de tu artículo aquí..."
+            />
+
+            <BlogContentEditor
+              client:load
+              name="content_en"
+              label="Article Content (English)"
+              initialContent={blogPost.content_en || ''}
+              placeholder="Write the content of your article here..."
+            />
           </div>
         </div>
 

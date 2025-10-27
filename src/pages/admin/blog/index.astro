@@ -145,6 +145,23 @@ function getStatusText(status: string): string {
       </div>
     )}
 
+    {success === 'deleted' && (
+      <div class="mb-6 rounded-md bg-green-50 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-green-800">
+              Artículo eliminado exitosamente.
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+
       <!-- Estadísticas del blog -->
       <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-lg border border-border bg-background p-6">
@@ -334,7 +351,13 @@ function getStatusText(status: string): string {
                             </svg>
                           </Button>
                         )}
-                        <Button variant="outline" size="sm" className="border-border text-red-600 hover:bg-red-50">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-border text-red-600 hover:bg-red-50 delete-blog-btn"
+                          data-uuid={post.uuid}
+                          data-title={post.title}
+                        >
                           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                           </svg>
@@ -434,7 +457,47 @@ function getStatusText(status: string): string {
     searchInput?.addEventListener('input', filterBlogPosts);
     statusFilter?.addEventListener('change', filterBlogPosts);
     categoryFilter?.addEventListener('change', filterBlogPosts);
-    
+
     console.log('🎯 Filtros del blog inicializados');
+
+    // Función para eliminar artículos del blog
+    function handleDeleteBlog(uuid: string, title: string) {
+      if (!confirm(`¿Estás seguro de que deseas eliminar el artículo "${title}"? Esta acción no se puede deshacer.`)) {
+        return;
+      }
+
+      fetch('/api/blog/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ uuid })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '/admin/blog?success=deleted';
+        } else {
+          alert('Error al eliminar el artículo: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar el artículo. Por favor intenta de nuevo.');
+      });
+    }
+
+    // Agregar event listeners a los botones de eliminar
+    const deleteButtons = document.querySelectorAll('.delete-blog-btn');
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const uuid = (button as HTMLElement).dataset.uuid || '';
+        const title = (button as HTMLElement).dataset.title || '';
+        handleDeleteBlog(uuid, title);
+      });
+    });
+
+    console.log('🗑️ Botones de eliminar inicializados');
   });
 </script>
