@@ -31,8 +31,8 @@ const productImages = await getProductImages(product.id);
 const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
 const galleryImages = productImages.filter(img => !img.is_primary);
 
-// If no images in product_images, use image_url as fallback
-const mainImage = primaryImage?.image_url || product.image_url || getProductPlaceholderImage(product.category);
+// If no images in product_images, use placeholder
+const mainImage = primaryImage?.image_url || getProductPlaceholderImage(product.category);
 const allImages = productImages.length > 0 
   ? productImages.map(img => img.image_url)
   : [mainImage, '/images/products/placeholder-hepa-filter.svg', '/images/products/placeholder-cleanroom.svg', '/images/products/placeholder-air-purification.svg'];

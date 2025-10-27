@@ -25,7 +25,6 @@ export interface Product {
   category: string;
   category_en?: string;
   stock: number;
-  image_url: string;
   status: 'active' | 'inactive' | 'draft';
   tags?: string;
   created_at: Date;
@@ -154,8 +153,8 @@ export const getProductByUuid = async (uuid: string): Promise<Product | null> =>
 export const createProduct = async (product: Omit<Product, 'id' | 'uuid' | 'created_at' | 'updated_at'>): Promise<number> => {
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO products (uuid, name, name_en, description, description_en, price, category, category_en, stock, image_url, status, tags) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO products (uuid, name, name_en, description, description_en, price, category, category_en, stock, status, tags) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -167,7 +166,6 @@ export const createProduct = async (product: Omit<Product, 'id' | 'uuid' | 'crea
     product.category,
     product.category_en || null,
     product.stock,
-    product.image_url,
     product.status,
     product.tags || ''
   ]) as any;

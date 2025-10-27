@@ -1,12 +1,22 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
-import { getProducts } from "@/lib/database";
+import { getProducts, getProductImages } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
 // Get products from database
 const products = await getProducts(12, 0);
+
+// Get primary image for each product
+const productsWithImages = await Promise.all(
+  products.map(async (product) => {
+    const images = await getProductImages(product.id);
+    const primaryImage = images.find(img => img.is_primary) || images[0];
+    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(product.category);
+    return { ...product, imageUrl };
+  })
+);
 
 // Function to format price
 const formatPrice = (price: number): string => {
@@ -200,7 +210,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
       <!-- Products grid -->
       <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="products-grid">
-        {products.map((product) => (
+        {productsWithImages.map((product) => (
           <div
             class="group product-card relative flex flex-col"
             data-category={product.category}
@@ -210,7 +220,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             <a href={`/en/product/${product.uuid}`} class="block flex-shrink-0">
               <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
                 <img
-                  src={product.image_url || getProductPlaceholderImage(product.category)}
+                  src={product.imageUrl}
                   alt={product.name}
                   class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
                 />
@@ -240,7 +250,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 <button
                   type="button"
                   class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
+                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl}', '${product.category || ''}')`}
                 >
                   Add to Cart
                 </button>
