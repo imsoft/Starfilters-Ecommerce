@@ -1,6 +1,7 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
+import AdminFilters from "@/components/shared/AdminFilters.astro";
 import { getProducts } from "@/lib/database";
 import { requireAdmin } from "@/lib/auth-utils";
 import type { Product } from "@/lib/database";
@@ -253,49 +254,32 @@ function getStatusText(status: string, stock: number): string {
       )}
 
       <!-- Filtros y búsqueda -->
-      <div class="mb-6 rounded-lg border border-border bg-background p-4">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-              </div>
-              <input
-                type="text"
-                id="search-products"
-                placeholder="Buscar productos..."
-                class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:w-64"
-              />
-            </div>
-            
-            <select id="category-filter" class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-              <option value="">Todas las categorías</option>
-              <option value="filtros">Filtros</option>
-              <option value="cuartos-limpios">Cuartos Limpios</option>
-              <option value="accesorios">Accesorios</option>
-              <option value="servicios">Servicios</option>
-            </select>
-
-            <select id="status-filter" class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-              <option value="">Todos los estados</option>
-              <option value="active">Activo</option>
-              <option value="inactive">Inactivo</option>
-              <option value="draft">Borrador</option>
-            </select>
-          </div>
-
-          <div class="flex items-center space-x-2">
-            <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
-              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-              </svg>
-              Exportar
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AdminFilters
+        searchPlaceholder="Buscar productos..."
+        searchId="search-products"
+        filters={[
+          {
+            id: "category-filter",
+            label: "Todas las categorías",
+            options: [
+              { value: "filtros", label: "Filtros" },
+              { value: "cuartos-limpios", label: "Cuartos Limpios" },
+              { value: "accesorios", label: "Accesorios" },
+              { value: "servicios", label: "Servicios" }
+            ]
+          },
+          {
+            id: "status-filter",
+            label: "Todos los estados",
+            options: [
+              { value: "active", label: "Activo" },
+              { value: "inactive", label: "Inactivo" },
+              { value: "draft", label: "Borrador" }
+            ]
+          }
+        ]}
+        exportLabel="Exportar"
+      />
 
       <!-- Tabla de productos -->
       <div class="rounded-lg border border-border bg-background">

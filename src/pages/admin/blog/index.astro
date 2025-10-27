@@ -1,6 +1,7 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
+import AdminFilters from "@/components/shared/AdminFilters.astro";
 import { getAllBlogPosts } from "@/lib/database";
 import type { BlogPost } from "@/lib/database";
 
@@ -205,49 +206,32 @@ function getStatusText(status: string): string {
       </div>
 
       <!-- Filtros y búsqueda -->
-      <div class="mb-6 rounded-lg border border-border bg-background p-4">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-              </div>
-              <input
-                type="text"
-                id="search-blog"
-                placeholder="Buscar artículos..."
-                class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:w-64"
-              />
-            </div>
-            
-            <select id="status-filter-blog" class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-              <option value="">Todos los estados</option>
-              <option value="published">Publicado</option>
-              <option value="draft">Borrador</option>
-              <option value="scheduled">Programado</option>
-            </select>
-
-            <select id="category-filter-blog" class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-              <option value="">Todas las categorías</option>
-              <option value="filtros">Filtros</option>
-              <option value="cuartos-limpios">Cuartos Limpios</option>
-              <option value="tecnologia">Tecnología</option>
-              <option value="industria">Industria</option>
-            </select>
-          </div>
-
-          <div class="flex items-center space-x-2">
-            <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
-              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-              </svg>
-              Exportar
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AdminFilters
+        searchPlaceholder="Buscar artículos..."
+        searchId="search-blog"
+        filters={[
+          {
+            id: "status-filter-blog",
+            label: "Todos los estados",
+            options: [
+              { value: "published", label: "Publicado" },
+              { value: "draft", label: "Borrador" },
+              { value: "scheduled", label: "Programado" }
+            ]
+          },
+          {
+            id: "category-filter-blog",
+            label: "Todas las categorías",
+            options: [
+              { value: "filtros", label: "Filtros" },
+              { value: "cuartos-limpios", label: "Cuartos Limpios" },
+              { value: "tecnologia", label: "Tecnología" },
+              { value: "industria", label: "Industria" }
+            ]
+          }
+        ]}
+        exportLabel="Exportar"
+      />
 
       <!-- Tabla de artículos -->
       <div class="rounded-lg border border-border bg-background">
@@ -316,7 +300,7 @@ function getStatusText(status: string): string {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{post.author}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{post.category}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                      {formatDate(post.publish_date)}
+                      {post.publish_date ? formatDate(post.publish_date) : 'No programado'}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(post.status)}`}>

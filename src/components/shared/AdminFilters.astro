@@ -1,0 +1,97 @@
+---
+export interface Props {
+  searchPlaceholder?: string;
+  searchId: string;
+  filters: Array<{
+    id: string;
+    label: string;
+    options: Array<{ value: string; label: string }>;
+  }>;
+  showExport?: boolean;
+  exportLabel?: string;
+}
+
+const {
+  searchPlaceholder = "Buscar...",
+  searchId,
+  filters,
+  showExport = true,
+  exportLabel = "Exportar"
+} = Astro.props;
+---
+
+<div class="mb-6 rounded-lg border border-border bg-background p-4">
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <!-- Filtros principales - ocupan todo el ancho disponible -->
+    <div class="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
+      <!-- Campo de búsqueda -->
+      <div class="relative flex-1 min-w-0">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+        <input
+          type="text"
+          id={searchId}
+          placeholder={searchPlaceholder}
+          class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        />
+      </div>
+      
+      <!-- Filtros adicionales -->
+      {filters.map((filter) => (
+        <div class="flex-shrink-0">
+          <select 
+            id={filter.id} 
+            class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:w-auto sm:min-w-[160px]"
+          >
+            <option value="">{filter.label}</option>
+            {filter.options.map((option) => (
+              <option value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </div>
+      ))}
+    </div>
+
+    <!-- Botón de exportar - siempre a la derecha -->
+    {showExport && (
+      <div class="flex-shrink-0">
+        <button 
+          type="button"
+          class="inline-flex items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        >
+          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          {exportLabel}
+        </button>
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  /* Asegurar que los filtros ocupen todo el ancho en pantallas grandes */
+  @media (min-width: 1024px) {
+    .flex-1 {
+      flex: 1 1 0%;
+    }
+    
+    .min-w-0 {
+      min-width: 0;
+    }
+  }
+  
+  /* En pantallas medianas, los filtros se apilan pero mantienen buen espaciado */
+  @media (max-width: 1023px) {
+    .sm\:flex-row {
+      flex-direction: row;
+    }
+    
+    .sm\:items-center {
+      align-items: center;
+    }
+  }
+</style>
