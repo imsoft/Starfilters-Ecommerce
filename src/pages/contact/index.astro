@@ -1,0 +1,112 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<WebsiteLayout 
+  title="Contacto"
+  seoTitle="Contacto | StarFilters"
+  description="Contacta con StarFilters para servicios de filtración industrial, cuartos limpios y soporte técnico especializado. Estamos aquí para ayudarte."
+  keywords={[
+    'contacto StarFilters',
+    'soporte técnico',
+    'servicios filtración',
+    'cuartos limpios'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Contacto"
+    description="Contacta con StarFilters para servicios de filtración industrial."
+    ogType="website"
+    keywords={['contacto', 'soporte técnico']}
+  />
+  
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-4xl px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Contacto
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-muted-foreground">
+          Estamos aquí para ayudarte con tus necesidades de filtración industrial
+        </p>
+      </div>
+      
+      <div class="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div>
+          <h2 class="text-2xl font-bold text-foreground mb-6">Información de Contacto</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-foreground">Teléfono</h3>
+              <p class="text-muted-foreground">+52 (55) 1234-5678</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Email</h3>
+              <p class="text-muted-foreground">contacto@starfilters.com</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Dirección</h3>
+              <p class="text-muted-foreground">
+                Av. Industrial 123<br>
+                Ciudad de México, CDMX 12345<br>
+                México
+              </p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Horarios de Atención</h3>
+              <p class="text-muted-foreground">
+                Lunes a Viernes: 8:00 AM - 6:00 PM<br>
+                Sábados: 9:00 AM - 2:00 PM<br>
+                Domingos: Cerrado
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h2 class="text-2xl font-bold text-foreground mb-6">Servicios Disponibles</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-foreground">Consultoría Técnica</h3>
+              <p class="text-muted-foreground">Asesoramiento especializado en sistemas de filtración</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Instalación</h3>
+              <p class="text-muted-foreground">Instalación profesional de filtros y cuartos limpios</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Mantenimiento</h3>
+              <p class="text-muted-foreground">Servicios de mantenimiento preventivo y correctivo</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Soporte 24/7</h3>
+              <p class="text-muted-foreground">Atención de emergencias y soporte técnico continuo</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-16 text-center">
+        <a 
+          href="/services" 
+          class="inline-flex items-center rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Ver Nuestros Servicios
+        </a>
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>

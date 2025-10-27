@@ -125,7 +125,7 @@ const t = useTranslations(lang);
             <h3 class="text-sm/6 font-semibold text-foreground">{t('footer.support')}</h3>
             <ul role="list" class="mt-6 space-y-4">
               <li>
-                <a href={lang === 'en' ? '/en/services' : '/services'} class="text-sm/6 text-muted-foreground hover:text-foreground"
+                <a href={lang === 'en' ? '/en/contact' : '/contact'} class="text-sm/6 text-muted-foreground hover:text-foreground"
                   >{t('footer.support.contact')}</a
                 >
               </li>
@@ -135,7 +135,7 @@ const t = useTranslations(lang);
                 >
               </li>
               <li>
-                <a href={lang === 'en' ? '/en/blog' : '/blog'} class="text-sm/6 text-muted-foreground hover:text-foreground"
+                <a href={lang === 'en' ? '/en/services' : '/services'} class="text-sm/6 text-muted-foreground hover:text-foreground"
                   >{t('footer.support.guides')}</a
                 >
               </li>
@@ -172,17 +172,17 @@ const t = useTranslations(lang);
             <h3 class="text-sm/6 font-semibold text-foreground">{t('footer.legal')}</h3>
             <ul role="list" class="mt-6 space-y-4">
               <li>
-                <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
+                <a href={lang === 'en' ? '/en/terms' : '/terms'} class="text-sm/6 text-muted-foreground hover:text-foreground"
                   >{t('footer.terms')}</a
                 >
               </li>
               <li>
-                <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
+                <a href={lang === 'en' ? '/en/privacy' : '/privacy'} class="text-sm/6 text-muted-foreground hover:text-foreground"
                   >{t('footer.privacy')}</a
                 >
               </li>
               <li>
-                <a href="#" class="text-sm/6 text-muted-foreground hover:text-foreground"
+                <a href={lang === 'en' ? '/en/services' : '/services'} class="text-sm/6 text-muted-foreground hover:text-foreground"
                   >{t('footer.license')}</a
                 >
               </li>

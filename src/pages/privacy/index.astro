@@ -1,0 +1,73 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<WebsiteLayout 
+  title="Política de Privacidad"
+  seoTitle="Política de Privacidad | StarFilters"
+  description="Política de privacidad de StarFilters. Conoce cómo recopilamos, utilizamos y protegemos tu información personal en nuestros servicios de filtración industrial."
+  keywords={[
+    'política de privacidad',
+    'protección de datos',
+    'privacidad StarFilters',
+    'información personal'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Política de Privacidad"
+    description="Política de privacidad de StarFilters."
+    ogType="website"
+    keywords={['política de privacidad', 'protección de datos']}
+  />
+  
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-4xl px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Política de Privacidad
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-muted-foreground">
+          Última actualización: {new Date().toLocaleDateString('es-ES')}
+        </p>
+      </div>
+      
+      <div class="mt-16 prose prose-lg max-w-none">
+        <h2>1. Información que Recopilamos</h2>
+        <p>Recopilamos información que nos proporciona directamente, incluyendo:</p>
+        <ul>
+          <li>Información de contacto (nombre, email, teléfono)</li>
+          <li>Información de la empresa</li>
+          <li>Datos de pedidos y servicios</li>
+          <li>Comunicaciones con nuestro equipo</li>
+        </ul>
+        
+        <h2>2. Uso de la Información</h2>
+        <p>Utilizamos su información para:</p>
+        <ul>
+          <li>Proporcionar nuestros servicios de filtración</li>
+          <li>Procesar pedidos y entregas</li>
+          <li>Comunicarnos sobre servicios y soporte</li>
+          <li>Mejorar nuestros productos y servicios</li>
+        </ul>
+        
+        <h2>3. Protección de Datos</h2>
+        <p>Implementamos medidas de seguridad técnicas y organizativas para proteger su información personal.</p>
+        
+        <h2>4. Compartir Información</h2>
+        <p>No vendemos ni compartimos su información personal con terceros, excepto cuando sea necesario para proporcionar nuestros servicios.</p>
+        
+        <h2>5. Sus Derechos</h2>
+        <p>Usted tiene derecho a acceder, rectificar o eliminar su información personal. Puede contactarnos para ejercer estos derechos.</p>
+        
+        <h2>6. Contacto</h2>
+        <p>Para preguntas sobre esta política de privacidad, puede contactarnos a través de nuestros servicios.</p>
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>

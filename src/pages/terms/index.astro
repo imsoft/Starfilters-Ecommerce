@@ -1,0 +1,67 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<WebsiteLayout 
+  title="Términos de Servicio"
+  seoTitle="Términos de Servicio | StarFilters"
+  description="Términos y condiciones de uso de los servicios de StarFilters. Conoce nuestras políticas y condiciones para el uso de nuestros productos y servicios de filtración industrial."
+  keywords={[
+    'términos de servicio',
+    'condiciones de uso',
+    'políticas StarFilters',
+    'servicios filtración'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Términos de Servicio"
+    description="Términos y condiciones de uso de los servicios de StarFilters."
+    ogType="website"
+    keywords={['términos de servicio', 'condiciones de uso']}
+  />
+  
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-4xl px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Términos de Servicio
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-muted-foreground">
+          Última actualización: {new Date().toLocaleDateString('es-ES')}
+        </p>
+      </div>
+      
+      <div class="mt-16 prose prose-lg max-w-none">
+        <h2>1. Aceptación de los Términos</h2>
+        <p>Al acceder y utilizar los servicios de StarFilters, usted acepta estar sujeto a estos términos de servicio.</p>
+        
+        <h2>2. Descripción del Servicio</h2>
+        <p>StarFilters proporciona servicios de filtración industrial, incluyendo:</p>
+        <ul>
+          <li>Filtros HEPA y sistemas de filtración</li>
+          <li>Instalación de cuartos limpios</li>
+          <li>Servicios de mantenimiento y consultoría</li>
+          <li>Soporte técnico especializado</li>
+        </ul>
+        
+        <h2>3. Uso Aceptable</h2>
+        <p>Los servicios deben utilizarse únicamente para fines legítimos y de acuerdo con las leyes aplicables.</p>
+        
+        <h2>4. Limitación de Responsabilidad</h2>
+        <p>StarFilters no será responsable por daños indirectos o consecuenciales que puedan resultar del uso de nuestros servicios.</p>
+        
+        <h2>5. Modificaciones</h2>
+        <p>Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación.</p>
+        
+        <h2>6. Contacto</h2>
+        <p>Para preguntas sobre estos términos, puede contactarnos a través de nuestros servicios.</p>
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>

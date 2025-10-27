@@ -1,0 +1,67 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<WebsiteLayout 
+  title="Terms of Service"
+  seoTitle="Terms of Service | StarFilters"
+  description="Terms and conditions for using StarFilters services. Learn about our policies and conditions for using our industrial filtration products and services."
+  keywords={[
+    'terms of service',
+    'conditions of use',
+    'StarFilters policies',
+    'filtration services'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Terms of Service"
+    description="Terms and conditions for using StarFilters services."
+    ogType="website"
+    keywords={['terms of service', 'conditions of use']}
+  />
+  
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-4xl px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Terms of Service
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-muted-foreground">
+          Last updated: {new Date().toLocaleDateString('en-US')}
+        </p>
+      </div>
+      
+      <div class="mt-16 prose prose-lg max-w-none">
+        <h2>1. Acceptance of Terms</h2>
+        <p>By accessing and using StarFilters services, you agree to be bound by these terms of service.</p>
+        
+        <h2>2. Service Description</h2>
+        <p>StarFilters provides industrial filtration services, including:</p>
+        <ul>
+          <li>HEPA filters and filtration systems</li>
+          <li>Cleanroom installation</li>
+          <li>Maintenance and consulting services</li>
+          <li>Specialized technical support</li>
+        </ul>
+        
+        <h2>3. Acceptable Use</h2>
+        <p>Services must be used only for legitimate purposes and in accordance with applicable laws.</p>
+        
+        <h2>4. Limitation of Liability</h2>
+        <p>StarFilters will not be liable for indirect or consequential damages that may result from the use of our services.</p>
+        
+        <h2>5. Modifications</h2>
+        <p>We reserve the right to modify these terms at any time. Changes will take effect immediately after publication.</p>
+        
+        <h2>6. Contact</h2>
+        <p>For questions about these terms, you can contact us through our services.</p>
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>

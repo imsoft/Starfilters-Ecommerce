@@ -1,0 +1,112 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<WebsiteLayout 
+  title="Contact"
+  seoTitle="Contact | StarFilters"
+  description="Contact StarFilters for industrial filtration services, cleanrooms and specialized technical support. We are here to help you."
+  keywords={[
+    'contact StarFilters',
+    'technical support',
+    'filtration services',
+    'cleanrooms'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    title="Contact"
+    description="Contact StarFilters for industrial filtration services."
+    ogType="website"
+    keywords={['contact', 'technical support']}
+  />
+  
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-4xl px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Contact
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-muted-foreground">
+          We are here to help you with your industrial filtration needs
+        </p>
+      </div>
+      
+      <div class="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div>
+          <h2 class="text-2xl font-bold text-foreground mb-6">Contact Information</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-foreground">Phone</h3>
+              <p class="text-muted-foreground">+52 (55) 1234-5678</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Email</h3>
+              <p class="text-muted-foreground">contact@starfilters.com</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Address</h3>
+              <p class="text-muted-foreground">
+                Av. Industrial 123<br>
+                Mexico City, CDMX 12345<br>
+                Mexico
+              </p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Business Hours</h3>
+              <p class="text-muted-foreground">
+                Monday to Friday: 8:00 AM - 6:00 PM<br>
+                Saturday: 9:00 AM - 2:00 PM<br>
+                Sunday: Closed
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h2 class="text-2xl font-bold text-foreground mb-6">Available Services</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-foreground">Technical Consulting</h3>
+              <p class="text-muted-foreground">Specialized advice on filtration systems</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Installation</h3>
+              <p class="text-muted-foreground">Professional installation of filters and cleanrooms</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">Maintenance</h3>
+              <p class="text-muted-foreground">Preventive and corrective maintenance services</p>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-foreground">24/7 Support</h3>
+              <p class="text-muted-foreground">Emergency response and continuous technical support</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-16 text-center">
+        <a 
+          href="/en/services" 
+          class="inline-flex items-center rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          View Our Services
+        </a>
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>
