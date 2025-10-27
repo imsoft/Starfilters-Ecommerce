@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import { getProducts } from "@/lib/database";
+import { getProductPlaceholderImage } from "@/lib/image-utils";
 
 // Obtener algunos productos para mostrar como recomendados
 const recommendedProducts = await getProducts(4, 0);
@@ -170,7 +171,7 @@ const formatPrice = (price: number): string => {
                     <img
                       src={
                         product.image_url ||
-                        "https://via.placeholder.com/300x300?text=Producto"
+                        getProductPlaceholderImage(product.category)
                       }
                       alt={product.name}
                       class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
@@ -406,7 +407,7 @@ const formatPrice = (price: number): string => {
         <li class="flex py-6 sm:py-10">
           <div class="shrink-0">
             <img
-              src="${item.image_url || "https://via.placeholder.com/200x200?text=Producto"}"
+              src="${item.image_url || "/images/products/placeholder-product.svg"}"
               alt="${item.name}"
               class="size-24 rounded-md object-cover sm:size-48"
             />

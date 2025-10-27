@@ -2,6 +2,7 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import { getProducts } from "@/lib/database";
+import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
 // Get products from database
@@ -209,7 +210,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             <a href={`/en/product/${product.uuid}`} class="block flex-shrink-0">
               <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
                 <img
-                  src={product.image_url || 'https://via.placeholder.com/300x300?text=' + encodeURIComponent(product.name)}
+                  src={product.image_url || getProductPlaceholderImage(product.category)}
                   alt={product.name}
                   class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
                 />

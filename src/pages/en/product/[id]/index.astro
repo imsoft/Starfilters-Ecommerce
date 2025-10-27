@@ -2,6 +2,7 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import { getProductByUuid, getProducts } from "@/lib/database";
+import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 
@@ -35,10 +36,10 @@ const formatPrice = (price: number): string => {
 
 // Generate some example images (in the future these would come from database)
 const productImages = [
-  product.image_url || 'https://via.placeholder.com/600x600?text=Product',
-  'https://via.placeholder.com/600x600?text=View+2',
-  'https://via.placeholder.com/600x600?text=View+3',
-  'https://via.placeholder.com/600x600?text=View+4'
+  product.image_url || getProductPlaceholderImage(product.category),
+  '/images/products/placeholder-hepa-filter.svg',
+  '/images/products/placeholder-cleanroom.svg',
+  '/images/products/placeholder-air-purification.svg'
 ];
 
 // Generate SEO data
@@ -338,7 +339,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 <a href={`/en/product/${relatedProduct.uuid}`} class="block flex-shrink-0">
                   <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
                     <img
-                      src={relatedProduct.image_url || 'https://via.placeholder.com/300x300?text=Product'}
+                      src={relatedProduct.image_url || getProductPlaceholderImage(relatedProduct.category)}
                       alt={relatedProduct.name}
                       class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
                     />
@@ -383,10 +384,10 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
     if (mainImage) {
       const images = [
-        `${(window as any).productImages?.[0] || 'https://via.placeholder.com/600x600?text=Product'}`,
-        'https://via.placeholder.com/600x600?text=View+2',
-        'https://via.placeholder.com/600x600?text=View+3',
-        'https://via.placeholder.com/600x600?text=View+4'
+        `${(window as any).productImages?.[0] || '/images/products/placeholder-product.svg'}`,
+        '/images/products/placeholder-hepa-filter.svg',
+        '/images/products/placeholder-cleanroom.svg',
+        '/images/products/placeholder-air-purification.svg'
       ];
       mainImage.src = images[index] || images[0];
     }
