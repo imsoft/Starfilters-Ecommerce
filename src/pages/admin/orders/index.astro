@@ -122,17 +122,6 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
             </Button>
           </a>
         </div>
-        
-        <!-- Indicador de datos -->
-        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 class="text-sm font-medium text-blue-800">📊 Estado de los datos de órdenes:</h3>
-          <div class="mt-2 text-sm text-blue-600">
-            <p>• Órdenes cargadas: {allOrders.length}</p>
-            <p>• Órdenes pendientes: {pendingOrders}</p>
-            <p>• Órdenes en proceso: {processingOrders}</p>
-            <p>• Órdenes completadas: {completedOrders}</p>
-          </div>
-        </div>
       </div>
 
       <!-- Estadísticas de órdenes -->
@@ -221,7 +210,6 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
             ]
           }
         ]}
-        exportLabel="Exportar"
       />
 
       <!-- Tabla de órdenes -->

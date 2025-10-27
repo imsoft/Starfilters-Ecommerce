@@ -7,6 +7,7 @@ interface BlogContentEditorProps {
   label: string;
   required?: boolean;
   placeholder?: string;
+  className?: string;
 }
 
 export function BlogContentEditor({
@@ -14,12 +15,13 @@ export function BlogContentEditor({
   name,
   label,
   required = false,
-  placeholder = 'Escribe el contenido aquí...'
+  placeholder = 'Escribe el contenido aquí...',
+  className = ''
 }: BlogContentEditorProps) {
   const [content, setContent] = useState(initialContent);
 
   return (
-    <div>
+    <div className={className}>
       <label
         htmlFor={name}
         className="block text-sm font-medium text-foreground mb-2"

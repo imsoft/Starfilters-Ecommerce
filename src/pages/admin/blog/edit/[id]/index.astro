@@ -185,7 +185,7 @@ const error = url.searchParams.get('error');
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Contenido</h2>
 
-          <div class="space-y-6">
+          <div>
             <BlogContentEditor
               client:load
               name="content"
@@ -201,6 +201,7 @@ const error = url.searchParams.get('error');
               label="Article Content (English)"
               initialContent={blogPost.content_en || ''}
               placeholder="Write the content of your article here..."
+              className="mt-16"
             />
           </div>
         </div>

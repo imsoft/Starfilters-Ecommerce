@@ -97,17 +97,6 @@ function getStatusText(status: string): string {
             </Button>
           </a>
         </div>
-        
-        <!-- Indicador de datos -->
-        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 class="text-sm font-medium text-blue-800">📊 Estado de los datos del blog:</h3>
-          <div class="mt-2 text-sm text-blue-600">
-            <p>• Posts cargados: {allBlogPosts.length}</p>
-            <p>• Posts publicados: {publishedPosts}</p>
-            <p>• Posts en borrador: {draftPosts}</p>
-            <p>• Posts programados: {scheduledPosts}</p>
-          </div>
-        </div>
       </div>
 
     <!-- Mensajes de éxito -->
@@ -247,7 +236,6 @@ function getStatusText(status: string): string {
             ]
           }
         ]}
-        exportLabel="Exportar"
       />
 
       <!-- Tabla de artículos -->
