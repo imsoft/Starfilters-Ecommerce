@@ -1,0 +1,188 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  class?: string;
+  width?: number;
+  height?: number;
+  priority?: boolean; // Para imágenes críticas (above the fold)
+  placeholder?: string;
+}
+
+const { 
+  src, 
+  alt, 
+  class: className = '', 
+  width, 
+  height, 
+  priority = false,
+  placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PC9zdmc+'
+} = Astro.props;
+
+// Generar un ID único para cada imagen
+const imageId = `lazy-image-${Math.random().toString(36).substr(2, 9)}`;
+---
+
+<img
+  id={imageId}
+  src={priority ? src : placeholder}
+  alt={alt}
+  class={`lazy-image ${className}`}
+  width={width}
+  height={height}
+  data-src={src}
+  data-loaded={priority ? 'true' : 'false'}
+  loading={priority ? 'eager' : 'lazy'}
+  decoding="async"
+/>
+
+<style>
+  .lazy-image {
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  .lazy-image[data-loaded="false"] {
+    opacity: 0.7;
+    filter: blur(2px);
+  }
+  
+  .lazy-image[data-loaded="true"] {
+    opacity: 1;
+    filter: none;
+  }
+  
+  .lazy-image.loading {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+  }
+  
+  @keyframes loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+</style>
+
+<script>
+  // Intersection Observer para lazy loading
+  class LazyImageLoader {
+    private observer: IntersectionObserver | null = null;
+    private loadedImages = new Set<string>();
+
+    constructor() {
+      this.initObserver();
+      this.loadCriticalImages();
+    }
+
+    private initObserver() {
+      const options = {
+        root: null,
+        rootMargin: '50px', // Cargar imágenes 50px antes de que sean visibles
+        threshold: 0.1
+      };
+
+      this.observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            this.loadImage(entry.target as HTMLImageElement);
+            this.observer?.unobserve(entry.target);
+          }
+        });
+      }, options);
+
+      // Observar todas las imágenes lazy
+      document.querySelectorAll('.lazy-image[data-loaded="false"]').forEach((img) => {
+        this.observer?.observe(img);
+      });
+    }
+
+    private loadCriticalImages() {
+      // Cargar imágenes críticas inmediatamente
+      document.querySelectorAll('.lazy-image[data-loaded="true"]').forEach((img) => {
+        this.loadImage(img as HTMLImageElement);
+      });
+    }
+
+    private loadImage(img: HTMLImageElement) {
+      const imageId = img.id;
+      
+      if (this.loadedImages.has(imageId)) {
+        return;
+      }
+
+      this.loadedImages.add(imageId);
+      
+      // Añadir clase de loading
+      img.classList.add('loading');
+      
+      const dataSrc = img.getAttribute('data-src');
+      if (!dataSrc) return;
+
+      // Crear nueva imagen para precargar
+      const newImg = new Image();
+      
+      newImg.onload = () => {
+        // Imagen cargada exitosamente
+        img.src = dataSrc;
+        img.setAttribute('data-loaded', 'true');
+        img.classList.remove('loading');
+        
+        // Disparar evento personalizado
+        img.dispatchEvent(new CustomEvent('lazyLoaded', {
+          detail: { src: dataSrc, alt: img.alt }
+        }));
+      };
+      
+      newImg.onerror = () => {
+        // Error al cargar imagen
+        img.classList.remove('loading');
+        img.classList.add('error');
+        
+        // Usar imagen placeholder en caso de error
+        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZWY0NDQ0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yPC90ZXh0Pjwvc3ZnPg==';
+        
+        // Disparar evento de error
+        img.dispatchEvent(new CustomEvent('lazyError', {
+          detail: { src: dataSrc, alt: img.alt }
+        }));
+      };
+      
+      // Iniciar carga
+      newImg.src = dataSrc;
+    }
+
+    // Método público para recargar imágenes (útil para SPAs)
+    public reload() {
+      this.loadedImages.clear();
+      document.querySelectorAll('.lazy-image').forEach((img) => {
+        img.setAttribute('data-loaded', 'false');
+        img.classList.remove('loading', 'error');
+        this.observer?.observe(img);
+      });
+    }
+
+    // Método para destruir el observer
+    public destroy() {
+      this.observer?.disconnect();
+      this.observer = null;
+    }
+  }
+
+  // Inicializar cuando el DOM esté listo
+  document.addEventListener('DOMContentLoaded', () => {
+    window.lazyImageLoader = new LazyImageLoader();
+  });
+
+  // También inicializar si el script se ejecuta después del DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      window.lazyImageLoader = new LazyImageLoader();
+    });
+  } else {
+    window.lazyImageLoader = new LazyImageLoader();
+  }
+</script>

@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
+import LazyImage from "@/components/shared/LazyImage.astro";
 import { getProductByUuid, getProducts, getProductImages } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
@@ -25,6 +26,16 @@ if (!product) {
 // Get related products
 const relatedProducts = await getProducts(4, 0);
 const filteredRelated = relatedProducts.filter(p => p.uuid !== product.uuid).slice(0, 3);
+
+// Get related products with images
+const relatedProductsWithImages = await Promise.all(
+  filteredRelated.map(async (product) => {
+    const images = await getProductImages(product.id);
+    const primaryImage = images.find(img => img.is_primary) || images[0];
+    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(product.category);
+    return { ...product, imageUrl };
+  })
+);
 
 // Get product images
 const productImages = await getProductImages(product.id);
@@ -136,11 +147,11 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
           <!-- Main image -->
           <div class="aspect-h-1 aspect-w-1 w-full">
-            <img
-              id="main-image"
+            <LazyImage
               src={mainImage}
               alt={product.name}
               class="h-full w-full object-cover object-center sm:rounded-lg"
+              priority={true}
             />
           </div>
         </div>
@@ -337,12 +348,12 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           </h2>
 
           <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
-            {filteredRelated.map((relatedProduct) => (
+            {relatedProductsWithImages.map((relatedProduct) => (
               <div class="group relative flex flex-col">
                 <a href={`/en/product/${relatedProduct.uuid}`} class="block flex-shrink-0">
                   <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
-                    <img
-                      src={relatedProduct.image_url || getProductPlaceholderImage(relatedProduct.category)}
+                    <LazyImage
+                      src={relatedProduct.imageUrl}
                       alt={relatedProduct.name}
                       class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
                     />
@@ -365,7 +376,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   <button
                     type="button"
                     class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.image_url || ''}', '${relatedProduct.category || ''}')`}
+                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}')`}
                   >
                     Add to Cart
                   </button>

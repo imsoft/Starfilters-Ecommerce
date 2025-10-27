@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
+import LazyImage from "@/components/shared/LazyImage.astro";
 import { getProducts, getProductImages } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -219,7 +220,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           >
             <a href={`/en/product/${product.uuid}`} class="block flex-shrink-0">
               <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
-                <img
+                <LazyImage
                   src={product.imageUrl}
                   alt={product.name}
                   class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
