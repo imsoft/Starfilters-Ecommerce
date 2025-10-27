@@ -89,6 +89,11 @@ if (user) {
             class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
             >{t('nav.blog')}</a
           >
+          <a
+            href={lang === 'en' ? '/en/contact' : '/contact'}
+            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
+            >Contacto</a
+          >
         </div>
 
         <!-- Controles del lado derecho - idioma, carrito, usuario -->
@@ -173,6 +178,11 @@ if (user) {
                   href={lang === 'en' ? '/en/blog' : '/blog'}
                   class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
                   >{t('nav.blog')}</a
+                >
+                <a
+                  href={lang === 'en' ? '/en/contact' : '/contact'}
+                  class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
+                  >Contacto</a
                 >
               </div>
               <div class="py-6">
