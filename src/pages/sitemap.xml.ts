@@ -15,6 +15,17 @@ export const GET: APIRoute = async ({ site }) => {
     { url: 'cuartos-limpios', priority: '0.8', changefreq: 'weekly' },
     { url: 'services', priority: '0.8', changefreq: 'weekly' },
     { url: 'blog', priority: '0.7', changefreq: 'daily' },
+    { url: 'contact', priority: '0.6', changefreq: 'monthly' },
+    { url: 'terms', priority: '0.3', changefreq: 'yearly' },
+    { url: 'privacy', priority: '0.3', changefreq: 'yearly' },
+    { url: 'en/', priority: '0.9', changefreq: 'daily' },
+    { url: 'en/filters', priority: '0.9', changefreq: 'daily' },
+    { url: 'en/cleanrooms', priority: '0.8', changefreq: 'weekly' },
+    { url: 'en/services', priority: '0.8', changefreq: 'weekly' },
+    { url: 'en/blog', priority: '0.7', changefreq: 'daily' },
+    { url: 'en/contact', priority: '0.6', changefreq: 'monthly' },
+    { url: 'en/terms', priority: '0.3', changefreq: 'yearly' },
+    { url: 'en/privacy', priority: '0.3', changefreq: 'yearly' },
   ];
   
   // Generar XML del sitemap

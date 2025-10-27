@@ -11,6 +11,17 @@ Allow: /services
 Allow: /blog
 Allow: /product/
 Allow: /blog/
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Allow: /en/
+Allow: /en/filters
+Allow: /en/cleanrooms
+Allow: /en/services
+Allow: /en/blog
+Allow: /en/contact
+Allow: /en/terms
+Allow: /en/privacy
 
 # Páginas bloqueadas (admin, auth, APIs)
 Disallow: /admin/
