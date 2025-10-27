@@ -1,0 +1,169 @@
+---
+import { getProductImages, addProductImage, deleteProductImage, setPrimaryImage } from '@/lib/database';
+import type { ProductImage } from '@/lib/database';
+
+interface Props {
+  productId: number;
+  productName: string;
+}
+
+const { productId, productName } = Astro.props;
+
+// Obtener imágenes existentes
+const images = await getProductImages(productId);
+
+// Manejar acciones de imágenes
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const action = formData.get('action')?.toString();
+  
+  if (action === 'add') {
+    const imageUrl = formData.get('image_url')?.toString();
+    const altText = formData.get('alt_text')?.toString();
+    const isPrimary = formData.get('is_primary') === 'true';
+    
+    if (imageUrl) {
+      await addProductImage({
+        product_id: productId,
+        image_url: imageUrl,
+        alt_text: altText || `${productName} - Imagen`,
+        sort_order: images.length,
+        is_primary: isPrimary || images.length === 0
+      });
+    }
+  } else if (action === 'delete') {
+    const imageId = parseInt(formData.get('image_id')?.toString() || '0');
+    if (imageId > 0) {
+      await deleteProductImage(imageId);
+    }
+  } else if (action === 'set_primary') {
+    const imageId = parseInt(formData.get('image_id')?.toString() || '0');
+    if (imageId > 0) {
+      await setPrimaryImage(productId, imageId);
+    }
+  }
+  
+  return Astro.redirect(Astro.url.pathname);
+}
+
+// Obtener imágenes actualizadas
+const updatedImages = await getProductImages(productId);
+---
+
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h3 class="text-lg font-semibold text-foreground">Imágenes del Producto</h3>
+    <span class="text-sm text-muted-foreground">{updatedImages.length} imagen(es)</span>
+  </div>
+
+  <!-- Formulario para agregar nueva imagen -->
+  <form method="POST" class="bg-muted p-4 rounded-lg space-y-4">
+    <input type="hidden" name="action" value="add" />
+    
+    <div>
+      <label for="image_url" class="block text-sm font-medium text-foreground mb-2">
+        URL de la Imagen
+      </label>
+      <input
+        type="url"
+        id="image_url"
+        name="image_url"
+        required
+        class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        placeholder="https://ejemplo.com/imagen.jpg"
+      />
+    </div>
+    
+    <div>
+      <label for="alt_text" class="block text-sm font-medium text-foreground mb-2">
+        Texto Alternativo (SEO)
+      </label>
+      <input
+        type="text"
+        id="alt_text"
+        name="alt_text"
+        class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        placeholder="Descripción de la imagen"
+      />
+    </div>
+    
+    <div class="flex items-center space-x-2">
+      <input
+        type="checkbox"
+        id="is_primary"
+        name="is_primary"
+        value="true"
+        class="rounded border-border text-primary focus:ring-primary"
+      />
+      <label for="is_primary" class="text-sm text-foreground">
+        Establecer como imagen principal
+      </label>
+    </div>
+    
+    <button
+      type="submit"
+      class="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+    >
+      Agregar Imagen
+    </button>
+  </form>
+
+  <!-- Galería de imágenes existentes -->
+  {updatedImages.length > 0 ? (
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {updatedImages.map((image) => (
+        <div class="relative bg-background border border-border rounded-lg overflow-hidden">
+          <img
+            src={image.image_url}
+            alt={image.alt_text || productName}
+            class="w-full h-48 object-cover"
+          />
+          
+          {image.is_primary && (
+            <div class="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium">
+              Principal
+            </div>
+          )}
+          
+          <div class="p-3 space-y-2">
+            <p class="text-sm text-muted-foreground truncate">
+              {image.alt_text || 'Sin descripción'}
+            </p>
+            
+            <div class="flex space-x-2">
+              {!image.is_primary && (
+                <form method="POST" class="inline">
+                  <input type="hidden" name="action" value="set_primary" />
+                  <input type="hidden" name="image_id" value={image.id} />
+                  <button
+                    type="submit"
+                    class="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded hover:bg-secondary/80"
+                  >
+                    Principal
+                  </button>
+                </form>
+              )}
+              
+              <form method="POST" class="inline">
+                <input type="hidden" name="action" value="delete" />
+                <input type="hidden" name="image_id" value={image.id} />
+                <button
+                  type="submit"
+                  onclick="return confirm('¿Estás seguro de que quieres eliminar esta imagen?')"
+                  class="text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded hover:bg-destructive/80"
+                >
+                  Eliminar
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div class="text-center py-8 text-muted-foreground">
+      <p>No hay imágenes para este producto.</p>
+      <p class="text-sm">Agrega la primera imagen usando el formulario de arriba.</p>
+    </div>
+  )}
+</div>

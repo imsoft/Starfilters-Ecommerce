@@ -32,6 +32,17 @@ export interface Product {
   updated_at: Date;
 }
 
+export interface ProductImage {
+  id: number;
+  uuid: string;
+  product_id: number;
+  image_url: string;
+  alt_text?: string;
+  sort_order: number;
+  is_primary: boolean;
+  created_at: Date;
+}
+
 export interface BlogPost {
   id: number;
   uuid: string;
@@ -1003,3 +1014,86 @@ export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Pr
     return null;
   }
 }
+
+// Funciones para manejar imágenes de productos
+export const getProductImages = async (productId: number): Promise<ProductImage[]> => {
+  const sql = `
+    SELECT id, uuid, product_id, image_url, alt_text, sort_order, is_primary, created_at
+    FROM product_images 
+    WHERE product_id = ? 
+    ORDER BY sort_order ASC, created_at ASC
+  `;
+  const result = await query(sql, [productId]) as ProductImage[];
+  return result;
+};
+
+export const getProductPrimaryImage = async (productId: number): Promise<ProductImage | null> => {
+  const sql = `
+    SELECT id, uuid, product_id, image_url, alt_text, sort_order, is_primary, created_at
+    FROM product_images 
+    WHERE product_id = ? AND is_primary = 1
+    LIMIT 1
+  `;
+  const result = await query(sql, [productId]) as ProductImage[];
+  return result.length > 0 ? result[0] : null;
+};
+
+export const addProductImage = async (image: Omit<ProductImage, 'id' | 'uuid' | 'created_at'>): Promise<number> => {
+  const uuid = generateUUID();
+  const sql = `
+    INSERT INTO product_images (uuid, product_id, image_url, alt_text, sort_order, is_primary) 
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  const result = await query(sql, [
+    uuid,
+    image.product_id,
+    image.image_url,
+    image.alt_text || null,
+    image.sort_order,
+    image.is_primary
+  ]) as any;
+  return result.insertId;
+};
+
+export const updateProductImage = async (id: number, image: Partial<ProductImage>): Promise<void> => {
+  const fields = [];
+  const values = [];
+
+  if (image.image_url !== undefined) {
+    fields.push('image_url = ?');
+    values.push(image.image_url);
+  }
+  if (image.alt_text !== undefined) {
+    fields.push('alt_text = ?');
+    values.push(image.alt_text);
+  }
+  if (image.sort_order !== undefined) {
+    fields.push('sort_order = ?');
+    values.push(image.sort_order);
+  }
+  if (image.is_primary !== undefined) {
+    fields.push('is_primary = ?');
+    values.push(image.is_primary);
+  }
+
+  if (fields.length === 0) {
+    return;
+  }
+
+  values.push(id);
+  const sql = `UPDATE product_images SET ${fields.join(', ')} WHERE id = ?`;
+  await query(sql, values);
+};
+
+export const deleteProductImage = async (id: number): Promise<void> => {
+  const sql = 'DELETE FROM product_images WHERE id = ?';
+  await query(sql, [id]);
+};
+
+export const setPrimaryImage = async (productId: number, imageId: number): Promise<void> => {
+  // Primero quitar primary de todas las imágenes del producto
+  await query('UPDATE product_images SET is_primary = 0 WHERE product_id = ?', [productId]);
+  
+  // Luego establecer la nueva imagen como primary
+  await query('UPDATE product_images SET is_primary = 1 WHERE id = ? AND product_id = ?', [imageId, productId]);
+};

@@ -2,6 +2,7 @@
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
 import { ProductImageUploader } from "@/components/ui/ProductImageUploader";
+import ProductImageManager from "@/components/admin/ProductImageManager.astro";
 import { getProductByUuid, updateProduct } from "@/lib/database";
 import { requireAdmin } from "@/lib/auth-utils";
 import type { Product } from "@/lib/database";
@@ -327,6 +328,14 @@ if (Astro.request.method === 'POST') {
               )}
             </div>
           </div>
+        </div>
+
+        <!-- Gestión de Imágenes -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Gestión de Imágenes</h2>
+          
+          <!-- Componente de gestión de imágenes -->
+          <ProductImageManager productId={product.id} productName={product.name} />
         </div>
 
         <!-- Especificaciones técnicas -->

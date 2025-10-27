@@ -1,7 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
-import { getProductByUuid, getProducts } from "@/lib/database";
+import { getProductByUuid, getProducts, getProductImages } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
@@ -26,6 +26,17 @@ if (!product) {
 const relatedProducts = await getProducts(4, 0);
 const filteredRelated = relatedProducts.filter(p => p.uuid !== product.uuid).slice(0, 3);
 
+// Obtener imágenes del producto
+const productImages = await getProductImages(product.id);
+const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
+const galleryImages = productImages.filter(img => !img.is_primary);
+
+// Si no hay imágenes en product_images, usar image_url como fallback
+const mainImage = primaryImage?.image_url || product.image_url || getProductPlaceholderImage(product.category);
+const allImages = productImages.length > 0 
+  ? productImages.map(img => img.image_url)
+  : [mainImage, '/images/products/placeholder-hepa-filter.svg', '/images/products/placeholder-cleanroom.svg', '/images/products/placeholder-air-purification.svg'];
+
 // Función para formatear precio
 const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('es-MX', {
@@ -33,14 +44,6 @@ const formatPrice = (price: number): string => {
     currency: 'MXN'
   }).format(price);
 };
-
-// Generar algunas imágenes de ejemplo (en el futuro estas vendrían de la base de datos)
-const productImages = [
-  product.image_url || getProductPlaceholderImage(product.category),
-  '/images/products/placeholder-hepa-filter.svg',
-  '/images/products/placeholder-cleanroom.svg',
-  '/images/products/placeholder-air-purification.svg'
-];
 
 // Generar datos SEO
 const siteUrl = Astro.site?.href || Astro.url.origin;
@@ -135,7 +138,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           <div class="aspect-h-1 aspect-w-1 w-full">
             <img
               id="main-image"
-              src={productImages[0]}
+              src={mainImage}
               alt={product.name}
               class="h-full w-full object-cover object-center sm:rounded-lg"
             />
@@ -383,12 +386,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     const thumbnails = document.querySelectorAll('[data-image-index]');
     
     if (mainImage) {
-      const images = [
-        `${(window as any).productImages?.[0] || '/images/products/placeholder-product.svg'}`,
-        '/images/products/placeholder-hepa-filter.svg',
-        '/images/products/placeholder-cleanroom.svg', 
-        '/images/products/placeholder-air-purification.svg'
-      ];
+      const images = allImages;
       mainImage.src = images[index] || images[0];
     }
 
