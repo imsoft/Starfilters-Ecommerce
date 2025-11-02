@@ -27,6 +27,10 @@ export interface Product {
   stock: number;
   status: 'active' | 'inactive' | 'draft';
   tags?: string;
+  dimensions?: string | null;
+  weight?: string | null;
+  material?: string | null;
+  warranty?: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -147,14 +151,27 @@ export const getProductById = async (id: number): Promise<Product | null> => {
 export const getProductByUuid = async (uuid: string): Promise<Product | null> => {
   const sql = 'SELECT * FROM products WHERE uuid = ?';
   const result = await query(sql, [uuid]) as Product[];
-  return result.length > 0 ? result[0] : null;
+  
+  if (result.length > 0) {
+    const product = result[0];
+    // Log para verificar qué datos se están recibiendo de la BD
+    console.log('🔍 getProductByUuid - Producto obtenido de la BD:');
+    console.log('  - Dimensions (raw):', product.dimensions, typeof product.dimensions);
+    console.log('  - Weight (raw):', product.weight, typeof product.weight);
+    console.log('  - Material (raw):', product.material, typeof product.material);
+    console.log('  - Warranty (raw):', product.warranty, typeof product.warranty);
+    console.log('  - Producto completo (raw):', JSON.stringify(product, null, 2));
+    return product;
+  }
+  
+  return null;
 };
 
 export const createProduct = async (product: Omit<Product, 'id' | 'uuid' | 'created_at' | 'updated_at'>): Promise<number> => {
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO products (uuid, name, name_en, description, description_en, price, category, category_en, stock, status, tags) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO products (uuid, name, name_en, description, description_en, price, category, category_en, stock, status, tags, dimensions, weight, material, warranty) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -167,23 +184,76 @@ export const createProduct = async (product: Omit<Product, 'id' | 'uuid' | 'crea
     product.category_en || null,
     product.stock,
     product.status,
-    product.tags || ''
+    product.tags || '',
+    product.dimensions || null,
+    product.weight || null,
+    product.material || null,
+    product.warranty || null
   ]) as any;
   return result.insertId;
 };
 
 export const updateProduct = async (id: number, product: Partial<Product>): Promise<boolean> => {
   try {
+    // Verificar que el producto existe antes de actualizar
+    const existingProduct = await getProductById(id);
+    if (!existingProduct) {
+      console.error('❌ El producto con ID', id, 'no existe');
+      return false;
+    }
+    
+    console.log('📝 updateProduct llamado con ID:', id);
+    console.log('📝 Producto existente:', JSON.stringify(existingProduct, null, 2));
+    console.log('📝 Datos a actualizar (JSON):', JSON.stringify(product, null, 2));
+    
     const fields: string[] = [];
     const values: any[] = [];
     
-    console.log('📝 updateProduct llamado con ID:', id);
-    console.log('📝 Datos a actualizar:', product);
-    
     Object.entries(product).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'created_at' && value !== undefined) {
-        fields.push(`${key} = ?`);
-        values.push(value);
+      // Excluir solo id y created_at, incluir todos los demás campos
+      if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
+        // Incluir el campo si tiene un valor, si es null (para limpiar campos), o si es string vacío
+        // Verificar explícitamente si el valor está definido (incluyendo null)
+        const isDefined = value !== undefined;
+        const existingValue = (existingProduct as any)[key];
+        
+        // Normalizar valores para comparación (null, undefined, string vacío se tratan como equivalentes)
+        const normalizeValue = (v: any) => {
+          if (v === null || v === undefined || v === '') return null;
+          if (typeof v === 'string' && v.trim() === '') return null;
+          return v;
+        };
+        
+        const normalizedExisting = normalizeValue(existingValue);
+        const normalizedNew = normalizeValue(value);
+        const hasChanged = normalizedExisting !== normalizedNew;
+        
+        console.log(`  🔍 Campo ${key}:`);
+        console.log(`     - Valor actual: ${existingValue === null ? 'NULL' : existingValue === undefined ? 'undefined' : JSON.stringify(existingValue)} (${typeof existingValue})`);
+        console.log(`     - Valor nuevo: ${value === null ? 'NULL' : value === undefined ? 'undefined' : JSON.stringify(value)} (${typeof value})`);
+        console.log(`     - Valor normalizado actual: ${normalizedExisting === null ? 'NULL' : JSON.stringify(normalizedExisting)}`);
+        console.log(`     - Valor normalizado nuevo: ${normalizedNew === null ? 'NULL' : JSON.stringify(normalizedNew)}`);
+        console.log(`     - Está definido: ${isDefined}`);
+        console.log(`     - Ha cambiado: ${hasChanged}`);
+        
+        if (isDefined) {
+          // Convertir string vacío a null para campos opcionales
+          let finalValue = value;
+          if (value === '' || (typeof value === 'string' && value.trim() === '')) {
+            finalValue = null;
+          }
+          
+          // Solo agregar el campo si ha cambiado
+          if (hasChanged) {
+            fields.push(`${key} = ?`);
+            values.push(finalValue);
+            console.log(`  ✅ Campo ${key} agregado: ${finalValue === null ? 'NULL' : JSON.stringify(finalValue)}`);
+          } else {
+            console.log(`  ⏭️  Campo ${key} omitido (sin cambios)`);
+          }
+        } else {
+          console.log(`  ⏭️  Campo ${key} omitido (undefined)`);
+        }
       }
     });
     
@@ -195,17 +265,29 @@ export const updateProduct = async (id: number, product: Partial<Product>): Prom
     values.push(id);
     const sql = `UPDATE products SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
     
-    console.log('🔍 SQL:', sql);
-    console.log('🔍 Valores:', values);
+    console.log('🔍 SQL generado:', sql);
+    console.log('🔍 Valores (count):', values.length);
+    console.log('🔍 Valores detallados:', values.map((v, i) => `${i}: ${v === null ? 'NULL' : JSON.stringify(v)}`));
     
     const result = await query(sql, values) as any;
     
     console.log('📊 Resultado de query:', result);
     console.log('📊 Filas afectadas:', result.affectedRows);
+    console.log('📊 Info:', result.info);
+    
+    if (result.affectedRows === 0) {
+      console.warn('⚠️ La actualización no afectó ninguna fila. Posibles causas:');
+      console.warn('  - El ID del producto no existe');
+      console.warn('  - Los valores son exactamente los mismos que ya existen');
+    }
     
     return result.affectedRows > 0;
   } catch (error) {
     console.error('❌ Error en updateProduct:', error);
+    if (error instanceof Error) {
+      console.error('❌ Mensaje de error:', error.message);
+      console.error('❌ Stack:', error.stack);
+    }
     throw error;
   }
 };

@@ -10,6 +10,9 @@ export interface CartItem {
   color?: string;
   size?: string;
   category?: string;
+  width?: string;
+  height?: string;
+  length?: string;
 }
 
 export interface Cart {

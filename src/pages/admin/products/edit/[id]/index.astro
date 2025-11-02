@@ -24,6 +24,28 @@ if (id) {
   if (!product) {
     return Astro.redirect('/admin/products?error=product_not_found');
   }
+  
+  // Log para verificar que los datos se cargan correctamente
+  console.log('📦 Producto cargado desde la BD:');
+  console.log('  - ID:', product.id);
+  console.log('  - UUID:', product.uuid);
+  console.log('  - Nombre:', product.name);
+  console.log('  - Dimensions:', product.dimensions, typeof product.dimensions, product.dimensions === null);
+  console.log('  - Weight:', product.weight, typeof product.weight, product.weight === null);
+  console.log('  - Material:', product.material, typeof product.material, product.material === null);
+  console.log('  - Warranty:', product.warranty, typeof product.warranty, product.warranty === null);
+  console.log('  - Dimensions value para input:', product.dimensions ?? "");
+  console.log('  - Weight value para input:', product.weight ?? "");
+  console.log('  - Material value para input:', product.material ?? "");
+  console.log('  - Warranty value para input:', product.warranty ?? "");
+  console.log('  - Producto completo (JSON):', JSON.stringify(product, null, 2));
+  
+  // Convertir null a undefined explícitamente si es necesario para el renderizado
+  // Esto asegura que los valores null se muestren como cadenas vacías en los inputs
+  if (product.dimensions === null) product.dimensions = undefined;
+  if (product.weight === null) product.weight = undefined;
+  if (product.material === null) product.material = undefined;
+  if (product.warranty === null) product.warranty = undefined;
 } else {
   return Astro.redirect('/admin/products?error=invalid_id');
 }
@@ -34,21 +56,65 @@ if (Astro.request.method === 'POST') {
     const formData = await Astro.request.formData();
     const action = formData.get('action')?.toString() || 'update';
     
-    const productData = {
+    // Capturar todos los campos del formulario, incluyendo los campos de especificaciones técnicas
+    const dimensionsValue = formData.get('dimensions');
+    const weightValue = formData.get('weight');
+    const materialValue = formData.get('material');
+    const warrantyValue = formData.get('warranty');
+    
+    // Convertir a string y limpiar
+    const dimensionsStr = dimensionsValue ? String(dimensionsValue).trim() : '';
+    const weightStr = weightValue ? String(weightValue).trim() : '';
+    const materialStr = materialValue ? String(materialValue).trim() : '';
+    const warrantyStr = warrantyValue ? String(warrantyValue).trim() : '';
+    
+    console.log('📏 Valor de dimensions del formulario (raw):', dimensionsValue);
+    console.log('📏 Valor de dimensions del formulario (string):', dimensionsStr);
+    console.log('⚖️ Valor de weight del formulario (raw):', weightValue);
+    console.log('⚖️ Valor de weight del formulario (string):', weightStr);
+    console.log('🔧 Valor de material del formulario (raw):', materialValue);
+    console.log('🔧 Valor de material del formulario (string):', materialStr);
+    console.log('🛡️ Valor de warranty del formulario (raw):', warrantyValue);
+    console.log('🛡️ Valor de warranty del formulario (string):', warrantyStr);
+    
+    // Asegurar que los campos siempre se incluyan, incluso si están vacíos (para poder limpiarlos)
+    // Si el campo está vacío, se convierte a null para limpiar el campo en la base de datos
+    const dimensionsFinal: string | null = dimensionsStr.length > 0 ? dimensionsStr : null;
+    const weightFinal: string | null = weightStr.length > 0 ? weightStr : null;
+    const materialFinal: string | null = materialStr.length > 0 ? materialStr : null;
+    const warrantyFinal: string | null = warrantyStr.length > 0 ? warrantyStr : null;
+    
+    const productData: Partial<Product> = {
       name: formData.get('name')?.toString() || '',
       description: formData.get('description')?.toString() || '',
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
       stock: parseInt(formData.get('stock')?.toString() || '0'),
       tags: formData.get('tags')?.toString() || '',
-      image_url: formData.get('image_url')?.toString() || product.image_url,
+      dimensions: dimensionsFinal,
+      weight: weightFinal,
+      material: materialFinal,
+      warranty: warrantyFinal,
       status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || product.status)
     };
     
-    console.log('📝 Datos del producto a actualizar:', productData);
+    // Verificar que los campos se hayan capturado correctamente
+    console.log('📏 dimensions en productData:', productData.dimensions, typeof productData.dimensions);
+    console.log('⚖️ weight en productData:', productData.weight, typeof productData.weight);
+    console.log('🔧 material en productData:', productData.material, typeof productData.material);
+    console.log('🛡️ warranty en productData:', productData.warranty, typeof productData.warranty);
+    
+    // Verificar que todos los campos de especificaciones técnicas estén presentes en productData
+    console.log('✅ Verificación de campos en productData:');
+    console.log('  - dimensions está definido:', 'dimensions' in productData);
+    console.log('  - weight está definido:', 'weight' in productData);
+    console.log('  - material está definido:', 'material' in productData);
+    console.log('  - warranty está definido:', 'warranty' in productData);
+    
+    console.log('📝 Datos del producto a actualizar:', JSON.stringify(productData, null, 2));
 
     // Validar datos requeridos
-    if (action === 'update' && (!productData.name || !productData.description || productData.price <= 0)) {
+    if (action === 'update' && (!productData.name || !productData.description || !productData.price || productData.price <= 0)) {
       throw new Error('Todos los campos requeridos deben ser completados correctamente');
     }
     
@@ -58,6 +124,8 @@ if (Astro.request.method === 'POST') {
 
     // Actualizar el producto
     console.log('💾 Intentando actualizar producto con ID:', product.id);
+    console.log('📋 Datos completos a actualizar:', JSON.stringify(productData, null, 2));
+    
     const success = await updateProduct(product.id, productData);
     console.log('📊 Resultado de actualización:', success);
     
@@ -66,8 +134,8 @@ if (Astro.request.method === 'POST') {
       const redirectMessage = action === 'draft' ? 'draft_saved' : 'updated';
       return Astro.redirect(`/admin/products?success=${redirectMessage}`);
     } else {
-      console.error('❌ Error al actualizar el producto');
-      errorMessage = 'Error al actualizar el producto';
+      console.error('❌ Error al actualizar el producto - updateProduct retornó false');
+      errorMessage = 'Error al actualizar el producto. Verifica los logs del servidor.';
     }
   } catch (error) {
     console.error('Error actualizando producto:', error);
@@ -304,28 +372,7 @@ if (Astro.request.method === 'POST') {
 
             <!-- Vista previa de imágenes -->
             <div id="images-preview" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {product.image_url && (
-                <div class="relative w-full h-32 group image-item" data-image-id="main" data-image-url={product.image_url}>
-                  <img 
-                    class="w-full h-full rounded-lg object-cover border border-border" 
-                    src={product.image_url} 
-                    alt={product.name}
-                  />
-                  
-                  <button
-                    type="button"
-                    class="delete-image-btn absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10 opacity-0 group-hover:opacity-100"
-                  >
-                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </button>
-                  
-                  <div class="absolute bottom-1 left-1 right-1 bg-primary text-primary-foreground text-xs p-1 rounded text-center font-medium">
-                    Principal
-                  </div>
-                </div>
-              )}
+              <!-- Las imágenes se cargarán dinámicamente mediante JavaScript -->
             </div>
           </div>
         </div>
@@ -352,7 +399,7 @@ if (Astro.request.method === 'POST') {
                   type="text"
                   id="dimensions"
                   name="dimensions"
-                  value="30 x 20 x 15 cm"
+                  value={product.dimensions ?? ""}
                   class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="Ej: 30 x 20 x 15 cm"
                 />
@@ -366,7 +413,7 @@ if (Astro.request.method === 'POST') {
                   type="text"
                   id="weight"
                   name="weight"
-                  value="2.5 kg"
+                  value={product.weight ?? ""}
                   class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="Ej: 2.5 kg"
                 />
@@ -380,7 +427,7 @@ if (Astro.request.method === 'POST') {
                   type="text"
                   id="material"
                   name="material"
-                  value="Polipropileno, Acero inoxidable"
+                  value={product.material ?? ""}
                   class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="Ej: Polipropileno, Acero inoxidable"
                 />
@@ -394,7 +441,7 @@ if (Astro.request.method === 'POST') {
                   type="text"
                   id="warranty"
                   name="warranty"
-                  value="2 años"
+                  value={product.warranty ?? ""}
                   class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="Ej: 2 años"
                 />
@@ -445,18 +492,28 @@ if (Astro.request.method === 'POST') {
         </div>
 
         <!-- Botones de acción -->
-        <div class="flex justify-end space-x-4">
+        <div class="mt-6 flex justify-end space-x-4">
           <a href="/admin/products">
             <Button type="button" variant="outline" className="border-border text-foreground hover:bg-muted">
               Cancelar
             </Button>
           </a>
-          <Button type="submit" name="action" value="draft" variant="outline" className="border-border text-foreground hover:bg-muted">
+          <button 
+            type="submit" 
+            name="action" 
+            value="draft" 
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border border-border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground px-4 py-2"
+          >
             Guardar como borrador
-          </Button>
-          <Button type="submit" name="action" value="update" className="bg-primary text-primary-foreground hover:bg-primary/90">
+          </button>
+          <button 
+            type="submit" 
+            name="action" 
+            value="update" 
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2"
+          >
             Actualizar producto
-          </Button>
+          </button>
         </div>
       </form>
   </div>
@@ -464,17 +521,113 @@ if (Astro.request.method === 'POST') {
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 DOM cargado, buscando formulario...');
+    
     // ===== DEBUGGING DEL FORMULARIO =====
     const editForm = document.getElementById('edit-product-form');
+    console.log('📋 Formulario encontrado:', editForm ? 'SÍ' : 'NO');
+    
     if (editForm) {
+      console.log('✅ Agregando event listener al formulario...');
+      
       editForm.addEventListener('submit', function(e) {
         console.log('📤 Formulario enviándose...');
         const formData = new FormData(this as HTMLFormElement);
+        const action = formData.get('action')?.toString();
+        console.log('📝 Acción:', action);
         console.log('📝 Datos del formulario:');
         for (const [key, value] of formData.entries()) {
           console.log(`  ${key}: ${value}`);
         }
+        
+        // Solo validar en el cliente si es necesario, pero no bloquear el envío
+        // La validación completa se hace en el servidor
+        const name = formData.get('name')?.toString();
+        const description = formData.get('description')?.toString();
+        const price = formData.get('price')?.toString();
+        
+        if (action === 'update' && (!name || !description || !price || parseFloat(price) <= 0)) {
+          e.preventDefault();
+          alert('Por favor completa todos los campos requeridos correctamente');
+          return false;
+        }
+        
+        // Permitir que el formulario se envíe normalmente
+        console.log('✅ Enviando formulario...');
+        return true;
       });
+      
+      console.log('✅ Event listener agregado al formulario');
+      
+      // También agregar event listeners a los botones directamente por si acaso
+      const updateButton = document.querySelector('button[value="update"]');
+      const draftButton = document.querySelector('button[value="draft"]');
+      
+      if (updateButton) {
+        updateButton.addEventListener('click', function(e: Event) {
+          console.log('🖱️ Click en botón Actualizar producto');
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Usar el botón directamente o currentTarget
+          const button = (e.currentTarget || updateButton) as HTMLButtonElement;
+          const form = editForm as HTMLFormElement;
+          
+          if (form) {
+            console.log('📤 Enviando formulario manualmente...');
+            
+            // Asegurar que el action value esté presente
+            let actionInput = form.querySelector('input[name="action"]') as HTMLInputElement;
+            if (!actionInput) {
+              actionInput = document.createElement('input');
+              actionInput.type = 'hidden';
+              actionInput.name = 'action';
+              form.appendChild(actionInput);
+            }
+            actionInput.value = 'update';
+            
+            // Enviar el formulario
+            console.log('✅ Enviando formulario...');
+            form.submit();
+          } else {
+            console.error('❌ No se encontró el formulario');
+          }
+        });
+      }
+      
+      if (draftButton) {
+        draftButton.addEventListener('click', function(e: Event) {
+          console.log('🖱️ Click en botón Guardar como borrador');
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Usar el botón directamente o currentTarget
+          const button = (e.currentTarget || draftButton) as HTMLButtonElement;
+          const form = editForm as HTMLFormElement;
+          
+          if (form) {
+            console.log('📤 Enviando formulario manualmente...');
+            
+            // Asegurar que el action value esté presente
+            let actionInput = form.querySelector('input[name="action"]') as HTMLInputElement;
+            if (!actionInput) {
+              actionInput = document.createElement('input');
+              actionInput.type = 'hidden';
+              actionInput.name = 'action';
+              form.appendChild(actionInput);
+            }
+            actionInput.value = 'draft';
+            
+            // Enviar el formulario
+            console.log('✅ Enviando formulario...');
+            form.submit();
+          } else {
+            console.error('❌ No se encontró el formulario');
+          }
+        });
+      }
+    } else {
+      console.error('❌ No se encontró el formulario edit-product-form');
     }
     
     // ===== SISTEMA DE ETIQUETAS (TAGS) =====
@@ -576,14 +729,7 @@ if (Astro.request.method === 'POST') {
     let currentImages: any[] = [];
     
     // Cargar imágenes existentes
-    const hasInitialImage = `{product.image_url || ''}`;
-    if (hasInitialImage) {
-      currentImages.push({
-        id: 'main',
-        url: hasInitialImage,
-        isPrimary: true
-      });
-    }
+    // Las imágenes se cargan mediante ProductImageManager
     
     // Función para crear elemento de imagen
     function createImageElement(image: any) {

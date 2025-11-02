@@ -1,7 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getProducts, getProductImages } from "@/lib/database";
+import { getProducts, getProductImages, getProductById } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 
 // Obtener algunos productos para mostrar como recomendados
@@ -27,7 +27,7 @@ const formatPrice = (price: number): string => {
 ---
 
 <WebsiteLayout title="Carrito de Compras">
-  <div class="bg-background">
+  <div class="bg-background pt-24">
     <!-- Breadcrumb -->
     <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
       <nav class="mb-8" aria-label="Breadcrumb">
@@ -266,6 +266,9 @@ const formatPrice = (price: number): string => {
     color?: string;
     size?: string;
     category?: string;
+    width?: string;
+    height?: string;
+    length?: string;
   }
 
   interface Cart {
@@ -384,7 +387,102 @@ const formatPrice = (price: number): string => {
     renderCart();
   }
 
-  function renderCart(): void {
+  function updateQuantityFromInput(uuid: string): void {
+    const quantityInput = document.getElementById(`quantity-${uuid}`) as HTMLInputElement;
+    
+    if (quantityInput) {
+      let quantity = parseInt(quantityInput.value) || 1;
+      
+      // Validar que sea al menos 1
+      if (quantity < 1) {
+        quantity = 1;
+        quantityInput.value = "1";
+      }
+      
+      updateQuantity(uuid, quantity);
+    }
+  }
+
+  function updateMeasurements(uuid: string, width: string, height: string, length: string): void {
+    const cart = getCart();
+    const itemIndex = cart.items.findIndex((item) => item.uuid === uuid);
+
+    if (itemIndex >= 0) {
+      cart.items[itemIndex].width = width || undefined;
+      cart.items[itemIndex].height = height || undefined;
+      cart.items[itemIndex].length = length || undefined;
+    }
+
+    saveCart(cart);
+    renderCart();
+  }
+
+  function updateMeasurementsFromInputs(uuid: string): void {
+    const widthSelect = document.getElementById(`width-${uuid}`) as HTMLSelectElement;
+    const heightSelect = document.getElementById(`height-${uuid}`) as HTMLSelectElement;
+    const lengthSelect = document.getElementById(`length-${uuid}`) as HTMLSelectElement;
+
+    if (widthSelect && heightSelect && lengthSelect) {
+      updateMeasurements(
+        uuid,
+        widthSelect.value.trim() || undefined,
+        heightSelect.value.trim() || undefined,
+        lengthSelect.value.trim() || undefined
+      );
+    }
+  }
+
+  // Función para parsear dimensiones del formato "30 x 20 x 15 cm" o "30x20x15"
+  function parseDimensions(dimensionsString: string | undefined | null): { length?: string; width?: string; height?: string } {
+    if (!dimensionsString) return {};
+    
+    // Formato esperado: "30 x 20 x 15 cm" o "30x20x15" o "30 x 20 x 15"
+    const match = dimensionsString.match(/(\d+)\s*x\s*(\d+)\s*x\s*(\d+)/i);
+    if (match) {
+      return {
+        length: match[1],
+        width: match[2],
+        height: match[3]
+      };
+    }
+    return {};
+  }
+
+  // Función para cargar dimensiones desde el producto si no están en el carrito
+  async function loadProductDimensions(item: CartItem): Promise<{ length?: string; width?: string; height?: string }> {
+    // Si ya tiene dimensiones parseadas, usarlas
+    if (item.length || item.width || item.height) {
+      return {
+        length: item.length,
+        width: item.width,
+        height: item.height
+      };
+    }
+    
+    // Si no tiene dimensiones, obtenerlas del producto
+    try {
+      const response = await fetch(`/api/get-product-dimensions?product_id=${item.product_id}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.dimensions) {
+          const parsed = parseDimensions(data.dimensions);
+          // Guardar las dimensiones parseadas en el carrito
+          updateMeasurements(item.uuid, parsed.width || '', parsed.height || '', parsed.length || '');
+          return {
+            length: parsed.length,
+            width: parsed.width,
+            height: parsed.height
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error loading product dimensions:', error);
+    }
+    
+    return {};
+  }
+
+  async function renderCart(): Promise<void> {
     const cart = getCart();
     const cartLoading = document.getElementById("cart-loading");
     const cartEmpty = document.getElementById("cart-empty");
@@ -411,8 +509,30 @@ const formatPrice = (price: number): string => {
       cartEmpty.classList.add("hidden");
       cartContent.classList.remove("hidden");
 
+      // Renderizar items - primero cargar dimensiones si no están
+      const itemsWithDimensions = await Promise.all(
+        cart.items.map(async (item) => {
+          const dimensions = await loadProductDimensions(item);
+          return { ...item, ...dimensions };
+        })
+      );
+
+      // Actualizar cartItems con dimensiones cargadas
+      const updatedCart = {
+        ...cart,
+        items: itemsWithDimensions.map((item, index) => ({
+          ...cart.items[index],
+          length: item.length,
+          width: item.width,
+          height: item.height
+        }))
+      };
+      
+      // Guardar carrito actualizado con dimensiones
+      saveCart(updatedCart);
+
       // Renderizar items
-      cartItems.innerHTML = cart.items
+      cartItems.innerHTML = itemsWithDimensions
         .map(
           (item) => `
         <li class="flex py-6 sm:py-10">
@@ -429,19 +549,27 @@ const formatPrice = (price: number): string => {
                 <h3 class="text-sm font-medium text-foreground">${item.name}</h3>
                 ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">${item.category}</p>` : ""}
                 <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
+                
+                <!-- Dimensiones del producto -->
+                ${item.length || item.width || item.height 
+                  ? `<div class="mt-4 space-y-1">
+                      <p class="text-xs font-medium text-foreground">Dimensiones (L x W x H):</p>
+                      <p class="text-xs text-muted-foreground">${item.length || "-"} x ${item.width || "-"} x ${item.height || "-"} cm</p>
+                    </div>` 
+                  : ""}
               </div>
               <div class="mt-4 sm:mt-0 sm:pr-9">
-                <select
-                  onchange="updateQuantity('${item.uuid}', parseInt(this.value))"
-                  class="rounded-md bg-background py-1.5 pr-8 pl-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-                >
-                  ${[1, 2, 3, 4, 5, 6, 7, 8]
-                    .map(
-                      (num) =>
-                        `<option value="${num}" ${item.quantity === num ? "selected" : ""}>${num}</option>`
-                    )
-                    .join("")}
-                </select>
+                <label class="block text-xs text-muted-foreground mb-1">Cantidad</label>
+                <input
+                  type="number"
+                  id="quantity-${item.uuid}"
+                  value="${item.quantity}"
+                  min="1"
+                  step="1"
+                  onchange="updateQuantityFromInput('${item.uuid}')"
+                  onblur="updateQuantityFromInput('${item.uuid}')"
+                  class="w-20 rounded-md border border-border bg-background py-1.5 px-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
                 <div class="absolute top-0 right-0">
                   <button
                     type="button"
@@ -582,9 +710,12 @@ const formatPrice = (price: number): string => {
   (window as any).addProductToCart = addProductToCart;
   (window as any).removeFromCart = removeFromCart;
   (window as any).updateQuantity = updateQuantity;
+  (window as any).updateQuantityFromInput = updateQuantityFromInput;
+  (window as any).updateMeasurements = updateMeasurements;
+  (window as any).updateMeasurementsFromInputs = updateMeasurementsFromInputs;
 
   // Inicializar carrito
-  document.addEventListener("DOMContentLoaded", () => {
-    renderCart();
+  document.addEventListener("DOMContentLoaded", async () => {
+    await renderCart();
   });
 </script>

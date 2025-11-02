@@ -24,6 +24,11 @@ if (Astro.request.method === 'POST') {
     const imagesUrls = formData.get('images_urls')?.toString() || '';
     const firstImageUrl = imagesUrls.split(',').filter(Boolean)[0] || '';
     
+    const dimensionsValue = formData.get('dimensions')?.toString()?.trim();
+    const weightValue = formData.get('weight')?.toString()?.trim();
+    const materialValue = formData.get('material')?.toString()?.trim();
+    const warrantyValue = formData.get('warranty')?.toString()?.trim();
+    
     const productData = {
       name: formData.get('name')?.toString() || '',
       name_en: formData.get('name_en')?.toString() || undefined,
@@ -34,6 +39,10 @@ if (Astro.request.method === 'POST') {
       category_en: formData.get('category_en')?.toString() || undefined,
       stock: parseInt(formData.get('stock')?.toString() || '0'),
       tags: formData.get('tags')?.toString() || '',
+      dimensions: dimensionsValue && dimensionsValue.length > 0 ? dimensionsValue : undefined,
+      weight: weightValue && weightValue.length > 0 ? weightValue : undefined,
+      material: materialValue && materialValue.length > 0 ? materialValue : undefined,
+      warranty: warrantyValue && warrantyValue.length > 0 ? warrantyValue : undefined,
       image_url: firstImageUrl, // Primera imagen subida o string vacío
       status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || 'active')
     };
