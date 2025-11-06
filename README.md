@@ -287,3 +287,5 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 ---
 
 **Desarrollado con ❤️ para StarFilters**
+
+https://developers.bind.com.mx/api-details#api=bind-erp-api&operation=Products_AddProduct

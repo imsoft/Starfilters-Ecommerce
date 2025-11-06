@@ -44,21 +44,69 @@ if (Astro.request.method === 'POST') {
   try {
     const formData = await Astro.request.formData();
     const action = formData.get('action')?.toString() || 'update';
-    
+
+    // Manejar acciones de imágenes
+    if (action === 'add') {
+      const { addProductImage } = await import('@/lib/database');
+      const imageUrl = formData.get('image_url')?.toString();
+      const altText = formData.get('alt_text')?.toString();
+      const isPrimary = formData.get('is_primary') === 'true';
+
+      if (imageUrl) {
+        const images = await import('@/lib/database').then(m => m.getProductImages(product.id));
+        await addProductImage({
+          product_id: product.id,
+          image_url: imageUrl,
+          alt_text: altText || `${product.name} - Imagen`,
+          sort_order: images.length,
+          is_primary: isPrimary || images.length === 0
+        });
+      }
+      return Astro.redirect(Astro.url.pathname);
+    } else if (action === 'delete') {
+      const { deleteProductImage } = await import('@/lib/database');
+      const imageId = parseInt(formData.get('image_id')?.toString() || '0');
+      if (imageId > 0) {
+        await deleteProductImage(imageId);
+      }
+      return Astro.redirect(Astro.url.pathname);
+    } else if (action === 'set_primary') {
+      const { setPrimaryImage } = await import('@/lib/database');
+      const imageId = parseInt(formData.get('image_id')?.toString() || '0');
+      if (imageId > 0) {
+        await setPrimaryImage(product.id, imageId);
+      }
+      return Astro.redirect(Astro.url.pathname);
+    }
+
+    // Procesar actualización del producto
     // Capturar y limpiar campos del formulario
     const dimensionsStr = formData.get('dimensions')?.toString().trim() || '';
     const weightStr = formData.get('weight')?.toString().trim() || '';
     const materialStr = formData.get('material')?.toString().trim() || '';
     const warrantyStr = formData.get('warranty')?.toString().trim() || '';
 
-    const productData: Partial<Product> = {
+    // Debug: Ver qué valores llegan
+    console.log('📊 Especificaciones técnicas recibidas:');
+    console.log('  - dimensions:', dimensionsStr);
+    console.log('  - weight:', weightStr);
+    console.log('  - material:', materialStr);
+    console.log('  - warranty:', warrantyStr);
+
+    // Función helper para convertir strings vacíos a null en lugar de undefined
+    const toNullIfEmpty = (value: string | null | undefined): string | null => {
+      if (!value || value.trim() === '') return null;
+      return value.trim();
+    };
+
+    const productData: any = {
       name: formData.get('name')?.toString() || '',
-      name_en: formData.get('name_en')?.toString().trim() || undefined,
+      name_en: toNullIfEmpty(formData.get('name_en')?.toString()),
       description: formData.get('description')?.toString() || '',
-      description_en: formData.get('description_en')?.toString().trim() || undefined,
+      description_en: toNullIfEmpty(formData.get('description_en')?.toString()),
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
-      category_en: formData.get('category_en')?.toString().trim() || undefined,
+      category_en: toNullIfEmpty(formData.get('category_en')?.toString()),
       stock: parseInt(formData.get('stock')?.toString() || '0'),
       tags: formData.get('tags')?.toString() || '',
       dimensions: dimensionsStr || null,
@@ -67,6 +115,12 @@ if (Astro.request.method === 'POST') {
       warranty: warrantyStr || null,
       status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || product.status)
     };
+
+    console.log('📦 productData especificaciones:');
+    console.log('  - dimensions:', productData.dimensions);
+    console.log('  - weight:', productData.weight);
+    console.log('  - material:', productData.material);
+    console.log('  - warranty:', productData.warranty);
 
     // Validar datos requeridos
     if (action === 'update' && (!productData.name || !productData.description || !productData.price || productData.price <= 0)) {
@@ -145,7 +199,7 @@ if (Astro.request.method === 'POST') {
             <!-- Columna Español -->
             <div class="space-y-6">
               <div class="flex items-center gap-2 mb-4">
-                <span class="text-lg font-medium text-foreground">🇪🇸 Español</span>
+                <span class="text-lg font-medium text-foreground">🇲🇽 Español</span>
               </div>
 
               <div>
@@ -307,7 +361,7 @@ if (Astro.request.method === 'POST') {
 
         <!-- Estado y Etiquetas -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Estado y Etiquetas</h2>
+          <h2 class="text-lg font-semibold text-foreground mb-6">Estado y Etiquetas</h2>
 
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-6">
             <div>
@@ -350,7 +404,7 @@ if (Astro.request.method === 'POST') {
 
         <!-- Imágenes -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Imágenes del Producto</h2>
+          <h2 class="text-lg font-semibold text-foreground mb-6">Imágenes del Producto</h2>
           
           <div class="space-y-4">
             <!-- Zona de carga -->
@@ -398,10 +452,10 @@ if (Astro.request.method === 'POST') {
 
         <!-- Especificaciones técnicas -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Especificaciones Técnicas</h2>
-          
-          <div class="space-y-4">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <h2 class="text-lg font-semibold text-foreground mb-6">Especificaciones Técnicas</h2>
+
+          <div class="space-y-6">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
                 <label for="dimensions" class="block text-sm font-medium text-foreground mb-2">
                   Dimensiones (L x W x H)
@@ -463,9 +517,9 @@ if (Astro.request.method === 'POST') {
 
         <!-- Historial de cambios -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Historial de Cambios</h2>
-          
-          <div class="space-y-3">
+          <h2 class="text-lg font-semibold text-foreground mb-6">Historial de Cambios</h2>
+
+          <div class="space-y-6">
             <div class="flex items-center space-x-3 p-3 rounded-md bg-muted/50">
               <div class="flex-shrink-0">
                 <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">

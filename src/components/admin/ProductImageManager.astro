@@ -1,6 +1,5 @@
 ---
-import { getProductImages, addProductImage, deleteProductImage, setPrimaryImage } from '@/lib/database';
-import type { ProductImage } from '@/lib/database';
+import { getProductImages } from '@/lib/database';
 
 interface Props {
   productId: number;
@@ -9,44 +8,7 @@ interface Props {
 
 const { productId, productName } = Astro.props;
 
-// Obtener imágenes existentes
-const images = await getProductImages(productId);
-
-// Manejar acciones de imágenes
-if (Astro.request.method === 'POST') {
-  const formData = await Astro.request.formData();
-  const action = formData.get('action')?.toString();
-  
-  if (action === 'add') {
-    const imageUrl = formData.get('image_url')?.toString();
-    const altText = formData.get('alt_text')?.toString();
-    const isPrimary = formData.get('is_primary') === 'true';
-    
-    if (imageUrl) {
-      await addProductImage({
-        product_id: productId,
-        image_url: imageUrl,
-        alt_text: altText || `${productName} - Imagen`,
-        sort_order: images.length,
-        is_primary: isPrimary || images.length === 0
-      });
-    }
-  } else if (action === 'delete') {
-    const imageId = parseInt(formData.get('image_id')?.toString() || '0');
-    if (imageId > 0) {
-      await deleteProductImage(imageId);
-    }
-  } else if (action === 'set_primary') {
-    const imageId = parseInt(formData.get('image_id')?.toString() || '0');
-    if (imageId > 0) {
-      await setPrimaryImage(productId, imageId);
-    }
-  }
-  
-  return Astro.redirect(Astro.url.pathname);
-}
-
-// Obtener imágenes actualizadas
+// Obtener imágenes del producto
 const updatedImages = await getProductImages(productId);
 ---
 
