@@ -137,39 +137,119 @@ if (Astro.request.method === 'POST') {
       <form method="POST" class="space-y-8">
         <!-- Información básica -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Información Básica</h2>
-          
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <label for="name" class="block text-sm font-medium text-foreground mb-2">
-                Nombre del producto (Español)
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Ej: Filtro HEPA Premium"
-              />
+          <h2 class="text-lg font-semibold text-foreground mb-6">Información Básica</h2>
+
+          <!-- Grid de dos columnas: Español | Inglés -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Columna Español -->
+            <div class="space-y-6">
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-lg font-medium text-foreground">🇪🇸 Español</span>
+              </div>
+
+              <div>
+                <label for="name" class="block text-sm font-medium text-foreground mb-2">
+                  Nombre del producto *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Ej: Filtro HEPA Premium"
+                />
+              </div>
+
+              <div>
+                <label for="description" class="block text-sm font-medium text-foreground mb-2">
+                  Descripción *
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows="6"
+                  required
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Describe las características y beneficios del producto..."
+                ></textarea>
+              </div>
+
+              <div>
+                <label for="category" class="block text-sm font-medium text-foreground mb-2">
+                  Categoría *
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  required
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">Seleccionar categoría</option>
+                  <option value="filtros">Filtros</option>
+                  <option value="cuartos-limpios">Cuartos Limpios</option>
+                  <option value="accesorios">Accesorios</option>
+                  <option value="servicios">Servicios</option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label for="name_en" class="block text-sm font-medium text-foreground mb-2">
-                Product Name (English)
-              </label>
-              <input
-                type="text"
-                id="name_en"
-                name="name_en"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="E.g: Premium HEPA Filter"
-              />
-            </div>
+            <!-- Columna Inglés -->
+            <div class="space-y-6">
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-lg font-medium text-foreground">🇺🇸 English</span>
+              </div>
 
+              <div>
+                <label for="name_en" class="block text-sm font-medium text-foreground mb-2">
+                  Product Name
+                </label>
+                <input
+                  type="text"
+                  id="name_en"
+                  name="name_en"
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Ex: Premium HEPA Filter"
+                />
+              </div>
+
+              <div>
+                <label for="description_en" class="block text-sm font-medium text-foreground mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="description_en"
+                  name="description_en"
+                  rows="6"
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Describe the product features and benefits..."
+                ></textarea>
+              </div>
+
+              <div>
+                <label for="category_en" class="block text-sm font-medium text-foreground mb-2">
+                  Category
+                </label>
+                <select
+                  id="category_en"
+                  name="category_en"
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">Select category</option>
+                  <option value="filters">Filters</option>
+                  <option value="cleanrooms">Cleanrooms</option>
+                  <option value="accessories">Accessories</option>
+                  <option value="services">Services</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campos comunes (sin idioma) -->
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mt-8 pt-6 border-t border-border">
             <div>
               <label for="sku" class="block text-sm font-medium text-foreground mb-2">
-                SKU
+                SKU *
               </label>
               <input
                 type="text"
@@ -183,7 +263,7 @@ if (Astro.request.method === 'POST') {
 
             <div>
               <label for="price" class="block text-sm font-medium text-foreground mb-2">
-                Precio
+                Precio *
               </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -204,7 +284,7 @@ if (Astro.request.method === 'POST') {
 
             <div>
               <label for="stock" class="block text-sm font-medium text-foreground mb-2">
-                Stock
+                Stock *
               </label>
               <input
                 type="number"
@@ -216,80 +296,17 @@ if (Astro.request.method === 'POST') {
                 placeholder="0"
               />
             </div>
-
-          </div>
-
-          <div class="mt-6">
-            <label for="description" class="block text-sm font-medium text-foreground mb-2">
-              Descripción (Español)
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows="4"
-              required
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Describe las características y beneficios del producto..."
-            ></textarea>
-          </div>
-
-          <div class="mt-6">
-            <label for="description_en" class="block text-sm font-medium text-foreground mb-2">
-              Description (English)
-            </label>
-            <textarea
-              id="description_en"
-              name="description_en"
-              rows="4"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Describe the features and benefits of the product..."
-            ></textarea>
           </div>
         </div>
 
-        <!-- Categoría y etiquetas -->
+        <!-- Estado y Etiquetas -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Categorización</h2>
-          
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <label for="category" class="block text-sm font-medium text-foreground mb-2">
-                Categoría (Español)
-              </label>
-              <select
-                id="category"
-                name="category"
-                required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">Seleccionar categoría</option>
-                <option value="filtros">Filtros</option>
-                <option value="cuartos-limpios">Cuartos Limpios</option>
-                <option value="accesorios">Accesorios</option>
-                <option value="servicios">Servicios</option>
-              </select>
-            </div>
+          <h2 class="text-lg font-semibold text-foreground mb-4">Estado y Etiquetas</h2>
 
-            <div>
-              <label for="category_en" class="block text-sm font-medium text-foreground mb-2">
-                Category (English)
-              </label>
-              <select
-                id="category_en"
-                name="category_en"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">Select category</option>
-                <option value="filters">Filters</option>
-                <option value="clean-rooms">Clean Rooms</option>
-                <option value="accessories">Accessories</option>
-                <option value="services">Services</option>
-              </select>
-            </div>
-
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-6">
             <div>
               <label for="status" class="block text-sm font-medium text-foreground mb-2">
-                Estado
+                Estado *
               </label>
               <select
                 id="status"
@@ -304,7 +321,7 @@ if (Astro.request.method === 'POST') {
             </div>
           </div>
 
-          <div class="mt-6">
+          <div>
             <label for="tags" class="block text-sm font-medium text-foreground mb-2">
               Etiquetas
             </label>

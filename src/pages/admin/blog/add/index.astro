@@ -128,130 +128,123 @@ const error = url.searchParams.get('error');
     <form method="POST" class="space-y-8">
       <!-- Información básica -->
       <div class="rounded-lg border border-border bg-background p-6">
-        <h2 class="text-lg font-semibold text-foreground mb-4">
+        <h2 class="text-lg font-semibold text-foreground mb-6">
           Información Básica
         </h2>
 
-        <div class="space-y-6">
-          <div>
-            <label
-              for="title"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Título del artículo (Español)
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              required
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Ej: Guía Completa de Filtros HEPA"
-            />
-          </div>
+        <!-- Grid de dos columnas: Español | Inglés -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Columna Español -->
+          <div class="space-y-6">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="text-lg font-medium text-foreground">🇪🇸 Español</span>
+            </div>
 
-          <div>
-            <label
-              for="title_en"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Article Title (English)
-            </label>
-            <input
-              type="text"
-              id="title_en"
-              name="title_en"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="E.g: Complete Guide to HEPA Filters"
-            />
-          </div>
-
-          <div>
-            <label
-              for="slug"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              URL del artículo - Slug (Español)
-            </label>
-            <div class="flex">
-              <span
-                class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm"
-              >
-                /blog/
-              </span>
+            <div>
+              <label for="title" class="block text-sm font-medium text-foreground mb-2">
+                Título del artículo *
+              </label>
               <input
                 type="text"
-                id="slug"
-                name="slug"
+                id="title"
+                name="title"
                 required
-                readonly
-                class="flex-1 rounded-r-md border border-border bg-muted px-3 py-2 text-muted-foreground cursor-not-allowed"
-                placeholder="guia-completa-filtros-hepa"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Ej: Guía Completa de Filtros HEPA"
               />
             </div>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Se genera automáticamente basado en el título
-            </p>
+
+            <div>
+              <label for="slug" class="block text-sm font-medium text-foreground mb-2">
+                URL del artículo (slug) *
+              </label>
+              <div class="flex">
+                <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm">
+                  /blog/
+                </span>
+                <input
+                  type="text"
+                  id="slug"
+                  name="slug"
+                  required
+                  readonly
+                  class="flex-1 rounded-r-md border border-border bg-muted px-3 py-2 text-muted-foreground cursor-not-allowed"
+                  placeholder="guia-completa-filtros-hepa"
+                />
+              </div>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Se genera automáticamente basado en el título
+              </p>
+            </div>
+
+            <div>
+              <label for="excerpt" class="block text-sm font-medium text-foreground mb-2">
+                Resumen *
+              </label>
+              <textarea
+                id="excerpt"
+                name="excerpt"
+                rows="4"
+                required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Breve descripción del artículo que aparecerá en la lista del blog..."
+              ></textarea>
+            </div>
           </div>
 
-          <div>
-            <label
-              for="slug_en"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Article URL - Slug (English)
-            </label>
-            <div class="flex">
-              <span
-                class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm"
-              >
-                /en/blog/
-              </span>
+          <!-- Columna Inglés -->
+          <div class="space-y-6">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="text-lg font-medium text-foreground">🇺🇸 English</span>
+            </div>
+
+            <div>
+              <label for="title_en" class="block text-sm font-medium text-foreground mb-2">
+                Article Title
+              </label>
               <input
                 type="text"
-                id="slug_en"
-                name="slug_en"
-                readonly
-                class="flex-1 rounded-r-md border border-border bg-muted px-3 py-2 text-muted-foreground cursor-not-allowed"
-                placeholder="complete-guide-to-hepa-filters"
+                id="title_en"
+                name="title_en"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Ex: Complete Guide to HEPA Filters"
               />
             </div>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Se genera automáticamente basado en el título en inglés
-            </p>
-          </div>
 
-          <div>
-            <label
-              for="excerpt"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Resumen (Español)
-            </label>
-            <textarea
-              id="excerpt"
-              name="excerpt"
-              rows="3"
-              required
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Breve descripción del artículo que aparecerá en la lista del blog..."
-            ></textarea>
-          </div>
+            <div>
+              <label for="slug_en" class="block text-sm font-medium text-foreground mb-2">
+                Article URL (slug)
+              </label>
+              <div class="flex">
+                <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm">
+                  /en/blog/
+                </span>
+                <input
+                  type="text"
+                  id="slug_en"
+                  name="slug_en"
+                  readonly
+                  class="flex-1 rounded-r-md border border-border bg-muted px-3 py-2 text-muted-foreground cursor-not-allowed"
+                  placeholder="complete-guide-hepa-filters"
+                />
+              </div>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Will be auto-generated based on the English title
+              </p>
+            </div>
 
-          <div>
-            <label
-              for="excerpt_en"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Excerpt (English)
-            </label>
-            <textarea
-              id="excerpt_en"
-              name="excerpt_en"
-              rows="3"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Brief description of the article that will appear in the blog list..."
-            ></textarea>
+            <div>
+              <label for="excerpt_en" class="block text-sm font-medium text-foreground mb-2">
+                Summary
+              </label>
+              <textarea
+                id="excerpt_en"
+                name="excerpt_en"
+                rows="4"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Brief description of the article that will appear in the blog list..."
+              ></textarea>
+            </div>
           </div>
         </div>
       </div>
@@ -390,89 +383,90 @@ const error = url.searchParams.get('error');
 
       <!-- SEO -->
       <div class="rounded-lg border border-border bg-background p-6">
-        <h2 class="text-lg font-semibold text-foreground mb-4">SEO</h2>
+        <h2 class="text-lg font-semibold text-foreground mb-6">SEO</h2>
 
-        <div class="space-y-4">
-          <div>
-            <label
-              for="meta-title"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Meta Título (Español)
-            </label>
-            <input
-              type="text"
-              id="meta-title"
-              name="meta-title"
-              maxlength="60"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Título optimizado para motores de búsqueda"
-            />
-            <p class="mt-1 text-sm text-muted-foreground">
-              Máximo 60 caracteres. Actual: <span id="meta-title-count">0</span>
-            </p>
+        <!-- Grid de dos columnas: Español | Inglés -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Columna Español -->
+          <div class="space-y-6">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="text-lg font-medium text-foreground">🇪🇸 Español</span>
+            </div>
+
+            <div>
+              <label for="meta-title" class="block text-sm font-medium text-foreground mb-2">
+                Meta Título
+              </label>
+              <input
+                type="text"
+                id="meta-title"
+                name="meta-title"
+                maxlength="60"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Título optimizado para motores de búsqueda"
+              />
+              <p class="mt-1 text-sm text-muted-foreground">
+                Máximo 60 caracteres. Actual: <span id="meta-title-count">0</span>
+              </p>
+            </div>
+
+            <div>
+              <label for="meta-description" class="block text-sm font-medium text-foreground mb-2">
+                Meta Descripción
+              </label>
+              <textarea
+                id="meta-description"
+                name="meta-description"
+                rows="4"
+                maxlength="160"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Descripción que aparecerá en los resultados de búsqueda"
+              ></textarea>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Máximo 160 caracteres. Actual: <span id="meta-description-count">0</span>
+              </p>
+            </div>
           </div>
 
-          <div>
-            <label
-              for="meta-title_en"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Meta Title (English)
-            </label>
-            <input
-              type="text"
-              id="meta-title_en"
-              name="meta-title_en"
-              maxlength="60"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="SEO-optimized title"
-            />
-            <p class="mt-1 text-sm text-muted-foreground">
-              Maximum 60 characters
-            </p>
-          </div>
+          <!-- Columna Inglés -->
+          <div class="space-y-6">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="text-lg font-medium text-foreground">🇺🇸 English</span>
+            </div>
 
-          <div>
-            <label
-              for="meta-description"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Meta Descripción (Español)
-            </label>
-            <textarea
-              id="meta-description"
-              name="meta-description"
-              rows="3"
-              maxlength="160"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Descripción que aparecerá en los resultados de búsqueda"
-            ></textarea>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Máximo 160 caracteres. Actual: <span id="meta-description-count"
-                >0</span
-              >
-            </p>
-          </div>
+            <div>
+              <label for="meta-title_en" class="block text-sm font-medium text-foreground mb-2">
+                Meta Title
+              </label>
+              <input
+                type="text"
+                id="meta-title_en"
+                name="meta-title_en"
+                maxlength="60"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Title optimized for search engines"
+              />
+              <p class="mt-1 text-sm text-muted-foreground">
+                Maximum 60 characters. Current: <span id="meta-title-en-count">0</span>
+              </p>
+            </div>
 
-          <div>
-            <label
-              for="meta-description_en"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Meta Description (English)
-            </label>
-            <textarea
-              id="meta-description_en"
-              name="meta-description_en"
-              rows="3"
-              maxlength="160"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Description that will appear in search results"
-            ></textarea>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Maximum 160 characters
-            </p>
+            <div>
+              <label for="meta-description_en" class="block text-sm font-medium text-foreground mb-2">
+                Meta Description
+              </label>
+              <textarea
+                id="meta-description_en"
+                name="meta-description_en"
+                rows="4"
+                maxlength="160"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Description that will appear in search results"
+              ></textarea>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Maximum 160 characters. Current: <span id="meta-description-en-count">0</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>

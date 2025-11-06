@@ -7,6 +7,11 @@ import { getProductByUuid, updateProduct } from "@/lib/database";
 import { requireAdmin } from "@/lib/auth-utils";
 import type { Product } from "@/lib/database";
 
+// Agregar headers para evitar caché del navegador
+Astro.response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
+
 // Verificar que el usuario es administrador
 const { redirect, user, isAdmin } = await requireAdmin(Astro.cookies);
 if (redirect) {
@@ -24,24 +29,8 @@ if (id) {
   if (!product) {
     return Astro.redirect('/admin/products?error=product_not_found');
   }
-  
-  // Log para verificar que los datos se cargan correctamente
-  console.log('📦 Producto cargado desde la BD:');
-  console.log('  - ID:', product.id);
-  console.log('  - UUID:', product.uuid);
-  console.log('  - Nombre:', product.name);
-  console.log('  - Dimensions:', product.dimensions, typeof product.dimensions, product.dimensions === null);
-  console.log('  - Weight:', product.weight, typeof product.weight, product.weight === null);
-  console.log('  - Material:', product.material, typeof product.material, product.material === null);
-  console.log('  - Warranty:', product.warranty, typeof product.warranty, product.warranty === null);
-  console.log('  - Dimensions value para input:', product.dimensions ?? "");
-  console.log('  - Weight value para input:', product.weight ?? "");
-  console.log('  - Material value para input:', product.material ?? "");
-  console.log('  - Warranty value para input:', product.warranty ?? "");
-  console.log('  - Producto completo (JSON):', JSON.stringify(product, null, 2));
-  
-  // Convertir null a undefined explícitamente si es necesario para el renderizado
-  // Esto asegura que los valores null se muestren como cadenas vacías en los inputs
+
+  // Convertir null a undefined para que los inputs muestren cadenas vacías
   if (product.dimensions === null) product.dimensions = undefined;
   if (product.weight === null) product.weight = undefined;
   if (product.material === null) product.material = undefined;
@@ -56,85 +45,45 @@ if (Astro.request.method === 'POST') {
     const formData = await Astro.request.formData();
     const action = formData.get('action')?.toString() || 'update';
     
-    // Capturar todos los campos del formulario, incluyendo los campos de especificaciones técnicas
-    const dimensionsValue = formData.get('dimensions');
-    const weightValue = formData.get('weight');
-    const materialValue = formData.get('material');
-    const warrantyValue = formData.get('warranty');
-    
-    // Convertir a string y limpiar
-    const dimensionsStr = dimensionsValue ? String(dimensionsValue).trim() : '';
-    const weightStr = weightValue ? String(weightValue).trim() : '';
-    const materialStr = materialValue ? String(materialValue).trim() : '';
-    const warrantyStr = warrantyValue ? String(warrantyValue).trim() : '';
-    
-    console.log('📏 Valor de dimensions del formulario (raw):', dimensionsValue);
-    console.log('📏 Valor de dimensions del formulario (string):', dimensionsStr);
-    console.log('⚖️ Valor de weight del formulario (raw):', weightValue);
-    console.log('⚖️ Valor de weight del formulario (string):', weightStr);
-    console.log('🔧 Valor de material del formulario (raw):', materialValue);
-    console.log('🔧 Valor de material del formulario (string):', materialStr);
-    console.log('🛡️ Valor de warranty del formulario (raw):', warrantyValue);
-    console.log('🛡️ Valor de warranty del formulario (string):', warrantyStr);
-    
-    // Asegurar que los campos siempre se incluyan, incluso si están vacíos (para poder limpiarlos)
-    // Si el campo está vacío, se convierte a null para limpiar el campo en la base de datos
-    const dimensionsFinal: string | null = dimensionsStr.length > 0 ? dimensionsStr : null;
-    const weightFinal: string | null = weightStr.length > 0 ? weightStr : null;
-    const materialFinal: string | null = materialStr.length > 0 ? materialStr : null;
-    const warrantyFinal: string | null = warrantyStr.length > 0 ? warrantyStr : null;
-    
+    // Capturar y limpiar campos del formulario
+    const dimensionsStr = formData.get('dimensions')?.toString().trim() || '';
+    const weightStr = formData.get('weight')?.toString().trim() || '';
+    const materialStr = formData.get('material')?.toString().trim() || '';
+    const warrantyStr = formData.get('warranty')?.toString().trim() || '';
+
     const productData: Partial<Product> = {
       name: formData.get('name')?.toString() || '',
+      name_en: formData.get('name_en')?.toString().trim() || undefined,
       description: formData.get('description')?.toString() || '',
+      description_en: formData.get('description_en')?.toString().trim() || undefined,
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
+      category_en: formData.get('category_en')?.toString().trim() || undefined,
       stock: parseInt(formData.get('stock')?.toString() || '0'),
       tags: formData.get('tags')?.toString() || '',
-      dimensions: dimensionsFinal,
-      weight: weightFinal,
-      material: materialFinal,
-      warranty: warrantyFinal,
+      dimensions: dimensionsStr || null,
+      weight: weightStr || null,
+      material: materialStr || null,
+      warranty: warrantyStr || null,
       status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || product.status)
     };
-    
-    // Verificar que los campos se hayan capturado correctamente
-    console.log('📏 dimensions en productData:', productData.dimensions, typeof productData.dimensions);
-    console.log('⚖️ weight en productData:', productData.weight, typeof productData.weight);
-    console.log('🔧 material en productData:', productData.material, typeof productData.material);
-    console.log('🛡️ warranty en productData:', productData.warranty, typeof productData.warranty);
-    
-    // Verificar que todos los campos de especificaciones técnicas estén presentes en productData
-    console.log('✅ Verificación de campos en productData:');
-    console.log('  - dimensions está definido:', 'dimensions' in productData);
-    console.log('  - weight está definido:', 'weight' in productData);
-    console.log('  - material está definido:', 'material' in productData);
-    console.log('  - warranty está definido:', 'warranty' in productData);
-    
-    console.log('📝 Datos del producto a actualizar:', JSON.stringify(productData, null, 2));
 
     // Validar datos requeridos
     if (action === 'update' && (!productData.name || !productData.description || !productData.price || productData.price <= 0)) {
       throw new Error('Todos los campos requeridos deben ser completados correctamente');
     }
-    
+
     if (action === 'draft' && !productData.name) {
       throw new Error('El nombre del producto es requerido');
     }
 
     // Actualizar el producto
-    console.log('💾 Intentando actualizar producto con ID:', product.id);
-    console.log('📋 Datos completos a actualizar:', JSON.stringify(productData, null, 2));
-    
     const success = await updateProduct(product.id, productData);
-    console.log('📊 Resultado de actualización:', success);
-    
+
     if (success) {
-      console.log('✅ Producto actualizado exitosamente');
       const redirectMessage = action === 'draft' ? 'draft_saved' : 'updated';
       return Astro.redirect(`/admin/products?success=${redirectMessage}`);
     } else {
-      console.error('❌ Error al actualizar el producto - updateProduct retornó false');
       errorMessage = 'Error al actualizar el producto. Verifica los logs del servidor.';
     }
   } catch (error) {
@@ -189,24 +138,118 @@ if (Astro.request.method === 'POST') {
       <form method="POST" class="space-y-8" id="edit-product-form">
         <!-- Información básica -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Información Básica</h2>
-          
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <label for="name" class="block text-sm font-medium text-foreground mb-2">
-                Nombre del producto
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={product.name}
-                required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Ej: Filtro HEPA Premium"
-              />
+          <h2 class="text-lg font-semibold text-foreground mb-6">Información Básica</h2>
+
+          <!-- Grid de dos columnas: Español | Inglés -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Columna Español -->
+            <div class="space-y-6">
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-lg font-medium text-foreground">🇪🇸 Español</span>
+              </div>
+
+              <div>
+                <label for="name" class="block text-sm font-medium text-foreground mb-2">
+                  Nombre del producto *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={product.name}
+                  required
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Ej: Filtro HEPA Premium"
+                />
+              </div>
+
+              <div>
+                <label for="description" class="block text-sm font-medium text-foreground mb-2">
+                  Descripción *
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows="6"
+                  required
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Describe las características y beneficios del producto..."
+                >{product.description}</textarea>
+              </div>
+
+              <div>
+                <label for="category" class="block text-sm font-medium text-foreground mb-2">
+                  Categoría *
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  required
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">Seleccionar categoría</option>
+                  <option value="filtros" selected={product.category === 'filtros'}>Filtros</option>
+                  <option value="cuartos-limpios" selected={product.category === 'cuartos-limpios'}>Cuartos Limpios</option>
+                  <option value="accesorios" selected={product.category === 'accesorios'}>Accesorios</option>
+                  <option value="servicios" selected={product.category === 'servicios'}>Servicios</option>
+                </select>
+              </div>
             </div>
 
+            <!-- Columna Inglés -->
+            <div class="space-y-6">
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-lg font-medium text-foreground">🇺🇸 English</span>
+              </div>
+
+              <div>
+                <label for="name_en" class="block text-sm font-medium text-foreground mb-2">
+                  Product Name
+                </label>
+                <input
+                  type="text"
+                  id="name_en"
+                  name="name_en"
+                  value={product.name_en ?? ""}
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Ex: Premium HEPA Filter"
+                />
+              </div>
+
+              <div>
+                <label for="description_en" class="block text-sm font-medium text-foreground mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="description_en"
+                  name="description_en"
+                  rows="6"
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Describe the product features and benefits..."
+                >{product.description_en ?? ""}</textarea>
+              </div>
+
+              <div>
+                <label for="category_en" class="block text-sm font-medium text-foreground mb-2">
+                  Category
+                </label>
+                <select
+                  id="category_en"
+                  name="category_en"
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">Select category</option>
+                  <option value="filters" selected={product.category_en === 'filters'}>Filters</option>
+                  <option value="cleanrooms" selected={product.category_en === 'cleanrooms'}>Cleanrooms</option>
+                  <option value="accessories" selected={product.category_en === 'accessories'}>Accessories</option>
+                  <option value="services" selected={product.category_en === 'services'}>Services</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campos comunes (sin idioma) -->
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mt-8 pt-6 border-t border-border">
             <div>
               <label for="sku" class="block text-sm font-medium text-foreground mb-2">
                 SKU
@@ -224,7 +267,7 @@ if (Astro.request.method === 'POST') {
 
             <div>
               <label for="price" class="block text-sm font-medium text-foreground mb-2">
-                Precio
+                Precio *
               </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -246,7 +289,7 @@ if (Astro.request.method === 'POST') {
 
             <div>
               <label for="stock" class="block text-sm font-medium text-foreground mb-2">
-                Stock
+                Stock *
               </label>
               <input
                 type="number"
@@ -260,48 +303,16 @@ if (Astro.request.method === 'POST') {
               />
             </div>
           </div>
-
-          <div class="mt-6">
-            <label for="description" class="block text-sm font-medium text-foreground mb-2">
-              Descripción
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows="4"
-              required
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Describe las características y beneficios del producto..."
-            >{product.description}</textarea>
-          </div>
         </div>
 
-        <!-- Categoría y etiquetas -->
+        <!-- Estado y Etiquetas -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Categorización</h2>
-          
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <label for="category" class="block text-sm font-medium text-foreground mb-2">
-                Categoría
-              </label>
-              <select
-                id="category"
-                name="category"
-                required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">Seleccionar categoría</option>
-                <option value="filtros" selected={product.category === 'filtros'}>Filtros</option>
-                <option value="cuartos-limpios" selected={product.category === 'cuartos-limpios'}>Cuartos Limpios</option>
-                <option value="accesorios" selected={product.category === 'accesorios'}>Accesorios</option>
-                <option value="servicios" selected={product.category === 'servicios'}>Servicios</option>
-              </select>
-            </div>
+          <h2 class="text-lg font-semibold text-foreground mb-4">Estado y Etiquetas</h2>
 
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-6">
             <div>
               <label for="status" class="block text-sm font-medium text-foreground mb-2">
-                Estado
+                Estado *
               </label>
               <select
                 id="status"
@@ -316,7 +327,7 @@ if (Astro.request.method === 'POST') {
             </div>
           </div>
 
-          <div class="mt-6">
+          <div>
             <label for="tags" class="block text-sm font-medium text-foreground mb-2">
               Etiquetas
             </label>

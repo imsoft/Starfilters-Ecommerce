@@ -151,20 +151,7 @@ export const getProductById = async (id: number): Promise<Product | null> => {
 export const getProductByUuid = async (uuid: string): Promise<Product | null> => {
   const sql = 'SELECT * FROM products WHERE uuid = ?';
   const result = await query(sql, [uuid]) as Product[];
-  
-  if (result.length > 0) {
-    const product = result[0];
-    // Log para verificar qué datos se están recibiendo de la BD
-    console.log('🔍 getProductByUuid - Producto obtenido de la BD:');
-    console.log('  - Dimensions (raw):', product.dimensions, typeof product.dimensions);
-    console.log('  - Weight (raw):', product.weight, typeof product.weight);
-    console.log('  - Material (raw):', product.material, typeof product.material);
-    console.log('  - Warranty (raw):', product.warranty, typeof product.warranty);
-    console.log('  - Producto completo (raw):', JSON.stringify(product, null, 2));
-    return product;
-  }
-  
-  return null;
+  return result.length > 0 ? result[0] : null;
 };
 
 export const createProduct = async (product: Omit<Product, 'id' | 'uuid' | 'created_at' | 'updated_at'>): Promise<number> => {
@@ -198,95 +185,49 @@ export const updateProduct = async (id: number, product: Partial<Product>): Prom
     // Verificar que el producto existe antes de actualizar
     const existingProduct = await getProductById(id);
     if (!existingProduct) {
-      console.error('❌ El producto con ID', id, 'no existe');
+      console.error('El producto con ID', id, 'no existe');
       return false;
     }
-    
-    console.log('📝 updateProduct llamado con ID:', id);
-    console.log('📝 Producto existente:', JSON.stringify(existingProduct, null, 2));
-    console.log('📝 Datos a actualizar (JSON):', JSON.stringify(product, null, 2));
-    
+
     const fields: string[] = [];
     const values: any[] = [];
-    
+
+    // Iterar sobre todos los campos enviados y agregarlos para actualización
     Object.entries(product).forEach(([key, value]) => {
-      // Excluir solo id y created_at, incluir todos los demás campos
+      // Excluir solo id, created_at y updated_at
       if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
-        // Incluir el campo si tiene un valor, si es null (para limpiar campos), o si es string vacío
-        // Verificar explícitamente si el valor está definido (incluyendo null)
-        const isDefined = value !== undefined;
-        const existingValue = (existingProduct as any)[key];
-        
-        // Normalizar valores para comparación (null, undefined, string vacío se tratan como equivalentes)
-        const normalizeValue = (v: any) => {
-          if (v === null || v === undefined || v === '') return null;
-          if (typeof v === 'string' && v.trim() === '') return null;
-          return v;
-        };
-        
-        const normalizedExisting = normalizeValue(existingValue);
-        const normalizedNew = normalizeValue(value);
-        const hasChanged = normalizedExisting !== normalizedNew;
-        
-        console.log(`  🔍 Campo ${key}:`);
-        console.log(`     - Valor actual: ${existingValue === null ? 'NULL' : existingValue === undefined ? 'undefined' : JSON.stringify(existingValue)} (${typeof existingValue})`);
-        console.log(`     - Valor nuevo: ${value === null ? 'NULL' : value === undefined ? 'undefined' : JSON.stringify(value)} (${typeof value})`);
-        console.log(`     - Valor normalizado actual: ${normalizedExisting === null ? 'NULL' : JSON.stringify(normalizedExisting)}`);
-        console.log(`     - Valor normalizado nuevo: ${normalizedNew === null ? 'NULL' : JSON.stringify(normalizedNew)}`);
-        console.log(`     - Está definido: ${isDefined}`);
-        console.log(`     - Ha cambiado: ${hasChanged}`);
-        
-        if (isDefined) {
-          // Convertir string vacío a null para campos opcionales
-          let finalValue = value;
-          if (value === '' || (typeof value === 'string' && value.trim() === '')) {
-            finalValue = null;
-          }
-          
-          // Solo agregar el campo si ha cambiado
-          if (hasChanged) {
-            fields.push(`${key} = ?`);
-            values.push(finalValue);
-            console.log(`  ✅ Campo ${key} agregado: ${finalValue === null ? 'NULL' : JSON.stringify(finalValue)}`);
-          } else {
-            console.log(`  ⏭️  Campo ${key} omitido (sin cambios)`);
-          }
-        } else {
-          console.log(`  ⏭️  Campo ${key} omitido (undefined)`);
+        // Convertir strings vacíos a null para mantener consistencia en la base de datos
+        let finalValue = value;
+        if (value === '' || (typeof value === 'string' && value.trim() === '')) {
+          finalValue = null;
         }
+
+        fields.push(`${key} = ?`);
+        values.push(finalValue);
       }
     });
-    
+
+    // Si no hay campos para actualizar, retornar true (no es un error)
     if (fields.length === 0) {
-      console.warn('⚠️ No hay campos para actualizar');
-      return false;
+      console.warn('No hay campos para actualizar, pero no es un error');
+      return true;
     }
-    
+
     values.push(id);
     const sql = `UPDATE products SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
-    
-    console.log('🔍 SQL generado:', sql);
-    console.log('🔍 Valores (count):', values.length);
-    console.log('🔍 Valores detallados:', values.map((v, i) => `${i}: ${v === null ? 'NULL' : JSON.stringify(v)}`));
-    
+
     const result = await query(sql, values) as any;
-    
-    console.log('📊 Resultado de query:', result);
-    console.log('📊 Filas afectadas:', result.affectedRows);
-    console.log('📊 Info:', result.info);
-    
+
     if (result.affectedRows === 0) {
-      console.warn('⚠️ La actualización no afectó ninguna fila. Posibles causas:');
-      console.warn('  - El ID del producto no existe');
-      console.warn('  - Los valores son exactamente los mismos que ya existen');
+      console.warn('La actualización no afectó ninguna fila. El producto con ID', id, 'puede no existir');
+      return false;
     }
-    
-    return result.affectedRows > 0;
+
+    return true;
   } catch (error) {
-    console.error('❌ Error en updateProduct:', error);
+    console.error('Error en updateProduct:', error);
     if (error instanceof Error) {
-      console.error('❌ Mensaje de error:', error.message);
-      console.error('❌ Stack:', error.stack);
+      console.error('Mensaje de error:', error.message);
     }
     throw error;
   }
