@@ -9,13 +9,13 @@ export const ui = {
   es: {
     // Navigation
     'nav.home': 'Inicio',
-    'nav.filters': 'Filtros',
+    'nav.filters': 'Filtros de Aire',
     'nav.cleanrooms': 'Cuartos Limpios',
     'nav.services': 'Servicios',
     'nav.blog': 'Blog',
     'nav.cart': 'Carrito',
     'nav.profile': 'Mi Perfil',
-    'nav.login': 'Iniciar sesión',
+    'nav.login': 'Inicia Sesión',
     'nav.logout': 'Cerrar Sesión',
     'nav.admin': 'Admin',
     'nav.changePassword': 'Cambiar Contraseña',

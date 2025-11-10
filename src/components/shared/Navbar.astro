@@ -22,6 +22,34 @@ let userIsAdmin = false;
 if (user) {
   userIsAdmin = await isUserAdmin(user.id);
 }
+
+const baseNavLinks = [
+  {
+    href: lang === 'en' ? '/en/filters' : '/filtros',
+    label: lang === 'en' ? 'Air Filters' : t('nav.filters'),
+  },
+  {
+    href: lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios',
+    label: lang === 'en' ? 'Cleanrooms' : t('nav.cleanrooms'),
+  },
+  {
+    href: lang === 'en' ? '/en/services' : '/services',
+    label: lang === 'en' ? 'Services' : t('nav.services'),
+  },
+  {
+    href: lang === 'en' ? '/en/blog' : '/blog',
+    label: lang === 'en' ? 'Blog' : t('nav.blog'),
+  },
+];
+
+const navLinks = [...baseNavLinks];
+
+if (!user) {
+  navLinks.push({
+    href: lang === 'en' ? '/en/login' : '/login',
+    label: lang === 'en' ? t('nav.login') : t('nav.login'),
+  });
+}
 ---
 
 <header class={`${isHomePage ? 'navbar' : ''} absolute inset-x-0 top-0 z-50 bg-white/30 backdrop-blur-sm`}>
@@ -72,31 +100,14 @@ if (user) {
 
         <!-- Menú de navegación - centrado -->
         <div class="hidden lg:flex lg:gap-x-8">
-          <a
-            href={lang === 'en' ? '/en/filters' : '/filtros'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
-            >{t('nav.filters')}</a
-          >
-          <a
-            href={lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
-            >{t('nav.cleanrooms')}</a
-          >
-          <a
-            href={lang === 'en' ? '/en/services' : '/services'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
-            >{t('nav.services')}</a
-          >
-          <a
-            href={lang === 'en' ? '/en/blog' : '/blog'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
-            >{t('nav.blog')}</a
-          >
-          <a
-            href={lang === 'en' ? '/en/contact' : '/contact'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
-            >Contacto</a
-          >
+          {navLinks.map((link) => (
+            <a
+              href={link.href}
+              class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
         </div>
 
         <!-- Controles del lado derecho - idioma, carrito, usuario -->
@@ -107,13 +118,7 @@ if (user) {
               <CartIcon />
               <UserDropdown user={user} />
             </>
-          ) : (
-            <a
-              href={lang === 'en' ? '/en/login' : '/login'}
-              class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
-              >{t('nav.login')}</a
-            >
-          )}
+          ) : null}
         </div>
       </nav>
     </div>
@@ -162,31 +167,14 @@ if (user) {
           <div class="mt-6 flow-root">
             <div class="-my-6 divide-y divide-border">
               <div class="space-y-2 py-6">
-                <a
-                  href={lang === 'en' ? '/en/filters' : '/filtros'}
-                  class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >{t('nav.filters')}</a
-                >
-                <a
-                  href={lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios'}
-                  class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >{t('nav.cleanrooms')}</a
-                >
-                <a
-                  href={lang === 'en' ? '/en/services' : '/services'}
-                  class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >{t('nav.services')}</a
-                >
-                <a
-                  href={lang === 'en' ? '/en/blog' : '/blog'}
-                  class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >{t('nav.blog')}</a
-                >
-                <a
-                  href={lang === 'en' ? '/en/contact' : '/contact'}
-                  class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >Contacto</a
-                >
+                {navLinks.map((link) => (
+                  <a
+                    href={link.href}
+                    class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
+                  >
+                    {link.label}
+                  </a>
+                ))}
               </div>
               <div class="py-6">
                 {user ? (
@@ -245,13 +233,7 @@ if (user) {
                       >{t('nav.logout')}</a
                     >
                   </div>
-                ) : (
-                  <a
-                    href={lang === 'en' ? '/en/login' : '/login'}
-                    class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-muted"
-                    >{t('nav.login')}</a
-                  >
-                )}
+                ) : null}
               </div>
             </div>
           </div>
