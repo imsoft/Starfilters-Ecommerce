@@ -17,6 +17,7 @@ export const generateUUID = (): string => {
 export interface Product {
   id: number;
   uuid: string;
+  bind_id?: string | null;
   name: string;
   name_en?: string;
   description: string;
@@ -783,8 +784,11 @@ export const getSalesStats = async (): Promise<SalesStats> => {
 
 export const getTopProducts = async (limit = 5): Promise<TopProduct[]> => {
   try {
+    // Validar y sanitizar el límite
+    const safeLimit = Math.max(1, Math.min(100, parseInt(String(limit))));
+
     const result = await query(
-      `SELECT 
+      `SELECT
         oi.product_id,
         oi.product_name,
         SUM(oi.quantity) as total_sold,
@@ -794,8 +798,8 @@ export const getTopProducts = async (limit = 5): Promise<TopProduct[]> => {
       WHERE o.status IN ("delivered", "shipped", "processing")
       GROUP BY oi.product_id, oi.product_name
       ORDER BY total_sold DESC
-      LIMIT ?`,
-      [limit]
+      LIMIT ${safeLimit}`,
+      []
     );
 
     return (result as any[]).map(item => ({

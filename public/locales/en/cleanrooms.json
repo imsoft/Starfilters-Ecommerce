@@ -4,24 +4,25 @@
     "description": "Design, manufacturing, and installation of industrial cleanrooms. Professional ISO-certified solutions for pharmaceutical, electronics, and food industries in Mexico."
   },
   "hero": {
-    "badge": "StarFilters - Controlled Environment Experts",
-    "title": "World-Class Cleanrooms for Your Industry",
-    "description": "We design, manufacture, and install ISO 14644 certified industrial cleanrooms. Comprehensive solutions for pharmaceutical, electronics, food, and research industries that require the highest quality controlled environments."
+    "badge": "About Us",
+    "title": "Certified cleanrooms for critical processes",
+    "description": "At Star Filters we design, build, and validate cleanrooms certified under ISO 14644 and GMP standards, ensuring safe, precise, and reproducible processes."
   },
-  "experience": {
-    "title": "Our Experience",
-    "paragraph1": "With over 15 years in the Mexican market, StarFilters has established itself as a leader in the design and construction of cleanrooms for industries demanding the highest purity standards. Our cleanrooms comply with classifications from ISO Class 1 to ISO Class 9, adapting to each client's specific needs.",
-    "paragraph2": "We work with state-of-the-art materials, high-density modular panels, HEPA/ULPA filtration systems, and advanced environmental controls. Each project includes complete validation, technical documentation, and certification in accordance with international regulations such as FDA, GMP, and EU GMP to ensure regulatory compliance for your operation."
+  "quality": {
+    "title": "Certified quality",
+    "paragraph1": "A cleanroom or white room is a specialized environment designed to control airborne particles, microorganisms, and contaminants, maintaining conditions up to 50,000 times cleaner than a standard environment.",
+    "paragraph2": "Star Filters offers comprehensive turnkey cleanroom solutions, with advanced HEPA filtration systems, high-efficiency airflows, and precise temperature, humidity, and differential pressure control.",
+    "paragraph3": "We serve sectors such as pharmaceutical, biotechnology, electronics, medical devices, and automotive industries, meeting the most demanding international standards. From engineering and architectural design to validation and environmental monitoring, we guarantee controlled and certified environments, where air quality defines product quality."
   },
   "numbers": {
     "title": "Our Numbers",
-    "installations": "Cleanrooms Installed",
-    "installationsNumber": "120+",
+    "installations": "Cleanrooms Built",
+    "installationsNumber": "120",
+    "experience": "Years of Experience",
+    "experienceNumber": "40",
     "area": "Square Meters Built",
-    "areaNumber": "25K+",
-    "certifications": "Certifications Issued",
-    "certificationsNumber": "95%",
-    "warranty": "Years of Warranty",
-    "warrantyNumber": "5"
+    "areaNumber": "20K",
+    "errorMargin": "Production Error Margin",
+    "errorMarginNumber": "0%"
   }
 }

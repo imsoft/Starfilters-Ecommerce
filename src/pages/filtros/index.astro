@@ -2,22 +2,19 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getProducts, getProductImages } from "@/lib/database";
+import { getActiveProducts } from "@/lib/product-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
-// Obtener productos de la base de datos
-const products = await getProducts(12, 0);
+// Obtener productos desde Bind ERP (fuente única de verdad)
+const products = await getActiveProducts();
 
-// Obtener imagen principal para cada producto
-const productsWithImages = await Promise.all(
-  products.map(async (product) => {
-    const images = await getProductImages(product.id);
-    const primaryImage = images.find(img => img.is_primary) || images[0];
-    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(product.category);
-    return { ...product, imageUrl };
-  })
-);
+// Preparar productos con imágenes
+const productsWithImages = products.map(product => {
+  // Usar placeholder por ahora (las imágenes se pueden agregar a Bind después)
+  const imageUrl = getProductPlaceholderImage(product.category);
+  return { ...product, imageUrl };
+});
 
 // Función para formatear precio
 const formatPrice = (price: number): string => {
@@ -218,7 +215,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             data-price={product.price}
             data-stock={product.stock}
           >
-            <a href={`/product/${product.uuid}`} class="block flex-shrink-0">
+            <a href={`/product/${product.bind_id}`} class="block flex-shrink-0">
               <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
                 <LazyImage
                   src={product.imageUrl}

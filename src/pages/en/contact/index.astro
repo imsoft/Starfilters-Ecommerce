@@ -2,110 +2,229 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { sendEmail } from "@/lib/email";
+
+export const prerender = false;
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
+
+type ContactFormValues = {
+  name: string;
+  city: string;
+  email: string;
+  phone: string;
+  message: string;
+};
+
+const initialValues: ContactFormValues = {
+  name: "",
+  city: "",
+  email: "",
+  phone: "",
+  message: "",
+};
+
+let formValues: ContactFormValues = { ...initialValues };
+let submissionStatus: "success" | "error" | null = null;
+let submissionMessage = "";
+
+const alertStyles = {
+  success: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  error: "border-red-300 bg-red-50 text-red-700",
+} as const;
+
+if (Astro.request.method === "POST") {
+  const formData = await Astro.request.formData();
+
+  formValues = {
+    name: (formData.get("name")?.toString() ?? "").trim(),
+    city: (formData.get("city")?.toString() ?? "").trim(),
+    email: (formData.get("email")?.toString() ?? "").trim(),
+    phone: (formData.get("phone")?.toString() ?? "").trim(),
+    message: (formData.get("message")?.toString() ?? "").trim(),
+  };
+
+  const hasEmpty = Object.values(formValues).some((value) => value.length === 0);
+
+  if (hasEmpty) {
+    submissionStatus = "error";
+    submissionMessage = "Please fill out all required fields.";
+  } else {
+    try {
+      const messageHtml = formValues.message.replace(/\n/g, "<br />");
+      const emailSent = await sendEmail({
+        to: "starinfo@starfilters.mx",
+        subject: `New contact message - ${formValues.name}`,
+        html: `
+          <h2>New message from the contact form</h2>
+          <p><strong>Language:</strong> English</p>
+          <p><strong>Name:</strong> ${formValues.name}</p>
+          <p><strong>City:</strong> ${formValues.city}</p>
+          <p><strong>Email:</strong> ${formValues.email}</p>
+          <p><strong>Phone:</strong> ${formValues.phone}</p>
+          <p><strong>Message:</strong><br />${messageHtml}</p>
+        `,
+        text: `New message from the contact form (English)\n\nName: ${formValues.name}\nCity: ${formValues.city}\nEmail: ${formValues.email}\nPhone: ${formValues.phone}\n\nMessage:\n${formValues.message}`,
+      });
+
+      if (emailSent) {
+        submissionStatus = "success";
+        submissionMessage =
+          "Thank you for reaching out. Our team will contact you very soon.";
+        formValues = { ...initialValues };
+      } else {
+        submissionStatus = "error";
+        submissionMessage =
+          "There was a problem sending your message. Please try again later.";
+      }
+    } catch (error) {
+      console.error("Error processing contact form:", error);
+      submissionStatus = "error";
+      submissionMessage =
+        "There was a problem sending your message. Please try again later.";
+    }
+  }
+}
 ---
 
-<WebsiteLayout 
+<WebsiteLayout
   title="Contact"
   seoTitle="Contact | StarFilters"
-  description="Contact StarFilters for industrial filtration services, cleanrooms and specialized technical support. We are here to help you."
-  keywords={[
-    'contact StarFilters',
-    'technical support',
-    'filtration services',
-    'cleanrooms'
-  ]}
+  description="Contact Star Filters for industrial filtration services, cleanrooms, and specialized technical support."
+  keywords={["contact Star Filters", "technical support", "filtration services", "cleanrooms"]}
 >
-  <SEO 
+  <SEO
     slot="seo"
     title="Contact"
-    description="Contact StarFilters for industrial filtration services."
+    description="Contact Star Filters for industrial filtration services."
     ogType="website"
-    keywords={['contact', 'technical support']}
+    keywords={["contact", "technical support"]}
   />
-  
+
   <div class="bg-background py-24 sm:py-32">
-    <div class="mx-auto max-w-4xl px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl text-center">
-        <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Contact
-        </h1>
-        <p class="mt-6 text-lg leading-8 text-muted-foreground">
-          We are here to help you with your industrial filtration needs
-        </p>
-      </div>
-      
-      <div class="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div>
-          <h2 class="text-2xl font-bold text-foreground mb-6">Contact Information</h2>
-          
-          <div class="space-y-4">
-            <div>
-              <h3 class="font-semibold text-foreground">Phone</h3>
-              <p class="text-muted-foreground">+52 (55) 1234-5678</p>
-            </div>
-            
-            <div>
-              <h3 class="font-semibold text-foreground">Email</h3>
-              <p class="text-muted-foreground">contact@starfilters.com</p>
-            </div>
-            
-            <div>
-              <h3 class="font-semibold text-foreground">Address</h3>
-              <p class="text-muted-foreground">
-                Av. Industrial 123<br>
-                Mexico City, CDMX 12345<br>
-                Mexico
-              </p>
-            </div>
-            
-            <div>
-              <h3 class="font-semibold text-foreground">Business Hours</h3>
-              <p class="text-muted-foreground">
-                Monday to Friday: 8:00 AM - 6:00 PM<br>
-                Saturday: 9:00 AM - 2:00 PM<br>
-                Sunday: Closed
-              </p>
-            </div>
+    <div class="mx-auto max-w-5xl px-6 lg:px-8">
+      <div class="grid gap-16 lg:grid-cols-[1.05fr_1fr]">
+        <div class="space-y-6">
+          <h1 class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            Contact us!
+          </h1>
+          <p class="text-lg leading-8 text-muted-foreground">
+            At Star Filters we offer flexible scheduling, fast delivery, and personalized attention to meet the highest standards of your industry.
+          </p>
+          <p class="text-lg leading-8 text-muted-foreground">
+            Complete the form and our team will get in touch with you.
+          </p>
+
+          <div class="rounded-2xl border border-border/60 bg-muted/40 p-6 sm:p-8">
+            <dl class="space-y-6 text-base text-foreground">
+              <div>
+                <dt class="text-sm font-semibold uppercase tracking-wide text-primary">Locations</dt>
+                <dd class="mt-2 text-lg text-foreground">Guadalajara, JAL / Mexico City</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-semibold uppercase tracking-wide text-primary">Phone numbers</dt>
+                <dd class="mt-2 space-y-1 text-lg text-foreground">
+                  <p><a class="hover:text-primary" href="tel:+523338987991">+52 33 3898 7991</a></p>
+                  <p><a class="hover:text-primary" href="tel:+525550870287">+52 55 5087 0287</a></p>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-semibold uppercase tracking-wide text-primary">Email</dt>
+                <dd class="mt-2 text-lg text-foreground">
+                  <a class="hover:text-primary" href="mailto:starinfo@starfilters.mx">starinfo@starfilters.mx</a>
+                </dd>
+              </div>
+            </dl>
           </div>
         </div>
-        
-        <div>
-          <h2 class="text-2xl font-bold text-foreground mb-6">Available Services</h2>
-          
-          <div class="space-y-4">
-            <div>
-              <h3 class="font-semibold text-foreground">Technical Consulting</h3>
-              <p class="text-muted-foreground">Specialized advice on filtration systems</p>
+
+        <div class="rounded-2xl border border-border/60 bg-muted/20 p-8 shadow-sm">
+          <h2 class="text-2xl font-semibold text-foreground">Contact form</h2>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Complete the fields below and we will reach out as soon as possible.
+          </p>
+
+          {submissionStatus && (
+            <div class={`mt-6 rounded-lg border px-4 py-3 text-sm ${alertStyles[submissionStatus]}`}>
+              {submissionMessage}
             </div>
-            
-            <div>
-              <h3 class="font-semibold text-foreground">Installation</h3>
-              <p class="text-muted-foreground">Professional installation of filters and cleanrooms</p>
+          )}
+
+          <form method="post" class="mt-8 space-y-6">
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label for="name" class="block text-sm font-medium text-foreground">Name</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  autocomplete="name"
+                  value={formValues.name}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+              <div>
+                <label for="city" class="block text-sm font-medium text-foreground">City</label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  required
+                  autocomplete="address-level2"
+                  value={formValues.city}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
             </div>
-            
-            <div>
-              <h3 class="font-semibold text-foreground">Maintenance</h3>
-              <p class="text-muted-foreground">Preventive and corrective maintenance services</p>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label for="email" class="block text-sm font-medium text-foreground">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autocomplete="email"
+                  value={formValues.email}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+              <div>
+                <label for="phone" class="block text-sm font-medium text-foreground">Phone</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  autocomplete="tel"
+                  value={formValues.phone}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
             </div>
-            
+
             <div>
-              <h3 class="font-semibold text-foreground">24/7 Support</h3>
-              <p class="text-muted-foreground">Emergency response and continuous technical support</p>
+              <label for="message" class="block text-sm font-medium text-foreground">Message</label>
+              <textarea
+                id="message"
+                name="message"
+                required
+                rows={5}
+                class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              >{formValues.message}</textarea>
             </div>
-          </div>
+
+            <button
+              type="submit"
+              class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Send message
+            </button>
+          </form>
         </div>
-      </div>
-      
-      <div class="mt-16 text-center">
-        <a 
-          href="/en/services" 
-          class="inline-flex items-center rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          View Our Services
-        </a>
       </div>
     </div>
   </div>

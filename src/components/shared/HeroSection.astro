@@ -28,10 +28,9 @@ const t = useTranslations(lang);
                 class="hero-badge relative rounded-full px-3 py-1 text-sm/6 text-muted-foreground ring-1 ring-border hover:ring-border"
               >
                 {t('hero.badge')} <a
-                  href="/cuartos-limpios"
+                  href={lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios'}
                   class="font-semibold whitespace-nowrap text-primary"
-                  ><span aria-hidden="true" class="absolute inset-0"></span>{t('hero.badgeLink')}
-                  <span aria-hidden="true">&rarr;</span></a
+                  ><span aria-hidden="true" class="absolute inset-0"></span>{t('hero.badgeLink')}<span aria-hidden="true"> &rarr;</span></a
                 >
               </div>
             </div>
@@ -47,11 +46,11 @@ const t = useTranslations(lang);
             </p>
             <div class="hero-cta mt-10 flex items-center gap-x-6">
               <a
-                href="/filtros"
+                href={lang === 'en' ? '/en/contact' : '/contacto'}
                 class="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >{t('hero.cta')}</a
               >
-              <a href="/services" class="text-sm/6 font-semibold text-foreground"
+              <a href={lang === 'en' ? '/en/filters' : '/filtros'} class="text-sm/6 font-semibold text-foreground"
                 >{t('hero.ctaSecondary')} <span aria-hidden="true">→</span></a
               >
             </div>
@@ -61,8 +60,8 @@ const t = useTranslations(lang);
     </div>
     <div class="bg-muted lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 flex items-center justify-center">
       <img
-        src="https://images.unsplash.com/photo-1551076805-e1869033e561?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=3432"
-        alt="Cuarto limpio moderno con sistemas de filtración HEPA"
+        src="/images/home-page/promocion-buen-fin-filtros-hepa-star-filters.png"
+        alt="Promoción Buen Fin filtros HEPA Star Filters"
         class="hero-image aspect-3/2 object-cover lg:aspect-auto lg:h-full lg:w-full"
       />
     </div>

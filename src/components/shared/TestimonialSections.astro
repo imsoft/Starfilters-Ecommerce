@@ -7,84 +7,45 @@ const t = useTranslations(lang);
 const testimonials = [
   {
     body: t('testimonials.testimonial1'),
-    author: {
-      name: "María González",
-      handle: "mgonzalez",
-      imageUrl:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
+    author: t('testimonials.testimonial1.author'),
+    role: t('testimonials.testimonial1.role'),
+    imageUrl: '/images/home-page/flex.png',
+    imageAlt: t('testimonials.testimonial1.author'),
   },
   {
     body: t('testimonials.testimonial2'),
-    author: {
-      name: "Carlos Ramírez",
-      handle: "cramirez",
-      imageUrl:
-        "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
+    author: t('testimonials.testimonial2.author'),
+    role: t('testimonials.testimonial2.role'),
+    imageUrl: '/images/home-page/life.png',
+    imageAlt: t('testimonials.testimonial2.author'),
   },
   {
     body: t('testimonials.testimonial3'),
-    author: {
-      name: "Ana López",
-      handle: "alopez",
-      imageUrl:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
+    author: t('testimonials.testimonial3.author'),
+    role: t('testimonials.testimonial3.role'),
+    imageUrl: '/images/home-page/envases.png',
+    imageAlt: t('testimonials.testimonial3.author'),
   },
   {
     body: t('testimonials.testimonial4'),
-    author: {
-      name: "Roberto Mendoza",
-      handle: "rmendoza",
-      imageUrl:
-        "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
+    author: t('testimonials.testimonial4.author'),
+    role: t('testimonials.testimonial4.role'),
+    imageUrl: '/images/home-page/nordin.png',
+    imageAlt: t('testimonials.testimonial4.author'),
   },
   {
     body: t('testimonials.testimonial5'),
-    author: {
-      name: "Patricia Ruiz",
-      handle: "pruiz",
-      imageUrl:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
+    author: t('testimonials.testimonial5.author'),
+    role: t('testimonials.testimonial5.role'),
+    imageUrl: '/images/home-page/itc.png',
+    imageAlt: t('testimonials.testimonial5.author'),
   },
   {
     body: t('testimonials.testimonial6'),
-    author: {
-      name: "Jorge Morales",
-      handle: "jmorales",
-      imageUrl:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
-  },
-  {
-    body: t('testimonials.testimonial7'),
-    author: {
-      name: "Laura Hernández",
-      handle: "lhernandez",
-      imageUrl:
-        "https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
-  },
-  {
-    body: t('testimonials.testimonial8'),
-    author: {
-      name: "Eduardo Torres",
-      handle: "etorres",
-      imageUrl:
-        "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
-  },
-  {
-    body: t('testimonials.testimonial9'),
-    author: {
-      name: "Sofía Castillo",
-      handle: "scastillo",
-      imageUrl:
-        "https://images.unsplash.com/photo-1463453091185-61582044d556?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
+    author: t('testimonials.testimonial6.author'),
+    role: t('testimonials.testimonial6.role'),
+    imageUrl: '/images/home-page/nbpp.png',
+    imageAlt: t('testimonials.testimonial6.author'),
   },
 ];
 ---
@@ -100,33 +61,29 @@ const testimonials = [
       </p>
     </div>
     <div
-      class="mx-auto mt-16 flow-root max-w-2xl sm:mt-20 lg:mx-0 lg:max-w-none"
+      class="mx-auto mt-16 flow-root max-w-5xl sm:mt-20 lg:mx-0 lg:max-w-none"
     >
-      <div class="-mt-8 sm:-mx-4 sm:columns-2 sm:text-[0] lg:columns-3">
-        {
-          testimonials.map((testimonial) => (
-            <div class="pt-8 sm:inline-block sm:w-full sm:px-4">
-              <figure class="rounded-2xl bg-muted p-8 text-sm/6">
-                <blockquote class="text-foreground">
-                  <p>{`“${testimonial.body}”`}</p>
-                </blockquote>
-                <figcaption class="mt-6 flex items-center gap-x-4">
-                  <img
-                    alt=""
-                    src={testimonial.author.imageUrl}
-                    class="size-10 rounded-full bg-muted"
-                  />
-                  <div>
-                    <div class="font-semibold text-foreground">
-                      {testimonial.author.name}
-                    </div>
-                    <div class="text-muted-foreground">{`@${testimonial.author.handle}`}</div>
-                  </div>
-                </figcaption>
-              </figure>
-            </div>
-          ))
-        }
+      <div class="grid gap-8 sm:grid-cols-2">
+        {testimonials.map((testimonial) => (
+          <div class="rounded-2xl bg-muted p-8 text-sm/6">
+            <blockquote class="text-foreground">
+              <p>{`“${testimonial.body}”`}</p>
+            </blockquote>
+            <figcaption class="mt-6 flex items-center gap-x-4">
+              <div class="flex size-12 items-center justify-center rounded-full bg-white p-1 shadow-inner">
+                <img
+                  src={testimonial.imageUrl}
+                  alt={testimonial.imageAlt}
+                  class="max-h-full max-w-full object-contain"
+                />
+              </div>
+              <div>
+                <div class="font-semibold text-foreground">{testimonial.author}</div>
+                <div class="text-muted-foreground">{testimonial.role}</div>
+              </div>
+            </figcaption>
+          </div>
+        ))}
       </div>
     </div>
   </div>

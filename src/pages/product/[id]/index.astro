@@ -2,51 +2,47 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getProductByUuid, getProducts, getProductImages } from "@/lib/database";
+import { getProductByBindId, getActiveProducts } from "@/lib/product-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 
-// Obtener UUID del producto de la URL
-const { id: uuid } = Astro.params;
+// Obtener Bind ID del producto de la URL
+const { id: bindId } = Astro.params;
 
-// Verificar que el UUID sea válido
-if (!uuid || typeof uuid !== 'string') {
+// Verificar que el ID sea válido
+if (!bindId || typeof bindId !== 'string') {
   return Astro.redirect('/filtros');
 }
 
-// Obtener producto de la base de datos por UUID
-const product = await getProductByUuid(uuid);
+// Obtener producto desde Bind ERP (fuente única)
+const product = await getProductByBindId(bindId);
 
 // Si no existe el producto, redirigir
 if (!product) {
   return Astro.redirect('/filtros');
 }
 
-// Obtener productos relacionados
-const relatedProducts = await getProducts(4, 0);
-const filteredRelated = relatedProducts.filter(p => p.uuid !== product.uuid).slice(0, 3);
+// Obtener productos relacionados desde Bind
+const allProducts = await getActiveProducts();
+const relatedProducts = allProducts
+  .filter(p => p.bind_id !== product.bind_id && p.category === product.category)
+  .slice(0, 3);
 
-// Obtener productos relacionados con imágenes
-const relatedProductsWithImages = await Promise.all(
-  filteredRelated.map(async (product) => {
-    const images = await getProductImages(product.id);
-    const primaryImage = images.find(img => img.is_primary) || images[0];
-    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(product.category);
-    return { ...product, imageUrl };
-  })
-);
+// Preparar productos relacionados con imágenes
+const relatedProductsWithImages = relatedProducts.map(product => {
+  const imageUrl = getProductPlaceholderImage(product.category);
+  return { ...product, imageUrl };
+});
 
-// Obtener imágenes del producto
-const productImages = await getProductImages(product.id);
-const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
-const galleryImages = productImages.filter(img => !img.is_primary);
-
-// Si no hay imágenes en product_images, usar placeholder
-const mainImage = primaryImage?.image_url || getProductPlaceholderImage(product.category);
-const allImages = productImages.length > 0 
-  ? productImages.map(img => img.image_url)
-  : [mainImage, '/images/products/placeholder-hepa-filter.svg', '/images/products/placeholder-cleanroom.svg', '/images/products/placeholder-air-purification.svg'];
+// Usar placeholder para imágenes (las imágenes se pueden agregar a Bind después)
+const mainImage = getProductPlaceholderImage(product.category);
+const allImages = [
+  mainImage,
+  '/images/products/placeholder-hepa-filter.svg',
+  '/images/products/placeholder-cleanroom.svg',
+  '/images/products/placeholder-air-purification.svg'
+];
 
 // Función para formatear precio
 const formatPrice = (price: number): string => {
@@ -64,23 +60,23 @@ const productSchema = generateProductSchema(product, siteUrl);
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Inicio', url: siteUrl },
   { name: 'Productos', url: `${siteUrl}/filtros` },
-  { name: product.name, url: `${siteUrl}/product/${product.uuid}` }
+  { name: product.name, url: `${siteUrl}/product/${product.bind_id}` }
 ]);
 ---
 
-<WebsiteLayout 
+<WebsiteLayout
   title={product.name}
   seoTitle={`${product.name} - Comprar en StarFilters`}
   description={productDescription}
   keywords={productKeywords}
-  ogImage={product.image_url}
+  ogImage={mainImage}
 >
-  <SEO 
+  <SEO
     slot="seo"
     title={product.name}
     description={productDescription}
     ogType="product"
-    ogImage={product.image_url}
+    ogImage={mainImage}
     ogImageAlt={product.name}
     keywords={productKeywords}
     product={{
@@ -129,7 +125,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           <!-- Selector de imágenes -->
           <div class="mx-auto mt-6 hidden w-full max-w-2xl sm:block lg:max-w-none">
             <div class="grid grid-cols-4 gap-6" id="image-thumbnails">
-              {productImages.map((image, index) => (
+              {allImages.map((image: string, index: number) => (
                 <button
                   type="button"
                   class={`relative flex cursor-pointer items-center justify-center rounded-md bg-background text-sm font-medium uppercase text-foreground hover:bg-muted focus:outline-none ${index === 0 ? 'ring-2 ring-primary' : ''}`}
@@ -341,7 +337,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       </div>
 
       <!-- Productos relacionados -->
-      {filteredRelated.length > 0 && (
+      {relatedProducts.length > 0 && (
         <section aria-labelledby="related-heading" class="mt-24">
           <h2 id="related-heading" class="text-lg font-medium text-foreground">
             Productos Relacionados
@@ -350,7 +346,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
             {relatedProductsWithImages.map((relatedProduct) => (
               <div class="group relative flex flex-col">
-                <a href={`/product/${relatedProduct.uuid}`} class="block flex-shrink-0">
+                <a href={`/product/${relatedProduct.bind_id}`} class="block flex-shrink-0">
                   <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
                     <LazyImage
                       src={relatedProduct.imageUrl}

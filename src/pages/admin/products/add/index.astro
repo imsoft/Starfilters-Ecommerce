@@ -1,71 +1,50 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
-import { ProductImageUploader } from "@/components/ui/ProductImageUploader";
-import { createProduct } from "@/lib/database";
+import { createProduct } from "@/lib/product-service";
 import { requireAdmin } from "@/lib/auth-utils";
 
 // Verificar que el usuario es administrador
-const { redirect, user, isAdmin } = await requireAdmin(Astro.cookies);
+const { redirect } = await requireAdmin(Astro.cookies);
 if (redirect) {
   return Astro.redirect(redirect);
 }
 
 // Manejar envío del formulario
-let successMessage = '';
 let errorMessage = '';
 
 if (Astro.request.method === 'POST') {
   try {
     const formData = await Astro.request.formData();
-    const action = formData.get('action')?.toString() || 'create';
-    
-    // Obtener URLs de imágenes subidas
-    const imagesUrls = formData.get('images_urls')?.toString() || '';
-    const firstImageUrl = imagesUrls.split(',').filter(Boolean)[0] || '';
-    
-    const dimensionsValue = formData.get('dimensions')?.toString()?.trim();
-    const weightValue = formData.get('weight')?.toString()?.trim();
-    const materialValue = formData.get('material')?.toString()?.trim();
-    const warrantyValue = formData.get('warranty')?.toString()?.trim();
-    
+
     const productData = {
       name: formData.get('name')?.toString() || '',
-      name_en: formData.get('name_en')?.toString() || undefined,
       description: formData.get('description')?.toString() || '',
-      description_en: formData.get('description_en')?.toString() || undefined,
+      uuid: formData.get('code')?.toString() || '', // SKU/Código
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
-      category_en: formData.get('category_en')?.toString() || undefined,
       stock: parseInt(formData.get('stock')?.toString() || '0'),
-      tags: formData.get('tags')?.toString() || '',
-      dimensions: dimensionsValue && dimensionsValue.length > 0 ? dimensionsValue : undefined,
-      weight: weightValue && weightValue.length > 0 ? weightValue : undefined,
-      material: materialValue && materialValue.length > 0 ? materialValue : undefined,
-      warranty: warrantyValue && warrantyValue.length > 0 ? warrantyValue : undefined,
-      image_url: firstImageUrl, // Primera imagen subida o string vacío
-      status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || 'active')
+      weight: formData.get('weight')?.toString() || undefined,
+      tags: formData.get('tags')?.toString() || undefined,
+      status: 'active' as const
     };
-    
+
     console.log('📝 Creando producto con datos:', productData);
 
-    // Validar datos requeridos (menos estricto para borradores)
-    if (action === 'create' && (!productData.name || !productData.description || productData.price <= 0)) {
-      throw new Error('Todos los campos requeridos deben ser completados correctamente');
-    }
-    
-    if (action === 'draft' && !productData.name) {
-      throw new Error('El nombre del producto es requerido');
+    // Validar datos requeridos
+    if (!productData.name || !productData.description || productData.price <= 0) {
+      throw new Error('Nombre, descripción y precio son campos requeridos');
     }
 
-    // Crear el producto
-    const productId = await createProduct(productData);
-    
-    if (productId) {
-      const redirectMessage = action === 'draft' ? 'draft_saved' : 'created';
-      return Astro.redirect(`/admin/products?success=${redirectMessage}`);
+    // Crear el producto en Bind ERP
+    console.log('✨ Creando producto en Bind ERP...');
+    const bindId = await createProduct(productData);
+
+    if (bindId) {
+      console.log('✅ Producto creado en Bind:', bindId);
+      return Astro.redirect(`/admin/products?success=created`);
     } else {
-      errorMessage = 'Error al crear el producto';
+      errorMessage = 'Error al crear el producto en Bind ERP';
     }
   } catch (error) {
     console.error('Error creando producto:', error);
@@ -82,7 +61,7 @@ if (Astro.request.method === 'POST') {
           <div>
             <h1 class="text-3xl font-bold tracking-tight text-foreground">Agregar Producto</h1>
             <p class="mt-2 text-muted-foreground">
-              Completa la información del nuevo producto
+              Completa la información del nuevo producto para Bind ERP
             </p>
           </div>
           <a href="/admin/products">
@@ -96,7 +75,7 @@ if (Astro.request.method === 'POST') {
         </div>
       </div>
 
-      <!-- Mensajes de éxito y error -->
+      <!-- Mensajes de error -->
       {errorMessage && (
         <div class="mb-6 rounded-md bg-red-50 border border-red-200 p-4">
           <div class="flex">
@@ -115,639 +94,164 @@ if (Astro.request.method === 'POST') {
         </div>
       )}
 
-      {successMessage && (
-        <div class="mb-6 rounded-md bg-green-50 border border-green-200 p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-green-800">Éxito</h3>
-              <div class="mt-2 text-sm text-green-700">
-                <p>{successMessage}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <!-- Formulario -->
       <form method="POST" class="space-y-8">
-        <!-- Información básica -->
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-6">Información Básica</h2>
 
-          <!-- Grid de dos columnas: Español | Inglés -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Columna Español -->
-            <div class="space-y-6">
-              <div class="flex items-center gap-2 mb-4">
-                <span class="text-lg font-medium text-foreground">🇲🇽 Español</span>
-              </div>
-
-              <div>
-                <label for="name" class="block text-sm font-medium text-foreground mb-2">
-                  Nombre del producto *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  required
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: Filtro HEPA Premium"
-                />
-              </div>
-
-              <div>
-                <label for="description" class="block text-sm font-medium text-foreground mb-2">
-                  Descripción *
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows="6"
-                  required
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Describe las características y beneficios del producto..."
-                ></textarea>
-              </div>
-
-              <div>
-                <label for="category" class="block text-sm font-medium text-foreground mb-2">
-                  Categoría *
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  required
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  <option value="filtros">Filtros</option>
-                  <option value="cuartos-limpios">Cuartos Limpios</option>
-                  <option value="accesorios">Accesorios</option>
-                  <option value="servicios">Servicios</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Columna Inglés -->
-            <div class="space-y-6">
-              <div class="flex items-center gap-2 mb-4">
-                <span class="text-lg font-medium text-foreground">🇺🇸 English</span>
-              </div>
-
-              <div>
-                <label for="name_en" class="block text-sm font-medium text-foreground mb-2">
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  id="name_en"
-                  name="name_en"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ex: Premium HEPA Filter"
-                />
-              </div>
-
-              <div>
-                <label for="description_en" class="block text-sm font-medium text-foreground mb-2">
-                  Description
-                </label>
-                <textarea
-                  id="description_en"
-                  name="description_en"
-                  rows="6"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Describe the product features and benefits..."
-                ></textarea>
-              </div>
-
-              <div>
-                <label for="category_en" class="block text-sm font-medium text-foreground mb-2">
-                  Category
-                </label>
-                <select
-                  id="category_en"
-                  name="category_en"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                >
-                  <option value="">Select category</option>
-                  <option value="filters">Filters</option>
-                  <option value="cleanrooms">Cleanrooms</option>
-                  <option value="accessories">Accessories</option>
-                  <option value="services">Services</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Campos comunes (sin idioma) -->
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mt-8 pt-6 border-t border-border">
-            <div>
-              <label for="sku" class="block text-sm font-medium text-foreground mb-2">
-                SKU *
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Nombre del Producto (Title en Bind) -->
+            <div class="md:col-span-2">
+              <label for="name" class="block text-sm font-medium text-foreground mb-2">
+                Nombre del Producto <span class="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="sku"
-                name="sku"
+                id="name"
+                name="name"
                 required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Ej: FIL-HEPA-001"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: Filtro HEPA H13 para Cuarto Limpio"
               />
             </div>
 
+            <!-- Código/SKU -->
+            <div>
+              <label for="code" class="block text-sm font-medium text-foreground mb-2">
+                Código/SKU
+              </label>
+              <input
+                type="text"
+                id="code"
+                name="code"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: FLT-H13-001"
+              />
+              <p class="mt-1 text-sm text-muted-foreground">Código único del producto</p>
+            </div>
+
+            <!-- Categoría -->
+            <div>
+              <label for="category" class="block text-sm font-medium text-foreground mb-2">
+                Categoría
+              </label>
+              <select
+                id="category"
+                name="category"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Seleccionar categoría</option>
+                <option value="filtros">Filtros</option>
+                <option value="cuartos-limpios">Cuartos Limpios</option>
+                <option value="accesorios">Accesorios</option>
+                <option value="servicios">Servicios</option>
+              </select>
+            </div>
+
+            <!-- Precio -->
             <div>
               <label for="price" class="block text-sm font-medium text-foreground mb-2">
-                Precio *
+                Precio (MXN) <span class="text-red-500">*</span>
               </label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span class="text-muted-foreground sm:text-sm">$</span>
-                </div>
+                <span class="absolute left-3 top-2 text-muted-foreground">$</span>
                 <input
                   type="number"
                   id="price"
                   name="price"
-                  step="0.01"
-                  min="0"
                   required
-                  class="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  min="0"
+                  step="0.01"
+                  class="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="0.00"
                 />
               </div>
             </div>
 
+            <!-- Stock/Inventario -->
             <div>
               <label for="stock" class="block text-sm font-medium text-foreground mb-2">
-                Stock *
+                Stock/Inventario
               </label>
               <input
                 type="number"
                 id="stock"
                 name="stock"
                 min="0"
-                required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                value="0"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="0"
               />
+              <p class="mt-1 text-sm text-muted-foreground">Cantidad disponible en inventario</p>
             </div>
-          </div>
-        </div>
 
-        <!-- Estado y Etiquetas -->
-        <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Estado y Etiquetas</h2>
-
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-6">
-            <div>
-              <label for="status" class="block text-sm font-medium text-foreground mb-2">
-                Estado *
+            <!-- Descripción -->
+            <div class="md:col-span-2">
+              <label for="description" class="block text-sm font-medium text-foreground mb-2">
+                Descripción <span class="text-red-500">*</span>
               </label>
-              <select
-                id="status"
-                name="status"
+              <textarea
+                id="description"
+                name="description"
                 required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
-                <option value="draft">Borrador</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label for="tags" class="block text-sm font-medium text-foreground mb-2">
-              Etiquetas
-            </label>
-            <div class="tags-input-container">
-              <div id="tags-display" class="flex flex-wrap gap-2 min-h-[42px] p-3 border border-border rounded-md bg-background focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
-                <input
-                  type="text"
-                  id="tags-input-field"
-                  class="flex-1 min-w-[120px] bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
-                  placeholder="Escribe etiquetas y presiona Enter o coma... (ej: premium, hepa, industrial)"
-                />
-              </div>
-              <input type="hidden" id="tags-hidden" name="tags" />
-              <p class="mt-1 text-sm text-muted-foreground">
-                Presiona Enter o escribe una coma para agregar etiquetas
-              </p>
+                rows="4"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Describe las características y beneficios del producto..."
+              ></textarea>
             </div>
           </div>
         </div>
 
-        <!-- Imágenes -->
+        <!-- Información Adicional -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Imágenes del Producto</h2>
-          
-          <div class="space-y-4">
-            <!-- Zona de carga -->
-            <div id="upload-zone-add" class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-              <svg class="mx-auto h-12 w-12 text-muted-foreground pointer-events-none" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <div class="mt-4">
-                <label for="product-images-add" class="cursor-pointer inline-block">
-                  <span class="mt-2 block text-sm font-medium text-foreground pointer-events-none">
-                    <span id="upload-status-add">Arrastra y suelta las imágenes aquí, o</span>
-                  </span>
-                  <span class="mt-1 block text-sm text-primary hover:text-primary/90 pointer-events-none">
-                    haz clic para seleccionar archivos
-                  </span>
-                </label>
-              </div>
-              <p class="mt-2 text-xs text-muted-foreground pointer-events-none">
-                PNG, JPG, GIF hasta 10MB cada una
-              </p>
+          <h2 class="text-lg font-semibold text-foreground mb-6">Información Adicional</h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Peso -->
+            <div>
+              <label for="weight" class="block text-sm font-medium text-foreground mb-2">
+                Peso
+              </label>
               <input
-                id="product-images-add"
-                name="product-images-add"
-                type="file"
-                multiple
-                accept="image/*"
-                class="hidden"
+                type="text"
+                id="weight"
+                name="weight"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: 2.5 kg"
               />
             </div>
 
-            <!-- Vista previa de imágenes -->
-            <div id="images-preview-add" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              <!-- Las imágenes se mostrarán aquí -->
-            </div>
-            
-            <!-- Input oculto para guardar URLs de imágenes -->
-            <input type="hidden" id="images-urls" name="images_urls" value="" />
-          </div>
-        </div>
-
-        <!-- Especificaciones técnicas -->
-        <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Especificaciones Técnicas</h2>
-          
-          <div class="space-y-4">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label for="dimensions" class="block text-sm font-medium text-foreground mb-2">
-                  Dimensiones (L x W x H)
-                </label>
-                <input
-                  type="text"
-                  id="dimensions"
-                  name="dimensions"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: 30 x 20 x 15 cm"
-                />
-              </div>
-
-              <div>
-                <label for="weight" class="block text-sm font-medium text-foreground mb-2">
-                  Peso
-                </label>
-                <input
-                  type="text"
-                  id="weight"
-                  name="weight"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: 2.5 kg"
-                />
-              </div>
-
-              <div>
-                <label for="material" class="block text-sm font-medium text-foreground mb-2">
-                  Material
-                </label>
-                <input
-                  type="text"
-                  id="material"
-                  name="material"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: Polipropileno, Acero inoxidable"
-                />
-              </div>
-
-              <div>
-                <label for="warranty" class="block text-sm font-medium text-foreground mb-2">
-                  Garantía
-                </label>
-                <input
-                  type="text"
-                  id="warranty"
-                  name="warranty"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: 2 años"
-                />
-              </div>
+            <!-- Tags/Etiquetas -->
+            <div>
+              <label for="tags" class="block text-sm font-medium text-foreground mb-2">
+                Etiquetas
+              </label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: hepa, filtro, h13"
+              />
+              <p class="mt-1 text-sm text-muted-foreground">Separadas por comas</p>
             </div>
           </div>
         </div>
 
         <!-- Botones de acción -->
-        <div class="flex justify-end space-x-4">
+        <div class="flex items-center justify-end gap-4 pb-8">
           <a href="/admin/products">
             <Button type="button" variant="outline" className="border-border text-foreground hover:bg-muted">
               Cancelar
             </Button>
           </a>
-          <Button type="submit" name="action" value="draft" variant="outline" className="border-border text-foreground hover:bg-muted">
-            Guardar como borrador
-          </Button>
-          <Button type="submit" name="action" value="create" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            Crear producto
+          <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Crear Producto
           </Button>
         </div>
       </form>
   </div>
 </AdminLayout>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const tagsDisplay = document.getElementById('tags-display');
-    const tagsInputField = document.getElementById('tags-input-field');
-    const tagsHidden = document.getElementById('tags-hidden');
-    
-    if (!tagsDisplay || !tagsInputField || !tagsHidden) return;
-    
-    let tags: string[] = [];
-    
-    // Función para crear un badge de etiqueta
-    function createTagBadge(tag: string): HTMLElement {
-      const badge = document.createElement('span');
-      badge.className = 'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-md';
-      badge.innerHTML = `
-        ${tag}
-        <button type="button" class="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5 transition-colors remove-tag">
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      `;
-      
-      // Agregar event listener para eliminar etiqueta
-      const removeBtn = badge.querySelector('.remove-tag');
-      removeBtn?.addEventListener('click', () => {
-        removeTag(tag);
-      });
-      
-      return badge;
-    }
-    
-    // Función para actualizar la visualización
-    function updateDisplay() {
-      if (!tagsDisplay || !tagsInputField || !tagsHidden) return;
-      
-      // Limpiar display
-      const existingBadges = tagsDisplay.querySelectorAll('.inline-flex');
-      existingBadges.forEach(badge => badge.remove());
-      
-      // Agregar badges de etiquetas
-      tags.forEach(tag => {
-        const badge = createTagBadge(tag);
-        tagsDisplay.insertBefore(badge, tagsInputField);
-      });
-      
-      // Actualizar input hidden
-      (tagsHidden as HTMLInputElement).value = tags.join(',');
-    }
-    
-    // Función para agregar etiqueta
-    function addTag(tag: string) {
-      const trimmedTag = tag.trim().toLowerCase();
-      if (trimmedTag && !tags.includes(trimmedTag)) {
-        tags.push(trimmedTag);
-        updateDisplay();
-        (tagsInputField as HTMLInputElement).value = '';
-      }
-    }
-    
-    // Función para eliminar etiqueta
-    function removeTag(tagToRemove: string) {
-      tags = tags.filter(tag => tag !== tagToRemove);
-      updateDisplay();
-    }
-    
-    // Event listeners
-    tagsInputField.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
-        e.preventDefault();
-        const value = (e.target as HTMLInputElement).value;
-        if (value.trim()) {
-          addTag(value);
-        }
-      }
-    });
-    
-    tagsInputField.addEventListener('blur', () => {
-      const value = (tagsInputField as HTMLInputElement).value;
-      if (value.trim()) {
-        addTag(value);
-      }
-    });
-    
-    // ===== GESTIÓN DE IMÁGENES EN AGREGAR PRODUCTO =====
-    const tempProductId = `temp_${Date.now()}`;
-    const uploadZoneAdd = document.getElementById('upload-zone-add');
-    const productImagesInputAdd = document.getElementById('product-images-add');
-    const imagesPreviewAdd = document.getElementById('images-preview-add');
-    const uploadStatusAdd = document.getElementById('upload-status-add');
-    const imagesUrlsInput = document.getElementById('images-urls');
-    
-    let uploadedImages: any[] = [];
-    
-    // Función para crear elemento de imagen
-    function createImageElementAdd(image: any, index: number) {
-      const div = document.createElement('div');
-      div.className = 'relative w-full h-32 group image-item-add';
-      div.setAttribute('data-image-url', image.url);
-      
-      div.innerHTML = `
-        <img 
-          class="w-full h-full rounded-lg object-cover border border-border" 
-          src="${image.url}" 
-          alt="Imagen del producto"
-        />
-        
-        <button
-          type="button"
-          class="delete-image-btn-add absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10 opacity-0 group-hover:opacity-100"
-          data-image-url="${image.url}"
-        >
-          <svg class="h-3 w-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-        
-        ${index === 0 ? `
-          <div class="absolute bottom-1 left-1 right-1 bg-primary text-primary-foreground text-xs p-1 rounded text-center font-medium">
-            Principal
-          </div>
-        ` : `
-          <button
-            type="button"
-            class="set-primary-btn-add absolute bottom-1 left-1 right-1 bg-black/50 text-white text-xs p-1 rounded text-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
-            data-image-url="${image.url}"
-          >
-            Hacer principal
-          </button>
-        `}
-      `;
-      
-      // Event listener para eliminar
-      const deleteBtn = div.querySelector('.delete-image-btn-add');
-      deleteBtn?.addEventListener('click', function(this: HTMLElement) {
-        const imageUrl = this.getAttribute('data-image-url');
-        if (imageUrl) deleteImageAdd(imageUrl);
-      });
-      
-      // Event listener para establecer como principal
-      const setPrimaryBtn = div.querySelector('.set-primary-btn-add');
-      setPrimaryBtn?.addEventListener('click', function(this: HTMLElement) {
-        const imageUrl = this.getAttribute('data-image-url');
-        if (imageUrl) setPrimaryImageAdd(imageUrl);
-      });
-      
-      return div;
-    }
-    
-    // Función para actualizar vista previa
-    function updateImagesPreviewAdd() {
-      if (!imagesPreviewAdd) return;
-      
-      imagesPreviewAdd.innerHTML = '';
-      uploadedImages.forEach((image: any, index: number) => {
-        imagesPreviewAdd.appendChild(createImageElementAdd(image, index));
-      });
-      
-      // Actualizar input oculto con las URLs (la primera es la principal)
-      if (imagesUrlsInput) {
-        const urls = uploadedImages.map((img: any) => img.url).join(',');
-        (imagesUrlsInput as HTMLInputElement).value = urls;
-      }
-      
-      console.log('📸 Imágenes en preview:', uploadedImages.length);
-    }
-    
-    // Función para subir imágenes
-    async function uploadImagesAdd(files: FileList) {
-      if (!uploadStatusAdd) return;
-      
-      uploadStatusAdd.textContent = 'Subiendo imágenes...';
-      
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        if (!file.type.startsWith('image/')) {
-          alert(`${file.name} no es una imagen válida`);
-          continue;
-        }
-        
-        if (file.size > 10 * 1024 * 1024) {
-          alert(`${file.name} es demasiado grande (máximo 10MB)`);
-          continue;
-        }
-        
-        try {
-          const formData = new FormData();
-          formData.append('image', file);
-          formData.append('productId', tempProductId);
-          
-          console.log('📤 Subiendo imagen:', file.name);
-          
-          const response = await fetch('/api/products/upload-image', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const result = await response.json();
-          
-          if (response.ok && result.success) {
-            uploadedImages.push({
-              url: result.url,
-              id: result.imageId || `img-${Date.now()}-${i}`
-            });
-            console.log('✅ Imagen subida:', result.url);
-          } else {
-            alert(`Error al subir ${file.name}: ${result.message}`);
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          alert(`Error al subir ${file.name}`);
-        }
-      }
-      
-      updateImagesPreviewAdd();
-      uploadStatusAdd.textContent = 'Arrastra y suelta las imágenes aquí, o';
-      
-      if (productImagesInputAdd) {
-        (productImagesInputAdd as HTMLInputElement).value = '';
-      }
-    }
-    
-    // Función para eliminar imagen
-    function deleteImageAdd(imageUrl: string) {
-      if (!confirm('¿Estás seguro de eliminar esta imagen?')) {
-        return;
-      }
-      
-      uploadedImages = uploadedImages.filter((img: any) => img.url !== imageUrl);
-      updateImagesPreviewAdd();
-      console.log('🗑️ Imagen eliminada');
-    }
-    
-    // Función para establecer imagen principal
-    function setPrimaryImageAdd(imageUrl: string) {
-      const imageIndex = uploadedImages.findIndex((img: any) => img.url === imageUrl);
-      if (imageIndex > -1) {
-        const [image] = uploadedImages.splice(imageIndex, 1);
-        uploadedImages.unshift(image);
-        updateImagesPreviewAdd();
-        console.log('⭐ Imagen principal establecida');
-      }
-    }
-    
-    // Event listeners
-    if (productImagesInputAdd) {
-      console.log('✅ Event listener agregado al input de archivos (agregar)');
-      productImagesInputAdd.addEventListener('change', function(e) {
-        console.log('📁 Archivo(s) seleccionado(s)');
-        const files = (this as HTMLInputElement).files;
-        if (files && files.length > 0) {
-          console.log('📁 Cantidad de archivos:', files.length);
-          uploadImagesAdd(files);
-        }
-      });
-    }
-    
-    // Drag and drop
-    if (uploadZoneAdd) {
-      uploadZoneAdd.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadZoneAdd.classList.add('border-primary', 'bg-primary/5');
-      });
-      
-      uploadZoneAdd.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadZoneAdd.classList.remove('border-primary', 'bg-primary/5');
-      });
-      
-      uploadZoneAdd.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadZoneAdd.classList.remove('border-primary', 'bg-primary/5');
-        
-        const files = e.dataTransfer?.files;
-        if (files && files.length > 0) {
-          uploadImagesAdd(files);
-        }
-      });
-    }
-    
-    console.log('🎯 Sistema de imágenes (agregar producto) inicializado');
-  });
-</script>

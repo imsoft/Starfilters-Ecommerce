@@ -1,8 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
-import { formatPrice } from "@/lib/cart";
-import StripePaymentForm from "@/components/ui/StripePaymentForm.tsx";
 
 // Verificar que el usuario esté autenticado
 const user = getAuthenticatedUser(Astro.cookies);
@@ -207,87 +205,7 @@ if (!user) {
     // Función para inicializar Stripe
     function initializeStripe(container: HTMLElement, clientSecret: string, amount: number) {
       try {
-        // Verificar si es un client_secret simulado
-        const isMockSecret = clientSecret.includes('pi_mock_');
-        
-        if (isMockSecret) {
-          // Modo desarrollo - mostrar formulario simulado
-          container.innerHTML = `
-            <div class="space-y-6">
-              <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 class="text-lg font-medium text-blue-800 mb-2">🧪 Modo Desarrollo</h3>
-                <p class="text-sm text-blue-600 mb-4">
-                  Para procesar pagos reales, configura la API de Stripe.
-                </p>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-foreground mb-2">
-                  Información de la tarjeta (Simulado)
-                </label>
-                <div class="p-4 border border-border rounded-md bg-background">
-                  <div class="space-y-3">
-                    <input 
-                      type="text" 
-                      placeholder="4242 4242 4242 4242" 
-                      class="w-full p-3 border border-border rounded-md"
-                      readonly
-                    />
-                    <div class="grid grid-cols-2 gap-3">
-                      <input 
-                        type="text" 
-                        placeholder="MM/AA" 
-                        class="p-3 border border-border rounded-md"
-                        readonly
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="CVC" 
-                        class="p-3 border border-border rounded-md"
-                        readonly
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-muted-foreground">Total a pagar:</span>
-                <span class="font-semibold text-foreground">${formatPrice(amount)}</span>
-              </div>
-
-              <button 
-                id="submit-payment" 
-                class="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Simular Pago ${formatPrice(amount)}
-              </button>
-
-              <div id="payment-message" class="hidden"></div>
-            </div>
-          `;
-
-          const submitButton = document.getElementById('submit-payment');
-          const messageDiv = document.getElementById('payment-message');
-
-          if (submitButton) {
-            submitButton.addEventListener('click', () => {
-              if (messageDiv) {
-                messageDiv.textContent = '✅ Pago simulado exitoso! Redirigiendo...';
-                messageDiv.className = 'text-green-600 text-sm mt-2';
-                messageDiv.classList.remove('hidden');
-              }
-              
-              setTimeout(() => {
-                window.location.href = '/purchase-success';
-              }, 1500);
-            });
-          }
-          
-          return;
-        }
-
-        // Modo producción - usar Stripe real
+        console.log('💳 Inicializando Stripe Elements...');
         const stripe = (window as any).Stripe(import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY);
         
         const elements = stripe.elements({
@@ -514,18 +432,30 @@ if (!user) {
             country,
           };
 
-          // Calcular total directamente (sin API por ahora)
-          const cart = getCart();
-          const subtotal = cart.total;
-          const shipping = 5.00;
-          const tax = subtotal * 0.16;
-          const order_total = subtotal + shipping + tax;
+          console.log('💳 Creando Payment Intent con Stripe...');
 
-          // Crear un client_secret simulado para desarrollo
-          const mockClientSecret = `pi_mock_${Date.now()}_secret_mock`;
+          // Llamar al API para crear el Payment Intent real
+          const response = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...checkoutData,
+              shippingMethod: 'standard' // Puede ser 'standard' o 'express'
+            }),
+          });
 
-          // Cargar Stripe y crear formulario de pago
-          await loadStripeForm(paymentFormContainer, mockClientSecret, order_total);
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al crear el pago');
+          }
+
+          const paymentData = await response.json();
+          console.log('✅ Payment Intent creado:', paymentData.paymentIntentId);
+
+          // Cargar Stripe con el client_secret real
+          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total);
 
         } catch (error) {
           console.error('Error:', error);

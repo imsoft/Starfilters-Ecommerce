@@ -1,43 +1,271 @@
 ---
-import FeatureServiceSection from "@/components/shared/FeatureServiceSection.astro";
-import PricingSection from "@/components/shared/PricingSection.astro";
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { sendEmail } from "@/lib/email";
+
+export const prerender = false;
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Inicio', url: siteUrl },
   { name: 'Servicios', url: `${siteUrl}/services` }
 ]);
+
+type ValidationFormValues = {
+  name: string;
+  city: string;
+  email: string;
+  phone: string;
+  message: string;
+};
+
+const initialValues: ValidationFormValues = {
+  name: '',
+  city: '',
+  email: '',
+  phone: '',
+  message: '',
+};
+
+let formValues: ValidationFormValues = { ...initialValues };
+let submissionStatus: 'success' | 'error' | null = null;
+let submissionMessage = '';
+
+const alertStyles = {
+  success: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+  error: 'border-red-300 bg-red-50 text-red-700',
+} as const;
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+
+  formValues = {
+    name: (formData.get('name')?.toString() ?? '').trim(),
+    city: (formData.get('city')?.toString() ?? '').trim(),
+    email: (formData.get('email')?.toString() ?? '').trim(),
+    phone: (formData.get('phone')?.toString() ?? '').trim(),
+    message: (formData.get('message')?.toString() ?? '').trim(),
+  };
+
+  const hasEmpty = Object.values(formValues).some((value) => value.length === 0);
+
+  if (hasEmpty) {
+    submissionStatus = 'error';
+    submissionMessage = 'Por favor completa todos los campos.';
+  } else {
+    try {
+      const messageHtml = formValues.message.replace(/\n/g, '<br />');
+      const emailSent = await sendEmail({
+        to: 'starinfo@starfilters.mx',
+        subject: `Solicitud de validación - ${formValues.name}`,
+        html: `
+          <h2>Nueva solicitud de validación de cuartos limpios</h2>
+          <p><strong>Nombre:</strong> ${formValues.name}</p>
+          <p><strong>Ciudad:</strong> ${formValues.city}</p>
+          <p><strong>Correo electrónico:</strong> ${formValues.email}</p>
+          <p><strong>Teléfono:</strong> ${formValues.phone}</p>
+          <p><strong>Mensaje:</strong><br />${messageHtml}</p>
+        `,
+        text: `Nueva solicitud de validación de cuartos limpios\n\nNombre: ${formValues.name}\nCiudad: ${formValues.city}\nCorreo electrónico: ${formValues.email}\nTeléfono: ${formValues.phone}\n\nMensaje:\n${formValues.message}`,
+      });
+
+      if (emailSent) {
+        submissionStatus = 'success';
+        submissionMessage = 'Gracias. Nos pondremos en contacto contigo para agendar tu validación.';
+        formValues = { ...initialValues };
+      } else {
+        submissionStatus = 'error';
+        submissionMessage = 'No fue posible enviar tu solicitud. Inténtalo nuevamente más tarde.';
+      }
+    } catch (error) {
+      console.error('Error al procesar la solicitud de servicios:', error);
+      submissionStatus = 'error';
+      submissionMessage = 'No fue posible enviar tu solicitud. Inténtalo nuevamente más tarde.';
+    }
+  }
+}
 ---
 
 <WebsiteLayout 
-  title="Servicios"
-  seoTitle="Servicios de Filtración Industrial y Mantenimiento | StarFilters"
-  description="Servicios profesionales de instalación, mantenimiento y consultoría en sistemas de filtración industrial. Soporte técnico especializado y planes de mantenimiento preventivo en México."
+  title="Servicios de Pruebas y Validación"
+  seoTitle="Pruebas y Validación de Cuartos Limpios | Star Filters"
+  description="Pruebas de desempeño certificadas por NEBB para cuartos limpios: integridad de filtros HEPA, conteo de partículas, hermeticidad de ductos y balanceo de aire."
   keywords={[
-    'servicios filtración',
-    'mantenimiento filtros',
-    'instalación cuartos limpios',
-    'consultoría industrial',
-    'soporte técnico filtros',
-    'mantenimiento preventivo'
+    'validación cuartos limpios',
+    'pruebas NEBB',
+    'ISO 14644',
+    'validación GMP',
+    'conteo de partículas',
+    'integridad filtros HEPA'
   ]}
 >
   <SEO 
     slot="seo"
-    title="Servicios de Filtración Industrial"
-    description="Servicios profesionales de instalación, mantenimiento y consultoría en sistemas de filtración industrial. Soporte técnico especializado y planes de mantenimiento preventivo en México."
+    title="Pruebas y Validación de Cuartos Limpios"
+    description="Realizamos pruebas de desempeño certificadas por NEBB para garantizar que cada cuarto limpio y área controlada opere conforme a las normas ISO 14644 y GMP."
     ogType="website"
     keywords={[
-      'servicios filtración',
-      'mantenimiento filtros',
-      'instalación cuartos limpios'
+      'validación cuartos limpios',
+      'pruebas NEBB',
+      'ISO 14644',
+      'integridad filtros HEPA'
     ]}
   />
   
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
-  <FeatureServiceSection />
-  <PricingSection />
+
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-6xl px-6 lg:px-8">
+      <div class="grid gap-16 lg:grid-cols-[1.1fr_1fr]">
+        <div class="space-y-10">
+          <div class="space-y-6">
+            <h1 class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+              Servicios de Pruebas y Validación de Desempeño en Cuartos Limpios
+            </h1>
+            <p class="text-lg leading-8 text-muted-foreground">
+              En Star Filters, realizamos pruebas de desempeño certificadas por NEBB para asegurar que cada cuarto limpio y área controlada opere conforme a las normas ISO 14644 y GMP, incluyendo NOM-059-SSA1-2015, NOM-241-SSA1-2021, NOM-249-SSA1-2010 y Federal Standard 209E.
+            </p>
+            <p class="text-lg leading-8 text-muted-foreground">
+              Nuestro objetivo es verificar que los sistemas de aire y filtración mantengan la máxima eficiencia, seguridad y pureza del aire, protegiendo el proceso y la calidad del producto.
+            </p>
+          </div>
+
+          <div class="space-y-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-foreground">Prueba de integridad de filtros HEPA</h2>
+              <p class="mt-2 text-base leading-7 text-muted-foreground">
+                Confirma que los filtros HEPA estén libres de fugas y conserven una barrera efectiva contra contaminantes, asegurando la protección del proceso y del producto final.
+              </p>
+            </div>
+            <div>
+              <h2 class="text-2xl font-semibold text-foreground">Conteo de partículas de aire</h2>
+              <p class="mt-2 text-base leading-7 text-muted-foreground">
+                Determina la clasificación ISO del área mediante la medición del tamaño y cantidad de partículas suspendidas en el aire, garantizando el nivel de limpieza requerido por el proceso.
+              </p>
+            </div>
+            <div>
+              <h2 class="text-2xl font-semibold text-foreground">Prueba de hermeticidad de ductos</h2>
+              <p class="mt-2 text-base leading-7 text-muted-foreground">
+                Verifica que los sistemas de aire y ductos estén correctamente sellados, evitando fugas que puedan afectar la presión del área o la eficiencia energética.
+              </p>
+            </div>
+            <div>
+              <h2 class="text-2xl font-semibold text-foreground">Balanceo y control de presión de áreas</h2>
+              <p class="mt-2 text-base leading-7 text-muted-foreground">
+                Mide y ajusta el flujo de aire, los cambios de aire por hora y las presiones diferenciales entre áreas, evitando contaminación cruzada y asegurando un desempeño óptimo del sistema.
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-4 rounded-2xl border border-border/70 bg-muted/40 p-6">
+            <h2 class="text-xl font-semibold text-foreground">Solicita tu servicio de validación</h2>
+            <p class="text-base leading-7 text-muted-foreground">
+              En Star Filters garantizamos resultados confiables con equipos de medición calibrados de vanguardia y técnicos certificados NEBB.
+            </p>
+            <p class="text-base leading-7 text-muted-foreground">
+              Ofrecemos flexibilidad de horario, entrega rápida de reportes de validación y atención personalizada para cumplir con los más altos estándares de tu industria. Completa el formulario y nuestro equipo te contactará para agendar tu validación.
+            </p>
+            <div class="text-base leading-7 text-foreground">
+              <p>Guadalajara, JAL / Ciudad de México</p>
+              <p class="mt-1">
+                <a class="hover:text-primary" href="tel:+523338987991">+52 33 3898 7991</a> /
+                <a class="hover:text-primary" href="tel:+525550870287">+52 55 5087 0287</a>
+              </p>
+              <p class="mt-1">
+                <a class="hover:text-primary" href="mailto:starinfo@starfilters.mx">starinfo@starfilters.mx</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-border/60 bg-muted/20 p-8 shadow-sm">
+          <h2 class="text-2xl font-semibold text-foreground">Formulario de validación</h2>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Completa los campos y nos pondremos en contacto contigo a la brevedad.
+          </p>
+
+          {submissionStatus && (
+            <div class={`mt-6 rounded-lg border px-4 py-3 text-sm ${alertStyles[submissionStatus]}`}>
+              {submissionMessage}
+            </div>
+          )}
+
+          <form method="post" class="mt-8 space-y-6">
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label for="name" class="block text-sm font-medium text-foreground">Nombre</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  autocomplete="name"
+                  value={formValues.name}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+              <div>
+                <label for="city" class="block text-sm font-medium text-foreground">Ciudad</label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  required
+                  autocomplete="address-level2"
+                  value={formValues.city}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+            </div>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label for="email" class="block text-sm font-medium text-foreground">Correo electrónico</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autocomplete="email"
+                  value={formValues.email}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+              <div>
+                <label for="phone" class="block text-sm font-medium text-foreground">Teléfono</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  autocomplete="tel"
+                  value={formValues.phone}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="message" class="block text-sm font-medium text-foreground">Mensaje</label>
+              <textarea
+                id="message"
+                name="message"
+                required
+                rows={5}
+                class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              >{formValues.message}</textarea>
+            </div>
+
+            <button
+              type="submit"
+              class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Enviar solicitud
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </WebsiteLayout>

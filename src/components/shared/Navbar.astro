@@ -40,16 +40,14 @@ const baseNavLinks = [
     href: lang === 'en' ? '/en/blog' : '/blog',
     label: lang === 'en' ? 'Blog' : t('nav.blog'),
   },
+  {
+    href: lang === 'en' ? '/en/contact' : '/contacto',
+    label: lang === 'en' ? 'Contact' : t('nav.contact'),
+  },
 ];
 
 const navLinks = [...baseNavLinks];
 
-if (!user) {
-  navLinks.push({
-    href: lang === 'en' ? '/en/login' : '/login',
-    label: lang === 'en' ? t('nav.login') : t('nav.login'),
-  });
-}
 ---
 
 <header class={`${isHomePage ? 'navbar' : ''} absolute inset-x-0 top-0 z-50 bg-white/30 backdrop-blur-sm`}>
@@ -64,8 +62,8 @@ if (!user) {
           <a href={lang === 'en' ? '/en' : '/'} class="-m-1.5 p-1.5 flex-shrink-0">
             <span class="sr-only">Starfilters</span>
             <img
-              src="/logos/logo-starfilters.png"
-              alt="Starfilters"
+              src="/images/home-page/Logo%20de%20Star%20Filters.png"
+              alt="Star Filters"
               class="h-14 w-auto object-contain"
               loading="eager"
               fetchpriority="high"
@@ -113,12 +111,19 @@ if (!user) {
         <!-- Controles del lado derecho - idioma, carrito, usuario -->
         <div class="hidden lg:flex lg:flex-1 lg:items-center lg:gap-x-4 lg:justify-end">
           <LanguageSelector client:load />
-          {user ? (
+          {!user ? (
+            <a
+              href={lang === 'en' ? '/en/login' : '/login'}
+              class="text-sm font-semibold text-foreground hover:text-primary transition-colors"
+            >
+              {t('nav.login')}
+            </a>
+          ) : (
             <>
               <CartIcon />
               <UserDropdown user={user} />
             </>
-          ) : null}
+          )}
         </div>
       </nav>
     </div>
@@ -133,8 +138,8 @@ if (!user) {
             <a href={lang === 'en' ? '/en' : '/'} class="-m-1.5 p-1.5">
               <span class="sr-only">Starfilters</span>
               <img
-                src="/logos/logo-starfilters.png"
-                alt="Starfilters"
+                src="/images/home-page/Logo%20de%20Star%20Filters.png"
+                alt="Star Filters"
                 class="h-14 w-auto object-contain"
                 loading="eager"
                 fetchpriority="high"
@@ -175,6 +180,14 @@ if (!user) {
                     {link.label}
                   </a>
                 ))}
+                {!user && (
+                  <a
+                    href={lang === 'en' ? '/en/login' : '/login'}
+                    class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
+                  >
+                    {t('nav.login')}
+                  </a>
+                )}
               </div>
               <div class="py-6">
                 {user ? (

@@ -1,9 +1,7 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
-import { ProductImageUploader } from "@/components/ui/ProductImageUploader";
-import ProductImageManager from "@/components/admin/ProductImageManager.astro";
-import { getProductByUuid, updateProduct } from "@/lib/database";
+import { getProductByBindId, updateProduct as updateProductService } from "@/lib/product-service";
 import { requireAdmin } from "@/lib/auth-utils";
 import type { Product } from "@/lib/database";
 
@@ -13,28 +11,22 @@ Astro.response.headers.set('Pragma', 'no-cache');
 Astro.response.headers.set('Expires', '0');
 
 // Verificar que el usuario es administrador
-const { redirect, user, isAdmin } = await requireAdmin(Astro.cookies);
+const { redirect } = await requireAdmin(Astro.cookies);
 if (redirect) {
   return Astro.redirect(redirect);
 }
 
-const { id } = Astro.params;
+const { id: bindId } = Astro.params;
 
-// Obtener el producto por UUID
+// Obtener el producto por Bind ID
 let product: Product | null = null;
 let errorMessage = '';
 
-if (id) {
-  product = await getProductByUuid(id);
+if (bindId) {
+  product = await getProductByBindId(bindId);
   if (!product) {
     return Astro.redirect('/admin/products?error=product_not_found');
   }
-
-  // Convertir null a undefined para que los inputs muestren cadenas vacías
-  if (product.dimensions === null) product.dimensions = undefined;
-  if (product.weight === null) product.weight = undefined;
-  if (product.material === null) product.material = undefined;
-  if (product.warranty === null) product.warranty = undefined;
 } else {
   return Astro.redirect('/admin/products?error=invalid_id');
 }
@@ -43,102 +35,34 @@ if (id) {
 if (Astro.request.method === 'POST') {
   try {
     const formData = await Astro.request.formData();
-    const action = formData.get('action')?.toString() || 'update';
 
-    // Manejar acciones de imágenes
-    if (action === 'add') {
-      const { addProductImage } = await import('@/lib/database');
-      const imageUrl = formData.get('image_url')?.toString();
-      const altText = formData.get('alt_text')?.toString();
-      const isPrimary = formData.get('is_primary') === 'true';
-
-      if (imageUrl) {
-        const images = await import('@/lib/database').then(m => m.getProductImages(product.id));
-        await addProductImage({
-          product_id: product.id,
-          image_url: imageUrl,
-          alt_text: altText || `${product.name} - Imagen`,
-          sort_order: images.length,
-          is_primary: isPrimary || images.length === 0
-        });
-      }
-      return Astro.redirect(Astro.url.pathname);
-    } else if (action === 'delete') {
-      const { deleteProductImage } = await import('@/lib/database');
-      const imageId = parseInt(formData.get('image_id')?.toString() || '0');
-      if (imageId > 0) {
-        await deleteProductImage(imageId);
-      }
-      return Astro.redirect(Astro.url.pathname);
-    } else if (action === 'set_primary') {
-      const { setPrimaryImage } = await import('@/lib/database');
-      const imageId = parseInt(formData.get('image_id')?.toString() || '0');
-      if (imageId > 0) {
-        await setPrimaryImage(product.id, imageId);
-      }
-      return Astro.redirect(Astro.url.pathname);
-    }
-
-    // Procesar actualización del producto
-    // Capturar y limpiar campos del formulario
-    const dimensionsStr = formData.get('dimensions')?.toString().trim() || '';
-    const weightStr = formData.get('weight')?.toString().trim() || '';
-    const materialStr = formData.get('material')?.toString().trim() || '';
-    const warrantyStr = formData.get('warranty')?.toString().trim() || '';
-
-    // Debug: Ver qué valores llegan
-    console.log('📊 Especificaciones técnicas recibidas:');
-    console.log('  - dimensions:', dimensionsStr);
-    console.log('  - weight:', weightStr);
-    console.log('  - material:', materialStr);
-    console.log('  - warranty:', warrantyStr);
-
-    // Función helper para convertir strings vacíos a null en lugar de undefined
-    const toNullIfEmpty = (value: string | null | undefined): string | null => {
-      if (!value || value.trim() === '') return null;
-      return value.trim();
-    };
-
-    const productData: any = {
+    const updatedData = {
       name: formData.get('name')?.toString() || '',
-      name_en: toNullIfEmpty(formData.get('name_en')?.toString()),
       description: formData.get('description')?.toString() || '',
-      description_en: toNullIfEmpty(formData.get('description_en')?.toString()),
+      uuid: formData.get('code')?.toString() || '', // SKU/Código
       price: parseFloat(formData.get('price')?.toString() || '0'),
       category: formData.get('category')?.toString() || '',
-      category_en: toNullIfEmpty(formData.get('category_en')?.toString()),
       stock: parseInt(formData.get('stock')?.toString() || '0'),
-      tags: formData.get('tags')?.toString() || '',
-      dimensions: dimensionsStr || null,
-      weight: weightStr || null,
-      material: materialStr || null,
-      warranty: warrantyStr || null,
-      status: action === 'draft' ? 'draft' : (formData.get('status')?.toString() as 'active' | 'inactive' | 'draft' || product.status)
+      weight: formData.get('weight')?.toString() || undefined,
+      tags: formData.get('tags')?.toString() || undefined,
+      status: 'active' as const
     };
 
-    console.log('📦 productData especificaciones:');
-    console.log('  - dimensions:', productData.dimensions);
-    console.log('  - weight:', productData.weight);
-    console.log('  - material:', productData.material);
-    console.log('  - warranty:', productData.warranty);
+    console.log('📝 Actualizando producto en Bind:', bindId, updatedData);
 
     // Validar datos requeridos
-    if (action === 'update' && (!productData.name || !productData.description || !productData.price || productData.price <= 0)) {
-      throw new Error('Todos los campos requeridos deben ser completados correctamente');
+    if (!updatedData.name || !updatedData.description || updatedData.price <= 0) {
+      throw new Error('Nombre, descripción y precio son campos requeridos');
     }
 
-    if (action === 'draft' && !productData.name) {
-      throw new Error('El nombre del producto es requerido');
-    }
-
-    // Actualizar el producto
-    const success = await updateProduct(product.id, productData);
+    // Actualizar el producto en Bind ERP
+    const success = await updateProductService(bindId, updatedData);
 
     if (success) {
-      const redirectMessage = action === 'draft' ? 'draft_saved' : 'updated';
-      return Astro.redirect(`/admin/products?success=${redirectMessage}`);
+      console.log('✅ Producto actualizado en Bind');
+      return Astro.redirect(`/admin/products?success=updated`);
     } else {
-      errorMessage = 'Error al actualizar el producto. Verifica los logs del servidor.';
+      errorMessage = 'Error al actualizar el producto en Bind ERP';
     }
   } catch (error) {
     console.error('Error actualizando producto:', error);
@@ -147,7 +71,7 @@ if (Astro.request.method === 'POST') {
 }
 ---
 
-<AdminLayout title="Editar Producto">
+<AdminLayout title={`Editar: ${product.name}`}>
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
       <!-- Header -->
       <div class="mt-10 mb-8">
@@ -155,7 +79,7 @@ if (Astro.request.method === 'POST') {
           <div>
             <h1 class="text-3xl font-bold tracking-tight text-foreground">Editar Producto</h1>
             <p class="mt-2 text-muted-foreground">
-              Modifica la información de: {product.name}
+              Actualiza la información del producto en Bind ERP
             </p>
           </div>
           <a href="/admin/products">
@@ -188,847 +112,181 @@ if (Astro.request.method === 'POST') {
         </div>
       )}
 
+      <!-- Info del Bind ID -->
+      <div class="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4">
+        <div class="flex items-center">
+          <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <p class="ml-3 text-sm text-blue-700">
+            <span class="font-medium">Bind ID:</span> {product.bind_id || 'N/A'}
+          </p>
+        </div>
+      </div>
+
       <!-- Formulario -->
-      <form method="POST" class="space-y-8" id="edit-product-form">
-        <!-- Información básica -->
+      <form method="POST" class="space-y-8">
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-6">Información Básica</h2>
 
-          <!-- Grid de dos columnas: Español | Inglés -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Columna Español -->
-            <div class="space-y-6">
-              <div class="flex items-center gap-2 mb-4">
-                <span class="text-lg font-medium text-foreground">🇲🇽 Español</span>
-              </div>
-
-              <div>
-                <label for="name" class="block text-sm font-medium text-foreground mb-2">
-                  Nombre del producto *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={product.name}
-                  required
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: Filtro HEPA Premium"
-                />
-              </div>
-
-              <div>
-                <label for="description" class="block text-sm font-medium text-foreground mb-2">
-                  Descripción *
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows="6"
-                  required
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Describe las características y beneficios del producto..."
-                >{product.description}</textarea>
-              </div>
-
-              <div>
-                <label for="category" class="block text-sm font-medium text-foreground mb-2">
-                  Categoría *
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  required
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  <option value="filtros" selected={product.category === 'filtros'}>Filtros</option>
-                  <option value="cuartos-limpios" selected={product.category === 'cuartos-limpios'}>Cuartos Limpios</option>
-                  <option value="accesorios" selected={product.category === 'accesorios'}>Accesorios</option>
-                  <option value="servicios" selected={product.category === 'servicios'}>Servicios</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Columna Inglés -->
-            <div class="space-y-6">
-              <div class="flex items-center gap-2 mb-4">
-                <span class="text-lg font-medium text-foreground">🇺🇸 English</span>
-              </div>
-
-              <div>
-                <label for="name_en" class="block text-sm font-medium text-foreground mb-2">
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  id="name_en"
-                  name="name_en"
-                  value={product.name_en ?? ""}
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ex: Premium HEPA Filter"
-                />
-              </div>
-
-              <div>
-                <label for="description_en" class="block text-sm font-medium text-foreground mb-2">
-                  Description
-                </label>
-                <textarea
-                  id="description_en"
-                  name="description_en"
-                  rows="6"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Describe the product features and benefits..."
-                >{product.description_en ?? ""}</textarea>
-              </div>
-
-              <div>
-                <label for="category_en" class="block text-sm font-medium text-foreground mb-2">
-                  Category
-                </label>
-                <select
-                  id="category_en"
-                  name="category_en"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                >
-                  <option value="">Select category</option>
-                  <option value="filters" selected={product.category_en === 'filters'}>Filters</option>
-                  <option value="cleanrooms" selected={product.category_en === 'cleanrooms'}>Cleanrooms</option>
-                  <option value="accessories" selected={product.category_en === 'accessories'}>Accessories</option>
-                  <option value="services" selected={product.category_en === 'services'}>Services</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Campos comunes (sin idioma) -->
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mt-8 pt-6 border-t border-border">
-            <div>
-              <label for="sku" class="block text-sm font-medium text-foreground mb-2">
-                SKU
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Nombre del Producto -->
+            <div class="md:col-span-2">
+              <label for="name" class="block text-sm font-medium text-foreground mb-2">
+                Nombre del Producto <span class="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="sku"
-                name="sku"
-                value={product.uuid}
-                readonly
-                class="w-full rounded-md border border-border bg-muted px-3 py-2 text-muted-foreground"
-                placeholder="UUID del producto"
+                id="name"
+                name="name"
+                required
+                value={product.name}
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: Filtro HEPA H13 para Cuarto Limpio"
               />
             </div>
 
+            <!-- Código/SKU -->
+            <div>
+              <label for="code" class="block text-sm font-medium text-foreground mb-2">
+                Código/SKU
+              </label>
+              <input
+                type="text"
+                id="code"
+                name="code"
+                value={product.uuid || ''}
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: FLT-H13-001"
+              />
+              <p class="mt-1 text-sm text-muted-foreground">Código único del producto</p>
+            </div>
+
+            <!-- Categoría -->
+            <div>
+              <label for="category" class="block text-sm font-medium text-foreground mb-2">
+                Categoría
+              </label>
+              <select
+                id="category"
+                name="category"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Seleccionar categoría</option>
+                <option value="filtros" selected={product.category === 'filtros'}>Filtros</option>
+                <option value="cuartos-limpios" selected={product.category === 'cuartos-limpios'}>Cuartos Limpios</option>
+                <option value="accesorios" selected={product.category === 'accesorios'}>Accesorios</option>
+                <option value="servicios" selected={product.category === 'servicios'}>Servicios</option>
+              </select>
+            </div>
+
+            <!-- Precio -->
             <div>
               <label for="price" class="block text-sm font-medium text-foreground mb-2">
-                Precio *
+                Precio (MXN) <span class="text-red-500">*</span>
               </label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span class="text-muted-foreground sm:text-sm">$</span>
-                </div>
+                <span class="absolute left-3 top-2 text-muted-foreground">$</span>
                 <input
                   type="number"
                   id="price"
                   name="price"
-                  value={product.price}
-                  step="0.01"
-                  min="0"
                   required
-                  class="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  min="0"
+                  step="0.01"
+                  value={product.price}
+                  class="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="0.00"
                 />
               </div>
             </div>
 
+            <!-- Stock/Inventario -->
             <div>
               <label for="stock" class="block text-sm font-medium text-foreground mb-2">
-                Stock *
+                Stock/Inventario
               </label>
               <input
                 type="number"
                 id="stock"
                 name="stock"
-                value={product.stock}
                 min="0"
-                required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                value={product.stock}
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="0"
               />
+              <p class="mt-1 text-sm text-muted-foreground">Cantidad disponible en inventario</p>
             </div>
-          </div>
-        </div>
 
-        <!-- Estado y Etiquetas -->
-        <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-6">Estado y Etiquetas</h2>
-
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-6">
-            <div>
-              <label for="status" class="block text-sm font-medium text-foreground mb-2">
-                Estado *
+            <!-- Descripción -->
+            <div class="md:col-span-2">
+              <label for="description" class="block text-sm font-medium text-foreground mb-2">
+                Descripción <span class="text-red-500">*</span>
               </label>
-              <select
-                id="status"
-                name="status"
+              <textarea
+                id="description"
+                name="description"
                 required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="active" selected={product.status === 'active'}>Activo</option>
-                <option value="inactive" selected={product.status === 'inactive'}>Inactivo</option>
-                <option value="draft" selected={product.status === 'draft'}>Borrador</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label for="tags" class="block text-sm font-medium text-foreground mb-2">
-              Etiquetas
-            </label>
-            <div class="tags-input-container">
-              <div id="tags-display" class="flex flex-wrap gap-2 min-h-[42px] p-3 border border-border rounded-md bg-background focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
-                <input
-                  type="text"
-                  id="tags-input-field"
-                  class="flex-1 min-w-[120px] bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
-                  placeholder="Escribe etiquetas y presiona Enter o coma... (ej: premium, hepa, industrial)"
-                />
-              </div>
-              <input type="hidden" id="tags-hidden" name="tags" value={product.tags || ""} />
-              <p class="mt-1 text-sm text-muted-foreground">
-                Presiona Enter o escribe una coma para agregar etiquetas
-              </p>
+                rows="4"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Describe las características y beneficios del producto..."
+              >{product.description}</textarea>
             </div>
           </div>
         </div>
 
-        <!-- Imágenes -->
+        <!-- Información Adicional -->
         <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-6">Imágenes del Producto</h2>
-          
-          <div class="space-y-4">
-            <!-- Zona de carga -->
-            <div id="upload-zone" class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-              <svg class="mx-auto h-12 w-12 text-muted-foreground pointer-events-none" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <div class="mt-4">
-                <label for="product-images" class="cursor-pointer inline-block">
-                  <span class="mt-2 block text-sm font-medium text-foreground pointer-events-none">
-                    <span id="upload-status">Arrastra y suelta las imágenes aquí, o</span>
-                  </span>
-                  <span class="mt-1 block text-sm text-primary hover:text-primary/90 pointer-events-none">
-                    haz clic para seleccionar archivos
-                  </span>
-                </label>
-              </div>
-              <p class="mt-2 text-xs text-muted-foreground pointer-events-none">
-                PNG, JPG, GIF hasta 10MB cada una
-              </p>
+          <h2 class="text-lg font-semibold text-foreground mb-6">Información Adicional</h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Peso -->
+            <div>
+              <label for="weight" class="block text-sm font-medium text-foreground mb-2">
+                Peso
+              </label>
               <input
-                id="product-images"
-                name="product-images"
-                type="file"
-                multiple
-                accept="image/*"
-                class="hidden"
+                type="text"
+                id="weight"
+                name="weight"
+                value={product.weight || ''}
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: 2.5 kg"
               />
             </div>
 
-            <!-- Vista previa de imágenes -->
-            <div id="images-preview" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              <!-- Las imágenes se cargarán dinámicamente mediante JavaScript -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Gestión de Imágenes -->
-        <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Gestión de Imágenes</h2>
-          
-          <!-- Componente de gestión de imágenes -->
-          <ProductImageManager productId={product.id} productName={product.name} />
-        </div>
-
-        <!-- Especificaciones técnicas -->
-        <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-6">Especificaciones Técnicas</h2>
-
-          <div class="space-y-6">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label for="dimensions" class="block text-sm font-medium text-foreground mb-2">
-                  Dimensiones (L x W x H)
-                </label>
-                <input
-                  type="text"
-                  id="dimensions"
-                  name="dimensions"
-                  value={product.dimensions ?? ""}
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: 30 x 20 x 15 cm"
-                />
-              </div>
-
-              <div>
-                <label for="weight" class="block text-sm font-medium text-foreground mb-2">
-                  Peso
-                </label>
-                <input
-                  type="text"
-                  id="weight"
-                  name="weight"
-                  value={product.weight ?? ""}
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: 2.5 kg"
-                />
-              </div>
-
-              <div>
-                <label for="material" class="block text-sm font-medium text-foreground mb-2">
-                  Material
-                </label>
-                <input
-                  type="text"
-                  id="material"
-                  name="material"
-                  value={product.material ?? ""}
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: Polipropileno, Acero inoxidable"
-                />
-              </div>
-
-              <div>
-                <label for="warranty" class="block text-sm font-medium text-foreground mb-2">
-                  Garantía
-                </label>
-                <input
-                  type="text"
-                  id="warranty"
-                  name="warranty"
-                  value={product.warranty ?? ""}
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Ej: 2 años"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Historial de cambios -->
-        <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-6">Historial de Cambios</h2>
-
-          <div class="space-y-6">
-            <div class="flex items-center space-x-3 p-3 rounded-md bg-muted/50">
-              <div class="flex-shrink-0">
-                <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <svg class="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-foreground">Producto actualizado</p>
-                <p class="text-sm text-muted-foreground">Precio cambiado de $85.00 a $89.00</p>
-              </div>
-              <div class="flex-shrink-0 text-sm text-muted-foreground">
-                Hace 2 horas
-              </div>
-            </div>
-
-            <div class="flex items-center space-x-3 p-3 rounded-md bg-muted/50">
-              <div class="flex-shrink-0">
-                <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <svg class="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-foreground">Producto creado</p>
-                <p class="text-sm text-muted-foreground">Producto agregado al catálogo</p>
-              </div>
-              <div class="flex-shrink-0 text-sm text-muted-foreground">
-                Hace 1 semana
-              </div>
+            <!-- Tags/Etiquetas -->
+            <div>
+              <label for="tags" class="block text-sm font-medium text-foreground mb-2">
+                Etiquetas
+              </label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                value={product.tags || ''}
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: hepa, filtro, h13"
+              />
+              <p class="mt-1 text-sm text-muted-foreground">Separadas por comas</p>
             </div>
           </div>
         </div>
 
         <!-- Botones de acción -->
-        <div class="mt-6 flex justify-end space-x-4">
+        <div class="flex items-center justify-end gap-4 pb-8">
           <a href="/admin/products">
             <Button type="button" variant="outline" className="border-border text-foreground hover:bg-muted">
               Cancelar
             </Button>
           </a>
-          <button 
-            type="submit" 
-            name="action" 
-            value="draft" 
-            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border border-border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground px-4 py-2"
-          >
-            Guardar como borrador
-          </button>
-          <button 
-            type="submit" 
-            name="action" 
-            value="update" 
-            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2"
-          >
-            Actualizar producto
-          </button>
+          <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Actualizar Producto
+          </Button>
         </div>
       </form>
   </div>
 </AdminLayout>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM cargado, buscando formulario...');
-    
-    // ===== DEBUGGING DEL FORMULARIO =====
-    const editForm = document.getElementById('edit-product-form');
-    console.log('📋 Formulario encontrado:', editForm ? 'SÍ' : 'NO');
-    
-    if (editForm) {
-      console.log('✅ Agregando event listener al formulario...');
-      
-      editForm.addEventListener('submit', function(e) {
-        console.log('📤 Formulario enviándose...');
-        const formData = new FormData(this as HTMLFormElement);
-        const action = formData.get('action')?.toString();
-        console.log('📝 Acción:', action);
-        console.log('📝 Datos del formulario:');
-        for (const [key, value] of formData.entries()) {
-          console.log(`  ${key}: ${value}`);
-        }
-        
-        // Solo validar en el cliente si es necesario, pero no bloquear el envío
-        // La validación completa se hace en el servidor
-        const name = formData.get('name')?.toString();
-        const description = formData.get('description')?.toString();
-        const price = formData.get('price')?.toString();
-        
-        if (action === 'update' && (!name || !description || !price || parseFloat(price) <= 0)) {
-          e.preventDefault();
-          alert('Por favor completa todos los campos requeridos correctamente');
-          return false;
-        }
-        
-        // Permitir que el formulario se envíe normalmente
-        console.log('✅ Enviando formulario...');
-        return true;
-      });
-      
-      console.log('✅ Event listener agregado al formulario');
-      
-      // También agregar event listeners a los botones directamente por si acaso
-      const updateButton = document.querySelector('button[value="update"]');
-      const draftButton = document.querySelector('button[value="draft"]');
-      
-      if (updateButton) {
-        updateButton.addEventListener('click', function(e: Event) {
-          console.log('🖱️ Click en botón Actualizar producto');
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Usar el botón directamente o currentTarget
-          const button = (e.currentTarget || updateButton) as HTMLButtonElement;
-          const form = editForm as HTMLFormElement;
-          
-          if (form) {
-            console.log('📤 Enviando formulario manualmente...');
-            
-            // Asegurar que el action value esté presente
-            let actionInput = form.querySelector('input[name="action"]') as HTMLInputElement;
-            if (!actionInput) {
-              actionInput = document.createElement('input');
-              actionInput.type = 'hidden';
-              actionInput.name = 'action';
-              form.appendChild(actionInput);
-            }
-            actionInput.value = 'update';
-            
-            // Enviar el formulario
-            console.log('✅ Enviando formulario...');
-            form.submit();
-          } else {
-            console.error('❌ No se encontró el formulario');
-          }
-        });
-      }
-      
-      if (draftButton) {
-        draftButton.addEventListener('click', function(e: Event) {
-          console.log('🖱️ Click en botón Guardar como borrador');
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Usar el botón directamente o currentTarget
-          const button = (e.currentTarget || draftButton) as HTMLButtonElement;
-          const form = editForm as HTMLFormElement;
-          
-          if (form) {
-            console.log('📤 Enviando formulario manualmente...');
-            
-            // Asegurar que el action value esté presente
-            let actionInput = form.querySelector('input[name="action"]') as HTMLInputElement;
-            if (!actionInput) {
-              actionInput = document.createElement('input');
-              actionInput.type = 'hidden';
-              actionInput.name = 'action';
-              form.appendChild(actionInput);
-            }
-            actionInput.value = 'draft';
-            
-            // Enviar el formulario
-            console.log('✅ Enviando formulario...');
-            form.submit();
-          } else {
-            console.error('❌ No se encontró el formulario');
-          }
-        });
-      }
-    } else {
-      console.error('❌ No se encontró el formulario edit-product-form');
-    }
-    
-    // ===== SISTEMA DE ETIQUETAS (TAGS) =====
-    const tagsDisplay = document.getElementById('tags-display');
-    const tagsInputField = document.getElementById('tags-input-field');
-    const tagsHidden = document.getElementById('tags-hidden');
-    
-    if (tagsDisplay && tagsInputField && tagsHidden) {
-    
-    // Obtener etiquetas existentes del input hidden
-    let tags: string[] = (tagsHidden as HTMLInputElement).value ? 
-      (tagsHidden as HTMLInputElement).value.split(',').filter((tag: string) => tag.trim()) : [];
-    
-    // Función para crear un badge de etiqueta
-    function createTagBadge(tag: string): HTMLElement {
-      const badge = document.createElement('span');
-      badge.className = 'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-md';
-      badge.innerHTML = `
-        ${tag}
-        <button type="button" class="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5 transition-colors remove-tag">
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      `;
-      
-      // Agregar event listener para eliminar etiqueta
-      const removeBtn = badge.querySelector('.remove-tag');
-      removeBtn?.addEventListener('click', () => {
-        removeTag(tag);
-      });
-      
-      return badge;
-    }
-    
-    // Función para actualizar la visualización
-    function updateDisplay() {
-      if (!tagsDisplay || !tagsInputField || !tagsHidden) return;
-      
-      // Limpiar display
-      const existingBadges = tagsDisplay.querySelectorAll('.inline-flex');
-      existingBadges.forEach(badge => badge.remove());
-      
-      // Agregar badges de etiquetas
-      tags.forEach(tag => {
-        const badge = createTagBadge(tag);
-        tagsDisplay.insertBefore(badge, tagsInputField);
-      });
-      
-      // Actualizar input hidden
-      (tagsHidden as HTMLInputElement).value = tags.join(',');
-    }
-    
-    // Función para agregar etiqueta
-    function addTag(tag: string) {
-      const trimmedTag = tag.trim().toLowerCase();
-      if (trimmedTag && !tags.includes(trimmedTag)) {
-        tags.push(trimmedTag);
-        updateDisplay();
-        (tagsInputField as HTMLInputElement).value = '';
-      }
-    }
-    
-    // Función para eliminar etiqueta
-    function removeTag(tagToRemove: string) {
-      tags = tags.filter(tag => tag !== tagToRemove);
-      updateDisplay();
-    }
-    
-    // Cargar etiquetas existentes al inicio
-    updateDisplay();
-    
-    // Event listeners
-    tagsInputField.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
-        e.preventDefault();
-        const value = (e.target as HTMLInputElement).value;
-        if (value.trim()) {
-          addTag(value);
-        }
-      }
-    });
-    
-    tagsInputField.addEventListener('blur', () => {
-      const value = (tagsInputField as HTMLInputElement).value;
-      if (value.trim()) {
-        addTag(value);
-      }
-    });
-    } // Cerrar el if de tags
-    
-    // ===== GESTIÓN DE IMÁGENES =====
-    const productId = `{product.uuid}`;
-    const uploadZone = document.getElementById('upload-zone');
-    const productImagesInput = document.getElementById('product-images');
-    const imagesPreview = document.getElementById('images-preview');
-    const uploadStatus = document.getElementById('upload-status');
-    
-    let currentImages: any[] = [];
-    
-    // Cargar imágenes existentes
-    // Las imágenes se cargan mediante ProductImageManager
-    
-    // Función para crear elemento de imagen
-    function createImageElement(image: any) {
-      const div = document.createElement('div');
-      div.className = 'relative w-full h-32 group image-item';
-      div.setAttribute('data-image-id', image.id);
-      div.setAttribute('data-image-url', image.url);
-      
-      div.innerHTML = `
-        <img 
-          class="w-full h-full rounded-lg object-cover border border-border" 
-          src="${image.url}" 
-          alt="Imagen del producto"
-        />
-        
-        <button
-          type="button"
-          class="delete-image-btn absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10 opacity-0 group-hover:opacity-100"
-        >
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-        
-        ${image.isPrimary ? `
-          <div class="absolute bottom-1 left-1 right-1 bg-primary text-primary-foreground text-xs p-1 rounded text-center font-medium">
-            Principal
-          </div>
-        ` : `
-          <button
-            type="button"
-            class="set-primary-btn absolute bottom-1 left-1 right-1 bg-black/50 text-white text-xs p-1 rounded text-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
-          >
-            Hacer principal
-          </button>
-        `}
-      `;
-      
-      // Event listener para eliminar
-      const deleteBtn = div.querySelector('.delete-image-btn');
-      deleteBtn?.addEventListener('click', () => deleteImage(image.id));
-      
-      // Event listener para establecer como principal
-      const setPrimaryBtn = div.querySelector('.set-primary-btn');
-      setPrimaryBtn?.addEventListener('click', () => setPrimaryImage(image.id));
-      
-      return div;
-    }
-    
-    // Función para actualizar la vista previa
-    function updateImagesPreview() {
-      if (!imagesPreview) return;
-      
-      imagesPreview.innerHTML = '';
-      currentImages.forEach((image: any) => {
-        imagesPreview.appendChild(createImageElement(image));
-      });
-      
-      console.log('📸 Imágenes actualizadas:', currentImages.length);
-    }
-    
-    // Función para subir imágenes
-    async function uploadImages(files: FileList) {
-      if (!uploadStatus) return;
-      
-      uploadStatus.textContent = 'Subiendo imágenes...';
-      
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        // Validar
-        if (!file.type.startsWith('image/')) {
-          alert(`${file.name} no es una imagen válida`);
-          continue;
-        }
-        
-        if (file.size > 10 * 1024 * 1024) {
-          alert(`${file.name} es demasiado grande (máximo 10MB)`);
-          continue;
-        }
-        
-        try {
-          const formData = new FormData();
-          formData.append('image', file);
-          formData.append('productId', productId);
-          
-          console.log('📤 Subiendo imagen:', file.name);
-          
-          const response = await fetch('/api/products/upload-image', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const result = await response.json();
-          
-          console.log('📊 Respuesta:', result);
-          
-          if (response.ok && result.success) {
-            currentImages.push({
-              id: result.imageId || `img-${Date.now()}-${i}`,
-              url: result.url,
-              isPrimary: currentImages.length === 0
-            });
-            
-            console.log('✅ Imagen subida:', result.url);
-          } else {
-            alert(`Error al subir ${file.name}: ${result.message}`);
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          alert(`Error al subir ${file.name}`);
-        }
-      }
-      
-      updateImagesPreview();
-      uploadStatus.textContent = 'Arrastra y suelta las imágenes aquí, o';
-      
-      // Limpiar input
-      if (productImagesInput) {
-        (productImagesInput as HTMLInputElement).value = '';
-      }
-    }
-    
-    // Función para eliminar imagen
-    async function deleteImage(imageId: string) {
-      if (!confirm('¿Estás seguro de eliminar esta imagen?')) {
-        return;
-      }
-      
-      try {
-        console.log('🗑️ Eliminando imagen:', imageId);
-        
-        const response = await fetch('/api/products/delete-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ imageId, productId })
-        });
-        
-        const result = await response.json();
-        
-        console.log('📊 Respuesta:', result);
-        
-        if (response.ok && result.success) {
-          currentImages = currentImages.filter((img: any) => img.id !== imageId);
-          updateImagesPreview();
-          console.log('✅ Imagen eliminada');
-        } else {
-          alert(`Error al eliminar: ${result.message}`);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error al eliminar la imagen');
-      }
-    }
-    
-    // Función para establecer imagen principal
-    async function setPrimaryImage(imageId: string) {
-      currentImages = currentImages.map((img: any) => ({
-        ...img,
-        isPrimary: img.id === imageId
-      }));
-      
-      updateImagesPreview();
-      
-      try {
-        console.log('⭐ Estableciendo imagen principal:', imageId);
-        
-        await fetch('/api/products/set-primary-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ imageId, productId })
-        });
-        
-        console.log('✅ Imagen principal establecida');
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    }
-    
-    // Inicializar vista previa con imágenes existentes
-    updateImagesPreview();
-    
-    // Event listener para el input de archivos
-    if (productImagesInput) {
-      console.log('✅ Event listener agregado al input de archivos');
-      productImagesInput.addEventListener('change', function(e) {
-        console.log('📁 Archivo(s) seleccionado(s)');
-        const files = (this as HTMLInputElement).files;
-        if (files && files.length > 0) {
-          console.log('📁 Cantidad de archivos:', files.length);
-          uploadImages(files);
-        }
-      });
-    } else {
-      console.error('❌ No se encontró el input de archivos');
-    }
-    
-    // Drag and drop en la zona de carga
-    if (uploadZone) {
-      console.log('✅ Event listeners de drag & drop agregados');
-      
-      uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadZone.classList.add('border-primary', 'bg-primary/5');
-      });
-      
-      uploadZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadZone.classList.remove('border-primary', 'bg-primary/5');
-      });
-      
-      uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadZone.classList.remove('border-primary', 'bg-primary/5');
-        
-        console.log('🎯 Archivos soltados');
-        const files = e.dataTransfer?.files;
-        if (files && files.length > 0) {
-          console.log('📁 Cantidad de archivos soltados:', files.length);
-          uploadImages(files);
-        }
-      });
-    } else {
-      console.error('❌ No se encontró la zona de carga');
-    }
-    
-    console.log('🎯 Sistema de imágenes de productos inicializado');
-    console.log('📸 Imágenes iniciales cargadas:', currentImages.length);
-  });
-</script>

@@ -4,6 +4,14 @@ import { getLangFromUrl, useTranslations } from '@/i18n/utils';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
+
+const faqItems = Array.from({ length: 14 }, (_, index) => {
+  const question = t(`faq.q${index + 1}`);
+  const answer = t(`faq.a${index + 1}`);
+  return question && answer
+    ? { id: `faq-${index}`, question, answer, index }
+    : null;
+}).filter(Boolean);
 ---
 
 <div class="bg-background">
@@ -15,312 +23,62 @@ const t = useTranslations(lang);
         {t('faq.title')}
       </h2>
       <dl class="mt-16 divide-y divide-border">
-        <div class="py-6 first:pt-0 last:pb-0">
-          <dt>
-            <Button
-              type="button"
-              variant="ghost"
-               data-toggle="faq-0"
-              className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
-            >
-              <span class="text-base/7 font-semibold"
-                >{t('faq.q1')}</span
+        {faqItems.map((item) => (
+          <div class="py-6 first:pt-0 last:pb-0">
+            <dt>
+              <Button
+                type="button"
+                variant="ghost"
+                data-toggle={item.id}
+                aria-expanded="false"
+                className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
               >
-              <span class="ml-6 flex h-7 items-center">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M12 6v12m6-6H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 not-in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M18 12H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-              </span>
-            </Button>
-          </dt>
-          <el-disclosure id="faq-0" class="contents">
-            <dd class="mt-2 pr-12">
-              <p class="text-base/7 text-muted-foreground">
-                {t('faq.a1')}
-              </p>
-            </dd>
-          </el-disclosure>
-        </div>
-        <div class="py-6 first:pt-0 last:pb-0">
-          <dt>
-            <Button
-              type="button"
-              variant="ghost"
-               data-toggle="faq-1"
-              className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
+                <span class="text-base/7 font-semibold">{item.question}</span>
+                <span class="ml-6 flex h-7 items-center">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    data-slot="icon"
+                    aria-hidden="true"
+                    class="size-6 in-aria-expanded:hidden"
+                  >
+                    <path
+                      d="M12 6v12m6-6H6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"></path>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    data-slot="icon"
+                    aria-hidden="true"
+                    class="size-6 not-in-aria-expanded:hidden"
+                  >
+                    <path
+                      d="M18 12H6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"></path>
+                  </svg>
+                </span>
+              </Button>
+            </dt>
+            <el-disclosure
+              id={item.id}
+              class="contents"
+              hidden
             >
-              <span class="text-base/7 font-semibold"
-                >{t('faq.q2')}</span
-              >
-              <span class="ml-6 flex h-7 items-center">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M12 6v12m6-6H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 not-in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M18 12H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-              </span>
-            </Button>
-          </dt>
-          <el-disclosure id="faq-1" hidden class="contents">
-            <dd class="mt-2 pr-12">
-              <p class="text-base/7 text-muted-foreground">
-                {t('faq.a2')}
-              </p>
-            </dd>
-          </el-disclosure>
-        </div>
-        <div class="py-6 first:pt-0 last:pb-0">
-          <dt>
-            <Button
-              type="button"
-              variant="ghost"
-               data-toggle="faq-2"
-              className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
-            >
-              <span class="text-base/7 font-semibold"
-                >{t('faq.q3')}</span
-              >
-              <span class="ml-6 flex h-7 items-center">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M12 6v12m6-6H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 not-in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M18 12H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-              </span>
-            </Button>
-          </dt>
-          <el-disclosure id="faq-2" hidden class="contents">
-            <dd class="mt-2 pr-12">
-              <p class="text-base/7 text-muted-foreground">
-                {t('faq.a3')}
-              </p>
-            </dd>
-          </el-disclosure>
-        </div>
-        <div class="py-6 first:pt-0 last:pb-0">
-          <dt>
-            <Button
-              type="button"
-              variant="ghost"
-               data-toggle="faq-3"
-              className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
-            >
-              <span class="text-base/7 font-semibold"
-                >{t('faq.q4')}</span
-              >
-              <span class="ml-6 flex h-7 items-center">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M12 6v12m6-6H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 not-in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M18 12H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-              </span>
-            </Button>
-          </dt>
-          <el-disclosure id="faq-3" hidden class="contents">
-            <dd class="mt-2 pr-12">
-              <p class="text-base/7 text-muted-foreground">
-                {t('faq.a4')}
-              </p>
-            </dd>
-          </el-disclosure>
-        </div>
-        <div class="py-6 first:pt-0 last:pb-0">
-          <dt>
-            <Button
-              type="button"
-              variant="ghost"
-               data-toggle="faq-4"
-              className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
-            >
-              <span class="text-base/7 font-semibold"
-                >{t('faq.q5')}</span
-              >
-              <span class="ml-6 flex h-7 items-center">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M12 6v12m6-6H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 not-in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M18 12H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-              </span>
-            </Button>
-          </dt>
-          <el-disclosure id="faq-4" hidden class="contents">
-            <dd class="mt-2 pr-12">
-              <p class="text-base/7 text-muted-foreground">
-                {t('faq.a5')}
-              </p>
-            </dd>
-          </el-disclosure>
-        </div>
-        <div class="py-6 first:pt-0 last:pb-0">
-          <dt>
-            <Button
-              type="button"
-              variant="ghost"
-               data-toggle="faq-5"
-              className="flex w-full items-start justify-between text-left text-foreground h-auto p-0"
-            >
-              <span class="text-base/7 font-semibold"
-                >{t('faq.q6')}</span
-              >
-              <span class="ml-6 flex h-7 items-center">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M12 6v12m6-6H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  data-slot="icon"
-                  aria-hidden="true"
-                  class="size-6 not-in-aria-expanded:hidden"
-                >
-                  <path
-                    d="M18 12H6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                </svg>
-              </span>
-            </Button>
-          </dt>
-          <el-disclosure id="faq-5" hidden class="contents">
-            <dd class="mt-2 pr-12">
-              <p class="text-base/7 text-muted-foreground">
-                {t('faq.a6')}
-              </p>
-            </dd>
-          </el-disclosure>
-        </div>
+              <dd class="mt-2 pr-12">
+                <p class="whitespace-pre-line text-base/7 text-muted-foreground">
+                  {item.answer}
+                </p>
+              </dd>
+            </el-disclosure>
+          </div>
+        ))}
       </dl>
    </div>
  </div>
