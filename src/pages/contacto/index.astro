@@ -1,0 +1,231 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { sendEmail } from "@/lib/email";
+
+export const prerender = false;
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+type ContactFormValues = {
+  name: string;
+  city: string;
+  email: string;
+  phone: string;
+  message: string;
+};
+
+const initialValues: ContactFormValues = {
+  name: "",
+  city: "",
+  email: "",
+  phone: "",
+  message: "",
+};
+
+let formValues: ContactFormValues = { ...initialValues };
+let submissionStatus: "success" | "error" | null = null;
+let submissionMessage = "";
+
+const alertStyles = {
+  success: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  error: "border-red-300 bg-red-50 text-red-700",
+} as const;
+
+if (Astro.request.method === "POST") {
+  const formData = await Astro.request.formData();
+
+  formValues = {
+    name: (formData.get("name")?.toString() ?? "").trim(),
+    city: (formData.get("city")?.toString() ?? "").trim(),
+    email: (formData.get("email")?.toString() ?? "").trim(),
+    phone: (formData.get("phone")?.toString() ?? "").trim(),
+    message: (formData.get("message")?.toString() ?? "").trim(),
+  };
+
+  const hasEmpty = Object.values(formValues).some((value) => value.length === 0);
+
+  if (hasEmpty) {
+    submissionStatus = "error";
+    submissionMessage = "Por favor completa todos los campos.";
+  } else {
+    try {
+      const messageHtml = formValues.message.replace(/\n/g, "<br />");
+      const emailSent = await sendEmail({
+        to: "starinfo@starfilters.mx",
+        subject: `Nuevo mensaje de contacto - ${formValues.name}`,
+        html: `
+          <h2>Nuevo mensaje desde el formulario de contacto</h2>
+          <p><strong>Idioma:</strong> Español</p>
+          <p><strong>Nombre:</strong> ${formValues.name}</p>
+          <p><strong>Ciudad:</strong> ${formValues.city}</p>
+          <p><strong>Correo electrónico:</strong> ${formValues.email}</p>
+          <p><strong>Teléfono:</strong> ${formValues.phone}</p>
+          <p><strong>Mensaje:</strong><br />${messageHtml}</p>
+        `,
+        text: `Nuevo mensaje desde el formulario de contacto (Español)\n\nNombre: ${formValues.name}\nCiudad: ${formValues.city}\nCorreo electrónico: ${formValues.email}\nTeléfono: ${formValues.phone}\n\nMensaje:\n${formValues.message}`,
+      });
+
+      if (emailSent) {
+        submissionStatus = "success";
+        submissionMessage =
+          "Gracias por contactarnos. Nuestro equipo se pondrá en contacto contigo muy pronto.";
+        formValues = { ...initialValues };
+      } else {
+        submissionStatus = "error";
+        submissionMessage =
+          "Ocurrió un problema al enviar tu mensaje. Inténtalo nuevamente más tarde.";
+      }
+    } catch (error) {
+      console.error("Error al procesar el formulario de contacto:", error);
+      submissionStatus = "error";
+      submissionMessage =
+        "Ocurrió un problema al enviar tu mensaje. Inténtalo nuevamente más tarde.";
+    }
+  }
+}
+---
+
+<WebsiteLayout
+  title="Contacto"
+  seoTitle="Contacto | StarFilters"
+  description="Contacta con StarFilters para servicios de filtración industrial, cuartos limpios y soporte técnico especializado. Estamos aquí para ayudarte."
+  keywords={["contacto StarFilters", "soporte técnico", "servicios filtración", "cuartos limpios"]}
+>
+  <SEO
+    slot="seo"
+    title="Contacto"
+    description="Contacta con StarFilters para servicios de filtración industrial."
+    ogType="website"
+    keywords={["contacto", "soporte técnico"]}
+  />
+
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-5xl px-6 lg:px-8">
+      <div class="grid gap-16 lg:grid-cols-[1.05fr_1fr]">
+        <div class="space-y-6">
+          <h1 class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            ¡Contáctanos!
+          </h1>
+          <p class="text-lg leading-8 text-muted-foreground">
+            En Star Filters ofrecemos flexibilidad de horario, entrega rápida y atención personalizada para cumplir con los más altos estándares de tu industria.
+          </p>
+          <p class="text-lg leading-8 text-muted-foreground">
+            Completa el formulario y nuestro equipo se pondrá en contacto contigo.
+          </p>
+
+          <div class="rounded-2xl border border-border/60 bg-muted/40 p-6 sm:p-8">
+            <dl class="space-y-6 text-base text-foreground">
+              <div>
+                <dt class="text-sm font-semibold uppercase tracking-wide text-primary">Ubicaciones</dt>
+                <dd class="mt-2 text-lg text-foreground">Guadalajara, JAL / Ciudad de México</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-semibold uppercase tracking-wide text-primary">Teléfonos</dt>
+                <dd class="mt-2 space-y-1 text-lg text-foreground">
+                  <p><a class="hover:text-primary" href="tel:+523338987991">+52 33 3898 7991</a></p>
+                  <p><a class="hover:text-primary" href="tel:+525550870287">+52 55 5087 0287</a></p>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-semibold uppercase tracking-wide text-primary">Correo electrónico</dt>
+                <dd class="mt-2 text-lg text-foreground">
+                  <a class="hover:text-primary" href="mailto:starinfo@starfilters.mx">starinfo@starfilters.mx</a>
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-border/60 bg-muted/20 p-8 shadow-sm">
+          <h2 class="text-2xl font-semibold text-foreground">Formulario de contacto</h2>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Completa los campos y nos pondremos en contacto contigo a la brevedad.
+          </p>
+
+          {submissionStatus && (
+            <div class={`mt-6 rounded-lg border px-4 py-3 text-sm ${alertStyles[submissionStatus]}`}>
+              {submissionMessage}
+            </div>
+          )}
+
+          <form method="post" class="mt-8 space-y-6">
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label for="name" class="block text-sm font-medium text-foreground">Nombre</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  autocomplete="name"
+                  value={formValues.name}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+              <div>
+                <label for="city" class="block text-sm font-medium text-foreground">Ciudad</label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  required
+                  autocomplete="address-level2"
+                  value={formValues.city}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+            </div>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label for="email" class="block text-sm font-medium text-foreground">Correo electrónico</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autocomplete="email"
+                  value={formValues.email}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+              <div>
+                <label for="phone" class="block text-sm font-medium text-foreground">Teléfono</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  autocomplete="tel"
+                  value={formValues.phone}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="message" class="block text-sm font-medium text-foreground">Mensaje</label>
+              <textarea
+                id="message"
+                name="message"
+                required
+                rows={5}
+                class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              >{formValues.message}</textarea>
+            </div>
+
+            <button
+              type="submit"
+              class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Enviar mensaje
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>
