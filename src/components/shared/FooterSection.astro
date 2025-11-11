@@ -96,17 +96,17 @@ const t = useTranslations(lang);
             <ul role="list" class="mt-6 space-y-4">
               <li>
                 <a href={lang === 'en' ? '/en/filters' : '/filtros'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Filtros</a
+                  >{t('nav.filters')}</a
                 >
               </li>
               <li>
                 <a href={lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Cuartos Limpios</a
+                  >{t('nav.cleanrooms')}</a
                 >
               </li>
               <li>
-                <a href={lang === 'en' ? '/en/services' : '/services'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Servicios</a
+                <a href={lang === 'en' ? '/en/services' : '/servicios'} class="text-sm/6 text-muted-foreground hover:text-foreground"
+                  >{t('nav.services')}</a
                 >
               </li>
             </ul>
@@ -116,12 +116,12 @@ const t = useTranslations(lang);
             <ul role="list" class="mt-6 space-y-4">
               <li>
                 <a href={lang === 'en' ? '/en/contact' : '/contact'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Contacto</a
+                  >{t('nav.contact')}</a
                 >
               </li>
               <li>
                 <a href={lang === 'en' ? '/en/blog' : '/blog'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Blog</a
+                  >{t('nav.blog')}</a
                 >
               </li>
             </ul>
@@ -132,13 +132,13 @@ const t = useTranslations(lang);
             <h3 class="text-sm/6 font-semibold text-foreground">{t('footer.company')}</h3>
             <ul role="list" class="mt-6 space-y-4">
               <li>
-                <a href={lang === 'en' ? '/en/services' : '/services'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Acerca de</a
+                <a href={lang === 'en' ? '/en/services' : '/servicios'} class="text-sm/6 text-muted-foreground hover:text-foreground"
+                  >{t('footer.about')}</a
                 >
               </li>
               <li>
                 <a href={lang === 'en' ? '/en/blog' : '/blog'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Blog</a
+                  >{t('nav.blog')}</a
                 >
               </li>
             </ul>
@@ -148,12 +148,12 @@ const t = useTranslations(lang);
             <ul role="list" class="mt-6 space-y-4">
               <li>
                 <a href={lang === 'en' ? '/en/terms' : '/terms'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Términos</a
+                  >{t('footer.terms')}</a
                 >
               </li>
               <li>
                 <a href={lang === 'en' ? '/en/privacy' : '/privacy'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >Privacidad</a
+                  >{t('footer.privacy')}</a
                 >
               </li>
             </ul>

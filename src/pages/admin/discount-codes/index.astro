@@ -1,0 +1,204 @@
+---
+import AdminLayout from '@/layouts/adminLayout.astro';
+import { getAuthenticatedUser } from '@/lib/auth-utils';
+import { isUserAdmin } from '@/lib/database';
+import { getAllDiscountCodes, deleteDiscountCode, type DiscountCode } from '@/lib/discount-codes';
+
+export const prerender = false;
+
+const user = getAuthenticatedUser(Astro.cookies);
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const userIsAdmin = await isUserAdmin(user.id);
+
+if (!userIsAdmin) {
+  return Astro.redirect('/');
+}
+
+let successMessage = '';
+let errorMessage = '';
+
+// Manejar eliminación de código
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const action = formData.get('action');
+  const id = formData.get('id');
+
+  if (action === 'delete' && id) {
+    try {
+      await deleteDiscountCode(parseInt(id as string));
+      successMessage = 'Código de descuento eliminado exitosamente';
+    } catch (error) {
+      console.error('Error deleting discount code:', error);
+      errorMessage = 'Error al eliminar el código de descuento';
+    }
+  }
+}
+
+const discountCodes = await getAllDiscountCodes();
+
+function formatDate(date: Date | null): string {
+  if (!date) return '-';
+  return new Date(date).toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function getStatusBadgeClass(code: DiscountCode): string {
+  if (!code.is_active) return 'bg-gray-100 text-gray-800';
+
+  const now = new Date();
+  if (code.end_date && new Date(code.end_date) < now) {
+    return 'bg-red-100 text-red-800';
+  }
+  if (code.usage_limit && code.usage_count >= code.usage_limit) {
+    return 'bg-yellow-100 text-yellow-800';
+  }
+  return 'bg-green-100 text-green-800';
+}
+
+function getStatus(code: DiscountCode): string {
+  if (!code.is_active) return 'Inactivo';
+
+  const now = new Date();
+  if (code.end_date && new Date(code.end_date) < now) {
+    return 'Expirado';
+  }
+  if (code.usage_limit && code.usage_count >= code.usage_limit) {
+    return 'Límite alcanzado';
+  }
+  return 'Activo';
+}
+---
+
+<AdminLayout title="Códigos de Descuento">
+  <div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+      <div class="sm:flex-auto">
+        <h1 class="text-base font-semibold text-gray-900">Códigos de Descuento</h1>
+        <p class="mt-2 text-sm text-gray-700">
+          Gestiona los códigos de descuento para tus clientes
+        </p>
+      </div>
+      <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+        <a
+          href="/admin/discount-codes/create"
+          class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          Crear Código
+        </a>
+      </div>
+    </div>
+
+    {successMessage && (
+      <div class="mt-4 rounded-md bg-green-50 p-4">
+        <p class="text-sm font-medium text-green-800">{successMessage}</p>
+      </div>
+    )}
+
+    {errorMessage && (
+      <div class="mt-4 rounded-md bg-red-50 p-4">
+        <p class="text-sm font-medium text-red-800">{errorMessage}</p>
+      </div>
+    )}
+
+    <div class="mt-8 flow-root">
+      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+          <table class="min-w-full divide-y divide-gray-300">
+            <thead>
+              <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                  Código
+                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Descripción
+                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Descuento
+                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Uso
+                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Vigencia
+                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Estado
+                </th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                  <span class="sr-only">Acciones</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              {discountCodes.map((code) => (
+                <tr>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+                    {code.code}
+                  </td>
+                  <td class="px-3 py-4 text-sm text-gray-500">
+                    {code.description || '-'}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    {code.discount_type === 'percentage'
+                      ? `${code.discount_value}%`
+                      : `$${code.discount_value.toFixed(2)}`
+                    }
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    {code.usage_count} / {code.usage_limit || '∞'}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    {formatDate(code.start_date)} - {formatDate(code.end_date)}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm">
+                    <span class={`inline-flex rounded-full px-2 text-xs font-semibold ${getStatusBadgeClass(code)}`}>
+                      {getStatus(code)}
+                    </span>
+                  </td>
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                    <a
+                      href={`/admin/discount-codes/edit/${code.id}`}
+                      class="text-indigo-600 hover:text-indigo-900 mr-4"
+                    >
+                      Editar
+                    </a>
+                    <form method="POST" style="display: inline;">
+                      <input type="hidden" name="action" value="delete" />
+                      <input type="hidden" name="id" value={code.id} />
+                      <button
+                        type="submit"
+                        class="text-red-600 hover:text-red-900"
+                        onclick="return confirm('¿Estás seguro de eliminar este código?')"
+                      >
+                        Eliminar
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {discountCodes.length === 0 && (
+            <div class="text-center py-12">
+              <p class="text-sm text-gray-500">No hay códigos de descuento creados</p>
+              <a
+                href="/admin/discount-codes/create"
+                class="mt-4 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                Crear el primer código
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

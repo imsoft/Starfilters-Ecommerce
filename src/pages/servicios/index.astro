@@ -7,7 +7,7 @@ import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Inicio', url: siteUrl },
-  { name: 'Servicios', url: `${siteUrl}/services` }
+  { name: 'Servicios', url: `${siteUrl}/servicios` }
 ]);
 ---
 

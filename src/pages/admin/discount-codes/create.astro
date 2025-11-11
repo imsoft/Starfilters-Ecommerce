@@ -1,0 +1,318 @@
+---
+import AdminLayout from '@/layouts/adminLayout.astro';
+import { getAuthenticatedUser } from '@/lib/auth-utils';
+import { isUserAdmin } from '@/lib/database';
+import { createDiscountCode } from '@/lib/discount-codes';
+
+export const prerender = false;
+
+const user = getAuthenticatedUser(Astro.cookies);
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const userIsAdmin = await isUserAdmin(user.id);
+
+if (!userIsAdmin) {
+  return Astro.redirect('/');
+}
+
+let errorMessage = '';
+let formData = {
+  code: '',
+  description: '',
+  discount_type: 'percentage',
+  discount_value: '',
+  min_purchase_amount: '',
+  max_discount_amount: '',
+  usage_limit: '',
+  start_date: '',
+  end_date: '',
+  is_active: true,
+};
+
+if (Astro.request.method === 'POST') {
+  const data = await Astro.request.formData();
+
+  formData = {
+    code: data.get('code')?.toString() || '',
+    description: data.get('description')?.toString() || '',
+    discount_type: data.get('discount_type')?.toString() as 'percentage' | 'fixed',
+    discount_value: data.get('discount_value')?.toString() || '',
+    min_purchase_amount: data.get('min_purchase_amount')?.toString() || '',
+    max_discount_amount: data.get('max_discount_amount')?.toString() || '',
+    usage_limit: data.get('usage_limit')?.toString() || '',
+    start_date: data.get('start_date')?.toString() || '',
+    end_date: data.get('end_date')?.toString() || '',
+    is_active: data.get('is_active') === 'on',
+  };
+
+  // Validaciones
+  if (!formData.code.trim()) {
+    errorMessage = 'El código es requerido';
+  } else if (!formData.discount_value || parseFloat(formData.discount_value) <= 0) {
+    errorMessage = 'El valor del descuento debe ser mayor a 0';
+  } else if (
+    formData.discount_type === 'percentage' &&
+    parseFloat(formData.discount_value) > 100
+  ) {
+    errorMessage = 'El porcentaje de descuento no puede ser mayor a 100';
+  } else {
+    try {
+      await createDiscountCode({
+        code: formData.code.trim(),
+        description: formData.description.trim() || undefined,
+        discount_type: formData.discount_type,
+        discount_value: parseFloat(formData.discount_value),
+        min_purchase_amount: formData.min_purchase_amount
+          ? parseFloat(formData.min_purchase_amount)
+          : undefined,
+        max_discount_amount: formData.max_discount_amount
+          ? parseFloat(formData.max_discount_amount)
+          : undefined,
+        usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : undefined,
+        start_date: formData.start_date || undefined,
+        end_date: formData.end_date || undefined,
+        is_active: formData.is_active,
+      });
+
+      return Astro.redirect('/admin/discount-codes');
+    } catch (error: any) {
+      console.error('Error creating discount code:', error);
+      if (error.code === 'ER_DUP_ENTRY') {
+        errorMessage = 'Ya existe un código con ese nombre';
+      } else {
+        errorMessage = 'Error al crear el código de descuento';
+      }
+    }
+  }
+}
+---
+
+<AdminLayout title="Crear Código de Descuento">
+  <div class="px-4 sm:px-6 lg:px-8">
+    <div class="mb-8">
+      <a
+        href="/admin/discount-codes"
+        class="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+      >
+        ← Volver a códigos de descuento
+      </a>
+    </div>
+
+    <div class="md:flex md:items-center md:justify-between">
+      <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-bold text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+          Crear Código de Descuento
+        </h2>
+      </div>
+    </div>
+
+    {errorMessage && (
+      <div class="mt-4 rounded-md bg-red-50 p-4">
+        <p class="text-sm font-medium text-red-800">{errorMessage}</p>
+      </div>
+    )}
+
+    <form method="POST" class="mt-8 space-y-8">
+      <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+        <!-- Código -->
+        <div class="sm:col-span-3">
+          <label for="code" class="block text-sm font-medium text-gray-900">
+            Código *
+          </label>
+          <input
+            type="text"
+            name="code"
+            id="code"
+            required
+            value={formData.code}
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            placeholder="VERANO2025"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            El código se convertirá a mayúsculas automáticamente
+          </p>
+        </div>
+
+        <!-- Tipo de descuento -->
+        <div class="sm:col-span-3">
+          <label for="discount_type" class="block text-sm font-medium text-gray-900">
+            Tipo de descuento *
+          </label>
+          <select
+            name="discount_type"
+            id="discount_type"
+            required
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+          >
+            <option value="percentage" selected={formData.discount_type === 'percentage'}>
+              Porcentaje (%)
+            </option>
+            <option value="fixed" selected={formData.discount_type === 'fixed'}>
+              Monto fijo ($)
+            </option>
+          </select>
+        </div>
+
+        <!-- Valor del descuento -->
+        <div class="sm:col-span-3">
+          <label for="discount_value" class="block text-sm font-medium text-gray-900">
+            Valor del descuento *
+          </label>
+          <input
+            type="number"
+            name="discount_value"
+            id="discount_value"
+            required
+            min="0"
+            step="0.01"
+            value={formData.discount_value}
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            placeholder="10.00"
+          />
+        </div>
+
+        <!-- Monto mínimo de compra -->
+        <div class="sm:col-span-3">
+          <label for="min_purchase_amount" class="block text-sm font-medium text-gray-900">
+            Monto mínimo de compra ($)
+          </label>
+          <input
+            type="number"
+            name="min_purchase_amount"
+            id="min_purchase_amount"
+            min="0"
+            step="0.01"
+            value={formData.min_purchase_amount}
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            placeholder="500.00"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            Opcional: Compra mínima requerida para aplicar el código
+          </p>
+        </div>
+
+        <!-- Descuento máximo -->
+        <div class="sm:col-span-3">
+          <label for="max_discount_amount" class="block text-sm font-medium text-gray-900">
+            Descuento máximo ($)
+          </label>
+          <input
+            type="number"
+            name="max_discount_amount"
+            id="max_discount_amount"
+            min="0"
+            step="0.01"
+            value={formData.max_discount_amount}
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            placeholder="1000.00"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            Opcional: Aplica solo para descuentos de porcentaje
+          </p>
+        </div>
+
+        <!-- Límite de uso -->
+        <div class="sm:col-span-3">
+          <label for="usage_limit" class="block text-sm font-medium text-gray-900">
+            Límite de uso
+          </label>
+          <input
+            type="number"
+            name="usage_limit"
+            id="usage_limit"
+            min="1"
+            value={formData.usage_limit}
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            placeholder="100"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            Opcional: Número máximo de veces que se puede usar
+          </p>
+        </div>
+
+        <!-- Descripción -->
+        <div class="sm:col-span-6">
+          <label for="description" class="block text-sm font-medium text-gray-900">
+            Descripción
+          </label>
+          <textarea
+            name="description"
+            id="description"
+            rows={3}
+            value={formData.description}
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            placeholder="Descripción interna del código de descuento"
+          ></textarea>
+        </div>
+
+        <!-- Fecha de inicio -->
+        <div class="sm:col-span-3">
+          <label for="start_date" class="block text-sm font-medium text-gray-900">
+            Fecha de inicio
+          </label>
+          <input
+            type="datetime-local"
+            name="start_date"
+            id="start_date"
+            value={formData.start_date}
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            Opcional: Deja en blanco para que sea válido desde ahora
+          </p>
+        </div>
+
+        <!-- Fecha de fin -->
+        <div class="sm:col-span-3">
+          <label for="end_date" class="block text-sm font-medium text-gray-900">
+            Fecha de expiración
+          </label>
+          <input
+            type="datetime-local"
+            name="end_date"
+            id="end_date"
+            value={formData.end_date}
+            class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            Opcional: Deja en blanco para que no expire
+          </p>
+        </div>
+
+        <!-- Estado activo -->
+        <div class="sm:col-span-6">
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              name="is_active"
+              id="is_active"
+              checked={formData.is_active}
+              class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+            />
+            <label for="is_active" class="ml-2 block text-sm text-gray-900">
+              Código activo
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-x-6 border-t border-gray-900/10 pt-6">
+        <a
+          href="/admin/discount-codes"
+          class="text-sm font-semibold text-gray-900"
+        >
+          Cancelar
+        </a>
+        <button
+          type="submit"
+          class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          Crear código
+        </button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>

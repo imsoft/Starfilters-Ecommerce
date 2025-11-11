@@ -80,6 +80,9 @@ export const ui = {
     'services.consulting.title': 'Consultoría Técnica',
     'services.consulting.description': 'Asesoría especializada para diseño de sistemas, selección de equipos, optimización de procesos y resolución de problemas. Soporte técnico disponible 24/7.',
 
+    // Logo Section
+    'logoSection.title': 'Presencia en las industrias más exigentes',
+
     // Footer
     'footer.tagline': 'Soluciones integrales en filtración para aire y líquidos. Calidad garantizada para tu tranquilidad.',
     'footer.solutions': 'Soluciones',
@@ -270,6 +273,9 @@ export const ui = {
     'services.maintenance.description': 'Customized preventive maintenance programs. Filter changes, periodic inspections, and adjustments to extend your equipment\'s lifespan.',
     'services.consulting.title': 'Technical Consulting',
     'services.consulting.description': 'Specialized advice for system design, equipment selection, process optimization, and problem solving. 24/7 technical support available.',
+
+    // Logo Section
+    'logoSection.title': 'Presence in the most demanding industries',
 
     // Footer
     'footer.tagline': 'Comprehensive filtration solutions for air and liquids. Guaranteed quality for your peace of mind.',

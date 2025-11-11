@@ -4,6 +4,7 @@ import { clearCart } from '@/lib/cart';
 import { createOrder, createOrderItem } from '@/lib/database';
 import { query } from '@/config/database';
 import { sendEmail, createOrderConfirmationEmail } from '@/lib/email';
+import { recordDiscountCodeUsage } from '@/lib/discount-codes';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -90,6 +91,22 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       }
 
       console.log('✅ Items de orden guardados y inventario actualizado');
+    }
+
+    // 3. Registrar uso del código de descuento si existe
+    if (metadata.discount_code_id && metadata.discount_amount) {
+      try {
+        await recordDiscountCodeUsage(
+          parseInt(metadata.discount_code_id),
+          orderId,
+          parseFloat(metadata.discount_amount),
+          metadata.user_id ? parseInt(metadata.user_id) : undefined
+        );
+        console.log('✅ Uso de código de descuento registrado:', metadata.discount_code);
+      } catch (error) {
+        console.error('⚠️ Error al registrar uso de código de descuento:', error);
+        // No lanzamos el error para no afectar el resto del proceso
+      }
     }
 
     console.log('✅ Orden procesada correctamente:', {

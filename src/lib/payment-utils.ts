@@ -17,6 +17,13 @@ export interface CheckoutData {
   apartment?: string;
 }
 
+// Interface para datos de descuento
+export interface DiscountData {
+  code: string;
+  discountCodeId: number;
+  amount: number;
+}
+
 // Interface para datos de envío
 export interface ShippingData {
   method: 'standard' | 'express';
@@ -45,20 +52,25 @@ export const calculateTax = (subtotal: number): number => {
 // Calcular total del pedido
 export const calculateOrderTotal = (
   cartItems: CartItem[],
-  shippingMethod: 'standard' | 'express'
+  shippingMethod: 'standard' | 'express',
+  discountAmount: number = 0
 ): {
   subtotal: number;
+  discount: number;
   shipping: number;
   tax: number;
   total: number;
 } => {
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const discount = discountAmount;
+  const subtotalAfterDiscount = Math.max(0, subtotal - discount);
   const shipping = calculateShipping(shippingMethod).cost;
-  const tax = calculateTax(subtotal);
-  const total = subtotal + shipping + tax;
+  const tax = calculateTax(subtotalAfterDiscount);
+  const total = subtotalAfterDiscount + shipping + tax;
 
   return {
     subtotal,
+    discount,
     shipping,
     tax,
     total
@@ -69,18 +81,20 @@ export const calculateOrderTotal = (
 export const createCheckoutPaymentIntent = async (
   checkoutData: CheckoutData,
   shippingMethod: 'standard' | 'express' = 'standard',
-  userId?: number
+  userId?: number,
+  discountData?: DiscountData
 ): Promise<{ client_secret: string; payment_intent_id: string; order_total: number }> => {
   try {
     // Obtener carrito actual
     const cart = getCart();
-    
+
     if (cart.items.length === 0) {
       throw new Error('El carrito está vacío');
     }
 
-    // Calcular totales
-    const orderTotals = calculateOrderTotal(cart.items, shippingMethod);
+    // Calcular totales con descuento si existe
+    const discountAmount = discountData?.amount || 0;
+    const orderTotals = calculateOrderTotal(cart.items, shippingMethod, discountAmount);
 
     // Serializar items del carrito para el metadata
     const cartItemsJSON = JSON.stringify(
@@ -105,6 +119,11 @@ export const createCheckoutPaymentIntent = async (
       shipping_cost: orderTotals.shipping.toString(),
       tax_amount: orderTotals.tax.toString(),
       ...(userId && { user_id: userId.toString() }),
+      ...(discountData && {
+        discount_code: discountData.code,
+        discount_code_id: discountData.discountCodeId.toString(),
+        discount_amount: discountData.amount.toString(),
+      }),
       cart_items: cartItemsJSON,
     };
 
@@ -200,14 +219,16 @@ export const formatCartForCheckout = (cartItems: CartItem[]) => {
 // Generar resumen del pedido
 export const generateOrderSummary = (
   cartItems: CartItem[],
-  shippingMethod: 'standard' | 'express' = 'standard'
+  shippingMethod: 'standard' | 'express' = 'standard',
+  discountAmount: number = 0
 ) => {
-  const orderTotals = calculateOrderTotal(cartItems, shippingMethod);
+  const orderTotals = calculateOrderTotal(cartItems, shippingMethod, discountAmount);
   const shippingData = calculateShipping(shippingMethod);
-  
+
   return {
     items: formatCartForCheckout(cartItems),
     subtotal: orderTotals.subtotal,
+    discount: orderTotals.discount,
     shipping: {
       method: shippingData.method,
       cost: shippingData.cost,

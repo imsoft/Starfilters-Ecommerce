@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createCheckoutPaymentIntent, validateCheckoutData, type CheckoutData } from '@/lib/payment-utils';
+import { createCheckoutPaymentIntent, validateCheckoutData, type CheckoutData, type DiscountData } from '@/lib/payment-utils';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { getCart } from '@/lib/cart';
 import { getProductByUuid } from '@/lib/database';
@@ -68,8 +68,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     }
 
+    // Obtener datos de descuento si existen
+    const discountData: DiscountData | undefined = body.discountCode ? {
+      code: body.discountCode.code,
+      discountCodeId: body.discountCode.discountCodeId,
+      amount: body.discountCode.amount,
+    } : undefined;
+
     // Crear Payment Intent
-    const result = await createCheckoutPaymentIntent(checkoutData, body.shippingMethod || 'standard', user.id);
+    const result = await createCheckoutPaymentIntent(
+      checkoutData,
+      body.shippingMethod || 'standard',
+      user.id,
+      discountData
+    );
 
     return new Response(JSON.stringify({
       client_secret: result.client_secret,

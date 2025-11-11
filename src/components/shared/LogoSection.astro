@@ -1,11 +1,14 @@
 ---
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <div class="bg-background py-24 sm:py-32">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
     <h2 class="text-center text-lg/8 font-semibold text-foreground">
-      Presencia en las industrias más exigentes
+      {t('logoSection.title')}
     </h2>
     <div class="mx-auto mt-10 flex max-w-4xl items-center justify-center">
       <img
