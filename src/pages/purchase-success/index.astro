@@ -2,6 +2,9 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { clearCart } from "@/lib/cart";
+import { getLangFromUrl } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
 
 // Verificar que el usuario esté autenticado
 const user = getAuthenticatedUser(Astro.cookies);
@@ -129,7 +132,7 @@ const currentDate = new Date().toLocaleDateString('es-MX', {
             ¿Tienes alguna pregunta sobre tu pedido?
           </p>
           <a
-            href="/contacto"
+            href={lang === 'en' ? '/en/contact' : '/contacto'}
             class="mt-2 inline-flex items-center text-sm font-medium text-primary hover:text-primary/90"
           >
             Contáctanos
