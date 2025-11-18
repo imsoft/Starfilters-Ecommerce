@@ -2,6 +2,7 @@
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
 import AdminFilters from "@/components/shared/AdminFilters.astro";
+import CustomModal from "@/components/shared/CustomModal.astro";
 import { getOrders, getOrderItems } from "@/lib/database";
 import type { Order, OrderItem } from "@/lib/database";
 
@@ -319,50 +320,66 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
       </div>
   </div>
 
-  <!-- Diálogo para cambiar estado -->
-  <dialog id="status-dialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0;" class="backdrop:bg-black/80 bg-background border border-border rounded-lg p-6 max-w-md shadow-xl">
-    <div class="space-y-4">
-      <h2 class="text-lg font-semibold text-foreground">Cambiar Estado de Orden</h2>
-      <p id="dialog-order-info" class="text-sm text-muted-foreground"></p>
-      
-      <form id="status-form" method="POST" class="space-y-4">
-        <input type="hidden" name="action" value="change_status" />
-        <input type="hidden" name="orderId" id="dialog-order-id" />
+  <!-- Modal para cambiar estado -->
+  <div
+    id="status-dialog"
+    class="fixed inset-0 z-50 hidden items-center justify-center"
+    style="display: none;"
+  >
+    <!-- Overlay -->
+    <div
+      id="status-dialog-overlay"
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm"
+    ></div>
+    
+    <!-- Modal Content -->
+    <div
+      id="status-dialog-content"
+      class="relative z-50 mx-4 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-lg"
+    >
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold text-foreground">Cambiar Estado de Orden</h2>
+        <p id="dialog-order-info" class="text-sm text-muted-foreground"></p>
         
-        <div>
-          <label class="block text-sm font-medium text-foreground mb-2">Nuevo Estado</label>
-          <select
-            name="newStatus"
-            id="dialog-new-status"
-            class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            required
-          >
-            <option value="pending">Pendiente</option>
-            <option value="processing">En Proceso</option>
-            <option value="shipped">Enviado</option>
-            <option value="delivered">Entregado</option>
-            <option value="cancelled">Cancelado</option>
-          </select>
-        </div>
+        <form id="status-form" method="POST" class="space-y-4">
+          <input type="hidden" name="action" value="change_status" />
+          <input type="hidden" name="orderId" id="dialog-order-id" />
+          
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-2">Nuevo Estado</label>
+            <select
+              name="newStatus"
+              id="dialog-new-status"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              required
+            >
+              <option value="pending">Pendiente</option>
+              <option value="processing">En Proceso</option>
+              <option value="shipped">Enviado</option>
+              <option value="delivered">Entregado</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+          </div>
 
-        <div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
-          <button
-            type="button"
-            id="dialog-cancel"
-            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-          >
-            Cambiar Estado
-          </button>
-        </div>
-      </form>
+          <div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
+            <button
+              type="button"
+              id="status-dialog-cancel"
+              class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
+            >
+              Cambiar Estado
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </dialog>
+  </div>
 </AdminLayout>
 
 <script>
@@ -443,14 +460,12 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
   // Manejar cambio de estado
   document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Inicializando gestor de cambio de estado...');
-    const dialog = document.getElementById('status-dialog') as HTMLDialogElement;
     const dialogOrderInfo = document.getElementById('dialog-order-info');
     const dialogOrderId = document.getElementById('dialog-order-id') as HTMLInputElement;
     const dialogNewStatus = document.getElementById('dialog-new-status') as HTMLSelectElement;
-    const dialogCancel = document.getElementById('dialog-cancel');
     const statusForm = document.getElementById('status-form') as HTMLFormElement;
 
-    // Abrir diálogo al hacer clic en botón de cambiar estado
+    // Abrir modal al hacer clic en botón de cambiar estado
     document.querySelectorAll('.change-status-btn').forEach(button => {
       button.addEventListener('click', (e) => {
         e.preventDefault();
@@ -467,31 +482,44 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
           dialogOrderInfo.textContent = `Orden: ${orderNumber}`;
           dialogOrderId.value = orderId;
           dialogNewStatus.value = currentStatus;
-          console.log('✅ Abriendo diálogo');
-          dialog?.showModal();
+          console.log('✅ Abriendo modal');
+          
+          // Mostrar modal personalizado
+          const modal = document.getElementById('status-dialog');
+          if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+          }
         } else {
-          console.error('❌ Faltan datos o elementos del diálogo');
+          console.error('❌ Faltan datos o elementos del modal');
         }
       });
     });
 
     console.log(`✅ ${document.querySelectorAll('.change-status-btn').length} botones de cambio de estado encontrados`);
 
-    // Cerrar diálogo
-    dialogCancel?.addEventListener('click', () => {
-      dialog?.close();
-    });
+    // Cerrar modal
+    const dialogCancel = document.getElementById('status-dialog-cancel');
+    const overlay = document.getElementById('status-dialog-overlay');
+    
+    const closeModal = () => {
+      const modal = document.getElementById('status-dialog');
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    };
 
-    // Cerrar al hacer clic fuera del diálogo
-    dialog?.addEventListener('click', (e) => {
-      const rect = dialog.getBoundingClientRect();
-      if (
-        e.clientX < rect.left ||
-        e.clientX > rect.right ||
-        e.clientY < rect.top ||
-        e.clientY > rect.bottom
-      ) {
-        dialog.close();
+    dialogCancel?.addEventListener('click', closeModal);
+    overlay?.addEventListener('click', closeModal);
+
+    // Cerrar con ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('status-dialog');
+        if (modal && modal.style.display === 'flex') {
+          closeModal();
+        }
       }
     });
 
@@ -518,7 +546,11 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
         });
 
         if (response.ok) {
-          dialog?.close();
+          const modal = document.getElementById('status-dialog');
+          if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+          }
           window.location.reload();
         } else {
           alert('Error al actualizar el estado de la orden');
@@ -530,3 +562,16 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
     });
   });
 </script>
+
+<style is:global>
+  /* Estilos para el modal de cambio de estado */
+  #status-dialog {
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #status-dialog[style*="display: flex"] {
+    display: flex !important;
+  }
+</style>

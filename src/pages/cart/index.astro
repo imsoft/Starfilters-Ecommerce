@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
+import CustomModal from "@/components/shared/CustomModal.astro";
 import { getProducts, getProductImages, getProductById } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 
@@ -224,32 +225,8 @@ const formatPrice = (price: number): string => {
     </main>
   </div>
 
-  <!-- Diálogo de confirmación -->
-  <dialog
-    id="confirm-dialog"
-    class="backdrop:bg-black/80 bg-background border border-border rounded-lg p-6 max-w-md"
-  >
-    <div class="space-y-4">
-      <h2 id="dialog-title" class="text-lg font-semibold text-foreground"></h2>
-      <p id="dialog-description" class="text-sm text-muted-foreground"></p>
-      <div
-        class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2"
-      >
-        <button
-          id="dialog-cancel"
-          class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
-        >
-          Cancelar
-        </button>
-        <button
-          id="dialog-confirm"
-          class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-red-600 text-white hover:bg-red-700 h-10 px-4 py-2"
-        >
-          Eliminar
-        </button>
-      </div>
-    </div>
-  </dialog>
+  <!-- Modal personalizado de confirmación -->
+  <CustomModal id="confirm-dialog" />
 </WebsiteLayout>
 
 <script>
@@ -355,18 +332,23 @@ const formatPrice = (price: number): string => {
   }
 
   function removeFromCart(uuid: string): void {
-    showConfirmDialog(
-      "Eliminar producto",
-      "¿Estás seguro de que quieres eliminar este producto del carrito?",
-      () => {
-        const cart = getCart();
-        cart.items = cart.items.filter((item) => item.uuid !== uuid);
-        cart.total = calculateTotal(cart.items);
-        cart.itemCount = calculateItemCount(cart.items);
-        saveCart(cart);
-        renderCart();
-      }
-    );
+    if (typeof (window as any).showCustomModal === 'function') {
+      (window as any).showCustomModal(
+        "confirm-dialog",
+        "Eliminar producto",
+        "¿Estás seguro de que quieres eliminar este producto del carrito?",
+        () => {
+          const cart = getCart();
+          cart.items = cart.items.filter((item) => item.uuid !== uuid);
+          cart.total = calculateTotal(cart.items);
+          cart.itemCount = calculateItemCount(cart.items);
+          saveCart(cart);
+          renderCart();
+        },
+        "Eliminar",
+        "Cancelar"
+      );
+    }
   }
 
   function updateQuantity(uuid: string, quantity: number): void {
@@ -640,71 +622,6 @@ const formatPrice = (price: number): string => {
     setTimeout(() => notification.remove(), 3000);
   }
 
-  // Diálogo de confirmación nativo
-  let confirmCallback: (() => void) | null = null;
-
-  function showConfirmDialog(
-    title: string,
-    description: string,
-    onConfirm: () => void
-  ): void {
-    const dialog = document.getElementById(
-      "confirm-dialog"
-    ) as HTMLDialogElement;
-    const dialogTitle = document.getElementById("dialog-title");
-    const dialogDescription = document.getElementById("dialog-description");
-    const confirmBtn = document.getElementById("dialog-confirm");
-    const cancelBtn = document.getElementById("dialog-cancel");
-
-    if (!dialog || !dialogTitle || !dialogDescription) return;
-
-    dialogTitle.textContent = title;
-    dialogDescription.textContent = description;
-    confirmCallback = onConfirm;
-
-    dialog.showModal();
-
-    // Event listeners para los botones
-    const handleConfirm = () => {
-      if (confirmCallback) {
-        confirmCallback();
-        confirmCallback = null;
-      }
-      dialog.close();
-    };
-
-    const handleCancel = () => {
-      confirmCallback = null;
-      dialog.close();
-    };
-
-    // Remover listeners anteriores y agregar nuevos
-    const newConfirmBtn = confirmBtn?.cloneNode(true) as HTMLButtonElement;
-    const newCancelBtn = cancelBtn?.cloneNode(true) as HTMLButtonElement;
-
-    confirmBtn?.parentNode?.replaceChild(newConfirmBtn, confirmBtn);
-    cancelBtn?.parentNode?.replaceChild(newCancelBtn, cancelBtn);
-
-    newConfirmBtn?.addEventListener("click", handleConfirm);
-    newCancelBtn?.addEventListener("click", handleCancel);
-
-    // Cerrar al hacer clic fuera del diálogo
-    dialog.addEventListener(
-      "click",
-      (e) => {
-        const rect = dialog.getBoundingClientRect();
-        if (
-          e.clientX < rect.left ||
-          e.clientX > rect.right ||
-          e.clientY < rect.top ||
-          e.clientY > rect.bottom
-        ) {
-          handleCancel();
-        }
-      },
-      { once: true }
-    );
-  }
 
   // Funciones globales (antes de DOMContentLoaded para que estén disponibles)
   (window as any).addProductToCart = addProductToCart;
@@ -717,27 +634,5 @@ const formatPrice = (price: number): string => {
   // Inicializar carrito
   document.addEventListener("DOMContentLoaded", async () => {
     await renderCart();
-    
-    // Asegurar que el modal esté centrado
-    const dialog = document.getElementById("confirm-dialog") as HTMLDialogElement;
-    if (dialog) {
-      // Agregar estilos para centrar el modal
-      dialog.style.margin = "auto";
-      dialog.style.position = "fixed";
-      dialog.style.top = "50%";
-      dialog.style.left = "50%";
-      dialog.style.transform = "translate(-50%, -50%)";
-    }
   });
 </script>
-
-<style>
-  /* Estilos para el modal de confirmación */
-  dialog[open] {
-    margin: auto;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-</style>
