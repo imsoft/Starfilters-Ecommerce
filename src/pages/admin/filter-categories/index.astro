@@ -34,36 +34,40 @@ const categoriesWithVariants = await Promise.all(
 ---
 
 <AdminLayout title="Categorías de Filtros">
-  <div class="container mx-auto px-4 py-8">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <!-- Header -->
-    <div class="mb-8 flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">Categorías de Filtros</h1>
-        <p class="mt-2 text-gray-600">
-          Gestiona las categorías de filtros, sus imágenes y variantes
-        </p>
+    <div class="mt-10 mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">Categorías de Filtros</h1>
+          <p class="mt-2 text-muted-foreground">
+            Gestiona las categorías de filtros, sus imágenes y variantes
+          </p>
+        </div>
+        <a href="/admin/filter-categories/create">
+          <button class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90">
+            <svg class="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+            </svg>
+            Nueva Categoría
+          </button>
+        </a>
       </div>
-      <a
-        href="/admin/filter-categories/create"
-        class="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-      >
-        + Nueva Categoría
-      </a>
     </div>
 
     <!-- Estadísticas -->
-    <div class="mb-8 grid gap-6 md:grid-cols-3">
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
+    <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="rounded-lg border border-border bg-background p-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Total Categorías</p>
-            <p class="mt-2 text-3xl font-bold text-gray-900">
+            <p class="text-sm font-medium text-muted-foreground">Total Categorías</p>
+            <p class="mt-2 text-3xl font-bold text-foreground">
               {categories.length}
             </p>
           </div>
-          <div class="rounded-full bg-blue-100 p-3">
+          <div class="rounded-full bg-primary/10 p-3">
             <svg
-              class="h-8 w-8 text-blue-600"
+              class="h-8 w-8 text-primary"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -79,10 +83,10 @@ const categoriesWithVariants = await Promise.all(
         </div>
       </div>
 
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
+      <div class="rounded-lg border border-border bg-background p-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Activas</p>
+            <p class="text-sm font-medium text-muted-foreground">Activas</p>
             <p class="mt-2 text-3xl font-bold text-green-600">
               {categories.filter((c) => c.status === "active").length}
             </p>
@@ -105,15 +109,15 @@ const categoriesWithVariants = await Promise.all(
         </div>
       </div>
 
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
+      <div class="rounded-lg border border-border bg-background p-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Inactivas/Borrador</p>
-            <p class="mt-2 text-3xl font-bold text-gray-600">
+            <p class="text-sm font-medium text-muted-foreground">Inactivas/Borrador</p>
+            <p class="mt-2 text-3xl font-bold text-muted-foreground">
               {categories.filter((c) => c.status !== "active").length}
             </p>
           </div>
-          <div class="rounded-full bg-gray-100 p-3">
+          <div class="rounded-full bg-muted p-3">
             <svg
               class="h-8 w-8 text-gray-600"
               fill="none"
@@ -133,12 +137,12 @@ const categoriesWithVariants = await Promise.all(
     </div>
 
     <!-- Tabla de Categorías -->
-    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
+    <div class="overflow-hidden rounded-lg border border-border bg-background shadow">
       {
         categoriesWithVariants.length === 0 ? (
           <div class="p-12 text-center">
             <svg
-              class="mx-auto h-12 w-12 text-gray-400"
+              class="mx-auto h-12 w-12 text-muted-foreground"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -150,16 +154,16 @@ const categoriesWithVariants = await Promise.all(
                 d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
               />
             </svg>
-            <h3 class="mt-2 text-sm font-medium text-gray-900">
+            <h3 class="mt-2 text-sm font-medium text-foreground">
               No hay categorías
             </h3>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-muted-foreground">
               Comienza creando una nueva categoría de filtros.
             </p>
             <div class="mt-6">
               <a
                 href="/admin/filter-categories/create"
-                class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 + Nueva Categoría
               </a>
@@ -168,43 +172,43 @@ const categoriesWithVariants = await Promise.all(
         ) : (
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+              <thead class="bg-muted/50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Categoría
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Slug
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Eficiencia
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Variantes
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Estado
                   </th>
-                  <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-200 bg-white">
+              <tbody class="divide-y divide-border bg-background">
                 {categoriesWithVariants.map((category) => (
-                  <tr class="hover:bg-gray-50">
+                  <tr class="hover:bg-muted/50">
                     <td class="whitespace-nowrap px-6 py-4">
                       <div class="flex items-center">
                         {category.main_image ? (
                           <img
-                            src={`/images/${category.main_image}`}
+                            src={category.main_image}
                             alt={category.name}
                             class="mr-3 h-10 w-10 rounded-lg object-cover"
                           />
                         ) : (
-                          <div class="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gray-200">
+                          <div class="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                             <svg
-                              class="h-6 w-6 text-gray-400"
+                              class="h-6 w-6 text-muted-foreground"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -219,11 +223,11 @@ const categoriesWithVariants = await Promise.all(
                           </div>
                         )}
                         <div>
-                          <div class="text-sm font-medium text-gray-900">
+                          <div class="text-sm font-medium text-foreground">
                             {category.name}
                           </div>
                           {category.name_en && (
-                            <div class="text-sm text-gray-500">
+                            <div class="text-sm text-muted-foreground">
                               {category.name_en}
                             </div>
                           )}
@@ -231,21 +235,21 @@ const categoriesWithVariants = await Promise.all(
                       </div>
                     </td>
                     <td class="whitespace-nowrap px-6 py-4">
-                      <div class="text-sm text-gray-900">{category.slug}</div>
+                      <div class="text-sm text-foreground">{category.slug}</div>
                     </td>
                     <td class="whitespace-nowrap px-6 py-4">
-                      <div class="text-sm text-gray-900">
+                      <div class="text-sm text-foreground">
                         {category.efficiency || "-"}
                       </div>
                       {category.efficiency_class && (
-                        <div class="text-sm text-gray-500">
+                        <div class="text-sm text-muted-foreground">
                           {category.efficiency_class}
                         </div>
                       )}
                     </td>
                     <td class="whitespace-nowrap px-6 py-4">
                       <div class="flex items-center">
-                        <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                        <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                           {category.variantCount} tamaños
                         </span>
                       </div>
@@ -271,7 +275,7 @@ const categoriesWithVariants = await Promise.all(
                       <div class="flex items-center justify-end gap-2">
                         <a
                           href={`/admin/filter-categories/edit/${category.id}`}
-                          class="text-blue-600 hover:text-blue-900"
+                          class="text-primary hover:text-primary/80"
                           title="Editar"
                         >
                           <svg
@@ -290,7 +294,7 @@ const categoriesWithVariants = await Promise.all(
                         </a>
                         <button
                           onclick={`deleteCategory(${category.id}, '${category.name}')`}
-                          class="text-red-600 hover:text-red-900"
+                          class="text-destructive hover:text-destructive/80"
                           title="Eliminar"
                         >
                           <svg
