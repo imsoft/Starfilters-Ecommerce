@@ -331,9 +331,125 @@ const formatPrice = (price: number): string => {
     renderCart();
   }
 
+  // Función para mostrar modal personalizado
+  function showCustomModal(
+    modalId: string,
+    title: string,
+    description: string,
+    onConfirm: () => void,
+    confirmText: string = "Confirmar",
+    cancelText: string = "Cancelar"
+  ): void {
+    console.log('🎯 showCustomModal llamado con modalId:', modalId);
+    console.log('🔍 Buscando elementos del modal...');
+    
+    const modal = document.getElementById(modalId);
+    const modalTitle = document.getElementById(`${modalId}-title`);
+    const modalDescription = document.getElementById(`${modalId}-description`);
+    const confirmBtn = document.getElementById(`${modalId}-confirm`);
+    const cancelBtn = document.getElementById(`${modalId}-cancel`);
+    const overlay = document.getElementById(`${modalId}-overlay`);
+
+    console.log('Elementos encontrados:', {
+      modal: !!modal,
+      modalTitle: !!modalTitle,
+      modalDescription: !!modalDescription,
+      confirmBtn: !!confirmBtn,
+      cancelBtn: !!cancelBtn,
+      overlay: !!overlay
+    });
+
+    if (!modal || !modalTitle || !modalDescription || !confirmBtn || !cancelBtn) {
+      console.error('❌ No se encontraron todos los elementos del modal');
+      console.error('IDs buscados:', {
+        modal: modalId,
+        title: `${modalId}-title`,
+        description: `${modalId}-description`,
+        confirm: `${modalId}-confirm`,
+        cancel: `${modalId}-cancel`,
+        overlay: `${modalId}-overlay`
+      });
+      // Buscar todos los elementos con IDs que contengan "confirm-dialog"
+      const allElements = document.querySelectorAll('[id*="confirm"]');
+      console.log('Elementos con "confirm" en el ID:', Array.from(allElements).map(el => el.id));
+      return;
+    }
+
+    // Establecer contenido
+    modalTitle.textContent = title;
+    modalDescription.textContent = description;
+    confirmBtn.textContent = confirmText;
+    cancelBtn.textContent = cancelText;
+
+    // Mostrar modal - remover clase 'hidden' y establecer display
+    modal.classList.remove("hidden");
+    modal.style.display = "flex";
+    modal.style.visibility = "visible";
+    modal.style.opacity = "1";
+    document.body.style.overflow = "hidden";
+    
+    // Asegurar que el contenido sea visible
+    const modalContent = document.getElementById(`${modalId}-content`);
+    if (modalContent) {
+      modalContent.style.display = "block";
+      modalContent.style.visibility = "visible";
+      modalContent.style.opacity = "1";
+    }
+    
+    console.log('✅ Modal mostrado - clases:', modal.className, 'style:', modal.style.cssText);
+
+    // Handlers
+    const handleConfirm = () => {
+      onConfirm();
+      closeModal();
+    };
+
+    const handleCancel = () => {
+      closeModal();
+    };
+
+    const closeModal = () => {
+      // Ocultar modal - agregar clase 'hidden' y establecer display
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+      modal.style.visibility = "hidden";
+      document.body.style.overflow = "";
+      // Remover listeners clonando los elementos
+      const newConfirmBtn = confirmBtn.cloneNode(true) as HTMLButtonElement;
+      const newCancelBtn = cancelBtn.cloneNode(true) as HTMLButtonElement;
+      const newOverlay = overlay?.cloneNode(true) as HTMLDivElement;
+      
+      confirmBtn.replaceWith(newConfirmBtn);
+      cancelBtn.replaceWith(newCancelBtn);
+      if (overlay) overlay.replaceWith(newOverlay);
+    };
+
+    // Agregar listeners a los elementos actuales
+    confirmBtn.addEventListener("click", handleConfirm);
+    cancelBtn.addEventListener("click", handleCancel);
+    if (overlay) overlay.addEventListener("click", handleCancel);
+
+    // Cerrar con ESC
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleCancel();
+        document.removeEventListener("keydown", handleEscape);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+  }
+
   function removeFromCart(uuid: string): void {
-    if (typeof (window as any).showCustomModal === 'function') {
-      (window as any).showCustomModal(
+    console.log('🔴 removeFromCart llamado con uuid:', uuid);
+    console.log('🔍 Verificando si el modal existe en el DOM...');
+    const modal = document.getElementById("confirm-dialog");
+    console.log('Modal encontrado:', !!modal);
+    if (modal) {
+      console.log('Modal HTML:', modal.outerHTML.substring(0, 200));
+    }
+    
+    try {
+      showCustomModal(
         "confirm-dialog",
         "Eliminar producto",
         "¿Estás seguro de que quieres eliminar este producto del carrito?",
@@ -348,6 +464,8 @@ const formatPrice = (price: number): string => {
         "Eliminar",
         "Cancelar"
       );
+    } catch (error) {
+      console.error('❌ Error al mostrar modal:', error);
     }
   }
 
@@ -634,5 +752,23 @@ const formatPrice = (price: number): string => {
   // Inicializar carrito
   document.addEventListener("DOMContentLoaded", async () => {
     await renderCart();
+    
+    // Verificar que el modal esté en el DOM
+    const modal = document.getElementById("confirm-dialog");
+    console.log('🔍 Modal en DOM después de renderCart:', !!modal);
+    if (modal) {
+      console.log('✅ Modal encontrado:', modal);
+      console.log('Modal classes:', modal.className);
+      console.log('Modal style:', modal.style.cssText);
+    } else {
+      console.error('❌ Modal NO encontrado en el DOM');
+      // Buscar todos los elementos con id que contenga "confirm"
+      const allWithConfirm = document.querySelectorAll('[id*="confirm"]');
+      console.log('Elementos con "confirm" en ID:', Array.from(allWithConfirm).map(el => ({
+        id: el.id,
+        tag: el.tagName,
+        classes: el.className
+      })));
+    }
   });
 </script>

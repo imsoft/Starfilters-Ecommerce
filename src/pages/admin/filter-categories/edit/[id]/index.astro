@@ -313,35 +313,8 @@ if (Astro.request.method === "POST") {
       )
     }
 
-    <!-- Tabs -->
-    <div class="mb-6 border-b border-gray-200">
-      <nav class="-mb-px flex space-x-8">
-        <button
-          onclick="showTab('info')"
-          id="tab-info"
-          class="tab-button whitespace-nowrap border-b-2 border-blue-500 px-1 py-4 text-sm font-medium text-blue-600"
-        >
-          Información
-        </button>
-        <button
-          onclick="showTab('images')"
-          id="tab-images"
-          class="tab-button whitespace-nowrap border-b-2 border-transparent px-1 py-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-        >
-          Imágenes ({images.length})
-        </button>
-        <button
-          onclick="showTab('variants')"
-          id="tab-variants"
-          class="tab-button whitespace-nowrap border-b-2 border-transparent px-1 py-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-        >
-          Variantes ({variants.length})
-        </button>
-      </nav>
-    </div>
-
-    <!-- Tab: Información -->
-    <div id="content-info" class="tab-content">
+    <!-- Contenido completo sin tabs -->
+    <div class="space-y-8">
       <form method="POST" class="space-y-8">
         <input type="hidden" name="action" value="update_category" />
 
@@ -384,7 +357,7 @@ if (Astro.request.method === "POST") {
 
             <div class="md:col-span-2">
               <p class="text-sm text-gray-600">
-                La imagen principal se gestiona en la pestaña "Imágenes" más abajo.
+                La imagen principal se gestiona en la sección "Imágenes" más abajo.
               </p>
             </div>
 
@@ -653,20 +626,21 @@ if (Astro.request.method === "POST") {
           </button>
         </div>
       </form>
-    </div>
 
-    <!-- Tab: Imágenes -->
-    <div id="content-images" class="tab-content hidden">
-      <CategoryImageManager
-        categoryId={categoryId}
-        categoryName={category.name}
-        mainImageUrl={category.main_image}
-      />
-    </div>
+      <!-- Sección: Imágenes -->
+      <div class="mt-8 rounded-lg border border-gray-200 bg-white p-6">
+        <h2 class="mb-4 text-xl font-bold text-gray-900">
+          Imágenes ({images.length})
+        </h2>
+        <CategoryImageManager
+          categoryId={categoryId}
+          categoryName={category.name}
+          mainImageUrl={category.main_image}
+        />
+      </div>
 
-    <!-- Tab: Variantes -->
-    <div id="content-variants" class="tab-content hidden">
-      <div class="space-y-6">
+      <!-- Sección: Variantes -->
+      <div class="mt-8 space-y-6">
         <!-- Agregar Variante -->
         <div class="rounded-lg border border-gray-200 bg-white p-6">
           <h2 class="mb-4 text-xl font-bold text-gray-900">
@@ -881,28 +855,6 @@ if (Astro.request.method === "POST") {
 </AdminLayout>
 
 <script define:vars={{ categoryId }}>
-  // Tab management
-  function showTab(tabName) {
-    // Hide all content
-    document.querySelectorAll(".tab-content").forEach((content) => {
-      content.classList.add("hidden");
-    });
-
-    // Reset all buttons
-    document.querySelectorAll(".tab-button").forEach((button) => {
-      button.classList.remove("border-blue-500", "text-blue-600");
-      button.classList.add("border-transparent", "text-gray-500");
-    });
-
-    // Show selected content
-    document.getElementById(`content-${tabName}`).classList.remove("hidden");
-
-    // Highlight selected button
-    const button = document.getElementById(`tab-${tabName}`);
-    button.classList.remove("border-transparent", "text-gray-500");
-    button.classList.add("border-blue-500", "text-blue-600");
-  }
-
   // Delete image
   async function deleteImage(id, filename) {
     if (!confirm(`¿Eliminar imagen "${filename}"?`)) return;
@@ -983,7 +935,6 @@ if (Astro.request.method === "POST") {
   }
 
   // Make functions global
-  (window as any).showTab = showTab;
   (window as any).deleteImage = deleteImage;
   (window as any).deleteVariant = deleteVariant;
   (window as any).editVariant = editVariant;
