@@ -2,7 +2,7 @@
 import AdminLayout from '@/layouts/adminLayout.astro';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
-import { createDiscountCode } from '@/lib/discount-codes';
+import { getDiscountCodeById, updateDiscountCode } from '@/lib/discount-codes';
 
 export const prerender = false;
 
@@ -18,24 +18,22 @@ if (!userIsAdmin) {
   return Astro.redirect('/');
 }
 
+const { id } = Astro.params;
+const discountId = parseInt(id || '0');
+
+let discountCode = await getDiscountCodeById(discountId);
+
+if (!discountCode) {
+  return Astro.redirect('/admin/discount-codes');
+}
+
 let errorMessage = '';
-let formData = {
-  code: '',
-  description: '',
-  discount_type: 'percentage',
-  discount_value: '',
-  min_purchase_amount: '',
-  max_discount_amount: '',
-  usage_limit: '',
-  start_date: '',
-  end_date: '',
-  is_active: true,
-};
+let successMessage = '';
 
 if (Astro.request.method === 'POST') {
   const data = await Astro.request.formData();
 
-  formData = {
+  const formData = {
     code: data.get('code')?.toString() || '',
     description: data.get('description')?.toString() || '',
     discount_type: data.get('discount_type')?.toString() as 'percentage' | 'fixed',
@@ -60,7 +58,7 @@ if (Astro.request.method === 'POST') {
     errorMessage = 'El porcentaje de descuento no puede ser mayor a 100';
   } else {
     try {
-      await createDiscountCode({
+      await updateDiscountCode(discountId, {
         code: formData.code.trim(),
         description: formData.description.trim() || undefined,
         discount_type: formData.discount_type,
@@ -77,20 +75,34 @@ if (Astro.request.method === 'POST') {
         is_active: formData.is_active,
       });
 
-      return Astro.redirect('/admin/discount-codes');
+      successMessage = 'Código actualizado exitosamente';
+      // Recargar el código actualizado
+      discountCode = await getDiscountCodeById(discountId);
     } catch (error: any) {
-      console.error('Error creating discount code:', error);
+      console.error('Error updating discount code:', error);
       if (error.code === 'ER_DUP_ENTRY') {
         errorMessage = 'Ya existe un código con ese nombre';
       } else {
-        errorMessage = 'Error al crear el código de descuento';
+        errorMessage = 'Error al actualizar el código de descuento';
       }
     }
   }
 }
+
+// Formatear fechas para el input datetime-local
+function formatDateForInput(date: Date | null): string {
+  if (!date) return '';
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 ---
 
-<AdminLayout title="Crear Código de Descuento">
+<AdminLayout title={`Editar: ${discountCode.code}`}>
   <div class="px-4 sm:px-6 lg:px-8">
     <div class="mb-8">
       <a
@@ -104,7 +116,7 @@ if (Astro.request.method === 'POST') {
     <div class="md:flex md:items-center md:justify-between">
       <div class="min-w-0 flex-1">
         <h2 class="text-2xl font-bold text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-          Crear Código de Descuento
+          Editar Código: {discountCode.code}
         </h2>
       </div>
     </div>
@@ -112,6 +124,12 @@ if (Astro.request.method === 'POST') {
     {errorMessage && (
       <div class="mt-4 rounded-md bg-red-50 p-4">
         <p class="text-sm font-medium text-red-800">{errorMessage}</p>
+      </div>
+    )}
+
+    {successMessage && (
+      <div class="mt-4 rounded-md bg-green-50 p-4">
+        <p class="text-sm font-medium text-green-800">{successMessage}</p>
       </div>
     )}
 
@@ -127,7 +145,7 @@ if (Astro.request.method === 'POST') {
             name="code"
             id="code"
             required
-            value={formData.code}
+            value={discountCode.code}
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
             placeholder="VERANO2025"
           />
@@ -147,10 +165,10 @@ if (Astro.request.method === 'POST') {
             required
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
           >
-            <option value="percentage" selected={formData.discount_type === 'percentage'}>
+            <option value="percentage" selected={discountCode.discount_type === 'percentage'}>
               Porcentaje (%)
             </option>
-            <option value="fixed" selected={formData.discount_type === 'fixed'}>
+            <option value="fixed" selected={discountCode.discount_type === 'fixed'}>
               Monto fijo ($)
             </option>
           </select>
@@ -168,7 +186,7 @@ if (Astro.request.method === 'POST') {
             required
             min="0"
             step="0.01"
-            value={formData.discount_value}
+            value={discountCode.discount_value}
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
             placeholder="10.00"
           />
@@ -185,7 +203,7 @@ if (Astro.request.method === 'POST') {
             id="min_purchase_amount"
             min="0"
             step="0.01"
-            value={formData.min_purchase_amount}
+            value={discountCode.min_purchase_amount || ''}
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
             placeholder="500.00"
           />
@@ -205,7 +223,7 @@ if (Astro.request.method === 'POST') {
             id="max_discount_amount"
             min="0"
             step="0.01"
-            value={formData.max_discount_amount}
+            value={discountCode.max_discount_amount || ''}
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
             placeholder="1000.00"
           />
@@ -224,12 +242,25 @@ if (Astro.request.method === 'POST') {
             name="usage_limit"
             id="usage_limit"
             min="1"
-            value={formData.usage_limit}
+            value={discountCode.usage_limit || ''}
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
             placeholder="100"
           />
           <p class="mt-1 text-sm text-gray-500">
             Opcional: Número máximo de veces que se puede usar
+          </p>
+        </div>
+
+        <!-- Contador de uso (solo lectura) -->
+        <div class="sm:col-span-3">
+          <label class="block text-sm font-medium text-gray-900">
+            Veces usado
+          </label>
+          <div class="mt-2 block w-full rounded-md border-0 px-3 py-2 bg-gray-50 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm">
+            {discountCode.usage_count} veces
+          </div>
+          <p class="mt-1 text-sm text-gray-500">
+            Este valor no se puede editar manualmente
           </p>
         </div>
 
@@ -242,10 +273,9 @@ if (Astro.request.method === 'POST') {
             name="description"
             id="description"
             rows={3}
-            value={formData.description}
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
             placeholder="Descripción interna del código de descuento"
-          ></textarea>
+          >{discountCode.description || ''}</textarea>
         </div>
 
         <!-- Fecha de inicio -->
@@ -257,7 +287,7 @@ if (Astro.request.method === 'POST') {
             type="datetime-local"
             name="start_date"
             id="start_date"
-            value={formData.start_date}
+            value={formatDateForInput(discountCode.start_date)}
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
           />
           <p class="mt-1 text-sm text-gray-500">
@@ -274,7 +304,7 @@ if (Astro.request.method === 'POST') {
             type="datetime-local"
             name="end_date"
             id="end_date"
-            value={formData.end_date}
+            value={formatDateForInput(discountCode.end_date)}
             class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
           />
           <p class="mt-1 text-sm text-gray-500">
@@ -289,7 +319,7 @@ if (Astro.request.method === 'POST') {
               type="checkbox"
               name="is_active"
               id="is_active"
-              checked={formData.is_active}
+              checked={discountCode.is_active}
               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
             />
             <label for="is_active" class="ml-2 block text-sm text-gray-900">
@@ -310,7 +340,7 @@ if (Astro.request.method === 'POST') {
           type="submit"
           class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
-          Crear código
+          Guardar cambios
         </button>
       </div>
     </form>

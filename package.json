@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "db:create-discount-codes": "node scripts/create-discount-codes.js"
+    "db:create-discount-codes": "node scripts/create-discount-codes.js",
+    "db:create-filter-categories": "node scripts/create-filter-categories.js"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.6",

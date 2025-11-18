@@ -208,6 +208,50 @@ export function getPublicIdFromUrl(url: string): string {
 }
 
 /**
+ * Sube una imagen principal de categoría de filtro
+ * @param file - Buffer o ruta del archivo
+ * @param categoryId - ID de la categoría
+ * @param imageName - Nombre de la imagen (opcional)
+ * @returns URL segura de la imagen subida
+ */
+export async function uploadCategoryPrimaryImage(
+  file: Buffer | string,
+  categoryId: number,
+  imageName?: string
+): Promise<string> {
+  const folder = `ecommerce/category/${categoryId}/primary`;
+  const public_id = imageName ? imageName.replace(/\.[^/.]+$/, '') : undefined;
+
+  return uploadImage(file, {
+    folder,
+    public_id,
+    resource_type: 'image'
+  });
+}
+
+/**
+ * Sube una imagen de carrusel de categoría de filtro
+ * @param file - Buffer o ruta del archivo
+ * @param categoryId - ID de la categoría
+ * @param imageName - Nombre de la imagen (opcional)
+ * @returns URL segura de la imagen subida
+ */
+export async function uploadCategoryCarouselImage(
+  file: Buffer | string,
+  categoryId: number,
+  imageName?: string
+): Promise<string> {
+  const folder = `ecommerce/category/${categoryId}/carrousel`;
+  const public_id = imageName ? imageName.replace(/\.[^/.]+$/, '') : undefined;
+
+  return uploadImage(file, {
+    folder,
+    public_id,
+    resource_type: 'image'
+  });
+}
+
+/**
  * Obtiene una URL optimizada de Cloudinary
  * @param publicId - ID público de la imagen
  * @param transformations - Transformaciones a aplicar

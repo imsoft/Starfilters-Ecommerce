@@ -100,6 +100,21 @@ const currentPath = Astro.url.pathname;
                   </li>
                   <li>
                     <a
+                      href="/admin/filter-categories"
+                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                        currentPath.startsWith('/admin/filter-categories')
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                      </svg>
+                      Categorías Filtros
+                    </a>
+                  </li>
+                  <li>
+                    <a
                       href="/admin/orders"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/orders')
@@ -141,6 +156,21 @@ const currentPath = Astro.url.pathname;
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                       </svg>
                       Usuarios
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/admin/discount-codes"
+                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                        currentPath.startsWith('/admin/discount-codes')
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                      </svg>
+                      Códigos Descuento
                     </a>
                   </li>
                 </ul>
@@ -230,6 +260,16 @@ const currentPath = Astro.url.pathname;
                     Productos
                   </a>
                   <a
+                    href="/admin/filter-categories"
+                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
+                      currentPath.startsWith('/admin/filter-categories')
+                        ? 'bg-muted'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    Categorías Filtros
+                  </a>
+                  <a
                     href="/admin/orders"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/orders')
@@ -258,6 +298,16 @@ const currentPath = Astro.url.pathname;
                     }`}
                   >
                     Usuarios
+                  </a>
+                  <a
+                    href="/admin/discount-codes"
+                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
+                      currentPath.startsWith('/admin/discount-codes')
+                        ? 'bg-muted'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    Códigos Descuento
                   </a>
                 </div>
                 <div class="py-6">

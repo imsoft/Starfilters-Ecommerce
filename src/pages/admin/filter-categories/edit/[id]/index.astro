@@ -1,0 +1,990 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import {
+  getCategoryById,
+  updateCategory,
+  getCategoryImages,
+  getCategoryVariants,
+  addCategoryImage,
+  deleteCategoryImage,
+  addCategoryVariant,
+  updateCategoryVariant,
+  deleteCategoryVariant,
+} from "@/lib/filter-category-service";
+import { getAuthenticatedUser } from '@/lib/auth-utils';
+import { isUserAdmin } from '@/lib/database';
+import CategoryImageManager from "@/components/admin/CategoryImageManager.astro";
+import DynamicListInput from "@/components/admin/DynamicListInput.astro";
+
+export const prerender = false;
+
+const user = getAuthenticatedUser(Astro.cookies);
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const userIsAdmin = await isUserAdmin(user.id);
+
+if (!userIsAdmin) {
+  return Astro.redirect('/');
+}
+
+const { id } = Astro.params;
+const categoryId = parseInt(id || "0");
+
+let category = await getCategoryById(categoryId);
+if (!category) {
+  return Astro.redirect("/admin/filter-categories");
+}
+
+let images = await getCategoryImages(categoryId);
+let variants = await getCategoryVariants(categoryId);
+
+let error: string | null = null;
+let success: string | null = null;
+
+// Helper para formatear precio (MySQL devuelve DECIMAL como string)
+function formatPrice(price: number | string): string {
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+  return numPrice.toFixed(2);
+}
+
+// Procesar formulario
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    const action = formData.get("action") as string;
+
+    if (action === "update_category") {
+      // Actualizar la categoría
+      const slug = (formData.get("name") as string)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+      const updated = await updateCategory(categoryId, {
+        name: formData.get("name") as string,
+        name_en: (formData.get("name_en") as string) || null,
+        slug: slug,
+        description: (formData.get("description") as string) || null,
+        description_en: (formData.get("description_en") as string) || null,
+        main_image: (formData.get("main_image") as string) || category.main_image || null,
+        // Convertir listas JSON a texto separado por saltos de línea
+        efficiency: (() => {
+          const efficiencyJson = formData.get("efficiency") as string;
+          if (efficiencyJson) {
+            try {
+              const efficiency = JSON.parse(efficiencyJson) as string[];
+              return efficiency.length > 0 ? efficiency.join('\n') : null;
+            } catch {
+              return efficiencyJson; // Si no es JSON, usar como está
+            }
+          }
+          return null;
+        })(),
+        efficiency_en: (() => {
+          const efficiencyJson = formData.get("efficiency_en") as string;
+          if (efficiencyJson) {
+            try {
+              const efficiency = JSON.parse(efficiencyJson) as string[];
+              return efficiency.length > 0 ? efficiency.join('\n') : null;
+            } catch {
+              return efficiencyJson;
+            }
+          }
+          return null;
+        })(),
+        efficiency_class: (formData.get("efficiency_class") as string) || null,
+        // Convertir listas JSON a texto separado por saltos de línea
+        characteristics: (() => {
+          const charsJson = formData.get("characteristics") as string;
+          if (charsJson) {
+            try {
+              const chars = JSON.parse(charsJson) as string[];
+              return chars.length > 0 ? chars.join('\n') : null;
+            } catch {
+              return charsJson; // Si no es JSON, usar como está
+            }
+          }
+          return null;
+        })(),
+        characteristics_en: (() => {
+          const charsJson = formData.get("characteristics_en") as string;
+          if (charsJson) {
+            try {
+              const chars = JSON.parse(charsJson) as string[];
+              return chars.length > 0 ? chars.join('\n') : null;
+            } catch {
+              return charsJson;
+            }
+          }
+          return null;
+        })(),
+        typical_installation:
+          (formData.get("typical_installation") as string) || null,
+        typical_installation_en:
+          (formData.get("typical_installation_en") as string) || null,
+        applications: (formData.get("applications") as string) || null,
+        applications_en: (formData.get("applications_en") as string) || null,
+        benefits: (() => {
+          const benefitsJson = formData.get("benefits") as string;
+          if (benefitsJson) {
+            try {
+              const benefits = JSON.parse(benefitsJson) as string[];
+              return benefits.length > 0 ? benefits.join('\n') : null;
+            } catch {
+              return benefitsJson;
+            }
+          }
+          return null;
+        })(),
+        benefits_en: (() => {
+          const benefitsJson = formData.get("benefits_en") as string;
+          if (benefitsJson) {
+            try {
+              const benefits = JSON.parse(benefitsJson) as string[];
+              return benefits.length > 0 ? benefits.join('\n') : null;
+            } catch {
+              return benefitsJson;
+            }
+          }
+          return null;
+        })(),
+        max_temperature: (formData.get("max_temperature") as string) || null,
+        frame_material: (formData.get("frame_material") as string) || null,
+        status: formData.get("status") as "active" | "inactive" | "draft",
+      });
+
+      // Actualizar imagen principal si viene del componente
+      const mainImageFromComponent = formData.get("main_image") as string;
+      if (mainImageFromComponent && mainImageFromComponent !== category.main_image) {
+        await updateCategory(categoryId, {
+          main_image: mainImageFromComponent,
+        });
+      }
+
+      if (updated) {
+        success = "Categoría actualizada exitosamente";
+        category = await getCategoryById(categoryId);
+        images = await getCategoryImages(categoryId);
+      } else {
+        error = "Error al actualizar la categoría";
+      }
+    } else if (action === "add_variant") {
+      // Agregar variante
+      const bindCode = formData.get("bind_code") as string;
+      const nominalSize = formData.get("nominal_size") as string;
+      const realSize = formData.get("real_size") as string;
+      const price = parseFloat(formData.get("price") as string);
+      const stock = parseInt(formData.get("stock") as string) || 0;
+      const isActive = formData.get("is_active") === "on";
+
+      if (bindCode && nominalSize && realSize && !isNaN(price)) {
+        const variantId = await addCategoryVariant({
+          category_id: categoryId,
+          bind_code: bindCode,
+          nominal_size: nominalSize,
+          real_size: realSize,
+          price: price,
+          stock: stock,
+          is_active: isActive,
+        });
+
+        if (variantId) {
+          success = "Variante agregada exitosamente";
+          variants = await getCategoryVariants(categoryId);
+        } else {
+          error = "Error al agregar la variante (¿código duplicado?)";
+        }
+      }
+    } else if (action === "update_variant") {
+      // Actualizar variante
+      const variantId = parseInt(formData.get("variant_id") as string);
+      const bindCode = formData.get("bind_code") as string;
+      const nominalSize = formData.get("nominal_size") as string;
+      const realSize = formData.get("real_size") as string;
+      const price = parseFloat(formData.get("price") as string);
+      const stock = parseInt(formData.get("stock") as string) || 0;
+      const isActive = formData.get("is_active") === "on";
+
+      if (bindCode && nominalSize && realSize && !isNaN(price)) {
+        const updated = await updateCategoryVariant(variantId, {
+          bind_code: bindCode,
+          nominal_size: nominalSize,
+          real_size: realSize,
+          price: price,
+          stock: stock,
+          is_active: isActive,
+        });
+
+        if (updated) {
+          success = "Variante actualizada exitosamente";
+          variants = await getCategoryVariants(categoryId);
+        } else {
+          error = "Error al actualizar la variante";
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error procesando formulario:", err);
+    error = err instanceof Error ? err.message : "Error desconocido";
+  }
+}
+---
+
+<AdminLayout title={`Editar: ${category.name}`}>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center gap-4">
+        <a
+          href="/admin/filter-categories"
+          class="text-gray-600 hover:text-gray-900"
+        >
+          <svg
+            class="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+        </a>
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">
+            Editar: {category.name}
+          </h1>
+          <p class="mt-2 text-gray-600">ID: {category.id} | Slug: {category.slug}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes -->
+    {
+      error && (
+        <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
+          <div class="flex">
+            <svg
+              class="h-5 w-5 text-red-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-red-800">{error}</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    {
+      success && (
+        <div class="mb-6 rounded-lg border border-green-300 bg-green-50 p-4">
+          <div class="flex">
+            <svg
+              class="h-5 w-5 text-green-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-green-800">{success}</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    <!-- Tabs -->
+    <div class="mb-6 border-b border-gray-200">
+      <nav class="-mb-px flex space-x-8">
+        <button
+          onclick="showTab('info')"
+          id="tab-info"
+          class="tab-button whitespace-nowrap border-b-2 border-blue-500 px-1 py-4 text-sm font-medium text-blue-600"
+        >
+          Información
+        </button>
+        <button
+          onclick="showTab('images')"
+          id="tab-images"
+          class="tab-button whitespace-nowrap border-b-2 border-transparent px-1 py-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+        >
+          Imágenes ({images.length})
+        </button>
+        <button
+          onclick="showTab('variants')"
+          id="tab-variants"
+          class="tab-button whitespace-nowrap border-b-2 border-transparent px-1 py-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+        >
+          Variantes ({variants.length})
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab: Información -->
+    <div id="content-info" class="tab-content">
+      <form method="POST" class="space-y-8">
+        <input type="hidden" name="action" value="update_category" />
+
+        <!-- Información Básica -->
+        <div class="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 class="mb-4 text-xl font-bold text-gray-900">
+            Información Básica
+          </h2>
+
+          <div class="grid gap-6 md:grid-cols-2">
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700">
+                Nombre (Español) *
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={category.name}
+                required
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                for="name_en"
+                class="block text-sm font-medium text-gray-700"
+              >
+                Nombre (Inglés)
+              </label>
+              <input
+                type="text"
+                id="name_en"
+                name="name_en"
+                value={category.name_en || ""}
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div class="md:col-span-2">
+              <p class="text-sm text-gray-600">
+                La imagen principal se gestiona en la pestaña "Imágenes" más abajo.
+              </p>
+            </div>
+
+            <div>
+              <label
+                for="status"
+                class="block text-sm font-medium text-gray-700"
+              >
+                Estado *
+              </label>
+              <select
+                id="status"
+                name="status"
+                required
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="active" selected={category.status === "active"}>
+                  Activo
+                </option>
+                <option
+                  value="inactive"
+                  selected={category.status === "inactive"}
+                >
+                  Inactivo
+                </option>
+                <option value="draft" selected={category.status === "draft"}>
+                  Borrador
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-6 md:grid-cols-2">
+            <div>
+              <label
+                for="description"
+                class="block text-sm font-medium text-gray-700"
+              >
+                Descripción (Español)
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                rows="4"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >{category.description || ""}</textarea>
+            </div>
+
+            <div>
+              <label
+                for="description_en"
+                class="block text-sm font-medium text-gray-700"
+              >
+                Descripción (Inglés)
+              </label>
+              <textarea
+                id="description_en"
+                name="description_en"
+                rows="4"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >{category.description_en || ""}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Especificaciones Técnicas -->
+        <div class="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 class="mb-4 text-xl font-bold text-gray-900">
+            Especificaciones Técnicas
+          </h2>
+
+          <div class="grid gap-6 md:grid-cols-3">
+            <div>
+              <label
+                for="efficiency_class"
+                class="block text-sm font-medium text-gray-700"
+              >
+                Clase de Eficiencia
+              </label>
+              <input
+                type="text"
+                id="efficiency_class"
+                name="efficiency_class"
+                value={category.efficiency_class || ""}
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                for="max_temperature"
+                class="block text-sm font-medium text-gray-700"
+              >
+                Temperatura Máxima
+              </label>
+              <input
+                type="text"
+                id="max_temperature"
+                name="max_temperature"
+                value={category.max_temperature || ""}
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                for="frame_material"
+                class="block text-sm font-medium text-gray-700"
+              >
+                Material del Marco
+              </label>
+              <input
+                type="text"
+                id="frame_material"
+                name="frame_material"
+                value={category.frame_material || ""}
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-6 md:grid-cols-2">
+            <DynamicListInput
+              id="efficiency"
+              name="efficiency"
+              label="Eficiencia (Español)"
+              placeholder="Ej: 99.997%"
+              helpText="Agrega cada valor de eficiencia como un elemento de la lista"
+              initialItems={category.efficiency ? category.efficiency.split('\n').filter(item => item.trim()) : []}
+            />
+            <DynamicListInput
+              id="efficiency_en"
+              name="efficiency_en"
+              label="Eficiencia (Inglés)"
+              placeholder="Ej: 99.997%"
+              helpText="Agrega cada valor de eficiencia como un elemento de la lista"
+              initialItems={category.efficiency_en ? category.efficiency_en.split('\n').filter(item => item.trim()) : []}
+            />
+          </div>
+
+          <div class="mt-6 grid gap-6 md:grid-cols-2">
+            <DynamicListInput
+              id="characteristics"
+              name="characteristics"
+              label="Características (Español)"
+              placeholder="Ej: Marco de aluminio"
+              helpText="Agrega cada característica como un elemento de la lista"
+              initialItems={category.characteristics ? category.characteristics.split('\n').filter(item => item.trim()) : []}
+            />
+            <DynamicListInput
+              id="characteristics_en"
+              name="characteristics_en"
+              label="Características (Inglés)"
+              placeholder="Ej: Aluminum frame"
+              helpText="Agrega cada característica como un elemento de la lista"
+              initialItems={category.characteristics_en ? category.characteristics_en.split('\n').filter(item => item.trim()) : []}
+            />
+          </div>
+        </div>
+
+        <!-- Información Adicional -->
+        <div class="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 class="mb-4 text-xl font-bold text-gray-900">
+            Información Adicional
+          </h2>
+
+          <div class="space-y-6">
+            <div class="grid gap-6 md:grid-cols-2">
+              <div>
+                <label
+                  for="typical_installation"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Instalación Típica (Español)
+                </label>
+                <textarea
+                  id="typical_installation"
+                  name="typical_installation"
+                  rows="3"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >{category.typical_installation || ""}</textarea>
+              </div>
+
+              <div>
+                <label
+                  for="typical_installation_en"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Instalación Típica (Inglés)
+                </label>
+                <textarea
+                  id="typical_installation_en"
+                  name="typical_installation_en"
+                  rows="3"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >{category.typical_installation_en || ""}</textarea>
+              </div>
+            </div>
+
+            <div class="grid gap-6 md:grid-cols-2">
+              <div>
+                <label
+                  for="applications"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Aplicaciones (Español)
+                </label>
+                <textarea
+                  id="applications"
+                  name="applications"
+                  rows="3"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >{category.applications || ""}</textarea>
+              </div>
+
+              <div>
+                <label
+                  for="applications_en"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Aplicaciones (Inglés)
+                </label>
+                <textarea
+                  id="applications_en"
+                  name="applications_en"
+                  rows="3"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >{category.applications_en || ""}</textarea>
+              </div>
+            </div>
+
+            <div class="grid gap-6 md:grid-cols-2">
+              <DynamicListInput
+                id="benefits"
+                name="benefits"
+                label="Beneficios (Español)"
+                placeholder="Ej: Compacto y liviano"
+                helpText="Agrega cada beneficio como un elemento de la lista"
+                initialItems={category.benefits ? category.benefits.split('\n').filter(item => item.trim()) : []}
+              />
+              <DynamicListInput
+                id="benefits_en"
+                name="benefits_en"
+                label="Beneficios (Inglés)"
+                placeholder="Ej: Compact and lightweight"
+                helpText="Agrega cada beneficio como un elemento de la lista"
+                initialItems={category.benefits_en ? category.benefits_en.split('\n').filter(item => item.trim()) : []}
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex items-center justify-end gap-4">
+          <a
+            href="/admin/filter-categories"
+            class="rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            Cancelar
+          </a>
+          <button
+            type="submit"
+            class="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tab: Imágenes -->
+    <div id="content-images" class="tab-content hidden">
+      <CategoryImageManager
+        categoryId={categoryId}
+        categoryName={category.name}
+        mainImageUrl={category.main_image}
+      />
+    </div>
+
+    <!-- Tab: Variantes -->
+    <div id="content-variants" class="tab-content hidden">
+      <div class="space-y-6">
+        <!-- Agregar Variante -->
+        <div class="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 class="mb-4 text-xl font-bold text-gray-900">
+            Agregar Variante
+          </h2>
+
+          <form method="POST" class="space-y-4">
+            <input type="hidden" name="action" value="add_variant" />
+
+            <div class="grid gap-4 md:grid-cols-5">
+              <div>
+                <label
+                  for="bind_code"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Código BIND *
+                </label>
+                <input
+                  type="text"
+                  id="bind_code"
+                  name="bind_code"
+                  required
+                  placeholder="HGD1"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="nominal_size"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Medida Nominal *
+                </label>
+                <input
+                  type="text"
+                  id="nominal_size"
+                  name="nominal_size"
+                  required
+                  placeholder='9.125" x 9.125" x 3"'
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="real_size"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Medida Real *
+                </label>
+                <input
+                  type="text"
+                  id="real_size"
+                  name="real_size"
+                  required
+                  placeholder="231 x 231 x 75 mm"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="price"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Precio *
+                </label>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  required
+                  step="0.01"
+                  placeholder="158.00"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="stock"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Stock
+                </label>
+                <input
+                  type="number"
+                  id="stock"
+                  name="stock"
+                  value="0"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="is_active"
+                name="is_active"
+                checked
+                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label for="is_active" class="ml-2 text-sm text-gray-700">
+                Activo
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              + Agregar Variante
+            </button>
+          </form>
+        </div>
+
+        <!-- Lista de Variantes -->
+        <div class="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 class="mb-4 text-xl font-bold text-gray-900">
+            Variantes ({variants.length})
+          </h2>
+
+          {
+            variants.length === 0 ? (
+              <p class="text-center text-gray-500">
+                No hay variantes. Agrega una arriba.
+              </p>
+            ) : (
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                        Código BIND
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                        Medida Nominal
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                        Medida Real
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                        Precio
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                        Stock
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                        Estado
+                      </th>
+                      <th class="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 bg-white">
+                    {variants.map((variant) => (
+                      <tr class="hover:bg-gray-50">
+                        <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+                          {variant.bind_code}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                          {variant.nominal_size}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                          {variant.real_size}
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                          ${formatPrice(variant.price)}
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                          {variant.stock}
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3">
+                          {variant.is_active ? (
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">
+                              Activo
+                            </span>
+                          ) : (
+                            <span class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold text-red-800">
+                              Inactivo
+                            </span>
+                          )}
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                          <button
+                            onclick={`editVariant(${JSON.stringify(variant).replace(/"/g, "&quot;")})`}
+                            class="mr-2 text-blue-600 hover:text-blue-900"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onclick={`deleteVariant(${variant.id}, '${variant.bind_code}')`}
+                            class="text-red-600 hover:text-red-900"
+                          >
+                            Eliminar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script define:vars={{ categoryId }}>
+  // Tab management
+  function showTab(tabName) {
+    // Hide all content
+    document.querySelectorAll(".tab-content").forEach((content) => {
+      content.classList.add("hidden");
+    });
+
+    // Reset all buttons
+    document.querySelectorAll(".tab-button").forEach((button) => {
+      button.classList.remove("border-blue-500", "text-blue-600");
+      button.classList.add("border-transparent", "text-gray-500");
+    });
+
+    // Show selected content
+    document.getElementById(`content-${tabName}`).classList.remove("hidden");
+
+    // Highlight selected button
+    const button = document.getElementById(`tab-${tabName}`);
+    button.classList.remove("border-transparent", "text-gray-500");
+    button.classList.add("border-blue-500", "text-blue-600");
+  }
+
+  // Delete image
+  async function deleteImage(id, filename) {
+    if (!confirm(`¿Eliminar imagen "${filename}"?`)) return;
+
+    try {
+      const response = await fetch(`/api/filter-categories/images/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        alert("Imagen eliminada");
+        window.location.reload();
+      } else {
+        alert("Error al eliminar la imagen");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error al eliminar la imagen");
+    }
+  }
+
+  // Delete variant
+  async function deleteVariant(id, bindCode) {
+    if (!confirm(`¿Eliminar variante "${bindCode}"?`)) return;
+
+    try {
+      const response = await fetch(`/api/filter-categories/variants/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        alert("Variante eliminada");
+        window.location.reload();
+      } else {
+        alert("Error al eliminar la variante");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error al eliminar la variante");
+    }
+  }
+
+  // Edit variant (show modal or populate form)
+  function editVariant(variant) {
+    // For simplicity, we'll use prompt - you can implement a modal later
+    const bindCode = prompt("Código BIND:", variant.bind_code);
+    if (!bindCode) return;
+
+    const nominalSize = prompt("Medida Nominal:", variant.nominal_size);
+    if (!nominalSize) return;
+
+    const realSize = prompt("Medida Real:", variant.real_size);
+    if (!realSize) return;
+
+    const price = parseFloat(prompt("Precio:", variant.price));
+    if (isNaN(price)) return;
+
+    const stock = parseInt(prompt("Stock:", variant.stock));
+    if (isNaN(stock)) return;
+
+    const isActive = confirm("¿Variante activa?");
+
+    // Create form and submit
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.innerHTML = `
+      <input type="hidden" name="action" value="update_variant">
+      <input type="hidden" name="variant_id" value="${variant.id}">
+      <input type="hidden" name="bind_code" value="${bindCode}">
+      <input type="hidden" name="nominal_size" value="${nominalSize}">
+      <input type="hidden" name="real_size" value="${realSize}">
+      <input type="hidden" name="price" value="${price}">
+      <input type="hidden" name="stock" value="${stock}">
+      ${isActive ? '<input type="hidden" name="is_active" value="on">' : ""}
+    `;
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  // Make functions global
+  (window as any).showTab = showTab;
+  (window as any).deleteImage = deleteImage;
+  (window as any).deleteVariant = deleteVariant;
+  (window as any).editVariant = editVariant;
+</script>

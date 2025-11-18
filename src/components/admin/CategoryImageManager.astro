@@ -1,0 +1,469 @@
+---
+import { getCategoryImages } from '@/lib/filter-category-service';
+
+interface Props {
+  categoryId: number;
+  categoryName: string;
+  mainImageUrl?: string | null;
+}
+
+const { categoryId, categoryName, mainImageUrl } = Astro.props;
+
+// Obtener imágenes del carrusel
+const carouselImages = await getCategoryImages(categoryId);
+const carouselImagesFiltered = carouselImages.filter(img => !img.is_primary);
+---
+
+<div class="space-y-8">
+  <!-- Imagen Principal -->
+  <div class="rounded-lg border border-gray-200 bg-white p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Imagen Principal</h3>
+    <p class="text-sm text-gray-600 mb-4">
+      Esta imagen se mostrará como la imagen principal de la categoría.
+    </p>
+    
+    <div class="space-y-4">
+      <!-- Preview de imagen principal (nueva) -->
+      <div id="primary-image-preview" class="hidden">
+        <div class="relative inline-block">
+          <img
+            id="primary-image-preview-img"
+            src=""
+            alt="Vista previa imagen principal"
+            class="h-48 w-48 rounded-lg border border-gray-300 object-cover"
+          />
+          <button
+            type="button"
+            id="remove-primary-image"
+            class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+            title="Eliminar imagen"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <input type="hidden" id="primary-image-url-new" name="main_image" value="" />
+      </div>
+
+      <!-- Imagen principal existente -->
+      {mainImageUrl && (
+        <div id="existing-primary-image" class="relative inline-block">
+          <img
+            src={mainImageUrl}
+            alt="Imagen principal actual"
+            class="h-48 w-48 rounded-lg border border-gray-300 object-cover"
+          />
+          <button
+            type="button"
+            id="remove-existing-primary-image"
+            class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+            title="Eliminar imagen"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <input type="hidden" id="primary-image-url-existing" name="main_image" value={mainImageUrl} />
+        </div>
+      )}
+
+      <!-- Uploader de imagen principal -->
+      <div>
+        <label
+          for="primary-image-input"
+          class="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 hover:border-gray-400"
+        >
+          <div class="text-center">
+            <svg
+              class="mx-auto h-12 w-12 text-gray-400"
+              stroke="currentColor"
+              fill="none"
+              viewBox="0 0 48 48"
+            >
+              <path
+                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <p class="mt-2 text-sm text-gray-600">
+              <span class="font-semibold">Click para subir</span> o arrastra y suelta
+            </p>
+            <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+          </div>
+          <input
+            type="file"
+            id="primary-image-input"
+            accept="image/*"
+            class="hidden"
+          />
+        </label>
+        <div id="primary-image-upload-status" class="mt-2 text-sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Imágenes de Carrusel -->
+  <div class="rounded-lg border border-gray-200 bg-white p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900">Imágenes de Carrusel</h3>
+        <p class="text-sm text-gray-600 mt-1">
+          Puedes agregar hasta 4 imágenes adicionales para el carrusel.
+        </p>
+      </div>
+      <span class="text-sm text-gray-500">
+        {carouselImagesFiltered.length}/4
+      </span>
+    </div>
+
+    <!-- Galería de imágenes de carrusel existentes -->
+    {carouselImagesFiltered.length > 0 && (
+      <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        {carouselImagesFiltered.map((image) => (
+          <div class="relative group">
+            <img
+              src={image.image_url}
+              alt={image.alt_text || categoryName}
+              class="h-32 w-full rounded-lg border border-gray-300 object-cover"
+            />
+            <button
+              type="button"
+              onclick={`deleteCarouselImage(${image.id})`}
+              class="absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block"
+              title="Eliminar imagen"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <!-- Uploader de imágenes de carrusel -->
+    {carouselImagesFiltered.length < 4 && (
+      <div>
+        <label
+          for="carousel-image-input"
+          class="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 hover:border-gray-400"
+        >
+          <div class="text-center">
+            <svg
+              class="mx-auto h-12 w-12 text-gray-400"
+              stroke="currentColor"
+              fill="none"
+              viewBox="0 0 48 48"
+            >
+              <path
+                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <p class="mt-2 text-sm text-gray-600">
+              <span class="font-semibold">Click para subir</span> o arrastra y suelta
+            </p>
+            <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+          </div>
+          <input
+            type="file"
+            id="carousel-image-input"
+            accept="image/*"
+            multiple
+            class="hidden"
+          />
+        </label>
+        <div id="carousel-image-upload-status" class="mt-2 text-sm"></div>
+      </div>
+    )}
+
+    {carouselImagesFiltered.length >= 4 && (
+      <p class="text-sm text-gray-500 text-center py-4">
+        Has alcanzado el límite de 4 imágenes de carrusel.
+      </p>
+    )}
+  </div>
+</div>
+
+<script define:vars={{ categoryId }}>
+  const categoryIdNum = parseInt(categoryId);
+
+  // ===== IMAGEN PRINCIPAL =====
+  const primaryImageInput = document.getElementById('primary-image-input');
+  const primaryImagePreview = document.getElementById('primary-image-preview');
+  const primaryImagePreviewImg = document.getElementById('primary-image-preview-img');
+  const primaryImageUrlNew = document.getElementById('primary-image-url-new');
+  const primaryImageUrlExisting = document.getElementById('primary-image-url-existing');
+  const existingPrimaryImage = document.getElementById('existing-primary-image');
+  const removePrimaryImageBtn = document.getElementById('remove-primary-image');
+  const removeExistingPrimaryImageBtn = document.getElementById('remove-existing-primary-image');
+  const primaryImageUploadStatus = document.getElementById('primary-image-upload-status');
+
+  if (primaryImageInput) {
+    primaryImageInput.addEventListener('change', async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      // Validar tamaño (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
+        primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+        return;
+      }
+
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
+        primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+        return;
+      }
+
+      primaryImageUploadStatus.textContent = '⏳ Subiendo imagen...';
+      primaryImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('categoryId', categoryIdNum.toString());
+        formData.append('imageType', 'primary');
+
+        const response = await fetch('/api/filter-categories/upload-image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.url) {
+          // Ocultar imagen existente si hay una
+          if (existingPrimaryImage) {
+            existingPrimaryImage.classList.add('hidden');
+          }
+          
+          // Mostrar preview de nueva imagen
+          primaryImagePreviewImg.src = result.url;
+          primaryImagePreview.classList.remove('hidden');
+          if (primaryImageUrlNew) {
+            primaryImageUrlNew.value = result.url;
+          }
+          
+          // Guardar la URL en la BD actualizando la categoría
+          await savePrimaryImageToDB(result.url);
+          
+          primaryImageUploadStatus.textContent = '✅ Imagen subida y guardada correctamente';
+          primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+        } else {
+          primaryImageUploadStatus.textContent = `❌ Error: ${result.error || 'Error desconocido'}`;
+          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+        }
+      } catch (error) {
+        console.error('Error subiendo imagen principal:', error);
+        primaryImageUploadStatus.textContent = '❌ Error al subir la imagen';
+        primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+      }
+    });
+  }
+
+  if (removePrimaryImageBtn) {
+    removePrimaryImageBtn.addEventListener('click', async () => {
+      if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
+        return;
+      }
+
+      // Eliminar de la BD
+      await savePrimaryImageToDB('');
+
+      if (primaryImagePreview) {
+        primaryImagePreview.classList.add('hidden');
+      }
+      if (primaryImageUrlNew) {
+        primaryImageUrlNew.value = '';
+      }
+      if (primaryImageInput) {
+        primaryImageInput.value = '';
+      }
+
+      // Recargar para actualizar la vista
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    });
+  }
+
+  // Manejar eliminación de imagen principal existente
+  if (removeExistingPrimaryImageBtn) {
+    removeExistingPrimaryImageBtn.addEventListener('click', async () => {
+      if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
+        return;
+      }
+
+      // Eliminar de la BD
+      await savePrimaryImageToDB('');
+
+      // Recargar para actualizar la vista
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    });
+  }
+
+  // ===== IMÁGENES DE CARRUSEL =====
+  const carouselImageInput = document.getElementById('carousel-image-input');
+  const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
+  const maxCarouselImages = 4;
+
+  if (carouselImageInput) {
+    carouselImageInput.addEventListener('change', async (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files || []);
+      if (files.length === 0) return;
+
+      // Obtener número actual de imágenes de carrusel
+      const currentCarouselCount = document.querySelectorAll('[data-carousel-image]').length;
+      const availableSlots = maxCarouselImages - currentCarouselCount;
+
+      if (files.length > availableSlots) {
+        carouselImageUploadStatus.textContent = `❌ Solo puedes agregar ${availableSlots} imagen(es) más`;
+        carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+        return;
+      }
+
+      carouselImageUploadStatus.textContent = `⏳ Subiendo ${files.length} imagen(es)...`;
+      carouselImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const file of files) {
+        // Validar tamaño (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          errorCount++;
+          continue;
+        }
+
+        // Validar tipo
+        if (!file.type.startsWith('image/')) {
+          errorCount++;
+          continue;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('categoryId', categoryIdNum.toString());
+          formData.append('imageType', 'carousel');
+
+          const response = await fetch('/api/filter-categories/upload-image', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (result.success && result.url) {
+            // Guardar la imagen en la BD
+            await saveCarouselImageToDB(result.url);
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (error) {
+          console.error('Error subiendo imagen de carrusel:', error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        carouselImageUploadStatus.textContent = `✅ ${successCount} imagen(es) subida(s) correctamente`;
+        carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+        // Recargar la página para mostrar las nuevas imágenes
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        carouselImageUploadStatus.textContent = `❌ Error al subir las imágenes`;
+        carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+      }
+
+      // Limpiar input
+      if (carouselImageInput) {
+        carouselImageInput.value = '';
+      }
+    });
+  }
+
+  // Función para guardar imagen principal en la BD
+  async function savePrimaryImageToDB(imageUrl: string) {
+    try {
+      const response = await fetch(`/api/filter-categories/${categoryIdNum}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          main_image: imageUrl,
+        }),
+      });
+
+      const result = await response.json();
+      return result.success;
+    } catch (error) {
+      console.error('Error guardando imagen principal en BD:', error);
+      return false;
+    }
+  }
+
+  // Función para guardar imagen de carrusel en la BD
+  async function saveCarouselImageToDB(imageUrl: string) {
+    try {
+      const response = await fetch(`/api/filter-categories/images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          categoryId: categoryIdNum,
+          imageUrl: imageUrl,
+          isPrimary: false,
+        }),
+      });
+
+      const result = await response.json();
+      return result.success;
+    } catch (error) {
+      console.error('Error guardando imagen en BD:', error);
+      return false;
+    }
+  }
+
+  // Función para eliminar imagen de carrusel
+  async function deleteCarouselImage(imageId: number) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/filter-categories/images/${imageId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('Imagen eliminada correctamente');
+        window.location.reload();
+      } else {
+        alert('Error al eliminar la imagen');
+      }
+    } catch (error) {
+      console.error('Error eliminando imagen:', error);
+      alert('Error al eliminar la imagen');
+    }
+  }
+
+  // Hacer función global
+  (window as any).deleteCarouselImage = deleteCarouselImage;
+</script>
+

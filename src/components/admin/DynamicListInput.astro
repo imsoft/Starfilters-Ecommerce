@@ -1,0 +1,268 @@
+---
+interface Props {
+  id: string;
+  name: string;
+  label: string;
+  placeholder?: string;
+  initialItems?: string[] | string;
+  helpText?: string;
+}
+
+const { id, name, label, placeholder = "Agregar elemento", initialItems = [], helpText } = Astro.props;
+
+// Convertir texto plano a array si viene como string separado por saltos de línea
+let items: string[] = [];
+if (Array.isArray(initialItems) && initialItems.length > 0) {
+  items = initialItems.filter(item => item && item.trim());
+} else if (typeof initialItems === 'string' && initialItems) {
+  items = initialItems.split('\n').filter(item => item.trim());
+}
+---
+
+<div class="space-y-2">
+  <label for={id} class="block text-sm font-medium text-gray-700">
+    {label}
+  </label>
+  
+  <div id={`${id}-container`} class="space-y-2">
+    {items.length > 0 ? (
+      items.map((item, index) => (
+        <div class="flex items-center gap-2" data-item-index={index}>
+          <input
+            type="text"
+            name={`${name}[]`}
+            value={item}
+            class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder={placeholder}
+          />
+          <button
+            type="button"
+            data-remove-index={index}
+            class="remove-item-btn rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
+            title="Eliminar elemento"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      ))
+    ) : (
+      <div class="text-sm text-gray-500 italic">No hay elementos. Haz clic en "Agregar elemento" para comenzar.</div>
+    )}
+  </div>
+  
+  <button
+    type="button"
+    id={`${id}-add-button`}
+    data-list-id={id}
+    data-field-name={name}
+    data-placeholder={placeholder}
+    class="mt-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+  >
+    + Agregar elemento
+  </button>
+  
+  {helpText && (
+    <p class="mt-1 text-xs text-gray-500">{helpText}</p>
+  )}
+  
+  <!-- Campo hidden para almacenar el JSON de la lista -->
+  <input
+    type="hidden"
+    id={`${id}-json`}
+    name={name}
+    value={JSON.stringify(items)}
+  />
+</div>
+
+<script>
+  // Funciones globales (solo se definen una vez)
+  if (typeof window !== 'undefined') {
+    // Función para agregar un elemento a la lista
+    if (!(window as any).__addListItem) {
+      (window as any).__addListItem = function(listId: string, fieldName: string, placeholderText: string) {
+        const container = document.getElementById(`${listId}-container`);
+        const jsonInput = document.getElementById(`${listId}-json`) as HTMLInputElement;
+        
+        if (!container || !jsonInput) {
+          console.error('No se encontró el contenedor o el input JSON para:', listId);
+          return;
+        }
+        
+        // Obtener el índice correcto (contar solo los divs de items, no el mensaje de "no hay elementos")
+        const existingItems = container.querySelectorAll('[data-item-index]');
+        const itemIndex = existingItems.length;
+        
+        // Remover el mensaje de "no hay elementos" si existe
+        const noItemsMsg = container.querySelector('.text-sm.text-gray-500.italic');
+        if (noItemsMsg) {
+          noItemsMsg.remove();
+        }
+        
+        // Crear nuevo elemento
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'flex items-center gap-2';
+        itemDiv.setAttribute('data-item-index', itemIndex.toString());
+        
+        // Escapar el placeholder para evitar problemas con comillas
+        const escapedPlaceholder = placeholderText.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+        
+        itemDiv.innerHTML = `
+          <input
+            type="text"
+            name="${fieldName}[]"
+            class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="${escapedPlaceholder}"
+          />
+          <button
+            type="button"
+            data-remove-index="${itemIndex}"
+            class="remove-item-btn rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
+            title="Eliminar elemento"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        `;
+        
+        container.appendChild(itemDiv);
+        
+        // Agregar listener al botón de eliminar
+        const removeBtn = itemDiv.querySelector('.remove-item-btn');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', () => {
+            itemDiv.remove();
+            (window as any).__updateListJson(listId);
+            // Si no hay más elementos, mostrar el mensaje
+            if (container.querySelectorAll('[data-item-index]').length === 0) {
+              const noItemsDiv = document.createElement('div');
+              noItemsDiv.className = 'text-sm text-gray-500 italic';
+              noItemsDiv.textContent = 'No hay elementos. Haz clic en "Agregar elemento" para comenzar.';
+              container.appendChild(noItemsDiv);
+            }
+          });
+        }
+        
+        // Agregar listener al nuevo input
+        const newInput = itemDiv.querySelector('input[type="text"]');
+        if (newInput) {
+          newInput.addEventListener('input', () => (window as any).__updateListJson(listId));
+          // Enfocar el nuevo input
+          (newInput as HTMLInputElement).focus();
+        }
+        
+        // Actualizar JSON
+        (window as any).__updateListJson(listId);
+      };
+    }
+    
+    // Función para actualizar el JSON hidden
+    if (!(window as any).__updateListJson) {
+      (window as any).__updateListJson = function(listId: string) {
+        const container = document.getElementById(`${listId}-container`);
+        const jsonInput = document.getElementById(`${listId}-json`) as HTMLInputElement;
+        
+        if (!container || !jsonInput) return;
+        
+        const items: string[] = [];
+        const inputs = container.querySelectorAll('input[type="text"]');
+        inputs.forEach((input) => {
+          const value = (input as HTMLInputElement).value.trim();
+          if (value) {
+            items.push(value);
+          }
+        });
+        
+        jsonInput.value = JSON.stringify(items);
+      };
+    }
+    
+    // Inicializar todos los componentes cuando el DOM esté listo
+    function initializeAllComponents() {
+      const addButtons = document.querySelectorAll('[data-list-id]');
+      
+      addButtons.forEach((button) => {
+        const listId = button.getAttribute('data-list-id');
+        const fieldName = button.getAttribute('data-field-name');
+        const placeholder = button.getAttribute('data-placeholder');
+        
+        if (!listId || !fieldName) return;
+        
+        const container = document.getElementById(`${listId}-container`);
+        const jsonInput = document.getElementById(`${listId}-json`) as HTMLInputElement;
+        
+        if (!container || !jsonInput) {
+          console.error('No se encontraron elementos para:', listId);
+          return;
+        }
+        
+        // Inicializar JSON con los datos existentes
+        (window as any).__updateListJson(listId);
+        
+        // Agregar listener al botón de agregar (solo una vez)
+        if (!button.hasAttribute('data-initialized')) {
+          button.setAttribute('data-initialized', 'true');
+          
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            (window as any).__addListItem(listId, fieldName, placeholder || 'Agregar elemento');
+          });
+        }
+        
+        // Agregar listeners a los botones de eliminar existentes (solo dentro de este contenedor)
+        const removeButtons = container.querySelectorAll('.remove-item-btn');
+        removeButtons.forEach((btn) => {
+          if (!btn.hasAttribute('data-initialized')) {
+            btn.setAttribute('data-initialized', 'true');
+            
+            btn.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              const button = e.currentTarget as HTMLElement;
+              const index = button.getAttribute('data-remove-index');
+              if (index !== null) {
+                const item = container.querySelector(`[data-item-index="${index}"]`);
+                if (item) {
+                  item.remove();
+                  (window as any).__updateListJson(listId);
+                  // Si no hay más elementos, mostrar el mensaje
+                  if (container.querySelectorAll('[data-item-index]').length === 0) {
+                    const noItemsDiv = document.createElement('div');
+                    noItemsDiv.className = 'text-sm text-gray-500 italic';
+                    noItemsDiv.textContent = 'No hay elementos. Haz clic en "Agregar elemento" para comenzar.';
+                    container.appendChild(noItemsDiv);
+                  }
+                }
+              }
+            });
+          }
+        });
+        
+        // Agregar listeners a los inputs existentes (solo dentro de este contenedor)
+        const inputs = container.querySelectorAll('input[type="text"]');
+        inputs.forEach((input) => {
+          if (!input.hasAttribute('data-initialized')) {
+            input.setAttribute('data-initialized', 'true');
+            input.addEventListener('input', () => (window as any).__updateListJson(listId));
+          }
+        });
+        
+      });
+    }
+    
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeAllComponents);
+    } else {
+      // DOM ya está listo
+      initializeAllComponents();
+    }
+    
+    // También ejecutar después de un pequeño delay para asegurar que todos los componentes estén renderizados
+    setTimeout(initializeAllComponents, 500);
+  }
+</script>
+
