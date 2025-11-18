@@ -95,7 +95,7 @@ if (Astro.request.method === 'POST') {
     <div class="mb-8">
       <a
         href="/admin/discount-codes"
-        class="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+        class="text-sm font-medium text-primary hover:text-primary/80"
       >
         ← Volver a códigos de descuento
       </a>
@@ -128,7 +128,7 @@ if (Astro.request.method === 'POST') {
             id="code"
             required
             value={formData.code}
-            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
             placeholder="VERANO2025"
           />
           <p class="mt-1 text-sm text-gray-500">
@@ -169,7 +169,7 @@ if (Astro.request.method === 'POST') {
             min="0"
             step="0.01"
             value={formData.discount_value}
-            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
             placeholder="10.00"
           />
         </div>
@@ -186,7 +186,7 @@ if (Astro.request.method === 'POST') {
             min="0"
             step="0.01"
             value={formData.min_purchase_amount}
-            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
             placeholder="500.00"
           />
           <p class="mt-1 text-sm text-gray-500">
@@ -206,7 +206,7 @@ if (Astro.request.method === 'POST') {
             min="0"
             step="0.01"
             value={formData.max_discount_amount}
-            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
             placeholder="1000.00"
           />
           <p class="mt-1 text-sm text-gray-500">
@@ -225,7 +225,7 @@ if (Astro.request.method === 'POST') {
             id="usage_limit"
             min="1"
             value={formData.usage_limit}
-            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
             placeholder="100"
           />
           <p class="mt-1 text-sm text-gray-500">
@@ -243,7 +243,7 @@ if (Astro.request.method === 'POST') {
             id="description"
             rows={3}
             value={formData.description}
-            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
             placeholder="Descripción interna del código de descuento"
           ></textarea>
         </div>
@@ -290,7 +290,7 @@ if (Astro.request.method === 'POST') {
               name="is_active"
               id="is_active"
               checked={formData.is_active}
-              class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+              class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <label for="is_active" class="ml-2 block text-sm text-gray-900">
               Código activo
@@ -308,7 +308,7 @@ if (Astro.request.method === 'POST') {
         </a>
         <button
           type="submit"
-          class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          class="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           Crear código
         </button>

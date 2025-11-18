@@ -167,9 +167,7 @@ if (Astro.request.method === "POST") {
       }
 
       if (updated) {
-        success = "Categoría actualizada exitosamente";
-        category = await getCategoryById(categoryId);
-        images = await getCategoryImages(categoryId);
+        return Astro.redirect("/admin/filter-categories");
       } else {
         error = "Error al actualizar la categoría";
       }
@@ -315,7 +313,7 @@ if (Astro.request.method === "POST") {
 
     <!-- Contenido completo sin tabs -->
     <div class="space-y-8">
-      <form method="POST" class="space-y-8">
+      <form method="POST" id="category-form" class="space-y-8">
         <input type="hidden" name="action" value="update_category" />
 
         <!-- Información Básica -->
@@ -359,34 +357,6 @@ if (Astro.request.method === "POST") {
               <p class="text-sm text-gray-600">
                 La imagen principal se gestiona en la sección "Imágenes" más abajo.
               </p>
-            </div>
-
-            <div>
-              <label
-                for="status"
-                class="block text-sm font-medium text-gray-700"
-              >
-                Estado *
-              </label>
-              <select
-                id="status"
-                name="status"
-                required
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="active" selected={category.status === "active"}>
-                  Activo
-                </option>
-                <option
-                  value="inactive"
-                  selected={category.status === "inactive"}
-                >
-                  Inactivo
-                </option>
-                <option value="draft" selected={category.status === "draft"}>
-                  Borrador
-                </option>
-              </select>
             </div>
           </div>
 
@@ -610,25 +580,8 @@ if (Astro.request.method === "POST") {
           </div>
         </div>
 
-        <!-- Botones -->
-        <div class="flex items-center justify-end gap-4">
-          <a
-            href="/admin/filter-categories"
-            class="rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
-          >
-            Cancelar
-          </a>
-          <button
-            type="submit"
-            class="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-          >
-            Guardar Cambios
-          </button>
-        </div>
-      </form>
-
       <!-- Sección: Imágenes -->
-      <div class="mt-8 rounded-lg border border-gray-200 bg-white p-6">
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6">
         <h2 class="mb-4 text-xl font-bold text-gray-900">
           Imágenes ({images.length})
         </h2>
@@ -640,7 +593,7 @@ if (Astro.request.method === "POST") {
       </div>
 
       <!-- Sección: Variantes -->
-      <div class="mt-8 space-y-6">
+      <div class="mt-12 space-y-8">
         <!-- Agregar Variante -->
         <div class="rounded-lg border border-gray-200 bg-white p-6">
           <h2 class="mb-4 text-xl font-bold text-gray-900">
@@ -760,7 +713,7 @@ if (Astro.request.method === "POST") {
         </div>
 
         <!-- Lista de Variantes -->
-        <div class="rounded-lg border border-gray-200 bg-white p-6">
+        <div class="mt-8 rounded-lg border border-gray-200 bg-white p-6">
           <h2 class="mb-4 text-xl font-bold text-gray-900">
             Variantes ({variants.length})
           </h2>
@@ -829,14 +782,23 @@ if (Astro.request.method === "POST") {
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
                           <button
-                            onclick={`editVariant(${JSON.stringify(variant).replace(/"/g, "&quot;")})`}
-                            class="mr-2 text-blue-600 hover:text-blue-900"
+                            type="button"
+                            data-variant-id={String(variant.id)}
+                            data-bind-code={String(variant.bind_code || '')}
+                            data-nominal-size={String(variant.nominal_size || '')}
+                            data-real-size={String(variant.real_size || '')}
+                            data-price={String(variant.price)}
+                            data-stock={String(variant.stock || 0)}
+                            data-is-active={variant.is_active ? 'true' : 'false'}
+                            class="edit-variant-btn mr-2 text-blue-600 hover:text-blue-900"
                           >
                             Editar
                           </button>
                           <button
-                            onclick={`deleteVariant(${variant.id}, '${variant.bind_code}')`}
-                            class="text-red-600 hover:text-red-900"
+                            type="button"
+                            data-variant-id={String(variant.id)}
+                            data-bind-code={String(variant.bind_code || '')}
+                            class="delete-variant-btn text-red-600 hover:text-red-900"
                           >
                             Eliminar
                           </button>
@@ -850,11 +812,60 @@ if (Astro.request.method === "POST") {
           }
         </div>
       </div>
+
+        <!-- Estado -->
+        <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6">
+          <div>
+            <label
+              for="status"
+              class="block text-sm font-medium text-gray-700"
+            >
+              Estado *
+            </label>
+            <select
+              id="status"
+              name="status"
+              required
+              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="active" selected={category.status === "active"}>
+                Activo
+              </option>
+              <option
+                value="inactive"
+                selected={category.status === "inactive"}
+              >
+                Inactivo
+              </option>
+              <option value="draft" selected={category.status === "draft"}>
+                Borrador
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="mt-6 flex items-center justify-end gap-4">
+          <a
+            href="/admin/filter-categories"
+            class="rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            Cancelar
+          </a>
+          <button
+            type="submit"
+            id="save-category-btn"
+            class="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </AdminLayout>
 
-<script define:vars={{ categoryId }}>
+<script is:inline define:vars={{ categoryId }}>
   // Delete image
   async function deleteImage(id, filename) {
     if (!confirm(`¿Eliminar imagen "${filename}"?`)) return;
@@ -878,6 +889,7 @@ if (Astro.request.method === "POST") {
 
   // Delete variant
   async function deleteVariant(id, bindCode) {
+    console.log('🗑️ Eliminando variante:', id, bindCode);
     if (!confirm(`¿Eliminar variante "${bindCode}"?`)) return;
 
     try {
@@ -897,45 +909,222 @@ if (Astro.request.method === "POST") {
     }
   }
 
-  // Edit variant (show modal or populate form)
-  function editVariant(variant) {
-    // For simplicity, we'll use prompt - you can implement a modal later
-    const bindCode = prompt("Código BIND:", variant.bind_code);
-    if (!bindCode) return;
+  // Edit variant - populate form with variant data
+  function editVariant(button) {
+    console.log('✏️ Editando variante, botón:', button);
+    const variantId = button.getAttribute('data-variant-id');
+    const bindCode = button.getAttribute('data-bind-code');
+    const nominalSize = button.getAttribute('data-nominal-size');
+    const realSize = button.getAttribute('data-real-size');
+    const price = button.getAttribute('data-price');
+    const stock = button.getAttribute('data-stock');
+    const isActive = button.getAttribute('data-is-active') === 'true';
 
-    const nominalSize = prompt("Medida Nominal:", variant.nominal_size);
-    if (!nominalSize) return;
+    console.log('📋 Datos de variante:', { variantId, bindCode, nominalSize, realSize, price, stock, isActive });
 
-    const realSize = prompt("Medida Real:", variant.real_size);
-    if (!realSize) return;
+    // Find the form to add variant
+    const actionInputs = document.querySelectorAll('input[name="action"]');
+    let addVariantForm = null;
+    actionInputs.forEach((input) => {
+      if (input.value === 'add_variant') {
+        addVariantForm = input.closest('form');
+      }
+    });
+    
+    console.log('📝 Formulario encontrado:', !!addVariantForm);
+    
+    if (!addVariantForm) {
+      console.log('⚠️ Formulario no encontrado, creando uno nuevo');
+      // If form not found, create a new form for editing
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.innerHTML = `
+        <input type="hidden" name="action" value="update_variant">
+        <input type="hidden" name="variant_id" value="${variantId}">
+        <input type="hidden" name="bind_code" value="${bindCode}">
+        <input type="hidden" name="nominal_size" value="${nominalSize}">
+        <input type="hidden" name="real_size" value="${realSize}">
+        <input type="hidden" name="price" value="${price}">
+        <input type="hidden" name="stock" value="${stock}">
+        ${isActive ? '<input type="hidden" name="is_active" value="on">' : ""}
+      `;
+      document.body.appendChild(form);
+      form.submit();
+      return;
+    }
 
-    const price = parseFloat(prompt("Precio:", variant.price));
-    if (isNaN(price)) return;
+    // Populate the form fields
+    const bindCodeInput = addVariantForm.querySelector('input[name="bind_code"]');
+    const nominalSizeInput = addVariantForm.querySelector('input[name="nominal_size"]');
+    const realSizeInput = addVariantForm.querySelector('input[name="real_size"]');
+    const priceInput = addVariantForm.querySelector('input[name="price"]');
+    const stockInput = addVariantForm.querySelector('input[name="stock"]');
+    const isActiveCheckbox = addVariantForm.querySelector('input[name="is_active"]');
+    const actionInput = addVariantForm.querySelector('input[name="action"]');
+    let variantIdInput = addVariantForm.querySelector('input[name="variant_id"]');
 
-    const stock = parseInt(prompt("Stock:", variant.stock));
-    if (isNaN(stock)) return;
+    if (bindCodeInput) bindCodeInput.value = bindCode || '';
+    if (nominalSizeInput) nominalSizeInput.value = nominalSize || '';
+    if (realSizeInput) realSizeInput.value = realSize || '';
+    if (priceInput) priceInput.value = price || '';
+    if (stockInput) stockInput.value = stock || '';
+    if (isActiveCheckbox) isActiveCheckbox.checked = isActive;
 
-    const isActive = confirm("¿Variante activa?");
+    // Change action to update
+    if (actionInput) actionInput.value = 'update_variant';
+    
+    // Add or update variant_id hidden input
+    if (!variantIdInput) {
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = 'variant_id';
+      hiddenInput.value = variantId || '';
+      addVariantForm.appendChild(hiddenInput);
+      variantIdInput = hiddenInput;
+    } else {
+      variantIdInput.value = variantId || '';
+    }
 
-    // Create form and submit
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.innerHTML = `
-      <input type="hidden" name="action" value="update_variant">
-      <input type="hidden" name="variant_id" value="${variant.id}">
-      <input type="hidden" name="bind_code" value="${bindCode}">
-      <input type="hidden" name="nominal_size" value="${nominalSize}">
-      <input type="hidden" name="real_size" value="${realSize}">
-      <input type="hidden" name="price" value="${price}">
-      <input type="hidden" name="stock" value="${stock}">
-      ${isActive ? '<input type="hidden" name="is_active" value="on">' : ""}
-    `;
-    document.body.appendChild(form);
-    form.submit();
+    // Change button text
+    const submitButton = addVariantForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.textContent = 'Actualizar Variante';
+    }
+
+    console.log('✅ Formulario poblado correctamente');
+    
+    // Scroll to form
+    addVariantForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Focus on first input
+    if (bindCodeInput) bindCodeInput.focus();
+  }
+
+  // Initialize buttons when DOM is ready
+  function initializeVariantButtons() {
+    console.log('🔧 Inicializando botones de variantes...');
+    
+    // Use event delegation for variant buttons only
+    // Attach to a specific container to avoid interfering with other forms
+    const variantsContainer = document.querySelector('.mt-12.space-y-8');
+    if (!variantsContainer) {
+      console.error('❌ No se encontró el contenedor de variantes');
+      return;
+    }
+    
+    variantsContainer.addEventListener('click', function(e) {
+      var target = e.target;
+      
+      // Skip if clicking on the main form or its elements
+      var categoryForm = document.getElementById('category-form');
+      if (categoryForm && categoryForm.contains(target)) {
+        return; // Don't interfere with main form
+      }
+      
+      // Handle edit button
+      var editButton = target.closest('.edit-variant-btn');
+      if (editButton) {
+        console.log('🖱️ Click en botón Editar');
+        e.preventDefault();
+        e.stopPropagation();
+        editVariant(editButton);
+        return;
+      }
+      
+      // Handle delete button
+      var deleteButton = target.closest('.delete-variant-btn');
+      if (deleteButton) {
+        console.log('🖱️ Click en botón Eliminar');
+        e.preventDefault();
+        e.stopPropagation();
+        var variantId = deleteButton.getAttribute('data-variant-id');
+        var bindCode = deleteButton.getAttribute('data-bind-code');
+        console.log('📋 Datos:', { variantId: variantId, bindCode: bindCode });
+        if (variantId && bindCode) {
+          deleteVariant(parseInt(variantId), bindCode);
+        } else {
+          console.error('❌ Faltan datos:', { variantId: variantId, bindCode: bindCode });
+        }
+        return;
+      }
+    });
+    
+    console.log('✅ Event listeners agregados para variantes');
   }
 
   // Make functions global
-  (window as any).deleteImage = deleteImage;
-  (window as any).deleteVariant = deleteVariant;
-  (window as any).editVariant = editVariant;
+  window.deleteImage = deleteImage;
+  window.deleteVariant = deleteVariant;
+  window.editVariant = editVariant;
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeVariantButtons();
+      
+      // Ensure form submission works
+      var categoryForm = document.getElementById('category-form');
+      var saveButton = document.getElementById('save-category-btn');
+      
+      if (categoryForm && saveButton) {
+        console.log('✅ Formulario y botón encontrados');
+        
+        // Add submit listener to form
+        categoryForm.addEventListener('submit', function(e) {
+          console.log('📝 Formulario enviándose...');
+          // Let it submit naturally
+        });
+        
+        // Add click listener to button as backup
+        saveButton.addEventListener('click', function(e) {
+          console.log('🖱️ Click en Guardar Cambios');
+          // Force form submission if it doesn't happen naturally
+          setTimeout(function() {
+            if (categoryForm) {
+              console.log('📝 Forzando envío del formulario...');
+              categoryForm.submit();
+            }
+          }, 100);
+        });
+      } else {
+        console.error('❌ No se encontró el formulario o el botón:', {
+          form: !!categoryForm,
+          button: !!saveButton
+        });
+      }
+    });
+  } else {
+    initializeVariantButtons();
+    
+    // Ensure form submission works
+    var categoryForm = document.getElementById('category-form');
+    var saveButton = document.getElementById('save-category-btn');
+    
+    if (categoryForm && saveButton) {
+      console.log('✅ Formulario y botón encontrados');
+      
+      // Add submit listener to form
+      categoryForm.addEventListener('submit', function(e) {
+        console.log('📝 Formulario enviándose...');
+        // Let it submit naturally
+      });
+      
+      // Add click listener to button as backup
+      saveButton.addEventListener('click', function(e) {
+        console.log('🖱️ Click en Guardar Cambios');
+        // Force form submission if it doesn't happen naturally
+        setTimeout(function() {
+          if (categoryForm) {
+            console.log('📝 Forzando envío del formulario...');
+            categoryForm.submit();
+          }
+        }, 100);
+      });
+    } else {
+      console.error('❌ No se encontró el formulario o el botón:', {
+        form: !!categoryForm,
+        button: !!saveButton
+      });
+    }
+  }
 </script>

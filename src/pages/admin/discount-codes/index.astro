@@ -50,7 +50,7 @@ function formatDate(date: Date | null): string {
 }
 
 function getStatusBadgeClass(code: DiscountCode): string {
-  if (!code.is_active) return 'bg-gray-100 text-gray-800';
+  if (!code.is_active) return 'bg-muted text-muted-foreground';
 
   const now = new Date();
   if (code.end_date && new Date(code.end_date) < now) {
