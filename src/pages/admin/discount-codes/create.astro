@@ -63,7 +63,7 @@ if (Astro.request.method === 'POST') {
       await createDiscountCode({
         code: formData.code.trim(),
         description: formData.description.trim() || undefined,
-        discount_type: formData.discount_type,
+        discount_type: formData.discount_type as 'percentage' | 'fixed',
         discount_value: parseFloat(formData.discount_value),
         min_purchase_amount: formData.min_purchase_amount
           ? parseFloat(formData.min_purchase_amount)
