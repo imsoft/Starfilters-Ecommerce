@@ -9,7 +9,8 @@
     "astro": "astro",
     "db:create-discount-codes": "node scripts/create-discount-codes.js",
     "db:create-filter-categories": "node scripts/create-filter-categories.js",
-    "db:verify-consistency": "node scripts/verify-database-consistency.js"
+    "db:verify-consistency": "node scripts/verify-database-consistency.js",
+    "start": "node server.js"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.6",
