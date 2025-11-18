@@ -1,7 +1,7 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
-import { getProductByBindId, updateProduct as updateProductService } from "@/lib/product-service";
+import { getProductById, updateProduct as updateProductService } from "@/lib/product-service";
 import { requireAdmin } from "@/lib/auth-utils";
 import type { Product } from "@/lib/database";
 
@@ -16,14 +16,14 @@ if (redirect) {
   return Astro.redirect(redirect);
 }
 
-const { id: bindId } = Astro.params;
+const { id } = Astro.params;
 
-// Obtener el producto por Bind ID
+// Obtener el producto por ID
 let product: Product | null = null;
 let errorMessage = '';
 
-if (bindId) {
-  product = await getProductByBindId(bindId);
+if (id) {
+  product = await getProductById(parseInt(id));
   if (!product) {
     return Astro.redirect('/admin/products?error=product_not_found');
   }
@@ -48,21 +48,21 @@ if (Astro.request.method === 'POST') {
       status: 'active' as const
     };
 
-    console.log('📝 Actualizando producto en Bind:', bindId, updatedData);
+    console.log('📝 Actualizando producto ID:', product.id, updatedData);
 
     // Validar datos requeridos
     if (!updatedData.name || !updatedData.description || updatedData.price <= 0) {
       throw new Error('Nombre, descripción y precio son campos requeridos');
     }
 
-    // Actualizar el producto en Bind ERP
-    const success = await updateProductService(bindId, updatedData);
+    // Actualizar el producto en la base de datos
+    const success = await updateProductService(product.id, updatedData);
 
     if (success) {
-      console.log('✅ Producto actualizado en Bind');
+      console.log('✅ Producto actualizado');
       return Astro.redirect(`/admin/products?success=updated`);
     } else {
-      errorMessage = 'Error al actualizar el producto en Bind ERP';
+      errorMessage = 'Error al actualizar el producto';
     }
   } catch (error) {
     console.error('Error actualizando producto:', error);

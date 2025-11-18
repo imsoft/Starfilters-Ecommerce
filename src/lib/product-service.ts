@@ -1,273 +1,309 @@
 /**
- * Servicio de Productos - Bind como fuente única
+ * Servicio de Productos - Base de datos local como fuente única
  *
- * Este servicio usa Bind ERP como la fuente única de verdad para productos.
- * MySQL se usa solo como cache opcional para mejorar rendimiento.
+ * Este servicio usa MySQL como la fuente única de verdad para productos.
+ * Bind se usa solo para sincronizar el inventario después de compras.
  */
 
-import {
-  getBindProducts,
-  getAllBindProducts,
-  getBindProductById,
-  createBindProduct,
-  updateBindProduct,
-  deleteBindProduct,
-  type BindProduct,
-  type GetProductsOptions,
-} from './bind';
+import { query } from '@/config/database';
 import type { Product } from './database';
-import { getFromCache, saveToCache, clearCacheKey } from './product-cache';
+import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 
 /**
- * Convertir producto de Bind a formato local
+ * Obtener todos los productos desde la base de datos local
  */
-export const bindProductToLocal = (bindProduct: any): Product => {
-  // Bind API devuelve campos en PascalCase (ID, Title, Code, etc.)
-  // El precio viene en Prices.Items[0].Price, no en Price directamente
-  let price = 0;
+export const getAllProducts = async (): Promise<Product[]> => {
+  try {
+    console.log('🔍 Obteniendo todos los productos desde la base de datos local...');
 
-  // Intentar obtener el precio del primer item en Prices.Items
-  if (bindProduct.Prices?.Items && Array.isArray(bindProduct.Prices.Items) && bindProduct.Prices.Items.length > 0) {
-    price = bindProduct.Prices.Items[0].Price || 0;
-  } else if (bindProduct.Price) {
-    price = bindProduct.Price;
-  } else if (bindProduct.price) {
-    price = bindProduct.price;
-  }
+    const products = await query(
+      'SELECT * FROM products ORDER BY created_at DESC'
+    ) as Product[];
 
-  return {
-    id: 0, // No se usa en Bind
-    uuid: bindProduct.SKU || bindProduct.Code || bindProduct.sku || bindProduct.code || '',
-    bind_id: bindProduct.ID || bindProduct.id || null,
-    name: bindProduct.Title || bindProduct.title || '',
-    name_en: bindProduct.customFields?.name_en || null,
-    description: bindProduct.Description || bindProduct.description || '',
-    description_en: bindProduct.customFields?.description_en || null,
-    price: price,
-    category: bindProduct.Category1 || bindProduct.Category || bindProduct.category || '',
-    category_en: bindProduct.customFields?.category_en || null,
-    stock: bindProduct.CurrentInventory || bindProduct.inventory || bindProduct.Inventory || 0,
-    status: 'active', // Bind no tiene concepto de inactive, todos son activos
-    tags: bindProduct.customFields?.tags || bindProduct.tags?.join(', ') || null,
-    dimensions: bindProduct.customFields?.dimensions || null,
-    weight: (bindProduct.Weight || bindProduct.weight)?.toString() || null,
-    material: bindProduct.customFields?.material || null,
-    warranty: bindProduct.customFields?.warranty || null,
-    created_at: bindProduct.CreationDate ? new Date(bindProduct.CreationDate) : new Date(),
-    updated_at: new Date(),
-  };
-};
-
-/**
- * Convertir producto local a formato Bind
- */
-export const localProductToBind = (product: Partial<Product>): BindProduct => {
-  return {
-    id: product.bind_id || undefined,
-    title: product.name || '',
-    description: product.description || '',
-    price: product.price || 0,
-    inventory: product.stock || 0,
-    category: product.category || '',
-    isActive: product.status === 'active',
-    sku: product.uuid,
-    tags: product.tags ? product.tags.split(',').map(t => t.trim()) : [],
-    customFields: {
-      name_en: product.name_en,
-      description_en: product.description_en,
-      category_en: product.category_en,
-      dimensions: product.dimensions,
-      weight: product.weight,
-      material: product.material,
-      warranty: product.warranty,
-    },
-  };
-};
-
-/**
- * Obtener todos los productos desde Bind (itera todas las páginas)
- * Usa caché para evitar llamadas repetidas a la API
- */
-export const getAllProducts = async (options: Omit<GetProductsOptions, 'page' | 'pageSize'> = {}): Promise<Product[]> => {
-  // Crear clave de caché basada en las opciones
-  const cacheKey = `all-products-${JSON.stringify(options)}`;
-
-  // Intentar obtener del caché primero
-  const cached = getFromCache(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  console.log('🔍 Obteniendo TODOS los productos desde Bind ERP...');
-
-  // Usar getAllBindProducts que itera todas las páginas automáticamente
-  const result = await getAllBindProducts({
-    search: options.search,
-    category: options.category,
-    isActive: options.isActive,
-  });
-
-  if (!result.success || !result.data) {
-    console.error('❌ Error obteniendo productos de Bind:', result.error);
+    console.log(`✅ ${products.length} productos obtenidos de la base de datos`);
+    return products;
+  } catch (error) {
+    console.error('❌ Error obteniendo productos de la base de datos:', error);
     return [];
   }
-
-  console.log(`✅ ${result.data.length} productos obtenidos de Bind`);
-
-  // Convertir productos de Bind a formato local
-  const convertedProducts = result.data.map(bindProductToLocal);
-
-  console.log(`🎉 Total final: ${convertedProducts.length} productos convertidos`);
-
-  // Guardar en caché
-  saveToCache(cacheKey, convertedProducts);
-
-  return convertedProducts;
 };
 
 /**
- * Obtener un producto por su Bind ID
+ * Obtener un producto por su UUID
  */
-export const getProductByBindId = async (bindId: string): Promise<Product | null> => {
-  console.log('🔍 Obteniendo producto desde Bind:', bindId);
+export const getProductByUuid = async (uuid: string): Promise<Product | null> => {
+  try {
+    console.log('🔍 Obteniendo producto por UUID:', uuid);
 
-  const result = await getBindProductById(bindId);
+    const products = await query(
+      'SELECT * FROM products WHERE uuid = ?',
+      [uuid]
+    ) as Product[];
 
-  if (!result.success || !result.data) {
-    console.error('❌ Error obteniendo producto de Bind:', result.error);
+    if (products.length === 0) {
+      console.log('❌ Producto no encontrado');
+      return null;
+    }
+
+    console.log('✅ Producto obtenido');
+    return products[0];
+  } catch (error) {
+    console.error('❌ Error obteniendo producto:', error);
     return null;
   }
-
-  console.log('✅ Producto obtenido de Bind');
-  return bindProductToLocal(result.data);
 };
 
 /**
- * Crear un nuevo producto en Bind
+ * Obtener un producto por su ID
  */
-export const createProduct = async (productData: Partial<Product>): Promise<string | null> => {
-  console.log('✨ Creando producto en Bind ERP...');
+export const getProductById = async (id: number): Promise<Product | null> => {
+  try {
+    console.log('🔍 Obteniendo producto por ID:', id);
 
-  const bindProductData = localProductToBind(productData);
-  const result = await createBindProduct(bindProductData);
+    const products = await query(
+      'SELECT * FROM products WHERE id = ?',
+      [id]
+    ) as Product[];
 
-  if (!result.success || !result.data?.id) {
-    console.error('❌ Error creando producto en Bind:', result.error);
+    if (products.length === 0) {
+      console.log('❌ Producto no encontrado');
+      return null;
+    }
+
+    console.log('✅ Producto obtenido');
+    return products[0];
+  } catch (error) {
+    console.error('❌ Error obteniendo producto:', error);
     return null;
   }
-
-  console.log('✅ Producto creado en Bind:', result.data.id);
-
-  // Invalidar caché al crear un producto
-  clearCacheKey('all-products-{}');
-
-  return result.data.id;
 };
 
 /**
- * Actualizar un producto en Bind
+ * Crear un nuevo producto en la base de datos local
  */
-export const updateProduct = async (bindId: string, productData: Partial<Product>): Promise<boolean> => {
-  console.log('📝 Actualizando producto en Bind:', bindId);
+export const createProduct = async (productData: Partial<Product>): Promise<number | null> => {
+  try {
+    console.log('✨ Creando producto en la base de datos...');
 
-  const bindProductData = localProductToBind(productData);
-  const result = await updateBindProduct(bindId, bindProductData);
+    const result = await query(
+      `INSERT INTO products (
+        uuid, bind_id, name, name_en, description, description_en,
+        price, category, category_en, stock, status, tags,
+        dimensions, weight, material, warranty
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        productData.uuid,
+        productData.bind_id || null,
+        productData.name,
+        productData.name_en || null,
+        productData.description,
+        productData.description_en || null,
+        productData.price,
+        productData.category,
+        productData.category_en || null,
+        productData.stock || 0,
+        productData.status || 'active',
+        productData.tags || null,
+        productData.dimensions || null,
+        productData.weight || null,
+        productData.material || null,
+        productData.warranty || null,
+      ]
+    ) as ResultSetHeader;
 
-  if (!result.success) {
-    console.error('❌ Error actualizando producto en Bind:', result.error);
-    return false;
+    console.log('✅ Producto creado con ID:', result.insertId);
+    return result.insertId;
+  } catch (error) {
+    console.error('❌ Error creando producto:', error);
+    return null;
   }
-
-  console.log('✅ Producto actualizado en Bind');
-
-  // Invalidar caché al actualizar un producto
-  clearCacheKey('all-products-{}');
-
-  return true;
 };
 
 /**
- * Eliminar un producto de Bind
+ * Actualizar un producto en la base de datos local
  */
-export const deleteProduct = async (bindId: string): Promise<boolean> => {
-  console.log('🗑️ Eliminando producto de Bind:', bindId);
+export const updateProduct = async (id: number, productData: Partial<Product>): Promise<boolean> => {
+  try {
+    console.log('📝 Actualizando producto ID:', id);
 
-  const result = await deleteBindProduct(bindId);
+    await query(
+      `UPDATE products SET
+        name = ?, name_en = ?, description = ?, description_en = ?,
+        price = ?, category = ?, category_en = ?, stock = ?,
+        status = ?, tags = ?, dimensions = ?, weight = ?,
+        material = ?, warranty = ?, bind_id = ?
+      WHERE id = ?`,
+      [
+        productData.name,
+        productData.name_en || null,
+        productData.description,
+        productData.description_en || null,
+        productData.price,
+        productData.category,
+        productData.category_en || null,
+        productData.stock,
+        productData.status,
+        productData.tags || null,
+        productData.dimensions || null,
+        productData.weight || null,
+        productData.material || null,
+        productData.warranty || null,
+        productData.bind_id || null,
+        id,
+      ]
+    );
 
-  if (!result.success) {
-    console.error('❌ Error eliminando producto de Bind:', result.error);
+    console.log('✅ Producto actualizado');
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando producto:', error);
     return false;
   }
+};
 
-  console.log('✅ Producto eliminado de Bind');
+/**
+ * Eliminar un producto de la base de datos local
+ */
+export const deleteProduct = async (id: number): Promise<boolean> => {
+  try {
+    console.log('🗑️ Eliminando producto ID:', id);
 
-  // Invalidar caché al eliminar un producto
-  clearCacheKey('all-products-{}');
+    await query('DELETE FROM products WHERE id = ?', [id]);
 
-  return true;
+    console.log('✅ Producto eliminado');
+    return true;
+  } catch (error) {
+    console.error('❌ Error eliminando producto:', error);
+    return false;
+  }
 };
 
 /**
  * Buscar productos por término de búsqueda
  */
 export const searchProducts = async (searchTerm: string, category?: string): Promise<Product[]> => {
-  return getAllProducts({
-    search: searchTerm,
-    category,
-    isActive: true, // Solo productos activos en búsquedas
-  });
+  try {
+    console.log('🔍 Buscando productos:', searchTerm);
+
+    let sql = `
+      SELECT * FROM products
+      WHERE (name LIKE ? OR description LIKE ? OR tags LIKE ?)
+      AND status = 'active'
+    `;
+
+    const params: any[] = [
+      `%${searchTerm}%`,
+      `%${searchTerm}%`,
+      `%${searchTerm}%`
+    ];
+
+    if (category) {
+      sql += ' AND category = ?';
+      params.push(category);
+    }
+
+    sql += ' ORDER BY created_at DESC';
+
+    const products = await query(sql, params) as Product[];
+
+    console.log(`✅ ${products.length} productos encontrados`);
+    return products;
+  } catch (error) {
+    console.error('❌ Error buscando productos:', error);
+    return [];
+  }
 };
 
 /**
  * Obtener productos por categoría
  */
 export const getProductsByCategory = async (category: string): Promise<Product[]> => {
-  return getAllProducts({
-    category,
-    isActive: true,
-  });
+  try {
+    console.log('🔍 Obteniendo productos de categoría:', category);
+
+    const products = await query(
+      'SELECT * FROM products WHERE category = ? AND status = "active" ORDER BY created_at DESC',
+      [category]
+    ) as Product[];
+
+    console.log(`✅ ${products.length} productos encontrados`);
+    return products;
+  } catch (error) {
+    console.error('❌ Error obteniendo productos por categoría:', error);
+    return [];
+  }
 };
 
 /**
  * Obtener productos activos (para el sitio público)
  */
 export const getActiveProducts = async (): Promise<Product[]> => {
-  return getAllProducts({
-    isActive: true,
-  });
+  try {
+    console.log('🔍 Obteniendo productos activos...');
+
+    const products = await query(
+      'SELECT * FROM products WHERE status = "active" ORDER BY created_at DESC'
+    ) as Product[];
+
+    console.log(`✅ ${products.length} productos activos encontrados`);
+    return products;
+  } catch (error) {
+    console.error('❌ Error obteniendo productos activos:', error);
+    return [];
+  }
 };
 
 /**
  * Obtener productos recientes (para dashboard)
  */
 export const getRecentProducts = async (limit: number = 5): Promise<Product[]> => {
-  const products = await getAllProducts();
+  try {
+    console.log(`🔍 Obteniendo ${limit} productos recientes...`);
 
-  // Ordenar por fecha de actualización (más recientes primero)
-  // Como Bind puede no devolver fechas, usamos el orden que viene
-  return products.slice(0, limit);
+    const products = await query(
+      'SELECT * FROM products ORDER BY created_at DESC LIMIT ?',
+      [limit]
+    ) as Product[];
+
+    console.log(`✅ ${products.length} productos recientes obtenidos`);
+    return products;
+  } catch (error) {
+    console.error('❌ Error obteniendo productos recientes:', error);
+    return [];
+  }
 };
 
 /**
  * Obtener estadísticas de productos
  */
 export const getProductStats = async () => {
-  const allProducts = await getAllProducts();
-  const activeProducts = allProducts.filter(p => p.status === 'active');
-  const inactiveProducts = allProducts.filter(p => p.status === 'inactive');
-  const lowStockProducts = allProducts.filter(p => p.stock < 5);
+  try {
+    const allProducts = await getAllProducts();
+    const activeProducts = allProducts.filter(p => p.status === 'active');
+    const inactiveProducts = allProducts.filter(p => p.status === 'inactive' || p.status === 'draft');
+    const lowStockProducts = allProducts.filter(p => p.stock < 5);
 
-  return {
-    total: allProducts.length,
-    active: activeProducts.length,
-    inactive: inactiveProducts.length,
-    lowStock: lowStockProducts.length,
-  };
+    return {
+      total: allProducts.length,
+      active: activeProducts.length,
+      inactive: inactiveProducts.length,
+      lowStock: lowStockProducts.length,
+    };
+  } catch (error) {
+    console.error('❌ Error obteniendo estadísticas:', error);
+    return {
+      total: 0,
+      active: 0,
+      inactive: 0,
+      lowStock: 0,
+    };
+  }
 };
 
 export default {
   getAllProducts,
-  getProductByBindId,
+  getProductByUuid,
+  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -276,6 +312,4 @@ export default {
   getActiveProducts,
   getRecentProducts,
   getProductStats,
-  bindProductToLocal,
-  localProductToBind,
 };
