@@ -243,7 +243,7 @@ const formatPrice = (price: number): string => {
         </button>
         <button
           id="dialog-confirm"
-          class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2"
+          class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-red-600 text-white hover:bg-red-700 h-10 px-4 py-2"
         >
           Eliminar
         </button>
@@ -717,5 +717,27 @@ const formatPrice = (price: number): string => {
   // Inicializar carrito
   document.addEventListener("DOMContentLoaded", async () => {
     await renderCart();
+    
+    // Asegurar que el modal esté centrado
+    const dialog = document.getElementById("confirm-dialog") as HTMLDialogElement;
+    if (dialog) {
+      // Agregar estilos para centrar el modal
+      dialog.style.margin = "auto";
+      dialog.style.position = "fixed";
+      dialog.style.top = "50%";
+      dialog.style.left = "50%";
+      dialog.style.transform = "translate(-50%, -50%)";
+    }
   });
 </script>
+
+<style>
+  /* Estilos para el modal de confirmación */
+  dialog[open] {
+    margin: auto;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+</style>
