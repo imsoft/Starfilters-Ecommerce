@@ -456,6 +456,39 @@ export const syncBindProduct = async (
 };
 
 /**
+ * Actualizar solo el inventario de un producto en Bind
+ * Se usa después de una compra exitosa para reducir el stock
+ */
+export const updateBindProductInventory = async (
+  bindId: string,
+  newInventory: number
+): Promise<BindProductResponse> => {
+  try {
+    console.log(`📦 Actualizando inventario en Bind (ID: ${bindId}) a ${newInventory} unidades`);
+
+    // Solo actualizar el campo de inventario
+    const response = await bindClient.put<any>('/api/Products', {
+      id: bindId,
+      inventory: newInventory,
+    });
+
+    console.log(`✅ Inventario actualizado en Bind: ${bindId} -> ${newInventory} unidades`);
+
+    return {
+      success: true,
+      data: response,
+      message: 'Inventario actualizado exitosamente en Bind',
+    };
+  } catch (error) {
+    console.error('❌ Error al actualizar inventario en Bind:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido al actualizar inventario',
+    };
+  }
+};
+
+/**
  * Verificar conexión con Bind API
  */
 export const checkBindConnection = async (): Promise<boolean> => {
@@ -476,6 +509,7 @@ export default {
   getBindProducts,
   getAllBindProducts,
   updateBindProduct,
+  updateBindProductInventory,
   deleteBindProduct,
   syncBindProduct,
   checkBindConnection,
