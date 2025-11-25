@@ -1,29 +1,46 @@
 {
   "seo": {
-    "title": "Industrial Filtration & Maintenance Services | StarFilters",
-    "description": "Professional installation, maintenance, and consulting services for industrial filtration systems. Specialized technical support and preventive maintenance plans in Mexico."
+    "title": "Cleanroom Certification and Performance Testing Services | StarFilters",
+    "description": "NEBB-certified cleanroom performance testing to ensure controlled areas operate in full compliance with ISO 14644 and GMP standards. Air and filtration system validation in Mexico."
   },
   "hero": {
-    "badge": "Professional Services",
-    "title": "Everything you need to maintain your filtration system",
-    "description": "From initial installation to continuous maintenance, StarFilters offers comprehensive services to ensure optimal operation of your filtration systems and cleanrooms. Our specialized technical team is available to support you at every stage."
+    "badge": "Testing and Validation Services",
+    "title": "Cleanroom Certification and Performance Testing Services",
+    "description": "At Star Filters, we provide NEBB-certified cleanroom performance testing to ensure every controlled area operates in full compliance with ISO 14644 and GMP standards, including NOM-059-SSA1-2015, NOM-241-SSA1-2021, NOM-249-SSA1-2010, and Federal Standard 209E.\n\nOur goal is to verify that your cleanroom systems perform with maximum efficiency, safety, and air purity — protecting your process and product integrity."
   },
   "features": {
-    "installation": {
-      "title": "Professional Installation",
-      "description": "Complete installation of filtration systems and cleanrooms with certified technicians. Guaranteed commissioning and staff training included."
+    "hepaIntegrity": {
+      "title": "HEPA Filter Leak Test",
+      "description": "Verifies that HEPA filters are free from leaks and maintain an effective barrier against airborne particles, ensuring product and process protection."
     },
-    "certification": {
-      "title": "Certification and Validation",
-      "description": "ISO 14644 certification testing, airflow validation, particle counting, and issuance of official documentation for regulatory compliance."
+    "particleCount": {
+      "title": "Airborne Particle Count Test",
+      "description": "Determines the ISO cleanliness classification of your cleanroom by measuring airborne particle size and concentration to confirm compliance with process requirements."
     },
-    "maintenance": {
-      "title": "Preventive Maintenance",
-      "description": "Customized preventive maintenance programs. Filter changes, periodic inspections, and adjustments to extend your equipment's lifespan."
+    "ductLeakage": {
+      "title": "Air Leakage Test",
+      "description": "Checks that air handling systems and ductwork are properly sealed, preventing energy loss and maintaining stable cleanroom pressure levels."
     },
-    "consulting": {
-      "title": "Technical Consulting",
-      "description": "Specialized advice for system design, equipment selection, process optimization, and problem solving. 24/7 technical support available."
+    "airBalancing": {
+      "title": "Air and Pressure Balancing",
+      "description": "Measures and adjusts airflow, air changes per hour, and pressure differentials between rooms to prevent cross-contamination and ensure optimal system performance."
     }
+  },
+  "requestSection": {
+    "title": "Request Your Validation Service",
+    "description": "At Star Filters, we deliver reliable results with state-of-the-art calibrated equipment and NEBB-certified technicians.\n\nWe offer flexible scheduling, fast validation report delivery, and personalized support to meet the highest standards of your industry.\n\nFill out the form and our team will contact you to schedule your validation service.",
+    "locations": "Guadalajara, JAL / Mexico City",
+    "phones": "+52 33 3898 7991 / +52 55 5087 0287",
+    "email": "starinfo@starfilters.mx",
+    "formTitle": "Contact Form",
+    "formDescription": "Complete the fields and we will get in touch with you shortly.",
+    "fields": {
+      "name": "First Name",
+      "city": "Last Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "message": "Message"
+    },
+    "submitButton": "Send message"
   }
 }

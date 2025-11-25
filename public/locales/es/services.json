@@ -1,29 +1,46 @@
 {
   "seo": {
-    "title": "Servicios de Filtración Industrial y Mantenimiento | StarFilters",
-    "description": "Servicios profesionales de instalación, mantenimiento y consultoría en sistemas de filtración industrial. Soporte técnico especializado y planes de mantenimiento preventivo en México."
+    "title": "Servicios de Pruebas y Validación de Desempeño en Cuartos Limpios | StarFilters",
+    "description": "Pruebas de desempeño certificadas por NEBB para cuartos limpios y áreas controladas conforme a normas ISO 14644 y GMP. Validación de sistemas de aire y filtración en México."
   },
   "hero": {
-    "badge": "Servicios Profesionales",
-    "title": "Todo lo que necesitas para mantener tu sistema de filtración",
-    "description": "Desde la instalación inicial hasta el mantenimiento continuo, StarFilters ofrece servicios integrales para garantizar el óptimo funcionamiento de tus sistemas de filtración y cuartos limpios. Nuestro equipo técnico especializado está disponible para apoyarte en cada etapa."
+    "badge": "Servicios de Pruebas y Validación",
+    "title": "Servicios de Pruebas y Validación de Desempeño en Cuartos Limpios",
+    "description": "En Star Filters, realizamos pruebas de desempeño certificadas por NEBB para asegurar que cada cuarto limpio y área controlada opere conforme a las normas ISO 14644 y GMP, incluyendo NOM-059-SSA1-2015, NOM-241-SSA1-2021, NOM-249-SSA1-2010 y Federal Standard 209E.\n\nNuestro objetivo es verificar que los sistemas de aire y filtración mantengan la máxima eficiencia, seguridad y pureza del aire, protegiendo el proceso y la calidad del producto."
   },
   "features": {
-    "installation": {
-      "title": "Instalación Profesional",
-      "description": "Instalación completa de sistemas de filtración y cuartos limpios con técnicos certificados. Puesta en marcha garantizada y capacitación de personal incluida."
+    "hepaIntegrity": {
+      "title": "Prueba de integridad de filtros HEPA",
+      "description": "Confirma que los filtros HEPA estén libres de fugas y conserven una barrera efectiva contra contaminantes, asegurando la protección del proceso y del producto final."
     },
-    "certification": {
-      "title": "Certificación y Validación",
-      "description": "Pruebas de certificación ISO 14644, validación de flujo de aire, conteo de partículas y emisión de documentación oficial para cumplimiento normativo."
+    "particleCount": {
+      "title": "Conteo de partículas de aire",
+      "description": "Determina la clasificación ISO del área mediante la medición del tamaño y cantidad de partículas suspendidas en el aire, garantizando el nivel de limpieza requerido por el proceso."
     },
-    "maintenance": {
-      "title": "Mantenimiento Preventivo",
-      "description": "Programas de mantenimiento preventivo personalizados. Cambio de filtros, inspecciones periódicas y ajustes para prolongar la vida útil de tu equipo."
+    "ductLeakage": {
+      "title": "Prueba de hermeticidad de ductos",
+      "description": "Verifica que los sistemas de aire y ductos estén correctamente sellados, evitando fugas que puedan afectar la presión del área o la eficiencia energética."
     },
-    "consulting": {
-      "title": "Consultoría Técnica",
-      "description": "Asesoría especializada para diseño de sistemas, selección de equipos, optimización de procesos y resolución de problemas. Soporte técnico disponible 24/7."
+    "airBalancing": {
+      "title": "Balanceo y control de presión de áreas",
+      "description": "Mide y ajusta el flujo de aire, los cambios de aire por hora y las presiones diferenciales entre áreas, evitando contaminación cruzada y asegurando un desempeño óptimo del sistema."
     }
+  },
+  "requestSection": {
+    "title": "Solicita tu servicio de validación",
+    "description": "En Star Filters garantizamos resultados confiables con equipos de medición calibrados de vanguardia y técnicos certificados NEBB.\n\nOfrecemos flexibilidad de horario, entrega rápida de reportes de validación y atención personalizada para cumplir con los más altos estándares de tu industria.\n\nCompleta el formulario y nuestro equipo te contactará para agendar tu validación.",
+    "locations": "Guadalajara, JAL / Ciudad de México",
+    "phones": "+52 33 3898 7991 / +52 55 5087 0287",
+    "email": "starinfo@starfilters.mx",
+    "formTitle": "Formulario de contacto",
+    "formDescription": "Completa los campos y nos pondremos en contacto contigo a la brevedad.",
+    "fields": {
+      "name": "Nombre",
+      "city": "Ciudad",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "message": "Mensaje"
+    },
+    "submitButton": "Enviar mensaje"
   }
 }
