@@ -1,17 +1,4 @@
 {
   "buildCommand": "pnpm build",
-  "framework": "astro",
-  "env": {
-    "DB_HOST": "@db-host",
-    "DB_USER": "@db-user",
-    "DB_PASSWORD": "@db-password",
-    "DB_NAME": "@db-name",
-    "JWT_SECRET": "@jwt-secret",
-    "STRIPE_SECRET_KEY": "@stripe-secret-key",
-    "STRIPE_PUBLIC_KEY": "@stripe-public-key",
-    "STRIPE_WEBHOOK_SECRET": "@stripe-webhook-secret",
-    "CLOUDINARY_CLOUD_NAME": "@cloudinary-cloud-name",
-    "CLOUDINARY_API_KEY": "@cloudinary-api-key",
-    "CLOUDINARY_API_SECRET": "@cloudinary-api-secret"
-  }
+  "framework": "astro"
 }
