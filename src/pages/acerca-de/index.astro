@@ -1,0 +1,161 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: lang === 'en' ? 'Home' : 'Inicio', url: siteUrl },
+  { name: lang === 'en' ? 'About Us' : 'Acerca de', url: `${siteUrl}${lang === 'en' ? '/en/about' : '/acerca-de'}` }
+]);
+---
+
+<WebsiteLayout
+  title={lang === 'en' ? 'About Us' : 'Acerca de'}
+  seoTitle={lang === 'en' ? 'About Star Filters - Our History and Mission | StarFilters' : 'Acerca de Star Filters - Nuestra Historia y Misión | StarFilters'}
+  description={lang === 'en' ? 'Learn about Star Filters, a leading company in industrial filtration in Mexico with over 40 years of experience in HEPA filters, cleanrooms, and air purification systems.' : 'Conoce Star Filters, empresa líder en filtración industrial en México con más de 40 años de experiencia en filtros HEPA, cuartos limpios y sistemas de purificación de aire.'}
+  keywords={lang === 'en' ? [
+    'Star Filters',
+    'industrial filtration',
+    'HEPA filters Mexico',
+    'cleanrooms Mexico',
+    'air filtration company'
+  ] : [
+    'Star Filters',
+    'filtración industrial',
+    'filtros HEPA México',
+    'cuartos limpios México',
+    'empresa filtración aire'
+  ]}
+>
+  <SEO
+    slot="seo"
+    title={lang === 'en' ? 'About Star Filters - Our History and Mission' : 'Acerca de Star Filters - Nuestra Historia y Misión'}
+    description={lang === 'en' ? 'Learn about Star Filters, a leading company in industrial filtration in Mexico with over 40 years of experience in HEPA filters, cleanrooms, and air purification systems.' : 'Conoce Star Filters, empresa líder en filtración industrial en México con más de 40 años de experiencia en filtros HEPA, cuartos limpios y sistemas de purificación de aire.'}
+    ogType="website"
+    keywords={lang === 'en' ? [
+      'Star Filters',
+      'industrial filtration',
+      'HEPA filters Mexico'
+    ] : [
+      'Star Filters',
+      'filtración industrial',
+      'filtros HEPA México'
+    ]}
+  />
+
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
+  
+  <div class="overflow-hidden bg-white py-24 sm:py-32">
+    <div class="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
+      <div class="max-w-4xl">
+        <p class="text-base/7 font-semibold text-primary">{t('about.badge')}</p>
+        <h1 class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
+          {t('about.title')}
+        </h1>
+        <p class="mt-6 text-xl/8 text-balance text-gray-700">
+          {t('about.subtitle')}
+        </p>
+      </div>
+
+      <section class="mt-20 grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-16">
+        <div class="lg:pr-8">
+          <h2 class="text-2xl font-semibold tracking-tight text-pretty text-gray-900">
+            {t('about.history.title')}
+          </h2>
+          <p class="mt-6 text-base/7 text-gray-600">
+            {t('about.history.paragraph1')}
+          </p>
+          <p class="mt-8 text-base/7 text-gray-600">
+            {t('about.history.paragraph2')}
+          </p>
+          <p class="mt-8 text-base/7 text-gray-600">
+            {t('about.history.paragraph3')}
+          </p>
+        </div>
+        <div class="pt-16 lg:row-span-2 lg:-mr-16 xl:mr-auto">
+          <div class="-mx-8 grid grid-cols-2 gap-4 sm:-mx-16 sm:grid-cols-4 lg:mx-0 lg:grid-cols-2 xl:gap-8">
+            <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
+              <img
+                src="/images/home-page/Logo%20de%20Star%20Filters.png"
+                alt="Logo Star Filters"
+                class="block size-full object-contain bg-white p-4"
+              />
+            </div>
+            <div class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40">
+              <img
+                src="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
+                alt="Construcción de cuartos limpios Star Filters"
+                class="block size-full object-cover"
+              />
+            </div>
+            <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
+              <img
+                src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
+                alt="Certificación ISO 14644"
+                class="block size-full object-cover"
+              />
+            </div>
+            <div class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40">
+              <img
+                src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
+                alt="Filtros Star en cuarto limpio"
+                class="block size-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="max-lg:mt-16 lg:col-span-1">
+          <p class="text-base/7 font-semibold text-gray-500">{t('about.mission.title')}</p>
+          <hr class="mt-6 border-t border-gray-200" />
+          <p class="mt-6 text-base/7 text-gray-600">
+            {t('about.mission.description')}
+          </p>
+          <p class="mt-8 text-base/7 font-semibold text-gray-500">{t('about.vision.title')}</p>
+          <hr class="mt-6 border-t border-gray-200" />
+          <p class="mt-6 text-base/7 text-gray-600">
+            {t('about.vision.description')}
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-20">
+        <div class="max-w-4xl">
+          <h2 class="text-2xl font-semibold tracking-tight text-pretty text-gray-900">
+            {t('about.values.title')}
+          </h2>
+          <dl class="mt-10 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="flex flex-col">
+              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.quality.title')}</dt>
+              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.quality.description')}</dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.innovation.title')}</dt>
+              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.innovation.description')}</dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.commitment.title')}</dt>
+              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.commitment.description')}</dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.excellence.title')}</dt>
+              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.excellence.description')}</dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.integrity.title')}</dt>
+              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.integrity.description')}</dd>
+            </div>
+            <div class="flex flex-col">
+              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.service.title')}</dt>
+              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.service.description')}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    </div>
+  </div>
+</WebsiteLayout>
+

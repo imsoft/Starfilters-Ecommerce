@@ -18,6 +18,7 @@ export default {
       "signup": "signup",
       "forgot-password": "forgot-password",
       "reset-password": "reset-password",
+      "acerca-de": "about",
     }
   },
   showDefaultLocale: false,

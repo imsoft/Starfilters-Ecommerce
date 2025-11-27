@@ -1,0 +1,47 @@
+{
+  "badge": "Our History",
+  "title": "About Star Filters",
+  "subtitle": "Over 40 years leading industrial filtration in Mexico, providing certified quality solutions to protect critical processes.",
+  "history": {
+    "title": "Our History",
+    "paragraph1": "Star Filters was born more than four decades ago with the vision of transforming the filtration industry in Mexico. Since our beginnings, we have specialized in providing the highest quality air filtration solutions for industries that require controlled and certified environments.",
+    "paragraph2": "Over the years, we have built a solid reputation based on technical excellence, constant innovation, and unwavering commitment to our clients. We have been pioneers in implementing advanced HEPA filtration technologies and in the design and installation of cleanrooms certified under international standards.",
+    "paragraph3": "Today, Star Filters is recognized as one of the leading companies in industrial filtration in Mexico, with more than 120 cleanrooms built, over 20,000 square meters of controlled areas, and an impeccable record of zero production errors. Our experience spans from the pharmaceutical and biotechnology industries to electronics, medical devices, and automotive."
+  },
+  "mission": {
+    "title": "Our Mission",
+    "description": "To provide comprehensive filtration and particle control solutions that guarantee the quality, safety, and efficiency of our clients' industrial processes, exceeding their expectations with cutting-edge technology and exceptional service."
+  },
+  "vision": {
+    "title": "Our Vision",
+    "description": "To be the leading company in Mexico and Latin America in industrial filtration and cleanroom solutions, recognized for our innovation, certified quality, and commitment to excellence in every project."
+  },
+  "values": {
+    "title": "Our Values",
+    "quality": {
+      "title": "Certified Quality",
+      "description": "We meet and exceed the most demanding international standards, guaranteeing certified products and services."
+    },
+    "innovation": {
+      "title": "Continuous Innovation",
+      "description": "We invest in cutting-edge technology and develop innovative solutions to stay at the forefront of the industry."
+    },
+    "commitment": {
+      "title": "Commitment",
+      "description": "We are committed to our clients' success, working tirelessly to meet and exceed their expectations."
+    },
+    "excellence": {
+      "title": "Excellence",
+      "description": "We seek excellence in every detail, from design to installation and maintenance of our systems."
+    },
+    "integrity": {
+      "title": "Integrity",
+      "description": "We act with honesty, transparency, and ethics in all our business and professional relationships."
+    },
+    "service": {
+      "title": "Customer Service",
+      "description": "We offer continuous technical support and personalized attention to guarantee total customer satisfaction."
+    }
+  }
+}
+

@@ -3,7 +3,7 @@
     "home": "Inicio",
     "filters": "Filtros",
     "cleanrooms": "Cuartos Limpios",
-    "services": "Servicios",
+    "services": "Servicios de validación",
     "blog": "Blog",
     "cart": "Carrito",
     "profile": "Perfil",
@@ -14,7 +14,7 @@
   "hero": {
     "badge": "Más de 15 años liderando la filtración industrial en México",
     "badgeLink": "Conocer más",
-    "title": "Soluciones Avanzadas en Filtración Industrial",
+    "title": "Control de partículas para tu proceso industrial",
     "description": "Especialistas en filtros HEPA, cuartos limpios y sistemas de purificación de aire industrial. Calidad certificada, instalación profesional y soporte técnico continuo para proteger tu operación.",
     "cta": "Ver Productos",
     "ctaSecondary": "Nuestros Servicios"
@@ -28,7 +28,7 @@
     "clientsNumber": "+200"
   },
   "features": {
-    "title": "Por qué StarFilters",
+    "title": "Tus aliados en control de partículas",
     "subtitle": "Todo lo que necesitas para proteger tu ambiente industrial",
     "certifications": {
       "title": "Certificaciones Internacionales",

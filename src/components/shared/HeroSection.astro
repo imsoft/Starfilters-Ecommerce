@@ -28,7 +28,9 @@ const t = useTranslations(lang);
                 class="hero-badge relative rounded-full px-3 py-1 text-sm/6 text-muted-foreground ring-1 ring-border hover:ring-border"
               >
                 {t('hero.badge')} <a
-                  href={lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios'}
+                  href={lang === 'en' ? '/en/about' : '/acerca-de'}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   class="font-semibold whitespace-nowrap text-primary"
                   ><span aria-hidden="true" class="absolute inset-0"></span>{t('hero.badgeLink')}<span aria-hidden="true"> &rarr;</span></a
                 >
@@ -60,8 +62,8 @@ const t = useTranslations(lang);
     </div>
     <div class="bg-muted lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 flex items-center justify-center">
       <img
-        src="/images/banner-buen-fin-2025.png"
-        alt="Promoción Buen Fin filtros HEPA Star Filters"
+        src="/images/home-page/Cuarto Limpio ISO 14644.JPG"
+        alt="Cuarto limpio ISO 14644 Star Filters"
         class="hero-image aspect-3/2 object-cover lg:aspect-auto lg:h-full lg:w-full"
       />
     </div>
