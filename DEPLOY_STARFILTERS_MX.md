@@ -29,7 +29,7 @@ apt update && apt upgrade -y
 
 # Instalar Node.js 20
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
+apt install -y nodejs 
 
 # Verificar instalación
 node --version  # Debe ser v20.x.x o superior
@@ -75,15 +75,15 @@ mysql -u root -p
 **Dentro de MySQL, ejecutar (reemplaza `TU_CONTRASEÑA_SEGURA` con una contraseña fuerte):**
 
 ```sql
-CREATE DATABASE starfilters_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'starfilters_user'@'localhost' IDENTIFIED BY 'TU_CONTRASEÑA_SEGURA';
+CREATE DATABASE starfilters_ecommerce_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'starfilters_user'@'localhost' IDENTIFIED BY 'Mitla19!';
 GRANT ALL PRIVILEGES ON starfilters_db.* TO 'starfilters_user'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
 
 **⚠️ IMPORTANTE:** Guarda estas credenciales:
-- Base de datos: `starfilters_db`
+- Base de datos: `starfilters_ecommerce_db`
 - Usuario: `starfilters_user`
 - Contraseña: (la que configuraste)
 

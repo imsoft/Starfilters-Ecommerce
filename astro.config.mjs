@@ -10,7 +10,7 @@ export default defineConfig({
   site: 'https://starfilters.mx',
   output: 'server',
   adapter: node({
-    mode: 'standalone'
+    mode: 'middleware'
   }),
 
   i18n: {
