@@ -897,6 +897,20 @@ export interface CreateBlogPostData {
 
 export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost | null> {
   try {
+    // Validar campos requeridos
+    if (!data.title || !data.slug || !data.excerpt || !data.content || !data.category || !data.author || !data.status) {
+      console.error('Error: Faltan campos requeridos', {
+        title: !!data.title,
+        slug: !!data.slug,
+        excerpt: !!data.excerpt,
+        content: !!data.content,
+        category: !!data.category,
+        author: !!data.author,
+        status: !!data.status
+      });
+      throw new Error('Faltan campos requeridos para crear el artículo del blog');
+    }
+
     const uuid = generateUUID();
     const now = new Date();
     
@@ -938,9 +952,15 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
     }
     
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creando post del blog:', error);
-    return null;
+    console.error('Detalles del error:', {
+      message: error?.message,
+      code: error?.code,
+      sqlMessage: error?.sqlMessage,
+      sqlState: error?.sqlState
+    });
+    throw error; // Re-lanzar el error para que se pueda manejar mejor
   }
 }
 

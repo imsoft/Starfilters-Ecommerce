@@ -33,6 +33,20 @@ if (Astro.request.method === 'POST') {
   const finalStatus = action === 'draft' ? 'draft' : status;
 
   try {
+    // Validar campos requeridos antes de intentar crear
+    if (!title || !slug || !excerpt || !content || !category || !author || !finalStatus) {
+      console.error('Campos faltantes:', {
+        title: !!title,
+        slug: !!slug,
+        excerpt: !!excerpt,
+        content: !!content,
+        category: !!category,
+        author: !!author,
+        status: !!finalStatus
+      });
+      return Astro.redirect('/admin/blog/add?error=missing_fields');
+    }
+
     const blogPost = await createBlogPost({
       title,
       title_en: title_en || undefined,
@@ -59,15 +73,23 @@ if (Astro.request.method === 'POST') {
     } else {
       return Astro.redirect('/admin/blog/add?error=creation_failed');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creando post del blog:', error);
-    return Astro.redirect('/admin/blog/add?error=creation_failed');
+    console.error('Detalles del error:', {
+      message: error?.message,
+      code: error?.code,
+      sqlMessage: error?.sqlMessage
+    });
+    // Pasar el mensaje de error en la URL para mostrarlo al usuario
+    const errorMessage = error?.message || error?.sqlMessage || 'Error desconocido';
+    return Astro.redirect(`/admin/blog/add?error=creation_failed&details=${encodeURIComponent(errorMessage)}`);
   }
 }
 
 // Obtener mensajes de la URL
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
+const errorDetails = url.searchParams.get('details');
 ---
 
 <AdminLayout title="Nuevo Artículo">
@@ -118,6 +140,30 @@ const error = url.searchParams.get('error');
           <div class="ml-3">
             <p class="text-sm font-medium text-red-800">
               Error al crear el artículo. Inténtalo de nuevo.
+            </p>
+            {errorDetails && (
+              <p class="mt-2 text-sm text-red-700">
+                <strong>Detalles:</strong> {errorDetails}
+              </p>
+            )}
+            <p class="mt-2 text-xs text-red-600">
+              Revisa la consola del servidor para más detalles.
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+    {error === 'missing_fields' && (
+      <div class="mb-6 rounded-md bg-yellow-50 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-yellow-800">
+              Por favor completa todos los campos requeridos.
             </p>
           </div>
         </div>
