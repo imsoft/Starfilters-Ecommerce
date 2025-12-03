@@ -39,6 +39,7 @@
       "city": "Ciudad",
       "email": "Correo electrónico",
       "phone": "Teléfono",
+      "company": "Nombre de la empresa",
       "message": "Mensaje"
     },
     "submitButton": "Enviar mensaje"

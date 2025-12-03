@@ -39,6 +39,7 @@
       "city": "Last Name",
       "email": "Email",
       "phone": "Phone Number",
+      "company": "Company Name",
       "message": "Message"
     },
     "submitButton": "Send message"

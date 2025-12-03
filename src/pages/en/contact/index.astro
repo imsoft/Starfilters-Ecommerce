@@ -14,6 +14,7 @@ type ContactFormValues = {
   city: string;
   email: string;
   phone: string;
+  company: string;
   message: string;
 };
 
@@ -22,6 +23,7 @@ const initialValues: ContactFormValues = {
   city: "",
   email: "",
   phone: "",
+  company: "",
   message: "",
 };
 
@@ -42,10 +44,11 @@ if (Astro.request.method === "POST") {
     city: (formData.get("city")?.toString() ?? "").trim(),
     email: (formData.get("email")?.toString() ?? "").trim(),
     phone: (formData.get("phone")?.toString() ?? "").trim(),
+    company: (formData.get("company")?.toString() ?? "").trim(),
     message: (formData.get("message")?.toString() ?? "").trim(),
   };
 
-  const hasEmpty = Object.values(formValues).some((value) => value.length === 0);
+  const hasEmpty = Object.entries(formValues).some(([key, value]) => key !== "company" && value.length === 0);
 
   if (hasEmpty) {
     submissionStatus = "error";
@@ -63,9 +66,10 @@ if (Astro.request.method === "POST") {
           <p><strong>City:</strong> ${formValues.city}</p>
           <p><strong>Email:</strong> ${formValues.email}</p>
           <p><strong>Phone:</strong> ${formValues.phone}</p>
+          <p><strong>Company:</strong> ${formValues.company || "N/A"}</p>
           <p><strong>Message:</strong><br />${messageHtml}</p>
         `,
-        text: `New message from the contact form (English)\n\nName: ${formValues.name}\nCity: ${formValues.city}\nEmail: ${formValues.email}\nPhone: ${formValues.phone}\n\nMessage:\n${formValues.message}`,
+        text: `New message from the contact form (English)\n\nName: ${formValues.name}\nCity: ${formValues.city}\nEmail: ${formValues.email}\nPhone: ${formValues.phone}\nCompany: ${formValues.company || "N/A"}\n\nMessage:\n${formValues.message}`,
       });
 
       if (emailSent) {
@@ -204,6 +208,18 @@ if (Astro.request.method === "POST") {
                   class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                 />
               </div>
+            </div>
+
+            <div>
+              <label for="company" class="block text-sm font-medium text-foreground">Company Name</label>
+              <input
+                id="company"
+                name="company"
+                type="text"
+                autocomplete="organization"
+                value={formValues.company}
+                class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              />
             </div>
 
             <div>
