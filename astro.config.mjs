@@ -2,14 +2,16 @@
 
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
-import vercel from '@astrojs/vercel';
+import node from '@astrojs/node';
 import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://starfilters.com',
   output: 'server',
-  adapter: vercel(),
+  adapter: node({
+    mode: 'standalone'
+  }),
 
   i18n: {
     defaultLocale: 'es',
