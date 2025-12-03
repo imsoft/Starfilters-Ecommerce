@@ -74,9 +74,11 @@ if (Astro.request.method === "POST") {
         const newToken = generateJWT(updatedAuthUser);
         
         // Actualizar cookie de sesión
+        // secure solo si es HTTPS o si está explícitamente configurado
+        const isSecure = Astro.url.protocol === 'https:' || process.env.FORCE_SECURE_COOKIES === 'true';
         Astro.cookies.set('auth-token', newToken, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
+          secure: isSecure,
           sameSite: 'lax',
           maxAge: 60 * 60 * 24 * 7, // 7 días
           path: '/'
