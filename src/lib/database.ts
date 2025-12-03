@@ -268,22 +268,34 @@ export const updateOrderStatus = async (id: number, status: string): Promise<boo
   return result.affectedRows > 0;
 };
 
+// Función helper para mapear blog post desde la base de datos
+function mapBlogPostFromDB(row: any): BlogPost {
+  return {
+    ...row,
+    featured_image: row.featured_image_url || row.featured_image || '',
+  };
+}
+
 // Funciones para Blog
 export const getBlogPosts = async (limit = 10, offset = 0): Promise<BlogPost[]> => {
   try {
     const sql = `
-      SELECT * FROM blog_posts 
+      SELECT *, COALESCE(featured_image_url, featured_image, '') as featured_image 
+      FROM blog_posts 
       WHERE status = 'published' 
       ORDER BY created_at DESC
     `;
     
-    const allPosts = await query(sql, []) as BlogPost[];
+    const allPosts = await query(sql, []) as any[];
+    
+    // Mapear los resultados
+    const mappedPosts = allPosts.map(mapBlogPostFromDB);
     
     // Aplicar limit y offset en JavaScript
     const startIndex = Math.max(0, offset);
     const endIndex = startIndex + Math.max(1, limit);
     
-    return allPosts.slice(startIndex, endIndex);
+    return mappedPosts.slice(startIndex, endIndex);
   } catch (error) {
     console.error('Error en getBlogPosts:', error);
     return [];
@@ -293,17 +305,21 @@ export const getBlogPosts = async (limit = 10, offset = 0): Promise<BlogPost[]> 
 export const getAllBlogPosts = async (limit = 100, offset = 0): Promise<BlogPost[]> => {
   try {
     const sql = `
-      SELECT * FROM blog_posts 
+      SELECT *, COALESCE(featured_image_url, featured_image, '') as featured_image 
+      FROM blog_posts 
       ORDER BY created_at DESC
     `;
     
-    const allPosts = await query(sql, []) as BlogPost[];
+    const allPosts = await query(sql, []) as any[];
+    
+    // Mapear los resultados
+    const mappedPosts = allPosts.map(mapBlogPostFromDB);
     
     // Aplicar limit y offset en JavaScript
     const startIndex = Math.max(0, offset);
     const endIndex = startIndex + Math.max(1, limit);
     
-    return allPosts.slice(startIndex, endIndex);
+    return mappedPosts.slice(startIndex, endIndex);
   } catch (error) {
     console.error('Error en getAllBlogPosts:', error);
     return [];
@@ -311,9 +327,9 @@ export const getAllBlogPosts = async (limit = 100, offset = 0): Promise<BlogPost
 };
 
 export const getBlogPostById = async (id: number): Promise<BlogPost | null> => {
-  const sql = 'SELECT * FROM blog_posts WHERE id = ?';
-  const result = await query(sql, [id]) as BlogPost[];
-  return result.length > 0 ? result[0] : null;
+  const sql = 'SELECT *, COALESCE(featured_image_url, featured_image, \'\') as featured_image FROM blog_posts WHERE id = ?';
+  const result = await query(sql, [id]) as any[];
+  return result.length > 0 ? mapBlogPostFromDB(result[0]) : null;
 };
 
 
@@ -321,10 +337,10 @@ export const getBlogPostByUuid = async (uuid: string, includeDrafts: boolean = f
   // Si includeDrafts es true, buscar sin importar el estado (útil para admin)
   // Si es false, solo buscar publicados (útil para mostrar en el sitio)
   const sql = includeDrafts 
-    ? 'SELECT * FROM blog_posts WHERE uuid = ?'
-    : 'SELECT * FROM blog_posts WHERE uuid = ? AND status = "published"';
-  const result = await query(sql, [uuid]) as BlogPost[];
-  return result.length > 0 ? result[0] : null;
+    ? 'SELECT *, COALESCE(featured_image_url, featured_image, \'\') as featured_image FROM blog_posts WHERE uuid = ?'
+    : 'SELECT *, COALESCE(featured_image_url, featured_image, \'\') as featured_image FROM blog_posts WHERE uuid = ? AND status = "published"';
+  const result = await query(sql, [uuid]) as any[];
+  return result.length > 0 ? mapBlogPostFromDB(result[0]) : null;
 };
 
 
@@ -951,8 +967,8 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
 
     const insertId = (result as any).insertId;
     if (insertId) {
-      const rows = await query('SELECT * FROM blog_posts WHERE id = ?', [insertId]);
-      return (rows as BlogPost[])[0] || null;
+      const rows = await query('SELECT *, COALESCE(featured_image_url, featured_image, \'\') as featured_image FROM blog_posts WHERE id = ?', [insertId]) as any[];
+      return rows.length > 0 ? mapBlogPostFromDB(rows[0]) : null;
     }
     
     return null;
@@ -971,10 +987,10 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
     const rows = await query(
-      'SELECT * FROM blog_posts WHERE slug = ? AND status = "published"',
+      'SELECT *, COALESCE(featured_image_url, featured_image, \'\') as featured_image FROM blog_posts WHERE slug = ? AND status = "published"',
       [slug]
-    );
-    return (rows as BlogPost[])[0] || null;
+    ) as any[];
+    return rows.length > 0 ? mapBlogPostFromDB(rows[0]) : null;
   } catch (error) {
     console.error('Error obteniendo post por slug:', error);
     return null;
@@ -1021,7 +1037,7 @@ export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Pr
         title = ?, title_en = ?, slug = ?, slug_en = ?,
         excerpt = ?, excerpt_en = ?, content = ?, content_en = ?,
         category = ?, author = ?, status = ?, publish_date = ?,
-        tags = ?, featured_image = ?,
+        tags = ?, featured_image_url = ?,
         meta_title = ?, meta_title_en = ?,
         meta_description = ?, meta_description_en = ?,
         updated_at = ?
@@ -1053,8 +1069,8 @@ export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Pr
     // Verificar si se actualizó algún registro
     const affectedRows = (result as any).affectedRows;
     if (affectedRows > 0) {
-      const rows = await query('SELECT * FROM blog_posts WHERE uuid = ?', [uuid]);
-      return (rows as BlogPost[])[0] || null;
+      const rows = await query('SELECT *, COALESCE(featured_image_url, featured_image, \'\') as featured_image FROM blog_posts WHERE uuid = ?', [uuid]) as any[];
+      return rows.length > 0 ? mapBlogPostFromDB(rows[0]) : null;
     }
 
     return null;

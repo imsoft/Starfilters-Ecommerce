@@ -136,11 +136,9 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   <div
                     class="relative mt-8 flex items-center gap-x-4 justify-self-end"
                   >
-                    <img
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                      alt={post.author}
-                      class="size-10 rounded-full bg-muted"
-                    />
+                    <div class="size-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
+                      {post.author.charAt(0).toUpperCase()}
+                    </div>
                     <div class="text-sm/6">
                       <p class="font-semibold text-foreground">
                         <a href="#">
