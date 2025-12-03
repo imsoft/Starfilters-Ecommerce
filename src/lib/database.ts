@@ -317,8 +317,12 @@ export const getBlogPostById = async (id: number): Promise<BlogPost | null> => {
 };
 
 
-export const getBlogPostByUuid = async (uuid: string): Promise<BlogPost | null> => {
-  const sql = 'SELECT * FROM blog_posts WHERE uuid = ? AND status = "published"';
+export const getBlogPostByUuid = async (uuid: string, includeDrafts: boolean = false): Promise<BlogPost | null> => {
+  // Si includeDrafts es true, buscar sin importar el estado (útil para admin)
+  // Si es false, solo buscar publicados (útil para mostrar en el sitio)
+  const sql = includeDrafts 
+    ? 'SELECT * FROM blog_posts WHERE uuid = ?'
+    : 'SELECT * FROM blog_posts WHERE uuid = ? AND status = "published"';
   const result = await query(sql, [uuid]) as BlogPost[];
   return result.length > 0 ? result[0] : null;
 };

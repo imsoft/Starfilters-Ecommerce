@@ -7,8 +7,8 @@ import { getBlogPostByUuid, updateBlogPost, generateSlug } from "@/lib/database"
 
 const { id } = Astro.params;
 
-// Obtener el artículo por UUID
-const blogPost = id ? await getBlogPostByUuid(id) : null;
+// Obtener el artículo por UUID (incluir borradores para admin)
+const blogPost = id ? await getBlogPostByUuid(id, true) : null;
 
 // Si no existe el artículo, redirigir
 if (!blogPost) {

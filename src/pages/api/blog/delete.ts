@@ -28,8 +28,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Obtener el post para verificar que existe
-    const post = await getBlogPostByUuid(uuid);
+    // Obtener el post para verificar que existe (incluir borradores para admin)
+    const post = await getBlogPostByUuid(uuid, true);
 
     if (!post) {
       return new Response(JSON.stringify({
