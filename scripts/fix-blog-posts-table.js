@@ -61,6 +61,7 @@ async function fixBlogPostsTable() {
     // Lista de columnas a verificar/agregar
     const columnsToAdd = [
       { name: 'featured_image_url', type: 'VARCHAR(500)', after: 'featured_image' },
+      { name: 'author_id', type: 'INT', after: 'author', nullable: true },
       { name: 'title_en', type: 'VARCHAR(255)', after: 'title' },
       { name: 'slug_en', type: 'VARCHAR(255)', after: 'slug' },
       { name: 'content_en', type: 'LONGTEXT', after: 'content' },
@@ -76,9 +77,10 @@ async function fixBlogPostsTable() {
       if (!exists) {
         console.log(`➕ Agregando columna: ${column.name}`);
         try {
+          const nullable = column.nullable !== false ? 'NULL' : 'NOT NULL';
           await connection.execute(
             `ALTER TABLE blog_posts 
-             ADD COLUMN ${column.name} ${column.type} 
+             ADD COLUMN ${column.name} ${column.type} ${nullable}
              ${column.after ? `AFTER ${column.after}` : ''}`
           );
           console.log(`✅ Columna ${column.name} agregada`);
@@ -133,6 +135,42 @@ async function fixBlogPostsTable() {
         console.log('✅ Datos copiados');
       } else {
         console.log('✓ No hay datos para copiar');
+      }
+    }
+
+    // Mapear autores existentes a author_id
+    const hasAuthorId = await checkColumnExists(connection, 'blog_posts', 'author_id');
+    if (hasAuthorId) {
+      console.log('\n📋 Mapeando autores a author_id...');
+      
+      // Obtener todos los posts sin author_id
+      const [postsWithoutAuthorId] = await connection.execute(
+        `SELECT id, author FROM blog_posts WHERE author_id IS NULL`
+      );
+      
+      if (postsWithoutAuthorId.length > 0) {
+        console.log(`➕ Encontrados ${postsWithoutAuthorId.length} posts sin author_id`);
+        
+        // Obtener el primer admin (o el que tenga el email admin@starfilters.com)
+        const [admins] = await connection.execute(
+          `SELECT id, email, full_name FROM admin_users WHERE role = 'admin' ORDER BY id LIMIT 1`
+        );
+        
+        if (admins.length > 0) {
+          const defaultAdminId = admins[0].id;
+          console.log(`➕ Usando admin ID ${defaultAdminId} (${admins[0].email}) como autor por defecto`);
+          
+          // Actualizar todos los posts sin author_id
+          await connection.execute(
+            `UPDATE blog_posts SET author_id = ? WHERE author_id IS NULL`,
+            [defaultAdminId]
+          );
+          console.log(`✅ ${postsWithoutAuthorId.length} posts actualizados con author_id`);
+        } else {
+          console.log('⚠️  No se encontró ningún admin en admin_users');
+        }
+      } else {
+        console.log('✓ Todos los posts ya tienen author_id');
       }
     }
 
