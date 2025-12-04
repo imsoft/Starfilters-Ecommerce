@@ -561,6 +561,13 @@ const errorDetails = url.searchParams.get('details');
     const metaTitleCount = document.getElementById('meta-title-count');
     const metaDescriptionCount = document.getElementById('meta-description-count');
 
+    // Campos SEO en inglés
+    const excerptEnInput = document.getElementById('excerpt_en') as HTMLTextAreaElement;
+    const metaTitleEnInput = document.getElementById('meta-title_en') as HTMLInputElement;
+    const metaDescriptionEnInput = document.getElementById('meta-description_en') as HTMLTextAreaElement;
+    const metaTitleEnCount = document.getElementById('meta-title-en-count');
+    const metaDescriptionEnCount = document.getElementById('meta-description-en-count');
+
     // Función para generar slug desde un texto
     const generateSlug = (text: string): string => {
       return text
@@ -621,6 +628,46 @@ const errorDetails = url.searchParams.get('details');
           metaDescriptionInput.value = this.value;
           if (metaDescriptionCount) {
             metaDescriptionCount.textContent = this.value.length.toString();
+          }
+        }
+      });
+    }
+
+    // ===== CAMPOS SEO EN INGLÉS =====
+
+    // Contar caracteres en meta título en inglés
+    if (metaTitleEnInput && metaTitleEnCount) {
+      metaTitleEnInput.addEventListener('input', function() {
+        metaTitleEnCount.textContent = this.value.length.toString();
+      });
+    }
+
+    // Contar caracteres en meta descripción en inglés
+    if (metaDescriptionEnInput && metaDescriptionEnCount) {
+      metaDescriptionEnInput.addEventListener('input', function() {
+        metaDescriptionEnCount.textContent = this.value.length.toString();
+      });
+    }
+
+    // Auto-generar meta título en inglés desde el título en inglés
+    if (titleEnInput && metaTitleEnInput) {
+      titleEnInput.addEventListener('input', function() {
+        if (!metaTitleEnInput.value) {
+          metaTitleEnInput.value = this.value;
+          if (metaTitleEnCount) {
+            metaTitleEnCount.textContent = this.value.length.toString();
+          }
+        }
+      });
+    }
+
+    // Auto-generar meta descripción en inglés desde el excerpt en inglés
+    if (excerptEnInput && metaDescriptionEnInput) {
+      excerptEnInput.addEventListener('input', function() {
+        if (!metaDescriptionEnInput.value) {
+          metaDescriptionEnInput.value = this.value;
+          if (metaDescriptionEnCount) {
+            metaDescriptionEnCount.textContent = this.value.length.toString();
           }
         }
       });
