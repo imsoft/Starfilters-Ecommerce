@@ -27,23 +27,28 @@ export function RichTextEditor({
         heading: {
           levels: [1, 2, 3],
         },
+        paragraph: {
+          HTMLAttributes: {
+            class: 'my-0',
+          },
+        },
         bulletList: {
           HTMLAttributes: {
-            class: 'list-disc list-inside',
+            class: 'list-disc list-inside my-2',
           },
           keepMarks: true,
           keepAttributes: false,
         },
         orderedList: {
           HTMLAttributes: {
-            class: 'list-decimal list-inside',
+            class: 'list-decimal list-inside my-2',
           },
           keepMarks: true,
           keepAttributes: false,
         },
         listItem: {
           HTMLAttributes: {
-            class: 'mb-1',
+            class: 'my-0',
           },
         },
       }),
