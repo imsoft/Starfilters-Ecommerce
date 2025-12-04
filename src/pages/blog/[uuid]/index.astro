@@ -124,9 +124,17 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         </div>
 
         <div class="mt-6 flex items-center gap-x-4">
-          <div class="size-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
-            {post.author.charAt(0).toUpperCase()}
-          </div>
+          {post.author_image ? (
+            <img
+              src={post.author_image}
+              alt={post.author}
+              class="size-10 rounded-full object-cover"
+            />
+          ) : (
+            <div class="size-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
+              {post.author.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div class="text-sm">
             <p class="font-semibold text-foreground">
               {post.author}
@@ -156,9 +164,17 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       <div class="mt-12 border-t border-border pt-8">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-x-4">
-            <div class="size-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
-              {post.author.charAt(0).toUpperCase()}
-            </div>
+            {post.author_image ? (
+              <img
+                src={post.author_image}
+                alt={post.author}
+                class="size-12 rounded-full object-cover"
+              />
+            ) : (
+              <div class="size-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
+                {post.author.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <p class="font-semibold text-foreground">{post.author}</p>
               <p class="text-muted-foreground">Autor del artículo</p>

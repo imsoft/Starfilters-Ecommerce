@@ -359,69 +359,13 @@ const error = url.searchParams.get('error');
         <!-- Imagen destacada -->
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Imagen Destacada</h2>
-          
-          <div class="space-y-4">
-            <!-- Zona de carga (solo si no hay imagen) -->
-            <div id="blog-upload-zone" class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer" style={blogPost.featured_image ? 'display: none;' : ''}>
-              <svg class="mx-auto h-12 w-12 text-muted-foreground" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <div class="mt-4">
-                <label for="blog-featured-image" class="cursor-pointer">
-                  <span class="mt-2 block text-sm font-medium text-foreground">
-                    <span id="blog-upload-status">Arrastra y suelta la imagen aquí, o</span>
-                  </span>
-                  <span class="mt-1 block text-sm text-primary hover:text-primary/90">
-                    haz clic para seleccionar archivo
-                  </span>
-                </label>
-                <input
-                  id="blog-featured-image"
-                  type="file"
-                  accept="image/*"
-                  class="sr-only"
-                />
-              </div>
-              <p class="mt-2 text-xs text-muted-foreground">
-                PNG, JPG, GIF hasta 5MB. Recomendado: 1200x630px
-              </p>
-            </div>
 
-            <!-- Vista previa de imagen -->
-            <div id="blog-image-preview" class="relative group" style={!blogPost.featured_image ? 'display: none;' : ''}>
-              <img 
-                id="blog-preview-img"
-                src={blogPost.featured_image || ''} 
-                alt="Imagen destacada" 
-                class="w-full h-64 object-cover rounded-lg border border-border"
-              />
-              
-              <button
-                type="button"
-                id="blog-delete-image"
-                class="absolute top-2 right-2 h-8 w-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all shadow-md opacity-0 group-hover:opacity-100"
-              >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-              
-              <button
-                type="button"
-                id="blog-change-image"
-                class="absolute bottom-2 right-2 px-3 py-1.5 bg-black/70 text-white text-xs rounded hover:bg-black/80 transition-all shadow-md opacity-0 group-hover:opacity-100"
-              >
-                Cambiar imagen
-              </button>
-            </div>
-          </div>
-          
-          <input 
-            type="hidden" 
-            id="featured-image-url" 
-            name="featured_image_url" 
-            value={blogPost.featured_image || ''} 
+          <BlogImageUploader
+            client:load
+            blogId={blogPost.uuid}
+            initialImage={blogPost.featured_image || undefined}
           />
+          <input type="hidden" id="featured-image-input" name="featured_image" value={blogPost.featured_image || ''} />
         </div>
 
         <!-- SEO -->
@@ -663,173 +607,15 @@ const error = url.searchParams.get('error');
         }
       });
     }
-    
-    // ===== GESTIÓN DE IMAGEN DESTACADA =====
-    const blogId = `{blogPost.uuid}`;
-    const blogUploadZone = document.getElementById('blog-upload-zone');
-    const blogFeaturedImageInput = document.getElementById('blog-featured-image');
-    const blogImagePreview = document.getElementById('blog-image-preview');
-    const blogPreviewImg = document.getElementById('blog-preview-img');
-    const blogDeleteImageBtn = document.getElementById('blog-delete-image');
-    const blogChangeImageBtn = document.getElementById('blog-change-image');
-    const blogUploadStatus = document.getElementById('blog-upload-status');
-    const featuredImageUrlInput = document.getElementById('featured-image-url');
-    
-    // Función para subir imagen
-    async function uploadBlogImage(file: File) {
-      if (!blogUploadStatus) return;
-      
-      // Validar
-      if (!file.type.startsWith('image/')) {
-        alert('El archivo debe ser una imagen válida');
-        return;
+
+
+    // Escuchar el evento de cambio de imagen destacada del componente BlogImageUploader
+    document.addEventListener('blog-image-changed', (event: any) => {
+      const featuredImageInput = document.getElementById('featured-image-input') as HTMLInputElement;
+      if (featuredImageInput && event.detail) {
+        featuredImageInput.value = event.detail.imageUrl || '';
+        console.log('Imagen destacada actualizada:', event.detail.imageUrl);
       }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen debe ser menor a 5MB');
-        return;
-      }
-      
-      blogUploadStatus.textContent = 'Subiendo imagen...';
-      
-      try {
-        const formData = new FormData();
-        formData.append('image', file);
-        formData.append('blogId', blogId);
-        
-        console.log('📤 Subiendo imagen de blog:', file.name);
-        
-        const response = await fetch('/api/blog/upload-image', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const result = await response.json();
-        
-        console.log('📊 Respuesta:', result);
-        
-        if (response.ok && result.success) {
-          // Actualizar vista previa
-          if (blogPreviewImg && blogImagePreview && blogUploadZone) {
-            (blogPreviewImg as HTMLImageElement).src = result.url;
-            blogImagePreview.style.display = '';
-            blogUploadZone.style.display = 'none';
-            
-            // Actualizar input oculto
-            if (featuredImageUrlInput) {
-              (featuredImageUrlInput as HTMLInputElement).value = result.url;
-            }
-          }
-          
-          console.log('✅ Imagen de blog subida:', result.url);
-        } else {
-          alert(`Error al subir la imagen: ${result.message}`);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error al subir la imagen');
-      } finally {
-        blogUploadStatus.textContent = 'Arrastra y suelta la imagen aquí, o';
-        
-        // Limpiar input
-        if (blogFeaturedImageInput) {
-          (blogFeaturedImageInput as HTMLInputElement).value = '';
-        }
-      }
-    }
-    
-    // Función para eliminar imagen
-    async function deleteBlogImage() {
-      if (!confirm('¿Estás seguro de eliminar esta imagen?')) {
-        return;
-      }
-      
-      try {
-        const currentUrl = (featuredImageUrlInput as HTMLInputElement)?.value;
-        
-        console.log('🗑️ Eliminando imagen de blog');
-        
-        const response = await fetch('/api/blog/delete-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ blogId, imageUrl: currentUrl })
-        });
-        
-        const result = await response.json();
-        
-        console.log('📊 Respuesta:', result);
-        
-        if (response.ok && result.success) {
-          // Ocultar vista previa y mostrar zona de carga
-          if (blogImagePreview && blogUploadZone) {
-            blogImagePreview.style.display = 'none';
-            blogUploadZone.style.display = '';
-          }
-          
-          // Limpiar input oculto
-          if (featuredImageUrlInput) {
-            (featuredImageUrlInput as HTMLInputElement).value = '';
-          }
-          
-          console.log('✅ Imagen de blog eliminada');
-        } else {
-          alert(`Error al eliminar: ${result.message}`);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error al eliminar la imagen');
-      }
-    }
-    
-    // Event listeners
-    if (blogFeaturedImageInput) {
-      blogFeaturedImageInput.addEventListener('change', (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) {
-          uploadBlogImage(file);
-        }
-      });
-    }
-    
-    if (blogDeleteImageBtn) {
-      blogDeleteImageBtn.addEventListener('click', deleteBlogImage);
-    }
-    
-    if (blogChangeImageBtn && blogFeaturedImageInput) {
-      blogChangeImageBtn.addEventListener('click', () => {
-        blogFeaturedImageInput.click();
-      });
-    }
-    
-    // Drag and drop
-    if (blogUploadZone) {
-      blogUploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        blogUploadZone.classList.add('border-primary', 'bg-primary/5');
-      });
-      
-      blogUploadZone.addEventListener('dragleave', () => {
-        blogUploadZone.classList.remove('border-primary', 'bg-primary/5');
-      });
-      
-      blogUploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        blogUploadZone.classList.remove('border-primary', 'bg-primary/5');
-        
-        const file = e.dataTransfer?.files[0];
-        if (file) {
-          uploadBlogImage(file);
-        }
-      });
-      
-      // Click en la zona para abrir selector
-      blogUploadZone.addEventListener('click', () => {
-        blogFeaturedImageInput?.click();
-      });
-    }
-    
-    console.log('🎯 Sistema de imagen de blog inicializado');
+    });
   });
 </script>

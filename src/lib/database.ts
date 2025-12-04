@@ -61,6 +61,8 @@ export interface BlogPost {
   category: string;
   featured_image: string;
   author: string;
+  author_id?: number | null;
+  author_image?: string | null;
   status: 'published' | 'draft' | 'scheduled' | 'archived';
   meta_title: string;
   meta_title_en?: string;
@@ -272,15 +274,16 @@ export const updateOrderStatus = async (id: number, status: string): Promise<boo
 function mapBlogPostFromDB(row: any): BlogPost {
   // Priorizar featured_image_url (Cloudinary) sobre featured_image
   const featuredImage = row.featured_image_url || row.featured_image || '';
-  
+
   // Debug: Log para verificar qué valores tenemos
   if (featuredImage && !featuredImage.startsWith('http')) {
     console.warn(`⚠️ Imagen del blog ${row.id || row.uuid} no parece ser una URL válida:`, featuredImage);
   }
-  
+
   return {
     ...row,
     featured_image: featuredImage,
+    author_image: row.author_image || row.profile_image || null,
   };
 }
 
@@ -288,20 +291,22 @@ function mapBlogPostFromDB(row: any): BlogPost {
 export const getBlogPosts = async (limit = 10, offset = 0): Promise<BlogPost[]> => {
   try {
     const sql = `
-      SELECT * FROM blog_posts 
-      WHERE status = 'published' 
-      ORDER BY created_at DESC
+      SELECT bp.*, au.profile_image
+      FROM blog_posts bp
+      LEFT JOIN admin_users au ON bp.author_id = au.id
+      WHERE bp.status = 'published'
+      ORDER BY bp.created_at DESC
     `;
-    
+
     const allPosts = await query(sql, []) as any[];
-    
+
     // Mapear los resultados (priorizar featured_image_url de Cloudinary)
     const mappedPosts = allPosts.map(mapBlogPostFromDB);
-    
+
     // Aplicar limit y offset en JavaScript
     const startIndex = Math.max(0, offset);
     const endIndex = startIndex + Math.max(1, limit);
-    
+
     return mappedPosts.slice(startIndex, endIndex);
   } catch (error) {
     console.error('Error en getBlogPosts:', error);
@@ -312,19 +317,21 @@ export const getBlogPosts = async (limit = 10, offset = 0): Promise<BlogPost[]> 
 export const getAllBlogPosts = async (limit = 100, offset = 0): Promise<BlogPost[]> => {
   try {
     const sql = `
-      SELECT * FROM blog_posts 
-      ORDER BY created_at DESC
+      SELECT bp.*, au.profile_image
+      FROM blog_posts bp
+      LEFT JOIN admin_users au ON bp.author_id = au.id
+      ORDER BY bp.created_at DESC
     `;
-    
+
     const allPosts = await query(sql, []) as any[];
-    
+
     // Mapear los resultados (priorizar featured_image_url de Cloudinary)
     const mappedPosts = allPosts.map(mapBlogPostFromDB);
-    
+
     // Aplicar limit y offset en JavaScript
     const startIndex = Math.max(0, offset);
     const endIndex = startIndex + Math.max(1, limit);
-    
+
     return mappedPosts.slice(startIndex, endIndex);
   } catch (error) {
     console.error('Error en getAllBlogPosts:', error);
@@ -333,7 +340,12 @@ export const getAllBlogPosts = async (limit = 100, offset = 0): Promise<BlogPost
 };
 
 export const getBlogPostById = async (id: number): Promise<BlogPost | null> => {
-  const sql = 'SELECT * FROM blog_posts WHERE id = ?';
+  const sql = `
+    SELECT bp.*, au.profile_image
+    FROM blog_posts bp
+    LEFT JOIN admin_users au ON bp.author_id = au.id
+    WHERE bp.id = ?
+  `;
   const result = await query(sql, [id]) as any[];
   return result.length > 0 ? mapBlogPostFromDB(result[0]) : null;
 };
@@ -342,9 +354,15 @@ export const getBlogPostById = async (id: number): Promise<BlogPost | null> => {
 export const getBlogPostByUuid = async (uuid: string, includeDrafts: boolean = false): Promise<BlogPost | null> => {
   // Si includeDrafts es true, buscar sin importar el estado (útil para admin)
   // Si es false, solo buscar publicados (útil para mostrar en el sitio)
-  const sql = includeDrafts 
-    ? 'SELECT * FROM blog_posts WHERE uuid = ?'
-    : 'SELECT * FROM blog_posts WHERE uuid = ? AND status = "published"';
+  const sql = includeDrafts
+    ? `SELECT bp.*, au.profile_image
+       FROM blog_posts bp
+       LEFT JOIN admin_users au ON bp.author_id = au.id
+       WHERE bp.uuid = ?`
+    : `SELECT bp.*, au.profile_image
+       FROM blog_posts bp
+       LEFT JOIN admin_users au ON bp.author_id = au.id
+       WHERE bp.uuid = ? AND bp.status = "published"`;
   const result = await query(sql, [uuid]) as any[];
   return result.length > 0 ? mapBlogPostFromDB(result[0]) : null;
 };
@@ -993,7 +1011,10 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
     const rows = await query(
-      'SELECT * FROM blog_posts WHERE slug = ? AND status = "published"',
+      `SELECT bp.*, au.profile_image
+       FROM blog_posts bp
+       LEFT JOIN admin_users au ON bp.author_id = au.id
+       WHERE bp.slug = ? AND bp.status = "published"`,
       [slug]
     ) as any[];
     return rows.length > 0 ? mapBlogPostFromDB(rows[0]) : null;
