@@ -37,11 +37,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Validar tipo de archivo
-    if (!image.type.startsWith('image/')) {
+    // Validar tipo de archivo (MIME type)
+    const isValidMimeType = image.type.startsWith('image/');
+    
+    // Validar extensión del archivo
+    const fileName = image.name.toLowerCase();
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!isValidMimeType && !hasValidExtension) {
       return new Response(JSON.stringify({ 
         success: false, 
-        message: 'El archivo debe ser una imagen válida' 
+        message: 'El archivo debe ser una imagen válida (JPG, JPEG, PNG, GIF o WEBP)' 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },

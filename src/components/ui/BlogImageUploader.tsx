@@ -41,9 +41,16 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
   };
 
   const handleFile = async (file: File) => {
-    // Validar tipo de archivo
-    if (!file.type.startsWith('image/')) {
-      alert('El archivo debe ser una imagen válida');
+    // Validar tipo de archivo (MIME type)
+    const isValidMimeType = file.type.startsWith('image/');
+    
+    // Validar extensión del archivo
+    const fileName = file.name.toLowerCase();
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!isValidMimeType && !hasValidExtension) {
+      alert('El archivo debe ser una imagen válida (JPG, JPEG, PNG, GIF o WEBP)');
       return;
     }
     
@@ -159,14 +166,14 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
               id="featured-image"
               name="featured-image"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp"
               className="sr-only"
               onChange={handleChange}
               disabled={uploading}
             />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            PNG, JPG, GIF hasta 5MB. Recomendado: 1200x630px
+            JPG, JPEG, PNG, GIF, WEBP hasta 5MB. Recomendado: 1200x630px
           </p>
         </div>
       )}
@@ -203,7 +210,7 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp"
             className="hidden"
             onChange={handleChange}
             disabled={uploading}
