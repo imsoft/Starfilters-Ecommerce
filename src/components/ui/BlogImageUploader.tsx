@@ -63,6 +63,7 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
       
       const response = await fetch('/api/blog/upload-image', {
         method: 'POST',
+        credentials: 'include', // Incluir cookies para autenticación
         body: formData
       });
       
@@ -100,6 +101,7 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
     try {
       const response = await fetch('/api/blog/delete-image', {
         method: 'POST',
+        credentials: 'include', // Incluir cookies para autenticación
         headers: {
           'Content-Type': 'application/json'
         },
