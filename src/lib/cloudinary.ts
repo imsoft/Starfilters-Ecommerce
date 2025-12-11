@@ -2,10 +2,22 @@ import { v2 as cloudinary } from 'cloudinary';
 import type { UploadApiResponse } from 'cloudinary';
 
 // Configurar Cloudinary
+const cloudName = import.meta.env.CLOUDINARY_CLOUD_NAME;
+const apiKey = import.meta.env.CLOUDINARY_API_KEY;
+const apiSecret = import.meta.env.CLOUDINARY_API_SECRET;
+
+// Validar que las credenciales estén configuradas
+if (!cloudName || !apiKey || !apiSecret) {
+  console.error('❌ ERROR: Credenciales de Cloudinary no configuradas');
+  console.error('   CLOUDINARY_CLOUD_NAME:', cloudName ? '✅' : '❌ FALTA');
+  console.error('   CLOUDINARY_API_KEY:', apiKey ? '✅' : '❌ FALTA');
+  console.error('   CLOUDINARY_API_SECRET:', apiSecret ? '✅' : '❌ FALTA');
+}
+
 cloudinary.config({
-  cloud_name: import.meta.env.CLOUDINARY_CLOUD_NAME,
-  api_key: import.meta.env.CLOUDINARY_API_KEY,
-  api_secret: import.meta.env.CLOUDINARY_API_SECRET,
+  cloud_name: cloudName,
+  api_key: apiKey,
+  api_secret: apiSecret,
   secure: true
 });
 
@@ -28,10 +40,29 @@ export async function uploadImage(
   options: UploadOptions
 ): Promise<string> {
   try {
+    // Validar credenciales antes de intentar subir
+    const cloudName = import.meta.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = import.meta.env.CLOUDINARY_API_KEY;
+    const apiSecret = import.meta.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      const missing = [];
+      if (!cloudName) missing.push('CLOUDINARY_CLOUD_NAME');
+      if (!apiKey) missing.push('CLOUDINARY_API_KEY');
+      if (!apiSecret) missing.push('CLOUDINARY_API_SECRET');
+      throw new Error(`Credenciales de Cloudinary faltantes: ${missing.join(', ')}`);
+    }
+
     // Convertir Buffer a base64 string
     const fileToUpload: string = Buffer.isBuffer(file)
       ? `data:image/png;base64,${file.toString('base64')}`
       : file;
+
+    console.log('📤 Subiendo a Cloudinary:', {
+      folder: options.folder,
+      public_id: options.public_id,
+      cloud_name: cloudName
+    });
 
     const result: UploadApiResponse = await cloudinary.uploader.upload(
       fileToUpload,
@@ -46,9 +77,17 @@ export async function uploadImage(
       }
     );
 
+    console.log('✅ Imagen subida exitosamente:', result.secure_url);
     return result.secure_url;
-  } catch (error) {
-    console.error('Error subiendo imagen a Cloudinary:', error);
+  } catch (error: any) {
+    console.error('❌ Error subiendo imagen a Cloudinary:', error);
+    console.error('   Detalles:', error.message);
+    if (error.http_code) {
+      console.error('   HTTP Code:', error.http_code);
+    }
+    if (error.message) {
+      throw new Error(`Error al subir la imagen: ${error.message}`);
+    }
     throw new Error('Error al subir la imagen');
   }
 }
@@ -164,10 +203,12 @@ export async function uploadToCloudinary(
       url
     };
   } catch (error) {
-    console.error('Error en uploadToCloudinary:', error);
+    console.error('❌ Error en uploadToCloudinary:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('   Mensaje de error:', errorMessage);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido'
+      error: errorMessage
     };
   }
 }

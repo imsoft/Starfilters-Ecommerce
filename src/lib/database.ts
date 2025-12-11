@@ -1029,9 +1029,46 @@ export function generateSlug(title: string): string {
   return title
     .toLowerCase()
     .trim()
+    .normalize('NFD') // Normalizar caracteres especiales
+    .replace(/[\u0300-\u036f]/g, '') // Remover acentos
     .replace(/[^\w\s-]/g, '') // Remover caracteres especiales
     .replace(/[\s_-]+/g, '-') // Reemplazar espacios y guiones con un solo guión
     .replace(/^-+|-+$/g, ''); // Remover guiones del inicio y final
+}
+
+// Función para generar slug único (añade número si ya existe)
+export async function generateUniqueSlug(title: string, excludeId?: number): Promise<string> {
+  let slug = generateSlug(title);
+  let counter = 1;
+  let isUnique = false;
+
+  while (!isUnique) {
+    try {
+      const checkSlug = counter === 1 ? slug : `${slug}-${counter}`;
+
+      // Verificar si el slug ya existe
+      const existing = await query(
+        excludeId
+          ? 'SELECT id FROM blog_posts WHERE slug = ? AND id != ?'
+          : 'SELECT id FROM blog_posts WHERE slug = ?',
+        excludeId ? [checkSlug, excludeId] : [checkSlug]
+      ) as any[];
+
+      if (existing.length === 0) {
+        slug = checkSlug;
+        isUnique = true;
+      } else {
+        counter++;
+      }
+    } catch (error) {
+      console.error('Error verificando slug único:', error);
+      // Si hay error, usar slug con timestamp para garantizar unicidad
+      slug = `${slug}-${Date.now()}`;
+      isUnique = true;
+    }
+  }
+
+  return slug;
 }
 
 export interface UpdateBlogPostData {
