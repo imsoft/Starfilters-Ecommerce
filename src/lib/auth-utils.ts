@@ -8,10 +8,16 @@ export const getAuthenticatedUser = (cookies: any): AuthUser | null => {
     const token = cookies.get('auth-token')?.value;
     
     if (!token) {
+      // Debug: Log cuando no hay token
+      console.log('🔐 No se encontró token de autenticación en cookies');
       return null;
     }
 
-    return verifyJWT(token);
+    const user = verifyJWT(token);
+    if (!user) {
+      console.log('🔐 Token inválido o expirado');
+    }
+    return user;
   } catch (error) {
     console.error('Error verificando token:', error);
     return null;
