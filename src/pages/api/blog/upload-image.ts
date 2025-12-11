@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth-utils';
 import { uploadToCloudinary } from '@/lib/cloudinary';
-import { getBlogPostByUuid, updateBlogPost } from '@/lib/database';
+import { getBlogPostByUuid, updateBlogPostImage } from '@/lib/database';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   // Debug: Verificar cookies recibidas
@@ -129,28 +129,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Actualizar automáticamente la base de datos con la URL de la imagen
     try {
-      const updatedPost = await updateBlogPost(blogUuid, {
-        title: blogPost.title,
-        title_en: blogPost.title_en,
-        slug: blogPost.slug,
-        slug_en: blogPost.slug_en,
-        excerpt: blogPost.excerpt,
-        excerpt_en: blogPost.excerpt_en,
-        content: blogPost.content,
-        content_en: blogPost.content_en,
-        category: blogPost.category,
-        author: blogPost.author,
-        status: blogPost.status,
-        publish_date: blogPost.publish_date || undefined,
-        tags: blogPost.tags,
-        featured_image_url: uploadResult.url, // Guardar la URL en la BD
-        meta_title: blogPost.meta_title,
-        meta_title_en: blogPost.meta_title_en,
-        meta_description: blogPost.meta_description,
-        meta_description_en: blogPost.meta_description_en
-      });
+      const updated = await updateBlogPostImage(blogUuid, uploadResult.url);
 
-      if (updatedPost) {
+      if (updated) {
         console.log('✅ URL de imagen guardada en la base de datos');
       } else {
         console.warn('⚠️ No se pudo actualizar la base de datos, pero la imagen se subió correctamente');

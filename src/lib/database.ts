@@ -1144,6 +1144,33 @@ export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Pr
   }
 }
 
+// Función específica para actualizar solo la imagen destacada
+export async function updateBlogPostImage(uuid: string, imageUrl: string): Promise<boolean> {
+  try {
+    console.log('🔄 Actualizando featured_image_url para blog:', uuid);
+    console.log('📸 Nueva URL:', imageUrl);
+    
+    const result = await query(
+      `UPDATE blog_posts SET featured_image_url = ?, updated_at = NOW() WHERE uuid = ?`,
+      [imageUrl, uuid]
+    );
+
+    const affectedRows = (result as any).affectedRows;
+    console.log('📊 Filas afectadas:', affectedRows);
+    
+    if (affectedRows > 0) {
+      console.log('✅ featured_image_url actualizada correctamente');
+      return true;
+    } else {
+      console.warn('⚠️ No se actualizó ninguna fila. ¿Existe el blog con ese UUID?');
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Error actualizando featured_image_url:', error);
+    return false;
+  }
+}
+
 // Funciones para manejar imágenes de productos
 export const getProductImages = async (productId: number): Promise<ProductImage[]> => {
   const sql = `
