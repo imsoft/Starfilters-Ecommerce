@@ -3,7 +3,7 @@
  * Ejecutar: node scripts/check-blog-images.js
  */
 
-import { query } from '../src/config/database.js';
+import { query } from './db-config.js';
 
 async function checkBlogImages() {
   console.log('🔍 Verificando imágenes de blog en la base de datos\n');

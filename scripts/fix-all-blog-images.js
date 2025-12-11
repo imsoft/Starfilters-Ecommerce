@@ -3,7 +3,7 @@
  * Ejecutar: node scripts/fix-all-blog-images.js
  */
 
-import { query } from '../src/config/database.js';
+import { query } from './db-config.js';
 
 async function fixAllBlogImages() {
   console.log('🔄 Migrando imágenes de blog\n');

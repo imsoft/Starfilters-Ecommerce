@@ -4,7 +4,7 @@
  * Ejemplo: node scripts/update-blog-image-url.js 26e0db26-ea85-4f67-86d3-c9e41b2f60d0 "https://res.cloudinary.com/..."
  */
 
-import { query } from '../src/config/database.js';
+import { query } from './db-config.js';
 
 async function updateBlogImageUrl(uuid, imageUrl) {
   console.log('🔄 Actualizando imagen de blog\n');
