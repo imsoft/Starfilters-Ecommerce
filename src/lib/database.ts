@@ -291,7 +291,7 @@ function mapBlogPostFromDB(row: any): BlogPost {
 export const getBlogPosts = async (limit = 10, offset = 0): Promise<BlogPost[]> => {
   try {
     const sql = `
-      SELECT bp.*, au.profile_image
+      SELECT bp.*, au.profile_image, bp.featured_image_url
       FROM blog_posts bp
       LEFT JOIN admin_users au ON bp.author_id = au.id
       WHERE bp.status = 'published'
@@ -317,7 +317,7 @@ export const getBlogPosts = async (limit = 10, offset = 0): Promise<BlogPost[]> 
 export const getAllBlogPosts = async (limit = 100, offset = 0): Promise<BlogPost[]> => {
   try {
     const sql = `
-      SELECT bp.*, au.profile_image
+      SELECT bp.*, au.profile_image, bp.featured_image_url
       FROM blog_posts bp
       LEFT JOIN admin_users au ON bp.author_id = au.id
       ORDER BY bp.created_at DESC
