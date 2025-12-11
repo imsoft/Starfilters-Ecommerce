@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth-utils';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { getBlogPostByUuid, updateBlogPost } from '@/lib/database';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const authResult = await requireAdmin(cookies);
@@ -58,17 +59,37 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    console.log('📤 Subiendo imagen de blog:', { blogId, fileName: image.name });
+    // Obtener el blog post para obtener el UUID (si blogId es numérico, buscar por ID)
+    let blogPost = await getBlogPostByUuid(blogId, true);
+    
+    // Si no se encontró por UUID, intentar buscar por ID numérico
+    if (!blogPost) {
+      const { getBlogPostById } = await import('@/lib/database');
+      blogPost = await getBlogPostById(parseInt(blogId));
+    }
+
+    if (!blogPost) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Artículo del blog no encontrado' 
+      }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const blogUuid = blogPost.uuid;
+    console.log('📤 Subiendo imagen de blog:', { blogId, blogUuid, fileName: image.name });
 
     // Convertir archivo a buffer
     const arrayBuffer = await image.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Subir a Cloudinary
+    // Subir a Cloudinary usando el UUID del blog
     const imageName = `featured_${Date.now()}`;
     const uploadResult = await uploadToCloudinary(
       buffer,
-      `starfilters-ecommerce/blog/${blogId}`,
+      `starfilters-ecommerce/blog/${blogUuid}`,
       imageName
     );
 
@@ -84,6 +105,39 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     console.log('✅ Imagen de blog subida exitosamente:', uploadResult.url);
+
+    // Actualizar automáticamente la base de datos con la URL de la imagen
+    try {
+      const updatedPost = await updateBlogPost(blogUuid, {
+        title: blogPost.title,
+        title_en: blogPost.title_en,
+        slug: blogPost.slug,
+        slug_en: blogPost.slug_en,
+        excerpt: blogPost.excerpt,
+        excerpt_en: blogPost.excerpt_en,
+        content: blogPost.content,
+        content_en: blogPost.content_en,
+        category: blogPost.category,
+        author: blogPost.author,
+        status: blogPost.status,
+        publish_date: blogPost.publish_date || undefined,
+        tags: blogPost.tags,
+        featured_image_url: uploadResult.url, // Guardar la URL en la BD
+        meta_title: blogPost.meta_title,
+        meta_title_en: blogPost.meta_title_en,
+        meta_description: blogPost.meta_description,
+        meta_description_en: blogPost.meta_description_en
+      });
+
+      if (updatedPost) {
+        console.log('✅ URL de imagen guardada en la base de datos');
+      } else {
+        console.warn('⚠️ No se pudo actualizar la base de datos, pero la imagen se subió correctamente');
+      }
+    } catch (dbError) {
+      console.error('❌ Error actualizando la base de datos:', dbError);
+      // No fallar la respuesta si la imagen se subió correctamente
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
