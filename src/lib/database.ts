@@ -341,7 +341,7 @@ export const getAllBlogPosts = async (limit = 100, offset = 0): Promise<BlogPost
 
 export const getBlogPostById = async (id: number): Promise<BlogPost | null> => {
   const sql = `
-    SELECT bp.*, au.profile_image
+    SELECT bp.*, bp.featured_image_url, au.profile_image
     FROM blog_posts bp
     LEFT JOIN admin_users au ON bp.author_id = au.id
     WHERE bp.id = ?
@@ -355,11 +355,11 @@ export const getBlogPostByUuid = async (uuid: string, includeDrafts: boolean = f
   // Si includeDrafts es true, buscar sin importar el estado (útil para admin)
   // Si es false, solo buscar publicados (útil para mostrar en el sitio)
   const sql = includeDrafts
-    ? `SELECT bp.*, au.profile_image
+    ? `SELECT bp.*, bp.featured_image_url, au.profile_image
        FROM blog_posts bp
        LEFT JOIN admin_users au ON bp.author_id = au.id
        WHERE bp.uuid = ?`
-    : `SELECT bp.*, au.profile_image
+    : `SELECT bp.*, bp.featured_image_url, au.profile_image
        FROM blog_posts bp
        LEFT JOIN admin_users au ON bp.author_id = au.id
        WHERE bp.uuid = ? AND bp.status = "published"`;
@@ -1011,7 +1011,7 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
     const rows = await query(
-      `SELECT bp.*, au.profile_image
+      `SELECT bp.*, bp.featured_image_url, au.profile_image
        FROM blog_posts bp
        LEFT JOIN admin_users au ON bp.author_id = au.id
        WHERE bp.slug = ? AND bp.status = "published"`,
