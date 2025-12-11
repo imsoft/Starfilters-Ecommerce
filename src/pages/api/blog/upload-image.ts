@@ -4,8 +4,22 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 import { getBlogPostByUuid, updateBlogPost } from '@/lib/database';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  // Debug: Verificar cookies recibidas
+  const authToken = cookies.get('auth-token');
+  console.log('🔐 Verificando autenticación:', {
+    hasToken: !!authToken,
+    tokenValue: authToken ? `${authToken.value.substring(0, 20)}...` : null,
+    cookieHeaders: request.headers.get('cookie')?.substring(0, 100) || 'No cookies en headers'
+  });
+
   const authResult = await requireAdmin(cookies);
+  
   if (authResult.redirect) {
+    console.error('❌ Autenticación fallida:', {
+      redirect: authResult.redirect,
+      hasUser: !!authResult.user,
+      isAdmin: authResult.isAdmin
+    });
     return new Response(JSON.stringify({ success: false, message: 'No autorizado' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
