@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from './button';
 
 interface BlogImageUploaderProps {
@@ -12,6 +12,13 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Actualizar el estado cuando cambia initialImage (al recargar la página)
+  React.useEffect(() => {
+    if (initialImage) {
+      setImage(initialImage);
+    }
+  }, [initialImage]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -77,6 +84,7 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
       const result = await response.json();
       
       if (response.ok && result.success) {
+        console.log('✅ Imagen subida exitosamente:', result.url);
         setImage(result.url);
         onImageChange?.(result.url);
         
@@ -89,6 +97,9 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
+        
+        // Mostrar mensaje de éxito
+        alert('✅ Imagen subida exitosamente. La imagen ya está guardada en la base de datos.');
       } else {
         alert(`Error al subir la imagen: ${result.message}`);
       }
