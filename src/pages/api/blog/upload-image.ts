@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth-utils';
 import { uploadToCloudinary } from '@/lib/cloudinary';
-import { getBlogPostByUuid, updateBlogPostImage } from '@/lib/database';
+import { getBlogPostByUuid, updateBlogPostImage, generateUUID } from '@/lib/database';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   // Debug: Verificar cookies recibidas
@@ -80,33 +80,44 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Obtener el blog post para obtener el UUID (si blogId es numérico, buscar por ID)
-    let blogPost = await getBlogPostByUuid(blogId, true);
-    
-    // Si no se encontró por UUID, intentar buscar por ID numérico
-    if (!blogPost) {
-      const { getBlogPostById } = await import('@/lib/database');
-      blogPost = await getBlogPostById(parseInt(blogId));
+    // Determinar el UUID a usar para la subida
+    let blogUuid: string;
+    let isNewBlog = false;
+    let blogPost = null;
+
+    // Si blogId es "new" o "draft", es un blog nuevo
+    if (blogId === 'new' || blogId === 'draft') {
+      isNewBlog = true;
+      blogUuid = generateUUID(); // Generar UUID temporal para blog nuevo
+      console.log('📝 Blog nuevo detectado, usando UUID temporal:', blogUuid);
+    } else {
+      // Intentar obtener el blog post existente
+      blogPost = await getBlogPostByUuid(blogId, true);
+      
+      // Si no se encontró por UUID, intentar buscar por ID numérico
+      if (!blogPost && !isNaN(parseInt(blogId))) {
+        const { getBlogPostById } = await import('@/lib/database');
+        blogPost = await getBlogPostById(parseInt(blogId));
+      }
+
+      if (blogPost) {
+        blogUuid = blogPost.uuid;
+        console.log('📤 Blog existente encontrado:', { blogId, blogUuid });
+      } else {
+        // Si no se encuentra el blog, tratarlo como nuevo
+        isNewBlog = true;
+        blogUuid = generateUUID();
+        console.log('⚠️ Blog no encontrado, tratando como nuevo con UUID temporal:', blogUuid);
+      }
     }
 
-    if (!blogPost) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        message: 'Artículo del blog no encontrado' 
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const blogUuid = blogPost.uuid;
-    console.log('📤 Subiendo imagen de blog:', { blogId, blogUuid, fileName: image.name });
+    console.log('📤 Subiendo imagen de blog:', { blogId, blogUuid, isNewBlog, fileName: image.name });
 
     // Convertir archivo a buffer
     const arrayBuffer = await image.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Subir a Cloudinary usando el UUID del blog
+    // Subir a Cloudinary usando el UUID del blog (temporal o real)
     const imageName = `featured_${Date.now()}`;
     const uploadResult = await uploadToCloudinary(
       buffer,
@@ -127,23 +138,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     console.log('✅ Imagen de blog subida exitosamente:', uploadResult.url);
 
-    // Actualizar automáticamente la base de datos con la URL de la imagen
-    try {
-      const updated = await updateBlogPostImage(blogUuid, uploadResult.url);
+    // Solo intentar actualizar la base de datos si el blog ya existe
+    if (!isNewBlog && blogPost) {
+      try {
+        const updated = await updateBlogPostImage(blogUuid, uploadResult.url);
 
-      if (updated) {
-        console.log('✅ URL de imagen guardada en la base de datos');
-      } else {
-        console.warn('⚠️ No se pudo actualizar la base de datos, pero la imagen se subió correctamente');
+        if (updated) {
+          console.log('✅ URL de imagen guardada en la base de datos');
+        } else {
+          console.warn('⚠️ No se pudo actualizar la base de datos, pero la imagen se subió correctamente');
+        }
+      } catch (dbError) {
+        console.error('❌ Error actualizando la base de datos:', dbError);
+        // No fallar la respuesta si la imagen se subió correctamente
       }
-    } catch (dbError) {
-      console.error('❌ Error actualizando la base de datos:', dbError);
-      // No fallar la respuesta si la imagen se subió correctamente
+    } else {
+      console.log('ℹ️ Blog nuevo - la imagen se guardará cuando se cree el artículo');
     }
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Imagen subida exitosamente',
+      message: isNewBlog ? 'Imagen subida exitosamente. Se asociará al blog cuando lo guardes.' : 'Imagen subida exitosamente',
       url: uploadResult.url
     }), {
       status: 200,

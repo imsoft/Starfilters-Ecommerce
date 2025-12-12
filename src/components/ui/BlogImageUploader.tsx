@@ -98,8 +98,8 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
           fileInputRef.current.value = '';
         }
         
-        // Mostrar mensaje de éxito
-        alert('✅ Imagen subida exitosamente. La imagen ya está guardada en la base de datos.');
+        // Mostrar mensaje de éxito apropiado según el contexto
+        alert(result.message || '✅ Imagen subida exitosamente');
       } else {
         alert(`Error al subir la imagen: ${result.message}`);
       }
