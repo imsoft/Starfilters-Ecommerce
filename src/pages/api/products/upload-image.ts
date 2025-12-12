@@ -68,7 +68,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const imageName = `product_${Date.now()}`;
     const uploadResult = await uploadToCloudinary(
       buffer,
-      `starfilters-ecommerce/products/${productId}`,
+      `starfilters-ecommerce/productos/${productId}/imagenes`,
       imageName
     );
 

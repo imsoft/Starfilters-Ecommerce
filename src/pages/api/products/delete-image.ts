@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     console.log('🗑️ Eliminando imagen:', { imageId, productId });
 
     // Aquí podrías eliminar la imagen de Cloudinary si lo deseas
-    // const publicId = `starfilters-ecommerce/products/${productId}/${imageId}`;
+    // const publicId = `starfilters-ecommerce/productos/${productId}/imagenes/${imageId}`;
     // await deleteImage(publicId);
 
     console.log('✅ Imagen eliminada exitosamente');

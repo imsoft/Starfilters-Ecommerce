@@ -10,10 +10,11 @@ Todas las imágenes se organizan automáticamente en Cloudinary siguiendo esta e
 
 ```
 starfilters-ecommerce/
-├── products/{product-uuid}/
-│   ├── main-image.jpg
-│   ├── gallery-1.jpg
-│   └── gallery-2.jpg
+├── productos/{product-uuid}/
+│   └── imagenes/
+│       ├── main-image.jpg
+│       ├── gallery-1.jpg
+│       └── gallery-2.jpg
 ├── blog/{blog-uuid}/
 │   ├── featured-image.jpg
 │   └── content-image.jpg

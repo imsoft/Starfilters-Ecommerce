@@ -104,7 +104,7 @@ export async function uploadProductImage(
   productId: string,
   imageName?: string
 ): Promise<string> {
-  const folder = `starfilters-ecommerce/products/${productId}`;
+  const folder = `starfilters-ecommerce/productos/${productId}/imagenes`;
   const public_id = imageName ? `${imageName}` : undefined;
 
   return uploadImage(file, {

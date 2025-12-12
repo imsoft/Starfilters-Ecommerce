@@ -33,11 +33,12 @@ El proyecto está configurado para organizar las imágenes de la siguiente maner
 
 ```
 starfilters-ecommerce/
-├── products/
+├── productos/
 │   ├── {product-uuid}/
-│   │   ├── main-image.jpg
-│   │   ├── gallery-1.jpg
-│   │   └── gallery-2.jpg
+│   │   └── imagenes/
+│   │       ├── main-image.jpg
+│   │       ├── gallery-1.jpg
+│   │       └── gallery-2.jpg
 ├── blog/
 │   ├── {blog-uuid}/
 │   │   ├── featured-image.jpg

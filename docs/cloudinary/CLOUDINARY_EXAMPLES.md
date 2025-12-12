@@ -340,8 +340,8 @@ export default function ProductGallery({ productId }: { productId: string }) {
 import { getOptimizedUrl } from '@/lib/cloudinary';
 
 // Obtener diferentes tamaños de la misma imagen
-const originalUrl = 'https://res.cloudinary.com/.../starfilters-ecommerce/products/123/image.jpg';
-const publicId = 'starfilters-ecommerce/products/123/image';
+const originalUrl = 'https://res.cloudinary.com/.../starfilters-ecommerce/productos/123/imagenes/image.jpg';
+const publicId = 'starfilters-ecommerce/productos/123/imagenes/image';
 
 // Thumbnail pequeño
 const thumbnail = getOptimizedUrl(publicId, {
