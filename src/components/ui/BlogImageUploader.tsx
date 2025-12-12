@@ -88,7 +88,16 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
         setImage(result.url);
         onImageChange?.(result.url);
         
-        // Emitir evento personalizado para actualizar el campo oculto
+        // Actualizar DIRECTAMENTE el campo oculto del DOM
+        const hiddenInput = document.getElementById('featured-image-input') as HTMLInputElement;
+        if (hiddenInput) {
+          hiddenInput.value = result.url;
+          console.log('✅ Campo oculto actualizado directamente:', hiddenInput.value);
+        } else {
+          console.error('❌ No se encontró el campo oculto featured-image-input');
+        }
+        
+        // Emitir evento personalizado (como respaldo)
         window.dispatchEvent(new CustomEvent('blog-image-changed', { 
           detail: { imageUrl: result.url } 
         }));
@@ -132,7 +141,14 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
         setImage(null);
         onImageChange?.(null);
         
-        // Emitir evento personalizado para actualizar el campo oculto
+        // Actualizar DIRECTAMENTE el campo oculto del DOM
+        const hiddenInput = document.getElementById('featured-image-input') as HTMLInputElement;
+        if (hiddenInput) {
+          hiddenInput.value = '';
+          console.log('✅ Campo oculto limpiado directamente');
+        }
+        
+        // Emitir evento personalizado (como respaldo)
         window.dispatchEvent(new CustomEvent('blog-image-changed', { 
           detail: { imageUrl: null } 
         }));
