@@ -23,6 +23,15 @@ if (Astro.request.method === 'POST') {
   const publishDate = formData.get('publish-date') as string;
   const tags = formData.get('tags') as string;
   const featuredImage = formData.get('featured_image') as string | null;
+  
+  // Debug: verificar qué imagen se recibió
+  console.log('🖼️ Imagen destacada recibida:', {
+    featuredImage,
+    tipo: typeof featuredImage,
+    longitud: featuredImage?.length,
+    estaVacio: !featuredImage || featuredImage === ''
+  });
+  
   const metaTitle = formData.get('meta-title') as string;
   const metaTitle_en = formData.get('meta-title_en') as string | null;
   const metaDescription = formData.get('meta-description') as string;
@@ -423,8 +432,14 @@ const errorDetails = url.searchParams.get('details');
           Imagen Destacada
         </h2>
 
-        <BlogImageUploader client:load blogId="new" />
+        <BlogImageUploader 
+          client:load 
+          blogId="new"
+        />
         <input type="hidden" id="featured-image-input" name="featured_image" value="" />
+        
+        <!-- Debug: mostrar URL capturada -->
+        <p id="image-url-debug" class="mt-2 text-xs text-muted-foreground"></p>
       </div>
 
       <!-- SEO -->
@@ -676,10 +691,31 @@ const errorDetails = url.searchParams.get('details');
     // Escuchar el evento de cambio de imagen destacada
     document.addEventListener('blog-image-changed', (event: any) => {
       const featuredImageInput = document.getElementById('featured-image-input') as HTMLInputElement;
+      const debugElement = document.getElementById('image-url-debug');
+      
       if (featuredImageInput && event.detail) {
-        featuredImageInput.value = event.detail.imageUrl || '';
-        console.log('Imagen destacada actualizada:', event.detail.imageUrl);
+        const imageUrl = event.detail.imageUrl || '';
+        featuredImageInput.value = imageUrl;
+        console.log('✅ Imagen destacada actualizada en campo oculto:', imageUrl);
+        console.log('✅ Valor del campo oculto:', featuredImageInput.value);
+        
+        // Mostrar debug visual
+        if (debugElement) {
+          debugElement.textContent = imageUrl ? `✅ URL capturada: ${imageUrl}` : '⚠️ Sin imagen';
+          debugElement.style.color = imageUrl ? 'green' : 'orange';
+        }
       }
     });
+
+    // Verificar el valor del campo antes de enviar el formulario
+    const form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        const featuredImageInput = document.getElementById('featured-image-input') as HTMLInputElement;
+        console.log('📤 Enviando formulario con imagen:', featuredImageInput?.value);
+        
+        // No prevenir el submit, solo loguear
+      });
+    }
   });
 </script>
