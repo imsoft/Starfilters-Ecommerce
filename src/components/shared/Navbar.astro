@@ -102,6 +102,14 @@ const navLinks = [...baseNavLinks];
 
         <!-- Menú de navegación - centrado -->
         <div class="hidden lg:flex lg:gap-x-8">
+          <!-- Enlace directo a Filtros de Aire -->
+          <a
+            href={lang === 'en' ? '/en/filters' : '/filtros'}
+            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
+          >
+            {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
+          </a>
+          
           <!-- Dropdown de Categorías de Filtros -->
           {filterCategories.length > 0 && (
             <div class="relative group">
@@ -109,7 +117,7 @@ const navLinks = [...baseNavLinks];
                 type="button"
                 class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors flex items-center gap-1"
               >
-                {lang === 'en' ? 'Filter Categories' : 'Categorías de Filtros'}
+                {lang === 'en' ? 'Filter Categories' : 'Categorías'}
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
@@ -203,11 +211,19 @@ const navLinks = [...baseNavLinks];
           <div class="mt-6 flow-root">
             <div class="-my-6 divide-y divide-border">
               <div class="space-y-2 py-6">
+                <!-- Enlace directo a Filtros de Aire en móvil -->
+                <a
+                  href={lang === 'en' ? '/en/filters' : '/filtros'}
+                  class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
+                >
+                  {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
+                </a>
+                
                 <!-- Categorías de Filtros en móvil -->
                 {filterCategories.length > 0 && (
                   <div class="-mx-3">
                     <p class="px-3 py-2 text-base/7 font-semibold text-foreground">
-                      {lang === 'en' ? 'Filter Categories' : 'Categorías de Filtros'}
+                      {lang === 'en' ? 'Filter Categories' : 'Categorías'}
                     </p>
                     {filterCategories.map((category) => (
                       <a

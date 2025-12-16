@@ -5,6 +5,8 @@ import LazyImage from "@/components/shared/LazyImage.astro";
 import { getCategoryBySlug, getCategoryVariants, getCategoryImages } from "@/lib/filter-category-service";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
+export const prerender = false;
+
 const { slug } = Astro.params;
 
 if (!slug) {
