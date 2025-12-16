@@ -3,7 +3,7 @@ import { verifyWebhookSignature, STRIPE_CONFIG } from '@/lib/stripe';
 import { clearCart } from '@/lib/cart';
 import { createOrder, createOrderItem } from '@/lib/database';
 import { query } from '@/config/database';
-import { sendEmail, createOrderConfirmationEmail } from '@/lib/email';
+import { sendEmail, createOrderConfirmationEmail, createNewOrderNotificationEmail } from '@/lib/email';
 import { recordDiscountCodeUsage } from '@/lib/discount-codes';
 import { updateBindProductInventory } from '@/lib/bind';
 import type { RowDataPacket } from 'mysql2/promise';
@@ -179,9 +179,39 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       const emailSent = await sendEmail(emailData);
       
       if (emailSent) {
-        console.log('✅ Email de confirmación enviado');
+        console.log('✅ Email de confirmación enviado al comprador');
       } else {
-        console.log('⚠️ Error al enviar email de confirmación');
+        console.log('⚠️ Error al enviar email de confirmación al comprador');
+      }
+
+      // 5. Enviar email al vendedor (admin)
+      const adminEmail = process.env.ADMIN_EMAIL || import.meta.env.ADMIN_EMAIL;
+      if (adminEmail) {
+        const adminEmailData = createNewOrderNotificationEmail(
+          orderNumber,
+          orderDate,
+          metadata.customer_name,
+          metadata.customer_email,
+          paymentIntent.amount / 100,
+          items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          metadata.shipping_address
+        );
+        
+        adminEmailData.to = adminEmail;
+        
+        const adminEmailSent = await sendEmail(adminEmailData);
+        
+        if (adminEmailSent) {
+          console.log('✅ Email de notificación enviado al vendedor');
+        } else {
+          console.log('⚠️ Error al enviar email de notificación al vendedor');
+        }
+      } else {
+        console.log('⚠️ ADMIN_EMAIL no configurado, no se enviará email al vendedor');
       }
     }
 

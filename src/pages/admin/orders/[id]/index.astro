@@ -2,6 +2,7 @@
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
 import { getOrderByUuid, getOrderItems, updateOrderStatus } from "@/lib/database";
+import { sendEmail, createOrderStatusUpdateEmail } from "@/lib/email";
 import type { Order, OrderItem } from "@/lib/database";
 
 const { id } = Astro.params;
@@ -84,10 +85,51 @@ if (Astro.request.method === 'POST') {
   
   if (newStatus && newStatus !== order.status) {
     console.log('✅ Actualizando estado...');
+    const oldStatus = order.status;
     const success = await updateOrderStatus(order.id, newStatus);
     console.log('✅ Resultado:', success);
     
     if (success) {
+      // Enviar email al comprador sobre el cambio de estado
+      try {
+        const orderDate = order.created_at 
+          ? new Date(order.created_at).toLocaleDateString('es-MX', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : new Date().toLocaleDateString('es-MX');
+
+        const emailData = createOrderStatusUpdateEmail(
+          order.customer_name,
+          order.order_number,
+          oldStatus,
+          newStatus,
+          orderDate,
+          orderItems.map(item => ({
+            name: item.product_name,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          order.total_amount
+        );
+
+        emailData.to = order.customer_email;
+
+        const emailSent = await sendEmail(emailData);
+
+        if (emailSent) {
+          console.log(`✅ Email de actualización de estado enviado al comprador (${oldStatus} → ${newStatus})`);
+        } else {
+          console.log('⚠️ Error al enviar email de actualización de estado');
+        }
+      } catch (emailError) {
+        console.error('⚠️ Error al enviar email de actualización de estado:', emailError);
+        // No fallar la actualización si el email falla
+      }
+
       return Astro.redirect(`/admin/orders/${id}?success=status_updated`);
     } else {
       console.error('❌ Error al actualizar estado');

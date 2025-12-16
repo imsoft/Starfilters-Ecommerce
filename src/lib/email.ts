@@ -232,3 +232,310 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
     text
   };
 };
+
+// Template para email al vendedor cuando se crea una nueva orden
+export const createNewOrderNotificationEmail = (
+  orderNumber: string,
+  orderDate: string,
+  customerName: string,
+  customerEmail: string,
+  total: number,
+  items: Array<{ name: string; quantity: number; price: number }>,
+  shippingAddress: string
+): EmailData => {
+  const subject = `Nueva Orden #${orderNumber} - StarFilters`;
+  
+  const itemsList = items.map(item => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+        <strong>${item.name}</strong><br>
+        <span style="color: #6b7280; font-size: 14px;">Cantidad: ${item.quantity}</span>
+      </td>
+      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+        $${(item.price * item.quantity).toFixed(2)}
+      </td>
+    </tr>
+  `).join('');
+  
+  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://tu-dominio.com';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>${subject}</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .total { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; }
+        .shipping { background: #e0e7ff; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .customer-info { background: #fef3c7; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .button { 
+          display: inline-block; 
+          background-color: #6366f1; 
+          color: white; 
+          padding: 12px 24px; 
+          text-decoration: none; 
+          border-radius: 6px; 
+          font-weight: bold;
+          margin: 20px 0;
+        }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🛒 Nueva Orden Recibida</h1>
+        </div>
+        <div class="content">
+          <h2>Nueva orden de compra</h2>
+          <p>Has recibido una nueva orden que requiere tu atención.</p>
+          
+          <div class="order-info">
+            <h3>Detalles de la Orden</h3>
+            <p><strong>Número de Pedido:</strong> ${orderNumber}</p>
+            <p><strong>Fecha:</strong> ${orderDate}</p>
+            <p><strong>Total:</strong> $${total.toFixed(2)} MXN</p>
+          </div>
+          
+          <div class="customer-info">
+            <h3>Información del Cliente</h3>
+            <p><strong>Nombre:</strong> ${customerName}</p>
+            <p><strong>Email:</strong> ${customerEmail}</p>
+          </div>
+          
+          <h3>Productos:</h3>
+          <table class="order-items">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Producto</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsList}
+            </tbody>
+          </table>
+          
+          <div class="shipping">
+            <h4>Dirección de Envío:</h4>
+            <p>${shippingAddress}</p>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="${siteUrl}/admin/orders" class="button">Ver Orden en Panel</a>
+          </div>
+        </div>
+        <div class="footer">
+          <p>© 2024 StarFilters. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const text = `
+    Nueva Orden Recibida
+    
+    Has recibido una nueva orden:
+    
+    Número de Pedido: ${orderNumber}
+    Fecha: ${orderDate}
+    Total: $${total.toFixed(2)} MXN
+    
+    Cliente:
+    Nombre: ${customerName}
+    Email: ${customerEmail}
+    
+    Productos:
+    ${items.map(item => `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+    
+    Dirección de Envío:
+    ${shippingAddress}
+    
+    Ver orden en: ${siteUrl}/admin/orders
+    
+    © 2024 StarFilters
+  `;
+  
+  return {
+    to: '',
+    subject,
+    html,
+    text
+  };
+};
+
+// Template para email al comprador cuando cambia el estado de la orden
+export const createOrderStatusUpdateEmail = (
+  customerName: string,
+  orderNumber: string,
+  oldStatus: string,
+  newStatus: string,
+  orderDate: string,
+  items: Array<{ name: string; quantity: number; price: number }>,
+  total: number,
+  trackingNumber?: string
+): EmailData => {
+  const statusMessages: Record<string, { title: string; message: string; color: string }> = {
+    processing: {
+      title: 'Tu pedido está siendo procesado',
+      message: 'Tu pedido ha sido confirmado y está siendo preparado para el envío.',
+      color: '#6366f1'
+    },
+    shipped: {
+      title: '¡Tu pedido ha sido enviado!',
+      message: 'Tu pedido está en camino. ' + (trackingNumber ? `Número de rastreo: ${trackingNumber}` : ''),
+      color: '#10b981'
+    },
+    delivered: {
+      title: '¡Tu pedido ha sido entregado!',
+      message: 'Tu pedido ha llegado a su destino. ¡Esperamos que disfrutes tus productos!',
+      color: '#059669'
+    },
+    cancelled: {
+      title: 'Tu pedido ha sido cancelado',
+      message: 'Tu pedido ha sido cancelado. Si tienes alguna pregunta, por favor contáctanos.',
+      color: '#ef4444'
+    }
+  };
+
+  const statusInfo = statusMessages[newStatus] || {
+    title: 'Actualización de tu pedido',
+    message: `El estado de tu pedido ha cambiado de "${oldStatus}" a "${newStatus}".`,
+    color: '#6366f1'
+  };
+
+  const subject = `Actualización de Pedido #${orderNumber} - StarFilters`;
+  
+  const itemsList = items.map(item => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+        <strong>${item.name}</strong><br>
+        <span style="color: #6b7280; font-size: 14px;">Cantidad: ${item.quantity}</span>
+      </td>
+      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+        $${(item.price * item.quantity).toFixed(2)}
+      </td>
+    </tr>
+  `).join('');
+  
+  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://tu-dominio.com';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>${subject}</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: ${statusInfo.color}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .status-badge { 
+          display: inline-block; 
+          padding: 8px 16px; 
+          background-color: ${statusInfo.color}; 
+          color: white; 
+          border-radius: 20px; 
+          font-weight: bold;
+          margin: 10px 0;
+        }
+        .button { 
+          display: inline-block; 
+          background-color: #6366f1; 
+          color: white; 
+          padding: 12px 24px; 
+          text-decoration: none; 
+          border-radius: 6px; 
+          font-weight: bold;
+          margin: 20px 0;
+        }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>${statusInfo.title}</h1>
+        </div>
+        <div class="content">
+          <h2>Hola ${customerName},</h2>
+          <p>${statusInfo.message}</p>
+          
+          <div class="order-info">
+            <h3>Detalles del Pedido</h3>
+            <p><strong>Número de Pedido:</strong> ${orderNumber}</p>
+            <p><strong>Fecha:</strong> ${orderDate}</p>
+            <p><strong>Estado:</strong> <span class="status-badge">${newStatus.toUpperCase()}</span></p>
+            ${trackingNumber ? `<p><strong>Número de Rastreo:</strong> ${trackingNumber}</p>` : ''}
+          </div>
+          
+          <h3>Productos:</h3>
+          <table class="order-items">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Producto</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsList}
+            </tbody>
+          </table>
+          
+          <div style="text-align: right; margin-top: 20px;">
+            <p style="font-size: 18px; font-weight: bold;">Total: $${total.toFixed(2)} MXN</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${siteUrl}/pedidos" class="button">Ver Mis Pedidos</a>
+          </div>
+        </div>
+        <div class="footer">
+          <p>© 2024 StarFilters. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const text = `
+    ${statusInfo.title}
+    
+    Hola ${customerName},
+    
+    ${statusInfo.message}
+    
+    Detalles del Pedido:
+    Número: ${orderNumber}
+    Fecha: ${orderDate}
+    Estado: ${newStatus.toUpperCase()}
+    ${trackingNumber ? `Número de Rastreo: ${trackingNumber}` : ''}
+    
+    Productos:
+    ${items.map(item => `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+    
+    Total: $${total.toFixed(2)} MXN
+    
+    Ver tus pedidos: ${siteUrl}/pedidos
+    
+    © 2024 StarFilters
+  `;
+  
+  return {
+    to: '',
+    subject,
+    html,
+    text
+  };
+};
