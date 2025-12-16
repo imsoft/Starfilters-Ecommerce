@@ -6,44 +6,74 @@ import { getActiveCategories, getCategoryVariants } from "@/lib/filter-category-
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
-// Obtener categorías de filtros activas
-const filterCategories = await getActiveCategories();
+export const prerender = false;
 
-// Obtener variantes para cada categoría y preparar datos
-const productsWithImages = await Promise.all(
-  filterCategories.map(async (category) => {
-    // Obtener variantes de esta categoría
-    const variants = await getCategoryVariants(category.id);
-    
-    // Calcular precio mínimo de las variantes
-    const prices = variants.filter(v => v.is_active).map(v => v.price);
-    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
-    
-    // Calcular stock total
-    const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-    
-    // Usar la imagen principal de la categoría o placeholder
-    const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
-    
-    return {
-      id: category.id,
-      uuid: category.slug, // Usar slug como identificador único
-      name: category.name,
-      description: category.description || '',
-      category: category.name, // Nombre de la categoría
-      price: minPrice,
-      maxPrice: maxPrice,
-      stock: totalStock,
-      imageUrl: imageUrl,
-      variantCount: variants.length,
-      slug: category.slug
-    };
-  })
-);
+// Declarar variables fuera del try para que estén disponibles en todo el scope
+let products: Array<{
+  id: number;
+  uuid: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  maxPrice: number;
+  stock: number;
+  imageUrl: string;
+  variantCount: number;
+  slug: string;
+}> = [];
+let filterCategories: any[] = [];
 
-// Filtrar solo categorías con variantes
-const products = productsWithImages.filter(p => p.variantCount > 0);
+try {
+  // Obtener categorías de filtros activas
+  filterCategories = await getActiveCategories();
+  console.log(`📦 Página /filtros: ${filterCategories.length} categorías activas encontradas`);
+
+  // Obtener variantes para cada categoría y preparar datos
+  const productsWithImages = await Promise.all(
+    filterCategories.map(async (category) => {
+      try {
+        // Obtener variantes de esta categoría
+        const variants = await getCategoryVariants(category.id);
+        
+        // Calcular precio mínimo de las variantes
+        const prices = variants.filter(v => v.is_active).map(v => v.price);
+        const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+        const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+        
+        // Calcular stock total
+        const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+        
+        // Usar la imagen principal de la categoría o placeholder
+        const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
+        
+        return {
+          id: category.id,
+          uuid: category.slug, // Usar slug como identificador único
+          name: category.name,
+          description: category.description || '',
+          category: category.name, // Nombre de la categoría
+          price: minPrice,
+          maxPrice: maxPrice,
+          stock: totalStock,
+          imageUrl: imageUrl,
+          variantCount: variants.length,
+          slug: category.slug
+        };
+      } catch (error) {
+        console.error(`❌ Error procesando categoría ${category.id}:`, error);
+        return null;
+      }
+    })
+  );
+
+  // Filtrar solo categorías con variantes y eliminar nulls
+  products = productsWithImages.filter((p): p is NonNullable<typeof p> => p !== null && p.variantCount > 0);
+  console.log(`✅ Página /filtros: ${products.length} productos listos para mostrar`);
+} catch (error) {
+  console.error('❌ Error en página /filtros:', error);
+  // products ya está inicializado como array vacío
+}
 
 // Función para formatear precio
 const formatPrice = (price: number): string => {
