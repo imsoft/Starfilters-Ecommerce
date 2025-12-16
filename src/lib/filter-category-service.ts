@@ -92,8 +92,9 @@ export const getActiveCategories = async (): Promise<FilterCategory[]> => {
   try {
     console.log('🔍 Obteniendo categorías activas...');
 
+    // Incluir categorías con status = 'active' o status IS NULL (para compatibilidad)
     const categories = await query(
-      'SELECT * FROM filter_categories WHERE status = "active" ORDER BY created_at DESC'
+      'SELECT * FROM filter_categories WHERE status = "active" OR status IS NULL ORDER BY created_at DESC'
     ) as FilterCategory[];
 
     console.log(`✅ ${categories.length} categorías activas obtenidas`);
