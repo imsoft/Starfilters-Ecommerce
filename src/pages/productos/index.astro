@@ -2,19 +2,77 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getAllProducts } from "@/lib/product-service";
+import { getActiveCategories, getCategoryVariants } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
-// Obtener productos desde la base de datos
-const products = await getAllProducts();
+export const prerender = false;
 
-// Preparar productos con imágenes
-const productsWithImages = products.map(product => {
-  // Usar placeholder por ahora (las imágenes se pueden agregar después)
-  const imageUrl = getProductPlaceholderImage(product.category);
-  return { ...product, imageUrl };
-});
+// Declarar variables fuera del try para que estén disponibles en todo el scope
+let products: Array<{
+  id: number;
+  uuid: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  maxPrice: number;
+  stock: number;
+  imageUrl: string;
+  variantCount: number;
+  slug: string;
+}> = [];
+let filterCategories: any[] = [];
+
+try {
+  // Obtener categorías de filtros activas
+  filterCategories = await getActiveCategories();
+  console.log(`📦 Página /productos: ${filterCategories.length} categorías activas encontradas`);
+
+  // Obtener variantes para cada categoría y preparar datos
+  const productsWithImages = await Promise.all(
+    filterCategories.map(async (category) => {
+      try {
+        // Obtener variantes de esta categoría
+        const variants = await getCategoryVariants(category.id);
+        
+        // Calcular precio mínimo de las variantes
+        const prices = variants.filter(v => v.is_active).map(v => v.price);
+        const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+        const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+        
+        // Calcular stock total
+        const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+        
+        // Usar la imagen principal de la categoría o placeholder
+        const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
+        
+        return {
+          id: category.id,
+          uuid: category.slug, // Usar slug como identificador único
+          name: category.name,
+          description: category.description || '',
+          category: category.name, // Nombre de la categoría
+          price: minPrice,
+          maxPrice: maxPrice,
+          stock: totalStock,
+          imageUrl: imageUrl,
+          variantCount: variants.length,
+          slug: category.slug
+        };
+      } catch (error) {
+        console.error(`❌ Error procesando categoría ${category.id}:`, error);
+        return null;
+      }
+    })
+  );
+
+  // Filtrar solo categorías con variantes y eliminar nulls
+  products = productsWithImages.filter((p): p is NonNullable<typeof p> => p !== null && p.variantCount > 0);
+  console.log(`✅ Página /productos: ${products.length} productos listos para mostrar`);
+} catch (error) {
+  console.error('❌ Error en página /productos:', error);
+}
 
 // Función para formatear precio
 const formatPrice = (price: number): string => {
@@ -24,7 +82,7 @@ const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-// Obtener categorías únicas
+// Obtener categorías únicas (nombres de categorías)
 const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
 
 // Generar datos SEO
@@ -48,82 +106,118 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 >
   <SEO 
     slot="seo"
-    schemaData={[breadcrumbSchema]}
+    title="Productos"
+    description="Explora nuestro catálogo completo de productos. Productos de alta calidad con envío a toda la República Mexicana."
+    ogType="website"
+    keywords={[
+      'catálogo productos',
+      'comprar productos',
+      'productos industriales'
+    ]}
   />
-
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-    <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        Productos StarFilters
-      </h1>
-      <p class="mt-4 text-lg text-muted-foreground">
-        Explora nuestro catálogo completo de productos. Calidad garantizada y envío rápido.
-      </p>
+  
+  <!-- Breadcrumb Schema -->
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  <div class="bg-background py-24">
+    <!-- Breadcrumb -->
+    <div class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+          <li>
+            <a href="/" class="hover:text-foreground transition-colors">Inicio</a>
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li class="text-foreground font-medium">Productos</li>
+        </ol>
+      </nav>
     </div>
 
-    <!-- Filtros -->
-    <div class="mb-8 space-y-6">
-      <!-- Búsqueda -->
-      <div>
-        <label for="search-products" class="block text-sm font-medium text-foreground mb-2">
-          Buscar productos
-        </label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
+    <section
+      aria-labelledby="collection-heading"
+      class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8"
+    >
+      <div class="mb-12">
+        <h1
+          id="collection-heading"
+          class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+        >
+          Productos StarFilters
+        </h1>
+        <p class="mt-4 text-lg text-muted-foreground">
+          Explora nuestro catálogo completo de productos. Calidad garantizada y envío rápido.
+        </p>
+      </div>
+
+      <!-- Filtros -->
+      <div class="mb-8 space-y-6">
+        <!-- Búsqueda -->
+        <div>
+          <label for="search-products" class="block text-sm font-medium text-foreground mb-2">
+            Buscar productos
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <input
+              type="text"
+              id="search-products"
+              placeholder="Buscar por nombre..."
+              class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
           </div>
-          <input
-            type="text"
-            id="search-products"
-            placeholder="Buscar por nombre..."
-            class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
+        </div>
+
+        <!-- Filtros por categoría -->
+        {categories.length > 0 && (
+          <div>
+            <h3 class="text-lg font-medium text-foreground mb-4">Filtrar por categoría</h3>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="filter-btn inline-flex items-center rounded-full border border-border bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
+                data-category="all"
+              >
+                Todos ({products.length})
+              </button>
+              {categories.map(category => {
+                const count = products.filter(p => p.category === category).length;
+                return (
+                  <button
+                    type="button"
+                    class="filter-btn inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    data-category={category}
+                  >
+                    {category} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <!-- Contador de resultados -->
+        <div class="text-sm text-muted-foreground">
+          Mostrando <span id="results-count" class="font-medium text-foreground">{products.length}</span> de {products.length} productos
         </div>
       </div>
 
-      <!-- Filtros por categoría -->
-      {categories.length > 0 && (
-        <div>
-          <h3 class="text-lg font-medium text-foreground mb-4">Filtrar por categoría</h3>
-          <div class="flex flex-wrap gap-2">
-            <button
-              type="button"
-              class="filter-btn inline-flex items-center rounded-full border border-border bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
-              data-category="all"
-            >
-              Todos ({products.length})
-            </button>
-            {categories.map(category => {
-              const count = products.filter(p => p.category === category).length;
-              return (
-                <button
-                  type="button"
-                  class="filter-btn inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                  data-category={category}
-                >
-                  {category} ({count})
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-
-    <!-- Grid de productos -->
-    {products.length > 0 ? (
+      <!-- Grid de productos -->
       <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="products-grid">
-        {productsWithImages.map((product) => (
+        {products.map((product) => (
           <div 
             class="group product-card relative flex flex-col" 
             data-category={product.category}
             data-price={product.price}
             data-stock={product.stock}
           >
-            <a href={`/product/${product.uuid}`} class="block flex-shrink-0">
+            <a href={`/filtros/${product.slug}`} class="block flex-shrink-0">
               <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
                 <LazyImage
                   src={product.imageUrl}
@@ -135,12 +229,17 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 {product.name}
               </h3>
             </a>
-            <p class="mt-1 text-sm text-muted-foreground">{product.category}</p>
+            <p class="mt-1 text-sm text-muted-foreground">
+              {product.variantCount > 1 ? `${product.variantCount} variantes disponibles` : product.category}
+            </p>
             <div class="mt-2 flex items-center justify-between">
               <p class="text-lg font-medium text-foreground">
-                {formatPrice(product.price || 0)}
+                {product.price === product.maxPrice 
+                  ? formatPrice(product.price)
+                  : `${formatPrice(product.price)} - ${formatPrice(product.maxPrice)}`
+                }
               </p>
-              {product.stock && product.stock > 0 ? (
+              {product.stock > 0 ? (
                 <span class="text-xs text-green-600 font-medium">
                   En stock
                 </span>
@@ -150,22 +249,41 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 </span>
               )}
             </div>
+            
+            <div class="mt-auto pt-3">
+              {product.stock > 0 ? (
+                <button
+                  type="button"
+                  class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl}', '${product.category || ''}')`}
+                >
+                  Agregar al Carrito
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  class="relative z-10 w-full rounded-md bg-gray-300 px-3 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed"
+                >
+                  No Disponible
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
-    ) : (
-      <div class="text-center py-12">
-        <p class="text-lg text-muted-foreground">No hay productos disponibles</p>
-        <p class="mt-2 text-sm text-muted-foreground">Vuelve pronto para ver nuevos productos</p>
-      </div>
-    )}
 
-    <!-- Contador de resultados -->
-    <div class="mt-8 text-center">
-      <p class="text-sm text-muted-foreground">
-        Mostrando <span id="results-count">{products.length}</span> de {products.length} productos
-      </p>
-    </div>
+      {products.length === 0 && (
+        <div class="text-center py-12">
+          <h3 class="text-lg font-medium text-foreground">
+            No hay productos disponibles
+          </h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Vuelve pronto para ver nuevos productos
+          </p>
+        </div>
+      )}
+    </section>
   </div>
 </WebsiteLayout>
 
@@ -204,31 +322,107 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     }
   }
 
-  // Filtro por categoría
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      // Remover selección anterior
-      document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.remove('bg-primary', 'text-primary-foreground');
-        b.classList.add('bg-background', 'text-foreground');
-      });
-      
-      // Agregar selección actual
-      btn.classList.add('bg-primary', 'text-primary-foreground');
-      btn.classList.remove('bg-background', 'text-foreground');
-      
-      currentCategory = btn.getAttribute('data-category') || 'all';
-      applyFilters();
+  // Función para filtrar por categoría
+  function filterByCategory(category: string): void {
+    currentCategory = category;
+    
+    // Actualizar botones activos
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+      if (btn.getAttribute('data-category') === category) {
+        btn.classList.add('bg-primary', 'text-primary-foreground');
+        btn.classList.remove('bg-background', 'text-foreground');
+      } else {
+        btn.classList.remove('bg-primary', 'text-primary-foreground');
+        btn.classList.add('bg-background', 'text-foreground');
+      }
     });
-  });
 
-  // Búsqueda
-  const searchInput = document.getElementById('search-products') as HTMLInputElement;
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      currentSearchTerm = searchInput.value;
-      applyFilters();
-    });
+    applyFilters();
   }
-</script>
 
+  // Función para agregar al carrito desde la grid
+  function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): void {
+    // Obtener carrito actual
+    const cartData = localStorage.getItem('starfilters_cart');
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
+
+    // Buscar si el producto ya existe
+    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
+
+    if (existingItemIndex >= 0) {
+      cart.items[existingItemIndex].quantity += 1;
+    } else {
+      cart.items.push({
+        uuid,
+        product_id,
+        name,
+        price,
+        quantity: 1,
+        image_url,
+        category
+      });
+    }
+
+    // Recalcular totales
+    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
+
+    // Guardar en localStorage
+    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
+
+    // Mostrar notificación
+    showNotification(`${name} agregado al carrito`);
+
+    // Disparar evento para actualizar navbar
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
+  }
+
+  function showNotification(message: string): void {
+    // Crear notificación temporal
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
+    notification.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>${message}</span>
+      </div>
+    `;
+    document.body.appendChild(notification);
+
+    // Remover después de 3 segundos
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+
+  // Hacer funciones globales
+  (window as any).filterByCategory = filterByCategory;
+  (window as any).addToCartQuick = addToCartQuick;
+
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', () => {
+    // Búsqueda
+    const searchInput = document.getElementById('search-products');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        currentSearchTerm = (e.target as HTMLInputElement).value;
+        applyFilters();
+      });
+    }
+
+    // Botones de categoría
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const category = btn.getAttribute('data-category') || 'all';
+        filterByCategory(category);
+      });
+    });
+
+    console.log('🎯 Filtros de productos inicializados');
+  });
+</script>
