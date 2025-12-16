@@ -1,172 +1,106 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
-import { clearCart } from "@/lib/cart";
-import { getLangFromUrl } from "@/i18n/utils";
 
-const lang = getLangFromUrl(Astro.url);
-
-// Verificar que el usuario esté autenticado
+// Obtener usuario para mostrar información personalizada
 const user = getAuthenticatedUser(Astro.cookies);
-if (!user) {
-  return Astro.redirect('/login');
-}
 
-// Limpiar el carrito después de una compra exitosa
-clearCart();
-
-// Obtener parámetros de la URL para mostrar información del pedido
+// Obtener información del pago desde la URL si está disponible
 const url = new URL(Astro.request.url);
 const paymentIntentId = url.searchParams.get('payment_intent');
 const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_secret');
-
-// Generar número de pedido único
-const orderNumber = `SF-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
-const currentDate = new Date().toLocaleDateString('es-MX', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-});
 ---
 
-<WebsiteLayout title="Compra exitosa">
-  <div class="bg-background">
-    <main class="mt-10 mx-auto max-w-7xl px-4 pt-16 pb-24 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl text-center">
-        <!-- Icono de éxito -->
-        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-          <svg
-            class="h-10 w-10 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            ></path>
-          </svg>
+<WebsiteLayout 
+  title="Compra Exitosa"
+  seoTitle="Compra Exitosa - StarFilters"
+  description="Tu compra se ha procesado exitosamente"
+>
+  <SEO 
+    slot="seo"
+    title="Compra Exitosa - StarFilters"
+    description="Tu compra se ha procesado exitosamente"
+  />
+
+  <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-16">
+    <div class="text-center">
+      <!-- Icono de éxito -->
+      <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+
+      <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-4">
+        ¡Compra Exitosa!
+      </h1>
+      
+      <p class="text-lg text-muted-foreground mb-8">
+        Tu pedido ha sido procesado correctamente. Recibirás un correo de confirmación con los detalles de tu compra.
+      </p>
+
+      {paymentIntentId && (
+        <div class="mb-8 p-4 bg-muted rounded-lg">
+          <p class="text-sm text-muted-foreground mb-2">ID de pago:</p>
+          <p class="text-sm font-mono text-foreground break-all">{paymentIntentId}</p>
         </div>
+      )}
 
-        <!-- Título principal -->
-        <h1 class="mt-6 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          ¡Compra exitosa!
-        </h1>
-
-        <!-- Mensaje de confirmación -->
-        <p class="mt-4 text-lg text-muted-foreground">
-          Gracias por tu compra. Hemos recibido tu pedido y te enviaremos un correo de confirmación pronto.
-        </p>
-
-        <!-- Detalles del pedido -->
-        <div class="mt-8 rounded-lg border border-border bg-background p-6 text-left">
-          <h2 class="text-lg font-medium text-foreground mb-4">Detalles del pedido</h2>
-          
-          <div class="space-y-3">
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">Número de pedido:</span>
-              <span class="font-medium text-foreground">#{orderNumber}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">Fecha:</span>
-              <span class="font-medium text-foreground">{currentDate}</span>
-            </div>
-            {paymentIntentId && (
-              <div class="flex justify-between">
-                <span class="text-muted-foreground">ID de pago:</span>
-                <span class="font-medium text-foreground text-xs">{paymentIntentId}</span>
-              </div>
-            )}
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">Método de pago:</span>
-              <span class="font-medium text-foreground">Tarjeta de crédito</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Información de envío -->
-        <div class="mt-6 rounded-lg border border-border bg-background p-6 text-left">
-          <h2 class="text-lg font-medium text-foreground mb-4">Información de envío</h2>
-          
-          <div class="space-y-2">
-            <p class="text-muted-foreground">
-              <span class="font-medium text-foreground">Cliente:</span><br>
-              {user.firstName} {user.lastName}<br>
-              {user.email}
-            </p>
-            <p class="mt-3 text-muted-foreground">
-              <span class="font-medium text-foreground">Tiempo estimado de entrega:</span><br>
-              4-10 días hábiles
-            </p>
-            <p class="mt-3 text-muted-foreground">
-              <span class="font-medium text-foreground">Estado del pedido:</span><br>
-              <span class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                Confirmado
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <!-- Botones de acción -->
-        <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
+      <div class="space-y-4">
+        <a
+          href="/pedidos"
+          class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Ver mis pedidos
+        </a>
+        
+        <div>
           <a
             href="/"
-            class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground shadow-xs hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden"
+            class="text-sm text-primary hover:text-primary/80 transition-colors"
           >
-            Continuar comprando
-          </a>
-          <a
-            href="/filtros"
-            class="inline-flex items-center justify-center rounded-md border border-border bg-background px-6 py-3 text-base font-medium text-foreground shadow-xs hover:bg-muted focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden"
-          >
-            Ver más productos
-          </a>
-        </div>
-
-        <!-- Información adicional -->
-        <div class="mt-8 text-center">
-          <p class="text-sm text-muted-foreground">
-            ¿Tienes alguna pregunta sobre tu pedido?
-          </p>
-          <a
-            href={lang === 'en' ? '/en/contact' : '/contacto'}
-            class="mt-2 inline-flex items-center text-sm font-medium text-primary hover:text-primary/90"
-          >
-            Contáctanos
-            <svg
-              class="ml-1 h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              ></path>
-            </svg>
+            Volver al inicio
           </a>
         </div>
       </div>
-    </main>
-  </div>
 
-  <script>
-    // Limpiar carrito en el lado del cliente también
-    import { clearCart } from '@/lib/cart';
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      clearCart();
-      
-      // Disparar evento para actualizar el contador del carrito
-      window.dispatchEvent(new CustomEvent('cartUpdated', { 
-        detail: { items: [], total: 0, itemCount: 0 }
-      }));
-    });
-  </script>
+      <div class="mt-12 pt-8 border-t border-border">
+        <h2 class="text-lg font-semibold text-foreground mb-4">¿Qué sigue?</h2>
+        <ul class="text-left space-y-2 text-sm text-muted-foreground max-w-md mx-auto">
+          <li class="flex items-start">
+            <svg class="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Recibirás un correo de confirmación con los detalles de tu pedido</span>
+          </li>
+          <li class="flex items-start">
+            <svg class="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Procesaremos tu pedido y te notificaremos cuando sea enviado</span>
+          </li>
+          <li class="flex items-start">
+            <svg class="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Puedes rastrear tu pedido desde la sección "Mis Pedidos"</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </WebsiteLayout>
+
+<script>
+  // Limpiar el carrito en el cliente
+  if (typeof window !== 'undefined') {
+    try {
+      const { clearCart } = await import('@/lib/cart');
+      clearCart();
+      console.log('✅ Carrito limpiado después de compra exitosa');
+    } catch (error) {
+      console.error('Error limpiando carrito:', error);
+    }
+  }
+</script>

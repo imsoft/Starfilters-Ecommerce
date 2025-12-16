@@ -58,9 +58,12 @@ async function handlePaymentSucceeded(paymentIntent: any) {
     console.log('Payment succeeded:', paymentIntent.id);
     const metadata = paymentIntent.metadata;
     
+    // Generar número de orden único
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    
     // 1. Crear la orden en la base de datos
     const orderId = await createOrder({
-      order_number: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      order_number: orderNumber,
       customer_name: metadata.customer_name,
       customer_email: metadata.customer_email,
       total_amount: paymentIntent.amount / 100, // Convertir de centavos a dólares
@@ -69,7 +72,7 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       user_id: metadata.user_id ? parseInt(metadata.user_id) : null
     });
 
-    console.log('✅ Orden creada con ID:', orderId);
+    console.log('✅ Orden creada con ID:', orderId, 'Número:', orderNumber);
 
     // 2. Guardar items de la orden
     if (metadata.cart_items) {
@@ -157,12 +160,10 @@ async function handlePaymentSucceeded(paymentIntent: any) {
         hour: '2-digit',
         minute: '2-digit'
       });
-
-      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
       
       const emailData = createOrderConfirmationEmail(
         metadata.customer_name,
-        orderNumber,
+        orderNumber, // Usar el mismo número de orden generado arriba
         orderDate,
         paymentIntent.amount / 100,
         items.map(item => ({
