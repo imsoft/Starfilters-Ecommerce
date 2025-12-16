@@ -23,6 +23,7 @@ let products: Array<{
 try {
   const allProducts = await getActiveProducts();
   console.log(`📦 Página /filtros: ${allProducts.length} productos activos encontrados`);
+  console.log('📦 Productos encontrados:', allProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
 
   // Preparar productos con imágenes
   products = allProducts.map(product => {
@@ -42,6 +43,7 @@ try {
   console.log(`✅ Página /filtros: ${products.length} productos listos para mostrar`);
 } catch (error) {
   console.error('❌ Error en página /filtros:', error);
+  console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack available');
 }
 
 // Función para formatear precio
