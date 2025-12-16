@@ -1,9 +1,19 @@
 import type { APIRoute } from 'astro';
+import { requireAdmin } from '@/lib/auth-utils';
 import { uploadCategoryPrimaryImage, uploadCategoryCarouselImage } from '@/lib/cloudinary';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  // Verificar autenticación de administrador
+  const authResult = await requireAdmin(cookies);
+  if (authResult.redirect) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'No autorizado' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -31,6 +41,24 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // Validar tamaño (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'La imagen debe ser menor a 10MB'
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('📤 Subiendo imagen de categoría de filtro:', {
+      categoryId,
+      imageType,
+      fileName: file.name,
+      fileSize: `${(file.size / 1024).toFixed(2)} KB`
+    });
+
     // Convertir el archivo a Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -41,8 +69,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (imageType === 'primary') {
       imageUrl = await uploadCategoryPrimaryImage(buffer, categoryIdNum, file.name);
+      console.log('✅ Imagen principal subida exitosamente:', imageUrl);
     } else {
       imageUrl = await uploadCategoryCarouselImage(buffer, categoryIdNum, file.name);
+      console.log('✅ Imagen de carrusel subida exitosamente:', imageUrl);
     }
 
     return new Response(

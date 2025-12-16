@@ -39,13 +39,22 @@ starfilters-ecommerce/
 │   │       ├── main-image.jpg
 │   │       ├── gallery-1.jpg
 │   │       └── gallery-2.jpg
+├── categorias-filtros/
+│   ├── {category-id}/
+│   │   ├── principal/
+│   │   │   └── main-image.jpg
+│   │   └── carrusel/
+│   │       ├── carousel-1.jpg
+│   │       ├── carousel-2.jpg
+│   │       └── carousel-3.jpg
 ├── blog/
 │   ├── {blog-uuid}/
 │   │   ├── featured-image.jpg
 │   │   └── content-image-1.jpg
-├── users/
-│   ├── {user-uuid}/
-│   │   └── avatar.jpg
+├── admin/
+│   └── profile/
+│       └── {user-id}/
+│           └── profile_image.jpg
 └── general/
     ├── logos/
     │   └── logo.png

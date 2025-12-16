@@ -260,7 +260,7 @@ export async function uploadCategoryPrimaryImage(
   categoryId: number,
   imageName?: string
 ): Promise<string> {
-  const folder = `ecommerce/category/${categoryId}/primary`;
+  const folder = `starfilters-ecommerce/categorias-filtros/${categoryId}/principal`;
   const public_id = imageName ? imageName.replace(/\.[^/.]+$/, '') : undefined;
 
   return uploadImage(file, {
@@ -282,7 +282,7 @@ export async function uploadCategoryCarouselImage(
   categoryId: number,
   imageName?: string
 ): Promise<string> {
-  const folder = `ecommerce/category/${categoryId}/carrousel`;
+  const folder = `starfilters-ecommerce/categorias-filtros/${categoryId}/carrusel`;
   const public_id = imageName ? imageName.replace(/\.[^/.]+$/, '') : undefined;
 
   return uploadImage(file, {
