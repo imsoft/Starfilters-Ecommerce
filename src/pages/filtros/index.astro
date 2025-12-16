@@ -2,19 +2,48 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getActiveProducts } from "@/lib/product-service";
+import { getActiveCategories, getCategoryVariants } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
-// Obtener productos desde Bind ERP (fuente única de verdad)
-const products = await getActiveProducts();
+// Obtener categorías de filtros activas
+const filterCategories = await getActiveCategories();
 
-// Preparar productos con imágenes
-const productsWithImages = products.map(product => {
-  // Usar placeholder por ahora (las imágenes se pueden agregar a Bind después)
-  const imageUrl = getProductPlaceholderImage(product.category);
-  return { ...product, imageUrl };
-});
+// Obtener variantes para cada categoría y preparar datos
+const productsWithImages = await Promise.all(
+  filterCategories.map(async (category) => {
+    // Obtener variantes de esta categoría
+    const variants = await getCategoryVariants(category.id);
+    
+    // Calcular precio mínimo de las variantes
+    const prices = variants.filter(v => v.is_active).map(v => v.price);
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+    
+    // Calcular stock total
+    const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    
+    // Usar la imagen principal de la categoría o placeholder
+    const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
+    
+    return {
+      id: category.id,
+      uuid: category.slug, // Usar slug como identificador único
+      name: category.name,
+      description: category.description || '',
+      category: category.name, // Nombre de la categoría
+      price: minPrice,
+      maxPrice: maxPrice,
+      stock: totalStock,
+      imageUrl: imageUrl,
+      variantCount: variants.length,
+      slug: category.slug
+    };
+  })
+);
+
+// Filtrar solo categorías con variantes
+const products = productsWithImages.filter(p => p.variantCount > 0);
 
 // Función para formatear precio
 const formatPrice = (price: number): string => {
@@ -24,7 +53,7 @@ const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-// Obtener categorías únicas
+// Obtener categorías únicas (nombres de categorías)
 const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
 
 // Generar datos SEO
@@ -208,14 +237,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
       <!-- Grid de productos -->
       <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="products-grid">
-        {productsWithImages.map((product) => (
+        {products.map((product) => (
           <div 
             class="group product-card relative flex flex-col" 
             data-category={product.category}
             data-price={product.price}
             data-stock={product.stock}
           >
-            <a href={`/product/${product.bind_id}`} class="block flex-shrink-0">
+            <a href={`/filtros/${product.slug}`} class="block flex-shrink-0">
               <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
                 <LazyImage
                   src={product.imageUrl}
@@ -227,10 +256,15 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 {product.name}
               </h3>
             </a>
-            <p class="mt-1 text-sm text-muted-foreground">{product.category}</p>
+            <p class="mt-1 text-sm text-muted-foreground">
+              {product.variantCount > 1 ? `${product.variantCount} variantes disponibles` : product.category}
+            </p>
             <div class="mt-2 flex items-center justify-between">
               <p class="text-lg font-medium text-foreground">
-                {formatPrice(product.price)}
+                {product.price === product.maxPrice 
+                  ? formatPrice(product.price)
+                  : `${formatPrice(product.price)} - ${formatPrice(product.maxPrice)}`
+                }
               </p>
               {product.stock > 0 ? (
                 <span class="text-xs text-green-600 font-medium">
