@@ -1,24 +1,84 @@
-// Configuración de email (básica para desarrollo)
-// En producción, integrar con servicios como SendGrid, Mailgun, etc.
+// Configuración de email con Resend
+import { Resend } from 'resend';
 
 export interface EmailData {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  from?: string;
 }
 
-// Función placeholder para envío de emails
-// Por ahora solo logea el email en consola para desarrollo
+// Inicializar Resend
+function getResendInstance(): Resend | null {
+  const resendApiKey = process.env.RESEND_API_KEY || import.meta.env.RESEND_API_KEY;
+  
+  if (!resendApiKey) {
+    console.warn('⚠️ RESEND_API_KEY no configurada. Los emails no se enviarán realmente.');
+    return null;
+  }
+
+  try {
+    return new Resend(resendApiKey);
+  } catch (error) {
+    console.error('❌ Error inicializando Resend:', error);
+    return null;
+  }
+}
+
+// Lazy initialization - crear instancia solo cuando se necesite
+let resendInstance: Resend | null = null;
+
+function getResend(): Resend | null {
+  if (!resendInstance) {
+    resendInstance = getResendInstance();
+  }
+  return resendInstance;
+}
+
+// Función para enviar emails usando Resend
 export const sendEmail = async (emailData: EmailData): Promise<boolean> => {
   try {
-    console.log('📧 ENVÍO DE EMAIL:');
+    const resend = getResend();
+    
+    if (!resend) {
+      console.warn('⚠️ Resend no está configurado. Email no enviado:', {
+        to: emailData.to,
+        subject: emailData.subject
+      });
+      return false;
+    }
+
+    if (!emailData.to) {
+      console.error('❌ No se proporcionó destinatario para el email');
+      return false;
+    }
+
+    // Obtener configuración de remitente
+    const resendFromEmail = process.env.RESEND_FROM_EMAIL || import.meta.env.RESEND_FROM_EMAIL || 'noreply@starfilters.com';
+    const resendFromName = process.env.RESEND_FROM_NAME || import.meta.env.RESEND_FROM_NAME || 'StarFilters';
+    const fromEmail = emailData.from || resendFromEmail;
+    const from = `${resendFromName} <${fromEmail}>`;
+
+    console.log('📧 Enviando email con Resend:');
     console.log('📮 Para:', emailData.to);
     console.log('📝 Asunto:', emailData.subject);
-    console.log('📄 Contenido HTML:', emailData.html);
-    console.log('📄 Contenido texto:', emailData.text || 'N/A');
-    console.log('✅ Email "enviado" exitosamente (modo desarrollo)');
-    
+    console.log('📤 Desde:', from);
+
+    const result = await resend.emails.send({
+      from: from,
+      to: emailData.to,
+      subject: emailData.subject,
+      html: emailData.html,
+      text: emailData.text,
+    });
+
+    if (result.error) {
+      console.error('❌ Error al enviar email con Resend:', result.error);
+      return false;
+    }
+
+    console.log('✅ Email enviado exitosamente con Resend. ID:', result.data?.id);
     return true;
   } catch (error) {
     console.error('❌ Error al enviar email:', error);
