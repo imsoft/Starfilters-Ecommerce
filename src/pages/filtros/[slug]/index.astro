@@ -1,0 +1,337 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import LazyImage from "@/components/shared/LazyImage.astro";
+import { getCategoryBySlug, getCategoryVariants, getCategoryImages } from "@/lib/filter-category-service";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/filtros');
+}
+
+// Obtener categoría por slug
+const category = await getCategoryBySlug(slug);
+
+if (!category) {
+  return Astro.redirect('/filtros');
+}
+
+// Obtener variantes y imágenes
+const variants = await getCategoryVariants(category.id);
+const images = await getCategoryImages(category.id);
+
+// Filtrar solo variantes activas
+const activeVariants = variants.filter(v => v.is_active);
+
+// Calcular precio mínimo y máximo
+const prices = activeVariants.map(v => v.price);
+const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+
+// Función para formatear precio
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  }).format(price);
+};
+
+// Imagen principal
+const mainImage = category.main_image || images.find(img => img.is_primary)?.image_url || '/images/products/placeholder.svg';
+const carouselImages = images.filter(img => !img.is_primary).sort((a, b) => a.sort_order - b.sort_order);
+
+// Generar datos SEO
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Inicio', url: siteUrl },
+  { name: 'Filtros', url: `${siteUrl}/filtros` },
+  { name: category.name, url: `${siteUrl}/filtros/${slug}` }
+]);
+---
+
+<WebsiteLayout 
+  title={category.name}
+  seoTitle={`${category.name} - Filtros Industriales StarFilters`}
+  description={category.description || `Conoce nuestros ${category.name} de alta calidad. Disponibles en múltiples tamaños y especificaciones.`}
+>
+  <SEO 
+    slot="seo"
+    schemaData={[breadcrumbSchema]}
+  />
+
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Breadcrumbs -->
+    <nav class="mb-8" aria-label="Breadcrumb">
+      <ol class="flex items-center space-x-2 text-sm">
+        <li><a href="/" class="text-muted-foreground hover:text-foreground transition-colors">Inicio</a></li>
+        <li><span class="text-muted-foreground">/</span></li>
+        <li><a href="/filtros" class="text-muted-foreground hover:text-foreground transition-colors">Filtros</a></li>
+        <li><span class="text-muted-foreground">/</span></li>
+        <li><span class="text-foreground font-medium">{category.name}</span></li>
+      </ol>
+    </nav>
+
+    <!-- Grid principal -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
+      <!-- Columna de imágenes -->
+      <div class="space-y-4">
+        <!-- Imagen principal -->
+        <div class="w-full aspect-square overflow-hidden rounded-lg bg-muted">
+          <LazyImage
+            src={mainImage}
+            alt={category.name}
+            class="h-full w-full object-cover object-center"
+          />
+        </div>
+
+        <!-- Galería de imágenes del carrusel -->
+        {carouselImages.length > 0 && (
+          <div class="grid grid-cols-4 gap-4">
+            {carouselImages.map((img) => (
+              <div class="aspect-square overflow-hidden rounded-lg bg-muted cursor-pointer hover:opacity-75 transition-opacity">
+                <LazyImage
+                  src={img.image_url}
+                  alt={img.alt_text || category.name}
+                  class="h-full w-full object-cover object-center"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Columna de información -->
+      <div class="space-y-6">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground mb-2">{category.name}</h1>
+          {category.description && (
+            <p class="text-lg text-muted-foreground">{category.description}</p>
+          )}
+        </div>
+
+        <!-- Precio -->
+        <div class="border-t border-border pt-6">
+          <p class="text-3xl font-bold text-foreground">
+            {minPrice === maxPrice 
+              ? formatPrice(minPrice)
+              : `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`
+            }
+          </p>
+          {activeVariants.length > 1 && (
+            <p class="text-sm text-muted-foreground mt-1">
+              Precio varía según el tamaño seleccionado
+            </p>
+          )}
+        </div>
+
+        <!-- Selector de variantes -->
+        {activeVariants.length > 0 && (
+          <div class="border-t border-border pt-6">
+            <h3 class="text-lg font-medium text-foreground mb-4">Selecciona un tamaño:</h3>
+            <div class="space-y-3">
+              {activeVariants.map((variant, index) => (
+                <div 
+                  class="variant-option flex items-center justify-between p-4 border-2 border-border rounded-lg cursor-pointer hover:border-primary transition-colors"
+                  data-variant-id={variant.id}
+                  data-price={variant.price}
+                  data-stock={variant.stock}
+                  data-bind-code={variant.bind_code}
+                >
+                  <div class="flex-1">
+                    <p class="font-medium text-foreground">{variant.nominal_size}</p>
+                    <p class="text-sm text-muted-foreground">Tamaño real: {variant.real_size}</p>
+                    {variant.stock > 0 ? (
+                      <p class="text-xs text-green-600 font-medium mt-1">
+                        En stock ({variant.stock} disponibles)
+                      </p>
+                    ) : (
+                      <p class="text-xs text-red-600 font-medium mt-1">
+                        Sin stock
+                      </p>
+                    )}
+                  </div>
+                  <p class="text-lg font-bold text-foreground">{formatPrice(variant.price)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Botón de agregar al carrito -->
+        <div class="border-t border-border pt-6">
+          <button
+            id="add-to-cart-btn"
+            disabled
+            class="w-full bg-primary text-primary-foreground py-3 px-6 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Selecciona un tamaño
+          </button>
+          <p id="selection-message" class="text-sm text-muted-foreground mt-2 text-center">
+            Por favor, selecciona un tamaño para continuar
+          </p>
+        </div>
+
+        <!-- Especificaciones técnicas -->
+        {(category.efficiency || category.max_temperature || category.frame_material) && (
+          <div class="border-t border-border pt-6">
+            <h3 class="text-lg font-medium text-foreground mb-4">Especificaciones Técnicas</h3>
+            <dl class="space-y-3">
+              {category.efficiency && (
+                <div class="flex justify-between">
+                  <dt class="text-sm text-muted-foreground">Eficiencia:</dt>
+                  <dd class="text-sm font-medium text-foreground">{category.efficiency}</dd>
+                </div>
+              )}
+              {category.efficiency_class && (
+                <div class="flex justify-between">
+                  <dt class="text-sm text-muted-foreground">Clase de eficiencia:</dt>
+                  <dd class="text-sm font-medium text-foreground">{category.efficiency_class}</dd>
+                </div>
+              )}
+              {category.max_temperature && (
+                <div class="flex justify-between">
+                  <dt class="text-sm text-muted-foreground">Temperatura máxima:</dt>
+                  <dd class="text-sm font-medium text-foreground">{category.max_temperature}</dd>
+                </div>
+              )}
+              {category.frame_material && (
+                <div class="flex justify-between">
+                  <dt class="text-sm text-muted-foreground">Material del marco:</dt>
+                  <dd class="text-sm font-medium text-foreground">{category.frame_material}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        )}
+
+        <!-- Características -->
+        {category.characteristics && (
+          <div class="border-t border-border pt-6">
+            <h3 class="text-lg font-medium text-foreground mb-4">Características</h3>
+            <div class="prose prose-sm max-w-none text-muted-foreground">
+              <p>{category.characteristics}</p>
+            </div>
+          </div>
+        )}
+
+        <!-- Aplicaciones -->
+        {category.applications && (
+          <div class="border-t border-border pt-6">
+            <h3 class="text-lg font-medium text-foreground mb-4">Aplicaciones</h3>
+            <div class="prose prose-sm max-w-none text-muted-foreground">
+              <p>{category.applications}</p>
+            </div>
+          </div>
+        )}
+
+        <!-- Beneficios -->
+        {category.benefits && (
+          <div class="border-t border-border pt-6">
+            <h3 class="text-lg font-medium text-foreground mb-4">Beneficios</h3>
+            <div class="prose prose-sm max-w-none text-muted-foreground">
+              <p>{category.benefits}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>
+
+<script>
+  // Manejar selección de variante
+  let selectedVariantId: number | null = null;
+  let selectedPrice: number = 0;
+  let selectedStock: number = 0;
+  let selectedBindCode: string = '';
+
+  const addToCartBtn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
+  const selectionMessage = document.getElementById('selection-message') as HTMLParagraphElement;
+  const variantOptions = document.querySelectorAll('.variant-option');
+
+  variantOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      // Remover selección anterior
+      variantOptions.forEach(opt => opt.classList.remove('border-primary', 'bg-primary/5'));
+      
+      // Agregar selección actual
+      option.classList.add('border-primary', 'bg-primary/5');
+      
+      // Obtener datos de la variante
+      selectedVariantId = parseInt(option.getAttribute('data-variant-id') || '0');
+      selectedPrice = parseFloat(option.getAttribute('data-price') || '0');
+      selectedStock = parseInt(option.getAttribute('data-stock') || '0');
+      selectedBindCode = option.getAttribute('data-bind-code') || '';
+      
+      // Actualizar botón
+      if (selectedStock > 0) {
+        addToCartBtn.disabled = false;
+        addToCartBtn.textContent = 'Agregar al carrito';
+        selectionMessage.textContent = `Tamaño seleccionado: ${option.querySelector('.font-medium')?.textContent}`;
+        selectionMessage.classList.remove('text-muted-foreground');
+        selectionMessage.classList.add('text-foreground');
+      } else {
+        addToCartBtn.disabled = true;
+        addToCartBtn.textContent = 'Sin stock';
+        selectionMessage.textContent = 'Este tamaño no está disponible actualmente';
+        selectionMessage.classList.remove('text-foreground');
+        selectionMessage.classList.add('text-red-600');
+      }
+    });
+  });
+
+  // Manejar agregar al carrito
+  addToCartBtn?.addEventListener('click', async () => {
+    if (!selectedVariantId || selectedStock === 0) return;
+    
+    try {
+      addToCartBtn.disabled = true;
+      addToCartBtn.textContent = 'Agregando...';
+      
+      const response = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: selectedBindCode,
+          quantity: 1,
+          price: selectedPrice
+        }),
+      });
+      
+      if (response.ok) {
+        addToCartBtn.textContent = '✓ Agregado al carrito';
+        addToCartBtn.classList.add('bg-green-600');
+        
+        // Actualizar contador del carrito en el header
+        const cartCountElements = document.querySelectorAll('.cart-count');
+        cartCountElements.forEach(el => {
+          const currentCount = parseInt(el.textContent || '0');
+          el.textContent = (currentCount + 1).toString();
+        });
+        
+        setTimeout(() => {
+          addToCartBtn.textContent = 'Agregar al carrito';
+          addToCartBtn.disabled = false;
+          addToCartBtn.classList.remove('bg-green-600');
+        }, 2000);
+      } else {
+        throw new Error('Error al agregar al carrito');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      addToCartBtn.textContent = 'Error. Intenta de nuevo';
+      addToCartBtn.classList.add('bg-red-600');
+      
+      setTimeout(() => {
+        addToCartBtn.textContent = 'Agregar al carrito';
+        addToCartBtn.disabled = false;
+        addToCartBtn.classList.remove('bg-red-600');
+      }, 2000);
+    }
+  });
+</script>
+
