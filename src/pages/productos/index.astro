@@ -1,0 +1,234 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import LazyImage from "@/components/shared/LazyImage.astro";
+import { getAllProducts } from "@/lib/product-service";
+import { getProductPlaceholderImage } from "@/lib/image-utils";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+
+// Obtener productos desde la base de datos
+const products = await getAllProducts();
+
+// Preparar productos con imágenes
+const productsWithImages = products.map(product => {
+  // Usar placeholder por ahora (las imágenes se pueden agregar después)
+  const imageUrl = getProductPlaceholderImage(product.category);
+  return { ...product, imageUrl };
+});
+
+// Función para formatear precio
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  }).format(price);
+};
+
+// Obtener categorías únicas
+const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+
+// Generar datos SEO
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Inicio', url: siteUrl },
+  { name: 'Productos', url: `${siteUrl}/productos` }
+]);
+---
+
+<WebsiteLayout 
+  title="Productos"
+  seoTitle="Productos - Catálogo StarFilters"
+  description="Explora nuestro catálogo completo de productos. Productos de alta calidad con envío a toda la República Mexicana."
+  keywords={[
+    'catálogo productos',
+    'comprar productos',
+    'productos industriales',
+    'tienda productos México'
+  ]}
+>
+  <SEO 
+    slot="seo"
+    schemaData={[breadcrumbSchema]}
+  />
+
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        Productos StarFilters
+      </h1>
+      <p class="mt-4 text-lg text-muted-foreground">
+        Explora nuestro catálogo completo de productos. Calidad garantizada y envío rápido.
+      </p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="mb-8 space-y-6">
+      <!-- Búsqueda -->
+      <div>
+        <label for="search-products" class="block text-sm font-medium text-foreground mb-2">
+          Buscar productos
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+          <input
+            type="text"
+            id="search-products"
+            placeholder="Buscar por nombre..."
+            class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <!-- Filtros por categoría -->
+      {categories.length > 0 && (
+        <div>
+          <h3 class="text-lg font-medium text-foreground mb-4">Filtrar por categoría</h3>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="filter-btn inline-flex items-center rounded-full border border-border bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
+              data-category="all"
+            >
+              Todos ({products.length})
+            </button>
+            {categories.map(category => {
+              const count = products.filter(p => p.category === category).length;
+              return (
+                <button
+                  type="button"
+                  class="filter-btn inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  data-category={category}
+                >
+                  {category} ({count})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+
+    <!-- Grid de productos -->
+    {products.length > 0 ? (
+      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="products-grid">
+        {productsWithImages.map((product) => (
+          <div 
+            class="group product-card relative flex flex-col" 
+            data-category={product.category}
+            data-price={product.price}
+            data-stock={product.stock}
+          >
+            <a href={`/product/${product.uuid}`} class="block flex-shrink-0">
+              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
+                <LazyImage
+                  src={product.imageUrl}
+                  alt={product.name}
+                  class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
+                />
+              </div>
+              <h3 class="mt-4 text-sm text-foreground font-medium hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">
+                {product.name}
+              </h3>
+            </a>
+            <p class="mt-1 text-sm text-muted-foreground">{product.category}</p>
+            <div class="mt-2 flex items-center justify-between">
+              <p class="text-lg font-medium text-foreground">
+                {formatPrice(product.price || 0)}
+              </p>
+              {product.stock && product.stock > 0 ? (
+                <span class="text-xs text-green-600 font-medium">
+                  En stock
+                </span>
+              ) : (
+                <span class="text-xs text-red-600 font-medium">
+                  Agotado
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div class="text-center py-12">
+        <p class="text-lg text-muted-foreground">No hay productos disponibles</p>
+        <p class="mt-2 text-sm text-muted-foreground">Vuelve pronto para ver nuevos productos</p>
+      </div>
+    )}
+
+    <!-- Contador de resultados -->
+    <div class="mt-8 text-center">
+      <p class="text-sm text-muted-foreground">
+        Mostrando <span id="results-count">{products.length}</span> de {products.length} productos
+      </p>
+    </div>
+  </div>
+</WebsiteLayout>
+
+<script>
+  // Datos de productos del servidor
+  const allProducts = document.querySelectorAll('.product-card');
+  let currentCategory = 'all';
+  let currentSearchTerm = '';
+
+  // Función principal de filtrado
+  function applyFilters(): void {
+    const productCards = Array.from(allProducts);
+    let visibleCount = 0;
+
+    productCards.forEach(card => {
+      const element = card as HTMLElement;
+      const productName = element.querySelector('h3')?.textContent?.toLowerCase() || '';
+      const productCategory = element.getAttribute('data-category') || '';
+
+      // Aplicar filtros
+      const matchesSearch = currentSearchTerm === '' || productName.includes(currentSearchTerm.toLowerCase());
+      const matchesCategory = currentCategory === 'all' || productCategory === currentCategory;
+
+      if (matchesSearch && matchesCategory) {
+        element.style.display = '';
+        visibleCount++;
+      } else {
+        element.style.display = 'none';
+      }
+    });
+
+    // Actualizar contador
+    const resultsCount = document.getElementById('results-count');
+    if (resultsCount) {
+      resultsCount.textContent = visibleCount.toString();
+    }
+  }
+
+  // Filtro por categoría
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Remover selección anterior
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('bg-primary', 'text-primary-foreground');
+        b.classList.add('bg-background', 'text-foreground');
+      });
+      
+      // Agregar selección actual
+      btn.classList.add('bg-primary', 'text-primary-foreground');
+      btn.classList.remove('bg-background', 'text-foreground');
+      
+      currentCategory = btn.getAttribute('data-category') || 'all';
+      applyFilters();
+    });
+  });
+
+  // Búsqueda
+  const searchInput = document.getElementById('search-products') as HTMLInputElement;
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      currentSearchTerm = searchInput.value;
+      applyFilters();
+    });
+  }
+</script>
+
