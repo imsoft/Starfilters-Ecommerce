@@ -376,16 +376,16 @@ function formatCurrency(amount: number): string {
                             </svg>
                           </Button>
                         </a>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="border-border text-red-600 hover:bg-red-50"
-                          onclick={`if(confirm('¿Estás seguro de eliminar este producto?')) { fetch('/api/products/${product.id}', { method: 'DELETE' }).then(() => window.location.reload()); }`}
+                        <button 
+                          type="button"
+                          class="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                          data-product-id={product.id}
+                          data-delete-product
                         >
                           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                           </svg>
-                        </Button>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -561,6 +561,56 @@ function formatCurrency(amount: number): string {
     categoryFilter?.addEventListener('change', filterProducts);
     stockFilter?.addEventListener('change', filterProducts);
 
+    // Event listeners para botones de eliminar
+    const deleteButtons = document.querySelectorAll('[data-delete-product]');
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const productId = button.getAttribute('data-product-id');
+        if (!productId) {
+          console.error('❌ No se encontró el ID del producto');
+          return;
+        }
+
+        const confirmed = confirm('¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer.');
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          button.disabled = true;
+          button.classList.add('opacity-50', 'cursor-not-allowed');
+
+          const response = await fetch(`/api/products/${productId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            console.log('✅ Producto eliminado exitosamente');
+            // Recargar la página para actualizar la lista
+            window.location.reload();
+          } else {
+            alert(`Error al eliminar el producto: ${data.message || 'Error desconocido'}`);
+            button.disabled = false;
+            button.classList.remove('opacity-50', 'cursor-not-allowed');
+          }
+        } catch (error) {
+          console.error('❌ Error eliminando producto:', error);
+          alert('Error al eliminar el producto. Por favor, intenta de nuevo.');
+          button.disabled = false;
+          button.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      });
+    });
+
     console.log('🎯 Filtros de productos inicializados');
+    console.log(`🗑️ ${deleteButtons.length} botones de eliminar configurados`);
   });
 </script>
