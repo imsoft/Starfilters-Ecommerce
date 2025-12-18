@@ -188,54 +188,90 @@ function formatCurrency(amount: number): string {
       )}
 
       {success === 'updated' && (
-        <div class="mb-6 rounded-md bg-green-50 border border-green-200 p-4">
+        <div class="mb-6 rounded-md bg-green-50 border border-green-200 p-4" id="success-message">
           <div class="flex">
             <div class="flex-shrink-0">
               <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </div>
-            <div class="ml-3">
+            <div class="ml-3 flex-1">
               <h3 class="text-sm font-medium text-green-800">Producto actualizado</h3>
               <div class="mt-2 text-sm text-green-700">
                 <p>El producto se ha actualizado exitosamente.</p>
               </div>
+            </div>
+            <div class="ml-auto pl-3">
+              <button
+                type="button"
+                class="inline-flex rounded-md bg-green-50 text-green-400 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                onclick="closeSuccessMessage()"
+              >
+                <span class="sr-only">Cerrar</span>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {error === 'product_not_found' && (
-        <div class="mb-6 rounded-md bg-red-50 border border-red-200 p-4">
+        <div class="mb-6 rounded-md bg-red-50 border border-red-200 p-4" id="error-message">
           <div class="flex">
             <div class="flex-shrink-0">
               <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </div>
-            <div class="ml-3">
+            <div class="ml-3 flex-1">
               <h3 class="text-sm font-medium text-red-800">Producto no encontrado</h3>
               <div class="mt-2 text-sm text-red-700">
                 <p>El producto que intentas editar no existe.</p>
               </div>
+            </div>
+            <div class="ml-auto pl-3">
+              <button
+                type="button"
+                class="inline-flex rounded-md bg-red-50 text-red-400 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                onclick="closeErrorMessage()"
+              >
+                <span class="sr-only">Cerrar</span>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {error === 'invalid_id' && (
-        <div class="mb-6 rounded-md bg-red-50 border border-red-200 p-4">
+        <div class="mb-6 rounded-md bg-red-50 border border-red-200 p-4" id="error-message">
           <div class="flex">
             <div class="flex-shrink-0">
               <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </div>
-            <div class="ml-3">
+            <div class="ml-3 flex-1">
               <h3 class="text-sm font-medium text-red-800">ID inválido</h3>
               <div class="mt-2 text-sm text-red-700">
                 <p>El ID del producto no es válido.</p>
               </div>
+            </div>
+            <div class="ml-auto pl-3">
+              <button
+                type="button"
+                class="inline-flex rounded-md bg-red-50 text-red-400 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                onclick="closeErrorMessage()"
+              >
+                <span class="sr-only">Cerrar</span>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -487,6 +523,30 @@ function formatCurrency(amount: number): string {
 </AdminLayout>
 
 <script>
+  // Función para cerrar mensajes de error
+  function closeErrorMessage() {
+    const errorMessage = document.getElementById('error-message');
+    if (errorMessage) {
+      errorMessage.remove();
+    }
+    // Limpiar parámetros de error de la URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('error');
+    window.history.replaceState({}, '', url);
+  }
+
+  // Función para cerrar mensajes de éxito
+  function closeSuccessMessage() {
+    const successMessage = document.getElementById('success-message');
+    if (successMessage) {
+      successMessage.remove();
+    }
+    // Limpiar parámetros de éxito de la URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('success');
+    window.history.replaceState({}, '', url);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-products');
     const categoryFilter = document.getElementById('category-filter');
