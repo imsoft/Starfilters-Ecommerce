@@ -2,77 +2,71 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getActiveCategories, getCategoryVariants } from "@/lib/filter-category-service";
+import { getActiveProducts } from "@/lib/product-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
 export const prerender = false;
 
-// Declarar variables fuera del try para que estén disponibles en todo el scope
-let products: Array<{
-  id: number;
-  uuid: string;
-  name: string;
-  description: string;
+// Obtener productos activos y agruparlos por categoría
+let categoriesData: Array<{
   category: string;
-  price: number;
+  products: Array<{
+    id: number;
+    uuid: string;
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    imageUrl: string;
+  }>;
+  totalProducts: number;
+  minPrice: number;
   maxPrice: number;
-  stock: number;
-  imageUrl: string;
-  variantCount: number;
-  slug: string;
+  totalStock: number;
 }> = [];
-let filterCategories: any[] = [];
 
 try {
-  // Obtener categorías de filtros activas
-  filterCategories = await getActiveCategories();
-  console.log(`📦 Página /filtros: ${filterCategories.length} categorías activas encontradas`);
-  console.log('📦 Categorías encontradas:', filterCategories.map(c => ({ id: c.id, name: c.name, status: c.status })));
+  const allProducts = await getActiveProducts();
+  console.log(`📦 Página /filtros: ${allProducts.length} productos activos encontrados`);
 
-  // Obtener variantes para cada categoría y preparar datos
-  const productsWithImages = await Promise.all(
-    filterCategories.map(async (category) => {
-      try {
-        // Obtener variantes de esta categoría
-        const variants = await getCategoryVariants(category.id);
-        console.log(`📦 Categoría ${category.name}: ${variants.length} variantes encontradas`);
-        
-        // Calcular precio mínimo de las variantes
-        const prices = variants.filter(v => v.is_active).map(v => v.price);
-        const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-        const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
-        
-        // Calcular stock total
-        const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-        
-        // Usar la imagen principal de la categoría o placeholder
-        const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
-        
-        return {
-          id: category.id,
-          uuid: category.slug, // Usar slug como identificador único
-          name: category.name,
-          description: category.description || '',
-          category: category.name, // Nombre de la categoría
-          price: minPrice,
-          maxPrice: maxPrice,
-          stock: totalStock,
-          imageUrl: imageUrl,
-          variantCount: variants.length,
-          slug: category.slug
-        };
-      } catch (error) {
-        console.error(`❌ Error procesando categoría ${category.id}:`, error);
-        console.error(`❌ Stack trace:`, error instanceof Error ? error.stack : 'No stack available');
-        return null;
-      }
-    })
-  );
+  // Agrupar productos por categoría
+  const productsByCategory = new Map<string, typeof allProducts>();
+  
+  allProducts.forEach(product => {
+    const category = product.category || 'Sin categoría';
+    if (!productsByCategory.has(category)) {
+      productsByCategory.set(category, []);
+    }
+    productsByCategory.get(category)!.push(product);
+  });
 
-  // Filtrar solo categorías con variantes y eliminar nulls
-  products = productsWithImages.filter((p): p is NonNullable<typeof p> => p !== null && p.variantCount > 0);
-  console.log(`✅ Página /filtros: ${products.length} productos listos para mostrar (después de filtrar por variantes)`);
+  // Preparar datos de categorías
+  categoriesData = Array.from(productsByCategory.entries()).map(([category, products]) => {
+    const prices = products.map(p => p.price || 0).filter(p => p > 0);
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+    const totalStock = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+
+    return {
+      category,
+      products: products.map(product => ({
+        id: product.id,
+        uuid: product.uuid,
+        name: product.name,
+        description: product.description || '',
+        price: product.price || 0,
+        stock: product.stock || 0,
+        imageUrl: getProductPlaceholderImage(product.category)
+      })),
+      totalProducts: products.length,
+      minPrice,
+      maxPrice,
+      totalStock
+    };
+  });
+
+  console.log(`✅ Página /filtros: ${categoriesData.length} categorías de productos listas para mostrar`);
 } catch (error) {
   console.error('❌ Error en página /filtros:', error);
   console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack available');
@@ -86,8 +80,8 @@ const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-// Obtener categorías únicas (nombres de categorías)
-const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+// Obtener todas las categorías únicas
+const categories = categoriesData.map(c => c.category);
 
 // Generar datos SEO
 const siteUrl = Astro.site?.href || Astro.url.origin;
@@ -100,7 +94,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 <WebsiteLayout 
   title="Filtros de Aire"
   seoTitle="Filtros de Aire - Catálogo StarFilters"
-  description="Explora nuestro catálogo completo de filtros de aire. Productos de alta calidad con envío a toda la República Mexicana."
+  description="Explora nuestro catálogo completo de filtros de aire organizados por categorías. Productos de alta calidad con envío a toda la República Mexicana."
   keywords={[
     'filtros de aire',
     'comprar filtros de aire',
@@ -111,7 +105,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   <SEO 
     slot="seo"
     title="Filtros de Aire"
-    description="Explora nuestro catálogo completo de filtros de aire. Productos de alta calidad con envío a toda la República Mexicana."
+    description="Explora nuestro catálogo completo de filtros de aire organizados por categorías. Productos de alta calidad con envío a toda la República Mexicana."
     ogType="website"
     keywords={[
       'filtros de aire',
@@ -152,7 +146,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           Filtros de Aire StarFilters
         </h1>
         <p class="mt-4 text-lg text-muted-foreground">
-          Encuentra los mejores filtros de aire para tu vehículo. Calidad garantizada y envío rápido.
+          Explora nuestras categorías de filtros de aire. Calidad garantizada y envío rápido.
         </p>
       </div>
 
@@ -160,8 +154,8 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       <div class="mb-8 space-y-6">
         <!-- Búsqueda -->
         <div>
-          <label for="search-products" class="block text-sm font-medium text-foreground mb-2">
-            Buscar productos
+          <label for="search-categories" class="block text-sm font-medium text-foreground mb-2">
+            Buscar categorías
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -171,119 +165,72 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             </div>
             <input
               type="text"
-              id="search-products"
-              placeholder="Buscar por nombre..."
+              id="search-categories"
+              placeholder="Buscar por nombre de categoría..."
               class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
         </div>
 
-        <!-- Filtros por categoría -->
-        {categories.length > 0 && (
-          <div>
-            <h3 class="text-lg font-medium text-foreground mb-4">Filtrar por categoría</h3>
-            <div class="flex flex-wrap gap-2">
-              <button
-                type="button"
-                class="filter-btn inline-flex items-center rounded-full border border-border bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
-                data-category="all"
-              >
-                Todos ({products.length})
-              </button>
-              {categories.map(category => {
-                const count = products.filter(p => p.category === category).length;
-                return (
-                  <button
-                    type="button"
-                    class="filter-btn inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                    data-category={category}
-                  >
-                    {category} ({count})
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         <!-- Contador de resultados -->
         <div class="text-sm text-muted-foreground">
-          Mostrando <span id="results-count" class="font-medium text-foreground">{products.length}</span> de {products.length} productos
+          Mostrando <span id="results-count" class="font-medium text-foreground">{categoriesData.length}</span> categorías
         </div>
       </div>
 
-      <!-- Grid de productos -->
-      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="products-grid">
-        {products.map((product) => (
+      <!-- Grid de categorías -->
+      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="categories-grid">
+        {categoriesData.map((categoryData) => (
           <div 
-            class="group product-card relative flex flex-col" 
-            data-category={product.category}
-            data-price={product.price}
-            data-stock={product.stock}
+            class="group category-card relative flex flex-col border border-border rounded-lg p-6 hover:shadow-lg transition-shadow" 
+            data-category={categoryData.category}
           >
-            <a href={`/filtros/${product.slug}`} class="block flex-shrink-0">
-              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
-                <LazyImage
-                  src={product.imageUrl}
-                  alt={product.name}
-                  class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
-                />
-              </div>
-              <h3 class="mt-4 text-sm text-foreground font-medium hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">
-                {product.name}
+            <div class="flex-shrink-0">
+              <h3 class="text-xl font-bold text-foreground mb-2">
+                {categoryData.category}
               </h3>
-            </a>
-            <p class="mt-1 text-sm text-muted-foreground">
-              {product.variantCount > 1 ? `${product.variantCount} variantes disponibles` : product.category}
-            </p>
-            <div class="mt-2 flex items-center justify-between">
-              <p class="text-lg font-medium text-foreground">
-                {product.price === product.maxPrice 
-                  ? formatPrice(product.price)
-                  : `${formatPrice(product.price)} - ${formatPrice(product.maxPrice)}`
-                }
+              <p class="text-sm text-muted-foreground mb-4">
+                {categoryData.totalProducts} {categoryData.totalProducts === 1 ? 'producto' : 'productos'} disponible{categoryData.totalProducts === 1 ? '' : 's'}
               </p>
-              {product.stock > 0 ? (
-                <span class="text-xs text-green-600 font-medium">
-                  En stock
-                </span>
-              ) : (
-                <span class="text-xs text-red-600 font-medium">
-                  Agotado
-                </span>
-              )}
             </div>
             
-            <div class="mt-auto pt-3">
-              {product.stock > 0 ? (
-                <button
-                  type="button"
-                  class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl}', '${product.category || ''}')`}
-                >
-                  Agregar al Carrito
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  class="relative z-10 w-full rounded-md bg-gray-300 px-3 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed"
-                >
-                  No Disponible
-                </button>
-              )}
+            <div class="mt-auto space-y-3">
+              <div class="flex items-center justify-between">
+                <p class="text-lg font-medium text-foreground">
+                  {categoryData.minPrice === categoryData.maxPrice 
+                    ? formatPrice(categoryData.minPrice)
+                    : `${formatPrice(categoryData.minPrice)} - ${formatPrice(categoryData.maxPrice)}`
+                  }
+                </p>
+                {categoryData.totalStock > 0 ? (
+                  <span class="text-xs text-green-600 font-medium">
+                    En stock
+                  </span>
+                ) : (
+                  <span class="text-xs text-red-600 font-medium">
+                    Agotado
+                  </span>
+                )}
+              </div>
+              
+              <a
+                href={`/productos?category=${encodeURIComponent(categoryData.category)}`}
+                class="block w-full text-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Ver Productos
+              </a>
             </div>
           </div>
         ))}
       </div>
 
-      {products.length === 0 && (
+      {categoriesData.length === 0 && (
         <div class="text-center py-12">
           <h3 class="text-lg font-medium text-foreground">
-            No hay productos disponibles
+            No hay categorías disponibles
           </h3>
           <p class="mt-2 text-sm text-muted-foreground">
-            Vuelve pronto para ver nuevos productos
+            Vuelve pronto para ver nuevas categorías de productos
           </p>
         </div>
       )}
@@ -292,26 +239,23 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 </WebsiteLayout>
 
 <script>
-  // Datos de productos del servidor
-  const allProducts = document.querySelectorAll('.product-card');
-  let currentCategory = 'all';
+  // Datos de categorías del servidor
+  const allCategories = document.querySelectorAll('.category-card');
   let currentSearchTerm = '';
 
   // Función principal de filtrado
   function applyFilters(): void {
-    const productCards = Array.from(allProducts);
+    const categoryCards = Array.from(allCategories);
     let visibleCount = 0;
 
-    productCards.forEach(card => {
+    categoryCards.forEach(card => {
       const element = card as HTMLElement;
-      const productName = element.querySelector('h3')?.textContent?.toLowerCase() || '';
-      const productCategory = element.getAttribute('data-category') || '';
+      const categoryName = element.querySelector('h3')?.textContent?.toLowerCase() || '';
 
       // Aplicar filtros
-      const matchesSearch = currentSearchTerm === '' || productName.includes(currentSearchTerm.toLowerCase());
-      const matchesCategory = currentCategory === 'all' || productCategory === currentCategory;
+      const matchesSearch = currentSearchTerm === '' || categoryName.includes(currentSearchTerm.toLowerCase());
 
-      if (matchesSearch && matchesCategory) {
+      if (matchesSearch) {
         element.style.display = '';
         visibleCount++;
       } else {
@@ -326,91 +270,10 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     }
   }
 
-  // Función para filtrar por categoría
-  function filterByCategory(category: string): void {
-    currentCategory = category;
-    
-    // Actualizar botones activos
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-      if (btn.getAttribute('data-category') === category) {
-        btn.classList.add('bg-primary', 'text-primary-foreground');
-        btn.classList.remove('bg-background', 'text-foreground');
-      } else {
-        btn.classList.remove('bg-primary', 'text-primary-foreground');
-        btn.classList.add('bg-background', 'text-foreground');
-      }
-    });
-
-    applyFilters();
-  }
-
-  // Función para agregar al carrito desde la grid
-  function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): void {
-    // Obtener carrito actual
-    const cartData = localStorage.getItem('starfilters_cart');
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
-
-    // Buscar si el producto ya existe
-    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
-
-    if (existingItemIndex >= 0) {
-      cart.items[existingItemIndex].quantity += 1;
-    } else {
-      cart.items.push({
-        uuid,
-        product_id,
-        name,
-        price,
-        quantity: 1,
-        image_url,
-        category
-      });
-    }
-
-    // Recalcular totales
-    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
-    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
-
-    // Guardar en localStorage
-    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
-
-    // Mostrar notificación
-    showNotification(`${name} agregado al carrito`);
-
-    // Disparar evento para actualizar navbar
-    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
-  }
-
-  function showNotification(message: string): void {
-    // Crear notificación temporal
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
-    notification.innerHTML = `
-      <div class="flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <span>${message}</span>
-      </div>
-    `;
-    document.body.appendChild(notification);
-
-    // Remover después de 3 segundos
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-
-  // Hacer funciones globales
-  (window as any).filterByCategory = filterByCategory;
-  (window as any).addToCartQuick = addToCartQuick;
-
   // Event listeners
   document.addEventListener('DOMContentLoaded', () => {
     // Búsqueda
-    const searchInput = document.getElementById('search-products');
+    const searchInput = document.getElementById('search-categories');
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         currentSearchTerm = (e.target as HTMLInputElement).value;
@@ -418,15 +281,6 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       });
     }
 
-    // Botones de categoría
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const category = btn.getAttribute('data-category') || 'all';
-        filterByCategory(category);
-      });
-    });
-
-    console.log('🎯 Filtros de productos inicializados');
+    console.log('🎯 Filtros de categorías inicializados');
   });
 </script>

@@ -6,7 +6,6 @@ import LanguageSelector from "./LanguageSelector";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import { isUserAdmin } from '@/lib/database';
-import { getActiveCategories } from '@/lib/filter-category-service';
 
 // Obtener idioma actual
 const lang = getLangFromUrl(Astro.url);
@@ -23,9 +22,6 @@ let userIsAdmin = false;
 if (user) {
   userIsAdmin = await isUserAdmin(user.id);
 }
-
-// Obtener categorías de filtros activas
-const filterCategories = await getActiveCategories();
 
 const baseNavLinks = [
   {
@@ -110,33 +106,6 @@ const navLinks = [...baseNavLinks];
             {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
           </a>
           
-          <!-- Dropdown de Categorías de Filtros -->
-          {filterCategories.length > 0 && (
-            <div class="relative group">
-              <button
-                type="button"
-                class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors flex items-center gap-1"
-              >
-                {lang === 'en' ? 'Filter Categories' : 'Categorías'}
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
-              <div class="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div class="py-1">
-                  {filterCategories.map((category) => (
-                    <a
-                      href={`/filtros/${category.slug}`}
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors"
-                    >
-                      {category.name}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
           {navLinks.map((link) => (
             <a
               href={link.href}
@@ -218,23 +187,6 @@ const navLinks = [...baseNavLinks];
                 >
                   {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
                 </a>
-                
-                <!-- Categorías de Filtros en móvil -->
-                {filterCategories.length > 0 && (
-                  <div class="-mx-3">
-                    <p class="px-3 py-2 text-base/7 font-semibold text-foreground">
-                      {lang === 'en' ? 'Filter Categories' : 'Categorías'}
-                    </p>
-                    {filterCategories.map((category) => (
-                      <a
-                        href={`/filtros/${category.slug}`}
-                        class="-mx-3 block rounded-lg px-6 py-2 text-base/7 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      >
-                        {category.name}
-                      </a>
-                    ))}
-                  </div>
-                )}
                 
                 {navLinks.map((link) => (
                   <a
