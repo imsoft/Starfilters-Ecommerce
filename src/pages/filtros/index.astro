@@ -70,9 +70,9 @@ try {
     })
   );
 
-  // Filtrar solo categorías con variantes y eliminar nulls
-  products = productsWithImages.filter((p): p is NonNullable<typeof p> => p !== null && p.variantCount > 0);
-  console.log(`✅ Página /filtros: ${products.length} categorías listas para mostrar (después de filtrar por variantes)`);
+  // Filtrar solo categorías válidas (eliminar nulls, pero mostrar aunque no tengan variantes)
+  products = productsWithImages.filter((p): p is NonNullable<typeof p> => p !== null);
+  console.log(`✅ Página /filtros: ${products.length} categorías listas para mostrar`);
 } catch (error) {
   console.error('❌ Error en página /filtros:', error);
   console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack available');
@@ -234,7 +234,12 @@ const breadcrumbSchema = generateBreadcrumbSchema([
               </h3>
             </a>
             <p class="mt-1 text-sm text-muted-foreground">
-              {product.variantCount > 1 ? `${product.variantCount} variantes disponibles` : product.category}
+              {product.variantCount > 1 
+                ? `${product.variantCount} variantes disponibles` 
+                : product.variantCount === 1 
+                  ? '1 variante disponible'
+                  : 'Sin variantes aún'
+              }
             </p>
             <div class="mt-2 flex items-center justify-between">
               <p class="text-lg font-medium text-foreground">
@@ -255,23 +260,12 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             </div>
             
             <div class="mt-auto pt-3">
-              {product.stock > 0 ? (
-                <button
-                  type="button"
-                  class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl}', '${product.category || ''}')`}
-                >
-                  Ver Detalles
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  class="relative z-10 w-full rounded-md bg-gray-300 px-3 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed"
-                >
-                  No Disponible
-                </button>
-              )}
+              <a
+                href={`/filtros/${product.slug}`}
+                class="block w-full text-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Ver Detalles
+              </a>
             </div>
           </div>
         ))}
