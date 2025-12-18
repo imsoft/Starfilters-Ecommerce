@@ -523,8 +523,8 @@ function formatCurrency(amount: number): string {
 </AdminLayout>
 
 <script>
-  // Función para cerrar mensajes de error
-  function closeErrorMessage() {
+  // Función para cerrar mensajes de error (debe estar en scope global)
+  window.closeErrorMessage = function() {
     const errorMessage = document.getElementById('error-message');
     if (errorMessage) {
       errorMessage.remove();
@@ -533,10 +533,10 @@ function formatCurrency(amount: number): string {
     const url = new URL(window.location.href);
     url.searchParams.delete('error');
     window.history.replaceState({}, '', url);
-  }
+  };
 
-  // Función para cerrar mensajes de éxito
-  function closeSuccessMessage() {
+  // Función para cerrar mensajes de éxito (debe estar en scope global)
+  window.closeSuccessMessage = function() {
     const successMessage = document.getElementById('success-message');
     if (successMessage) {
       successMessage.remove();
@@ -545,7 +545,7 @@ function formatCurrency(amount: number): string {
     const url = new URL(window.location.href);
     url.searchParams.delete('success');
     window.history.replaceState({}, '', url);
-  }
+  };
 
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-products');
