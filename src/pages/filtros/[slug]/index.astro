@@ -4,6 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import { getCategoryBySlug, getCategoryVariants, getCategoryImages } from "@/lib/filter-category-service";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getVariantPriceInMXN } from "@/lib/currency-service";
 
 export const prerender = false;
 
@@ -24,13 +25,20 @@ if (!category) {
 const variants = await getCategoryVariants(category.id);
 const images = await getCategoryImages(category.id);
 
-// Filtrar solo variantes activas
-const activeVariants = variants.filter(v => v.is_active);
+// Filtrar solo variantes activas y con stock
+const activeVariants = variants.filter(v => v.is_active && v.stock > 0);
 
-// Calcular precio mínimo y máximo
-const prices = activeVariants.map(v => v.price);
-const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+// Calcular precio mínimo y máximo en MXN (convertir si es necesario)
+const pricesInMXN = await Promise.all(
+  activeVariants.map(async v => {
+    if (v.currency === 'USD') {
+      return await getVariantPriceInMXN(v.price, v.currency, v.price_usd);
+    }
+    return v.price;
+  })
+);
+const minPrice = pricesInMXN.length > 0 ? Math.min(...pricesInMXN) : 0;
+const maxPrice = pricesInMXN.length > 0 ? Math.max(...pricesInMXN) : 0;
 
 // Función para formatear precio
 const formatPrice = (price: number): string => {
@@ -133,28 +141,33 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           <div class="border-t border-border pt-6">
             <h3 class="text-lg font-medium text-foreground mb-4">Selecciona un tamaño:</h3>
             <div class="space-y-3">
-              {activeVariants.map((variant, index) => (
-                <div 
+              {activeVariants.map((variant) => (
+                <div
                   class="variant-option flex items-center justify-between p-4 border-2 border-border rounded-lg cursor-pointer hover:border-primary transition-colors"
                   data-variant-id={variant.id}
                   data-price={variant.price}
+                  data-currency={variant.currency || 'MXN'}
+                  data-price-usd={variant.price_usd || ''}
                   data-stock={variant.stock}
                   data-bind-code={variant.bind_code}
                 >
                   <div class="flex-1">
                     <p class="font-medium text-foreground">{variant.nominal_size}</p>
                     <p class="text-sm text-muted-foreground">Tamaño real: {variant.real_size}</p>
-                    {variant.stock > 0 ? (
-                      <p class="text-xs text-green-600 font-medium mt-1">
-                        En stock ({variant.stock} disponibles)
-                      </p>
+                    <p class="text-xs text-green-600 font-medium mt-1">
+                      Disponible
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    {variant.currency === 'USD' && variant.price_usd ? (
+                      <>
+                        <p class="text-sm text-muted-foreground line-through">${variant.price_usd.toFixed(2)} USD</p>
+                        <p class="text-lg font-bold text-foreground">{formatPrice(variant.price)}</p>
+                      </>
                     ) : (
-                      <p class="text-xs text-red-600 font-medium mt-1">
-                        Sin stock
-                      </p>
+                      <p class="text-lg font-bold text-foreground">{formatPrice(variant.price)}</p>
                     )}
                   </div>
-                  <p class="text-lg font-bold text-foreground">{formatPrice(variant.price)}</p>
                 </div>
               ))}
             </div>
@@ -175,68 +188,83 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           </p>
         </div>
 
-        <!-- Especificaciones técnicas -->
-        {(category.efficiency || category.max_temperature || category.frame_material) && (
-          <div class="border-t border-border pt-6">
-            <h3 class="text-lg font-medium text-foreground mb-4">Especificaciones Técnicas</h3>
-            <dl class="space-y-3">
-              {category.efficiency && (
-                <div class="flex justify-between">
-                  <dt class="text-sm text-muted-foreground">Eficiencia:</dt>
-                  <dd class="text-sm font-medium text-foreground">{category.efficiency}</dd>
-                </div>
-              )}
-              {category.efficiency_class && (
-                <div class="flex justify-between">
-                  <dt class="text-sm text-muted-foreground">Clase de eficiencia:</dt>
-                  <dd class="text-sm font-medium text-foreground">{category.efficiency_class}</dd>
-                </div>
-              )}
-              {category.max_temperature && (
-                <div class="flex justify-between">
-                  <dt class="text-sm text-muted-foreground">Temperatura máxima:</dt>
-                  <dd class="text-sm font-medium text-foreground">{category.max_temperature}</dd>
-                </div>
-              )}
-              {category.frame_material && (
-                <div class="flex justify-between">
-                  <dt class="text-sm text-muted-foreground">Material del marco:</dt>
-                  <dd class="text-sm font-medium text-foreground">{category.frame_material}</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-        )}
+      </div>
+    </div>
 
-        <!-- Características -->
-        {category.characteristics && (
-          <div class="border-t border-border pt-6">
-            <h3 class="text-lg font-medium text-foreground mb-4">Características</h3>
-            <div class="prose prose-sm max-w-none text-muted-foreground">
-              <p>{category.characteristics}</p>
-            </div>
-          </div>
-        )}
+    <!-- Technical Specifications Section (Diseño Tailwind) -->
+    <div class="mx-auto mt-16 grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 sm:mt-20 lg:max-w-7xl lg:grid-cols-2">
+      <div>
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Especificaciones Técnicas</h2>
+        <p class="mt-4 text-gray-500">{category.description || `Conoce las especificaciones técnicas y características de nuestros ${category.name}.`}</p>
 
-        <!-- Aplicaciones -->
-        {category.applications && (
-          <div class="border-t border-border pt-6">
-            <h3 class="text-lg font-medium text-foreground mb-4">Aplicaciones</h3>
-            <div class="prose prose-sm max-w-none text-muted-foreground">
-              <p>{category.applications}</p>
+        <dl class="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
+          {category.efficiency && (
+            <div class="border-t border-gray-200 pt-4">
+              <dt class="font-medium text-gray-900">Eficiencia</dt>
+              <dd class="mt-2 text-sm text-gray-500 whitespace-pre-line">{category.efficiency}</dd>
             </div>
-          </div>
-        )}
+          )}
+          {category.efficiency_class && (
+            <div class="border-t border-gray-200 pt-4">
+              <dt class="font-medium text-gray-900">Clase de Eficiencia</dt>
+              <dd class="mt-2 text-sm text-gray-500">{category.efficiency_class}</dd>
+            </div>
+          )}
+          {category.frame_material && (
+            <div class="border-t border-gray-200 pt-4">
+              <dt class="font-medium text-gray-900">Material</dt>
+              <dd class="mt-2 text-sm text-gray-500">{category.frame_material}</dd>
+            </div>
+          )}
+          {category.max_temperature && (
+            <div class="border-t border-gray-200 pt-4">
+              <dt class="font-medium text-gray-900">Temperatura Máxima</dt>
+              <dd class="mt-2 text-sm text-gray-500">{category.max_temperature}</dd>
+            </div>
+          )}
+          {category.characteristics && (
+            <div class="border-t border-gray-200 pt-4">
+              <dt class="font-medium text-gray-900">Características</dt>
+              <dd class="mt-2 text-sm text-gray-500 whitespace-pre-line">{category.characteristics}</dd>
+            </div>
+          )}
+          {category.applications && (
+            <div class="border-t border-gray-200 pt-4">
+              <dt class="font-medium text-gray-900">Aplicaciones</dt>
+              <dd class="mt-2 text-sm text-gray-500">{category.applications}</dd>
+            </div>
+          )}
+          {category.benefits && (
+            <div class="border-t border-gray-200 pt-4">
+              <dt class="font-medium text-gray-900">Beneficios</dt>
+              <dd class="mt-2 text-sm text-gray-500 whitespace-pre-line">{category.benefits}</dd>
+            </div>
+          )}
+          {category.typical_installation && (
+            <div class="border-t border-gray-200 pt-4">
+              <dt class="font-medium text-gray-900">Instalación Típica</dt>
+              <dd class="mt-2 text-sm text-gray-500">{category.typical_installation}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
 
-        <!-- Beneficios -->
-        {category.benefits && (
-          <div class="border-t border-border pt-6">
-            <h3 class="text-lg font-medium text-foreground mb-4">Beneficios</h3>
-            <div class="prose prose-sm max-w-none text-muted-foreground">
-              <p>{category.benefits}</p>
-            </div>
+      <!-- Galería de imágenes 2x2 (Diseño Tailwind) -->
+      <div class="grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 lg:gap-8">
+        {carouselImages.slice(0, 4).map((img, index) => (
+          <LazyImage
+            src={img.image_url}
+            alt={img.alt_text || category.name}
+            class="rounded-lg bg-gray-100 w-full h-full object-cover object-center aspect-square"
+          />
+        ))}
+        {carouselImages.length < 4 && Array.from({ length: 4 - carouselImages.length }).map((_, index) => (
+          <div class="rounded-lg bg-gray-100 aspect-square flex items-center justify-center">
+            <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
           </div>
-        )}
+        ))}
       </div>
     </div>
   </div>
@@ -257,30 +285,22 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     option.addEventListener('click', () => {
       // Remover selección anterior
       variantOptions.forEach(opt => opt.classList.remove('border-primary', 'bg-primary/5'));
-      
+
       // Agregar selección actual
       option.classList.add('border-primary', 'bg-primary/5');
-      
+
       // Obtener datos de la variante
       selectedVariantId = parseInt(option.getAttribute('data-variant-id') || '0');
       selectedPrice = parseFloat(option.getAttribute('data-price') || '0');
       selectedStock = parseInt(option.getAttribute('data-stock') || '0');
       selectedBindCode = option.getAttribute('data-bind-code') || '';
-      
-      // Actualizar botón
-      if (selectedStock > 0) {
-        addToCartBtn.disabled = false;
-        addToCartBtn.textContent = 'Agregar al carrito';
-        selectionMessage.textContent = `Tamaño seleccionado: ${option.querySelector('.font-medium')?.textContent}`;
-        selectionMessage.classList.remove('text-muted-foreground');
-        selectionMessage.classList.add('text-foreground');
-      } else {
-        addToCartBtn.disabled = true;
-        addToCartBtn.textContent = 'Sin stock';
-        selectionMessage.textContent = 'Este tamaño no está disponible actualmente';
-        selectionMessage.classList.remove('text-foreground');
-        selectionMessage.classList.add('text-red-600');
-      }
+
+      // Actualizar botón (stock ya está filtrado, todas las variantes tienen stock)
+      addToCartBtn.disabled = false;
+      addToCartBtn.textContent = 'Agregar al carrito';
+      selectionMessage.textContent = `Tamaño seleccionado: ${option.querySelector('.font-medium')?.textContent}`;
+      selectionMessage.classList.remove('text-muted-foreground');
+      selectionMessage.classList.add('text-foreground');
     });
   });
 

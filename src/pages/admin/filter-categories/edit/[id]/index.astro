@@ -176,6 +176,8 @@ if (Astro.request.method === "POST") {
       const bindCode = formData.get("bind_code") as string;
       const nominalSize = formData.get("nominal_size") as string;
       const realSize = formData.get("real_size") as string;
+      const currency = (formData.get("currency") as string) || 'MXN';
+      const priceUSD = formData.get("price_usd") ? parseFloat(formData.get("price_usd") as string) : null;
       const price = parseFloat(formData.get("price") as string);
       const stock = parseInt(formData.get("stock") as string) || 0;
       const isActive = formData.get("is_active") === "on";
@@ -187,6 +189,8 @@ if (Astro.request.method === "POST") {
           nominal_size: nominalSize,
           real_size: realSize,
           price: price,
+          currency: currency as 'MXN' | 'USD',
+          price_usd: priceUSD,
           stock: stock,
           is_active: isActive,
         });
@@ -204,6 +208,8 @@ if (Astro.request.method === "POST") {
       const bindCode = formData.get("bind_code") as string;
       const nominalSize = formData.get("nominal_size") as string;
       const realSize = formData.get("real_size") as string;
+      const currency = (formData.get("currency") as string) || 'MXN';
+      const priceUSD = formData.get("price_usd") ? parseFloat(formData.get("price_usd") as string) : null;
       const price = parseFloat(formData.get("price") as string);
       const stock = parseInt(formData.get("stock") as string) || 0;
       const isActive = formData.get("is_active") === "on";
@@ -214,6 +220,8 @@ if (Astro.request.method === "POST") {
           nominal_size: nominalSize,
           real_size: realSize,
           price: price,
+          currency: currency as 'MXN' | 'USD',
+          price_usd: priceUSD,
           stock: stock,
           is_active: isActive,
         });
@@ -603,7 +611,7 @@ if (Astro.request.method === "POST") {
           <form method="POST" class="space-y-4">
             <input type="hidden" name="action" value="add_variant" />
 
-            <div class="grid gap-4 md:grid-cols-5">
+            <div class="grid gap-4 md:grid-cols-3">
               <div>
                 <label
                   for="bind_code"
@@ -654,13 +662,50 @@ if (Astro.request.method === "POST") {
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-4 mt-4">
+              <div>
+                <label
+                  for="currency"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Moneda *
+                </label>
+                <select
+                  id="currency"
+                  name="currency"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="MXN" selected>MXN (Pesos)</option>
+                  <option value="USD">USD (Dólares)</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  for="price_usd"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Precio USD
+                </label>
+                <input
+                  type="number"
+                  id="price_usd"
+                  name="price_usd"
+                  step="0.01"
+                  placeholder="10.50"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <p class="mt-1 text-xs text-gray-500">Solo si moneda es USD</p>
+              </div>
 
               <div>
                 <label
                   for="price"
                   class="block text-sm font-medium text-gray-700"
                 >
-                  Precio *
+                  Precio MXN *
                 </label>
                 <input
                   type="number"
@@ -671,6 +716,7 @@ if (Astro.request.method === "POST") {
                   placeholder="158.00"
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
+                <p class="mt-1 text-xs text-gray-500">Se calculará automático si USD</p>
               </div>
 
               <div>
@@ -732,10 +778,10 @@ if (Astro.request.method === "POST") {
                         Código BIND
                       </th>
                       <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                        Medida Nominal
+                        Tamaño
                       </th>
                       <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                        Medida Real
+                        Moneda
                       </th>
                       <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                         Precio
@@ -758,13 +804,23 @@ if (Astro.request.method === "POST") {
                           {variant.bind_code}
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-900">
-                          {variant.nominal_size}
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-900">
-                          {variant.real_size}
+                          <div>{variant.nominal_size}</div>
+                          <div class="text-xs text-gray-500">{variant.real_size}</div>
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                          ${formatPrice(variant.price)}
+                          <span class={`inline-flex rounded px-2 py-1 text-xs font-semibold ${variant.currency === 'USD' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {variant.currency || 'MXN'}
+                          </span>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                          {variant.currency === 'USD' && variant.price_usd ? (
+                            <div>
+                              <div class="font-medium">${formatPrice(variant.price_usd)} USD</div>
+                              <div class="text-xs text-gray-500">≈ ${formatPrice(variant.price)} MXN</div>
+                            </div>
+                          ) : (
+                            <div>${formatPrice(variant.price)} MXN</div>
+                          )}
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                           {variant.stock}
@@ -787,6 +843,8 @@ if (Astro.request.method === "POST") {
                             data-bind-code={String(variant.bind_code || '')}
                             data-nominal-size={String(variant.nominal_size || '')}
                             data-real-size={String(variant.real_size || '')}
+                            data-currency={String(variant.currency || 'MXN')}
+                            data-price-usd={String(variant.price_usd || '')}
                             data-price={String(variant.price)}
                             data-stock={String(variant.stock || 0)}
                             data-is-active={variant.is_active ? 'true' : 'false'}
@@ -922,11 +980,13 @@ if (Astro.request.method === "POST") {
     const bindCode = button.getAttribute('data-bind-code');
     const nominalSize = button.getAttribute('data-nominal-size');
     const realSize = button.getAttribute('data-real-size');
+    const currency = button.getAttribute('data-currency') || 'MXN';
+    const priceUSD = button.getAttribute('data-price-usd');
     const price = button.getAttribute('data-price');
     const stock = button.getAttribute('data-stock');
     const isActive = button.getAttribute('data-is-active') === 'true';
 
-    console.log('📋 Datos de variante:', { variantId, bindCode, nominalSize, realSize, price, stock, isActive });
+    console.log('📋 Datos de variante:', { variantId, bindCode, nominalSize, realSize, currency, priceUSD, price, stock, isActive });
 
     // Find the form to add variant
     const actionInputs = document.querySelectorAll('input[name="action"]');
@@ -950,6 +1010,8 @@ if (Astro.request.method === "POST") {
         <input type="hidden" name="bind_code" value="${bindCode}">
         <input type="hidden" name="nominal_size" value="${nominalSize}">
         <input type="hidden" name="real_size" value="${realSize}">
+        <input type="hidden" name="currency" value="${currency}">
+        <input type="hidden" name="price_usd" value="${priceUSD || ''}">
         <input type="hidden" name="price" value="${price}">
         <input type="hidden" name="stock" value="${stock}">
         ${isActive ? '<input type="hidden" name="is_active" value="on">' : ""}
@@ -963,6 +1025,8 @@ if (Astro.request.method === "POST") {
     const bindCodeInput = addVariantForm.querySelector('input[name="bind_code"]');
     const nominalSizeInput = addVariantForm.querySelector('input[name="nominal_size"]');
     const realSizeInput = addVariantForm.querySelector('input[name="real_size"]');
+    const currencySelect = addVariantForm.querySelector('select[name="currency"]');
+    const priceUSDInput = addVariantForm.querySelector('input[name="price_usd"]');
     const priceInput = addVariantForm.querySelector('input[name="price"]');
     const stockInput = addVariantForm.querySelector('input[name="stock"]');
     const isActiveCheckbox = addVariantForm.querySelector('input[name="is_active"]');
@@ -972,6 +1036,8 @@ if (Astro.request.method === "POST") {
     if (bindCodeInput) bindCodeInput.value = bindCode || '';
     if (nominalSizeInput) nominalSizeInput.value = nominalSize || '';
     if (realSizeInput) realSizeInput.value = realSize || '';
+    if (currencySelect) currencySelect.value = currency || 'MXN';
+    if (priceUSDInput) priceUSDInput.value = priceUSD || '';
     if (priceInput) priceInput.value = price || '';
     if (stockInput) stockInput.value = stock || '';
     if (isActiveCheckbox) isActiveCheckbox.checked = isActive;
