@@ -8,6 +8,7 @@ import LogoSection from '@/components/shared/LogoSection.astro';
 import TestimonialSections from '@/components/shared/TestimonialSections.astro';
 import FaqSection from '@/components/shared/FaqSection.astro';
 import FooterSection from '@/components/shared/FooterSection.astro';
+import WhatsAppButton from '@/components/shared/WhatsAppButton.astro';
 import { generateOrganizationSchema } from '@/lib/seo-utils';
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
@@ -49,5 +50,6 @@ const siteUrl = Astro.site?.href || Astro.url.origin;
 		<FaqSection />
 		<TestimonialSections />
 		<FooterSection />
+		<WhatsAppButton />
 	</body>
 </html>
