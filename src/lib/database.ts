@@ -667,11 +667,10 @@ export const getOrderByUuid = async (uuid: string): Promise<Order | null> => {
 
 export const getOrderItems = async (orderId: number): Promise<OrderItem[]> => {
   const sql = `
-    SELECT oi.*, p.image_url 
-    FROM order_items oi
-    LEFT JOIN products p ON oi.product_id = p.id
-    WHERE oi.order_id = ?
-    ORDER BY oi.id
+    SELECT *
+    FROM order_items
+    WHERE order_id = ?
+    ORDER BY id
   `;
   return await query(sql, [orderId]) as OrderItem[];
 };
