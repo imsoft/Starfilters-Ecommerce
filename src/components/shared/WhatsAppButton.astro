@@ -1,0 +1,78 @@
+---
+import { getWhatsAppNumber, getWhatsAppMessage } from '@/lib/site-settings-service';
+
+const whatsappNumber = await getWhatsAppNumber();
+const whatsappMessage = await getWhatsAppMessage();
+
+// Solo mostrar el botón si hay un número configurado
+const showButton = whatsappNumber && whatsappNumber.length > 0;
+
+// Generar URL de WhatsApp
+const whatsappUrl = showButton
+  ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`
+  : '#';
+---
+
+{showButton && (
+  <a
+    href={whatsappUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    class="whatsapp-button fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-[#25D366] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl"
+    title="Chatea con nosotros en WhatsApp"
+    aria-label="Contactar por WhatsApp"
+  >
+    <img
+      src="/logos/logo-whatsapp.svg"
+      alt="WhatsApp"
+      class="h-10 w-10"
+    />
+
+    <!-- Animación de pulso -->
+    <span class="absolute inline-flex h-full w-full rounded-full bg-[#25D366] opacity-75 animate-ping"></span>
+  </a>
+)}
+
+<style>
+  .whatsapp-button {
+    animation: slideIn 0.5s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Animación de pulso suave */
+  @keyframes ping {
+    75%, 100% {
+      transform: scale(1.1);
+      opacity: 0;
+    }
+  }
+
+  .animate-ping {
+    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  /* Responsive: hacer el botón más pequeño en móviles */
+  @media (max-width: 640px) {
+    .whatsapp-button {
+      bottom: 1rem;
+      right: 1rem;
+      height: 3.5rem;
+      width: 3.5rem;
+    }
+
+    .whatsapp-button img {
+      height: 2rem;
+      width: 2rem;
+    }
+  }
+</style>
