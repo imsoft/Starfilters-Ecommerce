@@ -143,7 +143,7 @@ export const ui = {
     'footer.terms': 'Términos de servicio',
     'footer.privacy': 'Política de privacidad',
     'footer.license': 'Licencia',
-    'footer.copyright': '© 2025 StarFilters, Inc. Todos los derechos reservados.',
+    'footer.copyright': '© 2026 StarFilters, Inc. Todos los derechos reservados.',
 
     // Testimonials
     'testimonials.badge': 'Testimonios',
@@ -362,7 +362,7 @@ export const ui = {
     'footer.terms': 'Terms of service',
     'footer.privacy': 'Privacy policy',
     'footer.license': 'License',
-    'footer.copyright': '© 2025 StarFilters, Inc. All rights reserved.',
+    'footer.copyright': '© 2026 StarFilters, Inc. All rights reserved.',
 
     // Testimonials
     'testimonials.badge': 'Testimonials',
