@@ -299,40 +299,65 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             </div>
           </form>
 
-          <!-- Detalles del producto -->
-          <section aria-labelledby="details-heading" class="mt-12">
-            <h2 id="details-heading" class="text-lg font-medium text-foreground">
-              Detalles del Producto
-            </h2>
+        </div>
+      </div>
 
-            <div class="mt-4 space-y-6">
-              <div>
-                <h3 class="text-sm font-medium text-foreground">Categoría</h3>
-                <p class="mt-2 text-sm text-muted-foreground">{product.category}</p>
-              </div>
-              
-              {product.description && (
-                <div>
-                  <h3 class="text-sm font-medium text-foreground">Descripción</h3>
-                  <div class="mt-2 prose prose-sm text-muted-foreground">
-                    <p>{product.description}</p>
-                  </div>
-                </div>
-              )}
+      <!-- Technical Specifications Section -->
+      <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-24 sm:px-6 sm:py-32 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
+        <div>
+          <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Especificaciones Técnicas</h2>
+          <p class="mt-4 text-muted-foreground">
+            Información detallada sobre las características técnicas y especificaciones del producto. Diseñado para cumplir con los más altos estándares de calidad.
+          </p>
 
-              <div>
-                <h3 class="text-sm font-medium text-foreground">Características</h3>
-                <div class="mt-2">
-                  <ul class="list-disc space-y-2 pl-4 text-sm text-muted-foreground">
-                    <li>Alta calidad y durabilidad</li>
-                    <li>Fácil instalación</li>
-                    <li>Garantía de 1 año</li>
-                    <li>Envío gratuito en pedidos mayores a $500</li>
-                  </ul>
-                </div>
-              </div>
+          <dl class="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
+            <div class="border-t border-border pt-4">
+              <dt class="font-medium text-foreground">Origen</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">Diseñado y fabricado en México</dd>
             </div>
-          </section>
+            <div class="border-t border-border pt-4">
+              <dt class="font-medium text-foreground">Material</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">Materiales de alta calidad certificados</dd>
+            </div>
+            <div class="border-t border-border pt-4">
+              <dt class="font-medium text-foreground">Dimensiones</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">Dimensiones estándar de la industria</dd>
+            </div>
+            <div class="border-t border-border pt-4">
+              <dt class="font-medium text-foreground">Acabado</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">Acabado profesional de alta durabilidad</dd>
+            </div>
+            <div class="border-t border-border pt-4">
+              <dt class="font-medium text-foreground">Incluye</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">Incluye garantía y soporte técnico</dd>
+            </div>
+            <div class="border-t border-border pt-4">
+              <dt class="font-medium text-foreground">Consideraciones</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">Variaciones naturales pueden ocurrir en el producto</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 lg:gap-8">
+          <img
+            alt="Vista detallada del producto 1"
+            src={allImages[0]}
+            class="rounded-lg bg-muted"
+          />
+          <img
+            alt="Vista detallada del producto 2"
+            src={allImages[1]}
+            class="rounded-lg bg-muted"
+          />
+          <img
+            alt="Vista detallada del producto 3"
+            src={allImages[2]}
+            class="rounded-lg bg-muted"
+          />
+          <img
+            alt="Vista detallada del producto 4"
+            src={allImages[3]}
+            class="rounded-lg bg-muted"
+          />
         </div>
       </div>
 
