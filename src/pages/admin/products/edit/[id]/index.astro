@@ -1,7 +1,9 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
+import { ProductImageUploader } from "@/components/ui/ProductImageUploader";
 import { getProductById, updateProduct as updateProductService } from "@/lib/product-service";
+import { getProductImages } from "@/lib/database";
 import { requireAdmin } from "@/lib/auth-utils";
 import type { Product } from "@/lib/database";
 
@@ -20,6 +22,7 @@ const { id } = Astro.params;
 
 // Obtener el producto por ID
 let product: Product | null = null;
+let productImages: any[] = [];
 let errorMessage = '';
 
 if (id) {
@@ -27,6 +30,9 @@ if (id) {
   if (!product) {
     return Astro.redirect('/admin/products?error=product_not_found');
   }
+
+  // Obtener imágenes del producto
+  productImages = await getProductImages(product.id);
 } else {
   return Astro.redirect('/admin/products?error=invalid_id');
 }
@@ -271,6 +277,24 @@ if (Astro.request.method === 'POST') {
               <p class="mt-1 text-sm text-muted-foreground">Separadas por comas</p>
             </div>
           </div>
+        </div>
+
+        <!-- Imágenes del Producto -->
+        <div class="rounded-lg border border-border bg-background p-6">
+          <h2 class="text-lg font-semibold text-foreground mb-2">Imágenes del Producto</h2>
+          <p class="text-sm text-muted-foreground mb-6">
+            Sube una o más imágenes del producto. La primera imagen será la imagen principal.
+          </p>
+
+          <ProductImageUploader
+            client:load
+            productId={product.id.toString()}
+            initialImages={productImages.map(img => ({
+              id: img.id.toString(),
+              url: img.image_url,
+              isPrimary: img.is_primary
+            }))}
+          />
         </div>
 
         <!-- Botones de acción -->
