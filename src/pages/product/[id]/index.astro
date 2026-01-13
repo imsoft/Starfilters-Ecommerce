@@ -122,37 +122,137 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       <!-- Technical Specifications Section -->
       <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-24 sm:px-6 sm:py-32 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
-          <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Especificaciones Técnicas</h2>
-          <p class="mt-4 text-muted-foreground">
-            Información detallada sobre las características técnicas y especificaciones del producto. Diseñado para cumplir con los más altos estándares de calidad.
+          <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{product.name}</h2>
+          <p class="mt-4 text-3xl tracking-tight text-foreground">
+            {formatPrice(product.price)}
           </p>
 
-          <dl class="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
-            <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Origen</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">Diseñado y fabricado en México</dd>
+          <!-- Valoraciones -->
+          <div class="mt-4">
+            <div class="flex items-center">
+              <div class="flex items-center">
+                {[1,2,3,4,5].map(rating => (
+                  <svg
+                    class={`h-5 w-5 flex-shrink-0 ${rating <= 4 ? 'text-yellow-400' : 'text-gray-300'}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                ))}
+              </div>
+              <a href="#reviews" class="ml-3 text-sm font-medium text-primary hover:text-primary/90">
+                117 valoraciones
+              </a>
             </div>
+          </div>
+
+          <!-- Descripción -->
+          <div class="mt-6 text-base text-muted-foreground">
+            <p>{product.description}</p>
+          </div>
+
+          <dl class="mt-10 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
             <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Material</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">Materiales de alta calidad certificados</dd>
+              <dt class="font-medium text-foreground">Categoría</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">{product.category || 'No especificada'}</dd>
             </div>
+            {product.uuid && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">SKU</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">{product.uuid}</dd>
+              </div>
+            )}
+            {product.weight && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">Peso</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">{product.weight}</dd>
+              </div>
+            )}
             <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Dimensiones</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">Dimensiones estándar de la industria</dd>
+              <dt class="font-medium text-foreground">Disponibilidad</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">
+                {product.stock > 0 ? `En stock (${product.stock} disponibles)` : 'Agotado'}
+              </dd>
             </div>
+            {product.tags && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">Etiquetas</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">{product.tags}</dd>
+              </div>
+            )}
             <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Acabado</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">Acabado profesional de alta durabilidad</dd>
-            </div>
-            <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Incluye</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">Incluye garantía y soporte técnico</dd>
-            </div>
-            <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Consideraciones</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">Variaciones naturales pueden ocurrir en el producto</dd>
+              <dt class="font-medium text-foreground">Garantía</dt>
+              <dd class="mt-2 text-sm text-muted-foreground">1 año de garantía</dd>
             </div>
           </dl>
+
+          <!-- Formulario de compra -->
+          <form class="mt-10">
+            <!-- Cantidad -->
+            <div class="flex items-center gap-4">
+              <label for="quantity" class="text-sm font-medium text-foreground">
+                Cantidad:
+              </label>
+              <select
+                id="quantity"
+                name="quantity"
+                class="rounded-md bg-background py-2 pr-8 pl-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              >
+                {Array.from({ length: Math.min(product.stock, 10) }, (_, i) => i + 1).map(num => (
+                  <option value={num}>{num}</option>
+                ))}
+              </select>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="mt-8 flex gap-4">
+              {product.stock > 0 ? (
+                <button
+                  type="button"
+                  id="add-to-cart-btn"
+                  class="flex flex-1 items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${mainImage}', '${product.category || ''}')`}
+                >
+                  Agregar al Carrito
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  class="flex flex-1 items-center justify-center rounded-md bg-gray-300 px-8 py-3 text-base font-medium text-gray-500 cursor-not-allowed"
+                >
+                  No Disponible
+                </button>
+              )}
+
+              <button
+                type="button"
+                class="flex items-center justify-center rounded-md px-4 py-3 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                title="Agregar a favoritos"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  aria-hidden="true"
+                  class="size-6 shrink-0"
+                >
+                  <path
+                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+          </form>
         </div>
         <div class="grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 lg:gap-8">
           <img
