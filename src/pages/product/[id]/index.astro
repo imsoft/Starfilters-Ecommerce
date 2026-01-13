@@ -119,54 +119,23 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     </div>
 
     <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-      <div class="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8">
-        <!-- Galería de imágenes -->
-        <div class="flex flex-col-reverse">
-          <!-- Selector de imágenes -->
-          <div class="mx-auto mt-6 hidden w-full max-w-2xl sm:block lg:max-w-none">
-            <div class="grid grid-cols-4 gap-6" id="image-thumbnails">
-              {allImages.map((image: string, index: number) => (
-                <button
-                  type="button"
-                  class={`relative flex cursor-pointer items-center justify-center rounded-md bg-background text-sm font-medium uppercase text-foreground hover:bg-muted focus:outline-none ${index === 0 ? 'ring-2 ring-primary' : ''}`}
-                  data-image-index={index}
-                  onclick={`showImage(${index})`}
-                >
-                  <span class="sr-only">Vista {index + 1}</span>
-                  <span class="absolute inset-0 overflow-hidden rounded-md">
-                    <img src={image} alt={`Vista ${index + 1} de ${product.name}`} class="h-full w-full object-cover object-center" />
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <!-- Imagen principal -->
-          <div class="aspect-h-1 aspect-w-1 w-full">
-            <LazyImage
-              src={mainImage}
-              alt={product.name}
-              class="h-full w-full object-cover object-center sm:rounded-lg"
-              priority={true}
-            />
-          </div>
-        </div>
-
-        <!-- Información del producto -->
-        <div class="mt-10 px-4 sm:mt-16 sm:px-0 lg:mt-0">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">
+      <!-- Product Info Section (Two Column Layout) -->
+      <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 py-16 sm:py-24 lg:max-w-7xl lg:grid-cols-2">
+        <!-- Left Column: Product Information -->
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             {product.name}
           </h1>
 
-          <div class="mt-3">
+          <div class="mt-4">
             <h2 class="sr-only">Información del producto</h2>
             <p class="text-3xl tracking-tight text-foreground">
               {formatPrice(product.price)}
             </p>
           </div>
 
-          <!-- Valoraciones (placeholder) -->
-          <div class="mt-3">
+          <!-- Valoraciones -->
+          <div class="mt-4">
             <h3 class="sr-only">Valoraciones</h3>
             <div class="flex items-center">
               <div class="flex items-center">
@@ -192,77 +161,77 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             </div>
           </div>
 
+          <!-- Descripción -->
           <div class="mt-6">
-            <h3 class="sr-only">Descripción</h3>
-            <div class="space-y-6 text-base text-muted-foreground">
+            <h3 class="text-lg font-medium text-foreground">Descripción</h3>
+            <div class="mt-4 space-y-6 text-base text-muted-foreground">
               <p>{product.description}</p>
             </div>
           </div>
 
-          <form class="mt-6">
-            <!-- Disponibilidad -->
-            <div class="mt-10 flex">
-              {product.stock > 0 ? (
-                <p class="flex items-center text-sm text-green-600">
-                  <svg
-                    class="mr-2 h-5 w-5 flex-shrink-0"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-                      clip-rule="evenodd"
-                    ></path>
-                  </svg>
-                  En stock ({product.stock} disponibles)
-                </p>
-              ) : (
-                <p class="flex items-center text-sm text-red-600">
-                  <svg
-                    class="mr-2 h-5 w-5 flex-shrink-0"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                      clip-rule="evenodd"
-                    ></path>
-                  </svg>
-                  Agotado
-                </p>
-              )}
-            </div>
-
-            <!-- Cantidad -->
-            <div class="mt-6">
-              <div class="flex items-center">
-                <label for="quantity" class="text-sm font-medium text-foreground mr-4">
-                  Cantidad:
-                </label>
-                <select
-                  id="quantity"
-                  name="quantity"
-                  class="rounded-md bg-background py-1.5 pr-8 pl-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+          <!-- Disponibilidad -->
+          <div class="mt-6">
+            {product.stock > 0 ? (
+              <p class="flex items-center text-sm text-green-600">
+                <svg
+                  class="mr-2 h-5 w-5 flex-shrink-0"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
                 >
-                  {Array.from({ length: Math.min(product.stock, 10) }, (_, i) => i + 1).map(num => (
-                    <option value={num}>{num}</option>
-                  ))}
-                </select>
-              </div>
+                  <path
+                    fill-rule="evenodd"
+                    d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                En stock ({product.stock} disponibles)
+              </p>
+            ) : (
+              <p class="flex items-center text-sm text-red-600">
+                <svg
+                  class="mr-2 h-5 w-5 flex-shrink-0"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                Agotado
+              </p>
+            )}
+          </div>
+
+          <!-- Formulario de compra -->
+          <form class="mt-8">
+            <!-- Cantidad -->
+            <div class="flex items-center">
+              <label for="quantity" class="text-sm font-medium text-foreground mr-4">
+                Cantidad:
+              </label>
+              <select
+                id="quantity"
+                name="quantity"
+                class="rounded-md bg-background py-1.5 pr-8 pl-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+              >
+                {Array.from({ length: Math.min(product.stock, 10) }, (_, i) => i + 1).map(num => (
+                  <option value={num}>{num}</option>
+                ))}
+              </select>
             </div>
 
             <!-- Botones de acción -->
-            <div class="mt-10 flex">
+            <div class="mt-8 flex gap-4">
               {product.stock > 0 ? (
                 <button
                   type="button"
                   id="add-to-cart-btn"
-                  class="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden sm:w-full transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
+                  class="flex flex-1 items-center justify-center rounded-md border border-transparent bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden transition-colors"
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${mainImage}', '${product.category || ''}')`}
                 >
                   Agregar al Carrito
                 </button>
@@ -270,7 +239,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 <button
                   type="button"
                   disabled
-                  class="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-gray-300 px-8 py-3 text-base font-medium text-gray-500 cursor-not-allowed sm:w-full"
+                  class="flex flex-1 items-center justify-center rounded-md border border-transparent bg-gray-300 px-8 py-3 text-base font-medium text-gray-500 cursor-not-allowed"
                 >
                   No Disponible
                 </button>
@@ -278,7 +247,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
               <button
                 type="button"
-                class="ml-4 flex items-center justify-center rounded-md px-3 py-3 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                class="flex items-center justify-center rounded-md px-3 py-3 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -298,7 +267,30 @@ const breadcrumbSchema = generateBreadcrumbSchema([
               </button>
             </div>
           </form>
+        </div>
 
+        <!-- Right Column: Image Grid (2x2) -->
+        <div class="grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 lg:gap-8">
+          <img
+            alt="Vista principal del producto"
+            src={allImages[0]}
+            class="rounded-lg bg-muted"
+          />
+          <img
+            alt="Vista detallada del producto"
+            src={allImages[1]}
+            class="rounded-lg bg-muted"
+          />
+          <img
+            alt="Vista lateral del producto"
+            src={allImages[2]}
+            class="rounded-lg bg-muted"
+          />
+          <img
+            alt="Vista adicional del producto"
+            src={allImages[3]}
+            class="rounded-lg bg-muted"
+          />
         </div>
       </div>
 
@@ -412,26 +404,6 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 </WebsiteLayout>
 
 <script>
-  // Funciones para galería de imágenes
-  function showImage(index: number): void {
-    const mainImage = document.getElementById('main-image') as HTMLImageElement;
-    const thumbnails = document.querySelectorAll('[data-image-index]');
-    
-    if (mainImage) {
-      const images = allImages;
-      mainImage.src = images[index] || images[0];
-    }
-
-    // Actualizar estado activo de thumbnails
-    thumbnails.forEach((thumb, i) => {
-      if (i === index) {
-        thumb.classList.add('ring-2', 'ring-primary');
-      } else {
-        thumb.classList.remove('ring-2', 'ring-primary');
-      }
-    });
-  }
-
   // Función para verificar stock en tiempo real
   async function checkStock(uuid: string, quantity: number): Promise<boolean> {
     try {
@@ -553,6 +525,5 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   }
 
   // Hacer funciones globales
-  (window as any).showImage = showImage;
   (window as any).addToCartFromProduct = addToCartFromProduct;
 </script>
