@@ -14,6 +14,13 @@ let filterCategories: any[] = [];
 try {
   filterCategories = await getActiveCategories();
   console.log(`📦 Página /filtros: ${filterCategories.length} categorías activas encontradas`);
+  
+  // Log para debugging
+  if (filterCategories.length === 0) {
+    console.warn('⚠️ No se encontraron categorías activas. Verifica que existan categorías con status="active" o status IS NULL en la base de datos.');
+  } else {
+    console.log('✅ Categorías encontradas:', filterCategories.map(c => ({ id: c.id, name: c.name, status: c.status })));
+  }
 } catch (error) {
   console.error('❌ Error en página /filtros:', error);
   filterCategories = [];
@@ -117,19 +124,19 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         {filterCategories.map((category) => {
           const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
           return (
-            <div 
-              class="group category-card relative flex flex-col cursor-pointer" 
+            <a
+              href={`/productos?filter_category_id=${category.id}`}
+              class="group category-card relative flex flex-col cursor-pointer transition-transform hover:scale-105"
               data-name={category.name.toLowerCase()}
-              onclick={`window.location.href='/productos?filter_category_id=${category.id}'`}
             >
-              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
+              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted shadow-md">
                 <LazyImage
                   src={imageUrl}
                   alt={category.name}
                   class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
                 />
               </div>
-              <h3 class="mt-4 text-lg text-foreground font-semibold hover:text-primary transition-colors">
+              <h3 class="mt-4 text-lg text-foreground font-semibold group-hover:text-primary transition-colors">
                 {category.name}
               </h3>
               {category.description && (
@@ -138,14 +145,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 </p>
               )}
               <div class="mt-auto pt-4">
-                <span class="inline-flex items-center text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+                <span class="inline-flex items-center text-sm font-medium text-primary group-hover:text-primary/80 transition-colors">
                   Ver productos
                   <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                   </svg>
                 </span>
               </div>
-            </div>
+            </a>
           );
         })}
       </div>
