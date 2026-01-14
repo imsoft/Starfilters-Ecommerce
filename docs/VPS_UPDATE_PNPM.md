@@ -24,14 +24,16 @@ source /root/.zshrc
 ### Paso 2: Actualizar pnpm
 
 ```bash
-# Actualizar pnpm globalmente
-pnpm add -g pnpm
+# Actualizar pnpm a sí mismo (comando correcto)
+pnpm self-update
 
 # Verificar la nueva versión
 pnpm --version
 ```
 
 **Debería mostrar:** `10.28.0` o superior
+
+**Nota:** Si recibes el error `ERR_PNPM_GLOBAL_PNPM_INSTALL`, usa `pnpm self-update` en lugar de `pnpm add -g pnpm`.
 
 ## 🔧 Solución de Problemas Comunes
 
@@ -55,7 +57,7 @@ echo $PATH | grep pnpm
 # Debe incluir /root/.local/share/pnpm
 
 # 5. Ahora intentar actualizar
-pnpm add -g pnpm
+pnpm self-update
 ```
 
 ### Si aún no funciona después de source
@@ -72,7 +74,7 @@ export PNPM_HOME="/root/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"
 
 # Ahora intentar actualizar
-pnpm add -g pnpm
+pnpm self-update
 ```
 
 ### Método Alternativo: Usando npm
