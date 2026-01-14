@@ -270,36 +270,6 @@ tail -f ~/logs/error_log
 
 ---
 
-## 🎯 ALTERNATIVA: PLATAFORMA ESPECIALIZADA
-
-### Recomendación: **Vercel** (GRATIS)
-
-Hostinger es difícil para Astro SSR. Recomiendo **Vercel**:
-
-**Ventajas:**
-- ✅ Deploy automático con Git
-- ✅ SSL automático
-- ✅ CDN global
-- ✅ Soporte nativo para Astro
-- ✅ Variables de entorno seguras
-- ✅ Deploys instantáneos
-- ✅ 100% gratis para proyectos personales
-
-**Deploy en Vercel:**
-```bash
-# 1. Instalar Vercel CLI
-npm i -g vercel
-
-# 2. Login
-vercel login
-
-# 3. Deploy
-vercel --prod
-
-# 4. Conectar dominio
-vercel domains add tudominio.com
-```
-
 ---
 
 ## ⚠️ PROBLEMAS COMUNES
@@ -324,4 +294,4 @@ Si tienes problemas:
 1. Revisa los logs de Hostinger
 2. Verifica que todas las variables de entorno estén correctas
 3. Contacta soporte de Hostinger
-4. Considera migrar a Vercel/Netlify (gratis y más fácil)
+4. Revisa la documentación en `docs/VPS_UPDATE_FILTER_CATEGORIES.md` para troubleshooting

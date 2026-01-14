@@ -5,9 +5,9 @@ Esta carpeta contiene toda la documentación técnica del proyecto Starfilters E
 ## 📂 Estructura de Documentación
 
 ### 🚀 Deployment
-Guías para desplegar la aplicación en diferentes plataformas:
-- **[Vercel](./deployment/DEPLOY_VERCEL.md)** - Recomendado para producción
-- **[Hostinger](./deployment/DEPLOY_HOSTINGER.md)** - Opción alternativa
+Guías para desplegar la aplicación en VPS:
+- **[Hostinger VPS](./deployment/DEPLOY_HOSTINGER.md)** - Guía completa de deployment
+- **[VPS Quick Start](./deployment/VPS_QUICK_START.md)** - Inicio rápido
 
 ### ☁️ Cloudinary
 Documentación sobre la integración con Cloudinary para gestión de imágenes:
@@ -37,7 +37,7 @@ Documentación sobre la integración con Stripe para pagos:
 
 1. **Configurar Base de Datos**: [Base de Datos](./database/DATABASE_SETUP.md)
 2. **Configurar Cloudinary**: [Cloudinary Setup](./cloudinary/CLOUDINARY_SETUP.md)
-3. **Desplegar a Producción**: [Deploy en Vercel](./deployment/DEPLOY_VERCEL.md)
+3. **Desplegar a Producción**: [Deploy en VPS Hostinger](./deployment/DEPLOY_HOSTINGER.md)
 
 ## 📖 Más Información
 

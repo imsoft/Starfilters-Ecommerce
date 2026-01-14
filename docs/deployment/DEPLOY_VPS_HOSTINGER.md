@@ -217,16 +217,16 @@ mysql -u starfilters_user -p starfilters_db < starfilters_db.sql
 
 ### 5.1 Cambiar Adapter de Astro
 
-**⚠️ IMPORTANTE:** El proyecto actualmente usa `@astrojs/vercel`. Para VPS necesitamos cambiar a `@astrojs/node`.
+**⚠️ IMPORTANTE:** El proyecto usa `@astrojs/node` para VPS.
 
-**En tu máquina local, antes de hacer push:**
+**Verificar que está instalado:**
 
 ```bash
-# Instalar adapter de Node.js
-pnpm add @astrojs/node
+# Verificar que @astrojs/node está instalado
+pnpm list @astrojs/node
 
-# Remover adapter de Vercel (opcional, puedes dejarlo)
-# pnpm remove @astrojs/vercel
+# Si no está instalado:
+pnpm add @astrojs/node
 ```
 
 **Actualizar `astro.config.mjs`:**

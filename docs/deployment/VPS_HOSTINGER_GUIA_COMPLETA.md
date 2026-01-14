@@ -318,17 +318,14 @@ EXIT;
 
 ### 5.1 En tu Máquina Local
 
-**El proyecto actualmente usa `@astrojs/vercel`. Para VPS necesitamos `@astrojs/node`.**
+**El proyecto usa `@astrojs/node` para VPS.**
 
 ```bash
-# Ir al directorio del proyecto
-cd /Users/brangarciaramos/Proyectos/imSoft/sitios-web/starfilters-ecommerce
+# Verificar que @astrojs/node está instalado
+pnpm list @astrojs/node
 
-# Instalar adapter de Node.js
+# Si no está instalado:
 pnpm add @astrojs/node
-
-# Opcional: remover adapter de Vercel (o déjalo si también usas Vercel)
-# pnpm remove @astrojs/vercel
 ```
 
 ### 5.2 Actualizar astro.config.mjs

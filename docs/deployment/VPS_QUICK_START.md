@@ -126,15 +126,13 @@ pnpm add @astrojs/node
 # Actualizar astro.config.mjs
 ```
 
-**En `astro.config.mjs`, cambiar:**
+**En `astro.config.mjs`, verificar que sea:**
 ```javascript
-import vercel from '@astrojs/vercel';
-// Por:
 import node from '@astrojs/node';
 
 // Y en la configuración:
 adapter: node({
-  mode: 'standalone'
+  mode: 'middleware'
 }),
 ```
 

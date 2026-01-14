@@ -1,220 +1,116 @@
-# Scripts de Migración y Utilidades
+# Scripts de Utilidades y Deployment
 
-Este directorio contiene scripts útiles para administrar la base de datos y el sistema.
+Este directorio contiene scripts útiles para administrar el VPS, la base de datos y el sistema.
 
-## 🆕 Migración Bind ID
+## 🚀 Scripts de Deployment VPS
 
-### `migrate-bind-id.js`
-
-Agrega la columna `bind_id` a la tabla `products` para almacenar el ID del producto en Bind ERP.
+### `vps-update-all.sh`
+Script completo e interactivo para actualizar el VPS con todas las mejoras.
+- Actualiza código desde GitHub
+- Ejecuta scripts SQL necesarios
+- Reconstruye la aplicación
+- Reinicia PM2
 
 **Uso:**
 ```bash
-node scripts/migrate-bind-id.js
+./scripts/vps-update-all.sh
 ```
 
-**Lo que hace:**
-1. Verifica si la columna `bind_id` ya existe
-2. Si no existe, la crea después de la columna `uuid`
-3. Agrega un índice `idx_bind_id` para búsquedas rápidas
-4. Muestra la estructura final de la tabla
+### `update-filter-categories-db.sh`
+Actualiza la base de datos con los campos necesarios para filter categories.
+- Verifica que la BD existe
+- Agrega campos faltantes de forma segura
 
-**Salida esperada:**
-```
-✅ Columna bind_id agregada exitosamente
-✅ Índice idx_bind_id creado exitosamente
-🎉 ¡Migración completada exitosamente!
-```
-
-**Si ya fue ejecutado:**
-```
-⚠️  La columna bind_id ya existe en la tabla products
-✅ No se necesita migración
-```
-
-**Requisitos:**
-- Node.js 18+
-- MySQL corriendo en localhost
-- Variables de entorno configuradas en `.env`
-
----
-
-## Otros Scripts Disponibles
-
-### Gestión de Usuarios
-
-- **`create-admin.js`** - Crear un usuario administrador
-- **`activate-user.js`** - Activar un usuario
-- **`create-test-user.js`** - Crear usuario de prueba
-
-### Gestión de Productos
-
-- **`add-tags-column-to-products.js`** - Agregar columna de etiquetas
-- **`add-specifications-to-products.js`** - Agregar especificaciones técnicas
-- **`add-dimensions-to-products.js`** - Agregar dimensiones
-- **`migrate-product-images.js`** - Migrar sistema de imágenes
-- **`remove-image-url-column.js`** - Limpiar columna antigua
-
-### Internacionalización
-
-- **`add-i18n-fields.js`** - Agregar campos de traducción
-- **`translate-existing-content.js`** - Traducir contenido existente
-
-### Testing y Desarrollo
-
-- **`test-db-connection.js`** - Verificar conexión a MySQL
-- **`create-test-orders.js`** - Crear órdenes de prueba
-- **`test-lazy-loading-performance.js`** - Probar rendimiento
-
-### Utilidades de Migración
-
-- **`add-uuids-migration.js`** - Agregar UUIDs a registros existentes
-- **`add-missing-tables-and-columns.js`** - Completar schema
-
----
-
-## 📋 Cómo Ejecutar Scripts
-
-### 1. Verificar configuración
-
-Asegúrate de que tu archivo `.env` tenga las credenciales correctas:
-
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=starfilters_db
-```
-
-### 2. Ejecutar script
-
+**Uso:**
 ```bash
-node scripts/nombre-del-script.js
+./scripts/update-filter-categories-db.sh
 ```
 
-### 3. Verificar resultado
+### `check-database-name.sh`
+Verifica el nombre correcto de la base de datos.
 
-Los scripts muestran logs detallados con emojis para fácil lectura:
-
-- ✅ - Operación exitosa
-- ❌ - Error
-- ⚠️  - Advertencia
-- 🔍 - Verificación
-- 📡 - Conexión
-- 🚀 - Inicio de proceso
-
----
-
-## 🛡️ Seguridad
-
-### Antes de ejecutar en producción:
-
-1. **Hacer backup de la base de datos:**
-   ```bash
-   mysqldump -u root -p starfilters_db > backup-$(date +%Y%m%d-%H%M%S).sql
-   ```
-
-2. **Probar en desarrollo primero**
-
-3. **Verificar que no hay usuarios activos**
-
-4. **Revisar el código del script**
-
----
-
-## ⚠️ Troubleshooting
-
-### Error: "Cannot connect to MySQL"
-
-**Solución:**
-1. Verifica que MySQL esté corriendo:
-   ```bash
-   mysql -u root -p
-   ```
-2. Revisa las credenciales en `.env`
-3. Verifica el puerto (por defecto 3306)
-
-### Error: "Column already exists"
-
-**Solución:**
-- Esto es normal, el script detecta si la columna ya existe y no hace nada
-
-### Error: "Access denied"
-
-**Solución:**
-- Verifica el usuario y contraseña en `.env`
-- Asegúrate que el usuario tiene permisos `ALTER TABLE`
-
----
-
-## 📝 Crear Nuevos Scripts
-
-Si necesitas crear un nuevo script de migración, usa esta plantilla:
-
-```javascript
-import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// Cargar variables de entorno
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, '..', '.env');
-dotenv.config({ path: envPath });
-
-// Configuración de la base de datos
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'starfilters_db',
-};
-
-async function runMigration() {
-  let connection;
-
-  try {
-    console.log('📡 Conectando a MySQL...');
-    connection = await mysql.createConnection(dbConfig);
-    console.log('✅ Conexión exitosa\n');
-
-    // Tu lógica aquí
-    console.log('🚀 Ejecutando migración...');
-
-    // Ejemplo:
-    // await connection.query('ALTER TABLE ...');
-
-    console.log('✅ Migración completada\n');
-
-  } catch (error) {
-    console.error('\n❌ Error:', error.message);
-    process.exit(1);
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
-  }
-}
-
-runMigration()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error('❌ Error fatal:', error);
-    process.exit(1);
-  });
+**Uso:**
+```bash
+./scripts/check-database-name.sh
 ```
 
+## 🔧 Scripts de Diagnóstico y Fix
+
+### `fix-server-start.sh`
+Corrige problemas de inicio del servidor usando server.js.
+
+### `fix-pm2-start.sh`
+Corrige problemas de PM2 con configuración correcta.
+
+### `fix-app-crashing.sh`
+Diagnostica por qué la aplicación se está cayendo.
+
+### `check-nginx-config.sh`
+Verifica la configuración de Nginx y el estado de la aplicación.
+
+### `diagnose-502.sh`
+Diagnostica errores 502 Bad Gateway.
+
+### `quick-fix-502.sh`
+Solución rápida para errores 502.
+
+### `fix-order-items-query.sh`
+Corrige el error de query en order_items.
+
+## 📊 Scripts de Base de Datos
+
+### `export-database-structure.sh`
+Exporta la estructura completa de la base de datos.
+
+**Uso:**
+```bash
+./scripts/export-database-structure.sh
+```
+
+### `show-database-info.sh`
+Muestra información clave de la base de datos.
+
+### `show-all-tables-structure.sh`
+Muestra la estructura de todas las tablas.
+
+## 👤 Scripts de Usuarios
+
+### `create-admin.js`
+Crear un usuario administrador.
+
+**Uso:**
+```bash
+node scripts/create-admin.js
+```
+
+### `reset-admin-password.js`
+Restablecer contraseña de administrador.
+
+**Uso:**
+```bash
+node scripts/reset-admin-password.js
+```
+
+### `activate-user.js`
+Activar un usuario.
+
+**Uso:**
+```bash
+node scripts/activate-user.js
+```
+
+## 🛠️ Scripts de Utilidades
+
+### `edit-env-vps.sh`
+Editar archivo .env en el VPS de forma segura.
+
+### `fix-vps-complete.sh`
+Script completo para arreglar problemas comunes en el VPS.
+
 ---
 
-## 📚 Recursos
+## 📝 Notas
 
-- [MySQL ALTER TABLE Docs](https://dev.mysql.com/doc/refman/8.0/en/alter-table.html)
-- [Node.js MySQL2 Docs](https://sidorares.github.io/node-mysql2/docs)
-- [Documentación del Proyecto](../docs/)
-
----
-
-**Última actualización:** 2025-01-09
+- Todos los scripts de bash deben tener permisos de ejecución: `chmod +x script.sh`
+- Los scripts de Node.js requieren variables de entorno en `.env`
+- Los scripts de SQL verifican si los cambios ya existen antes de aplicarlos

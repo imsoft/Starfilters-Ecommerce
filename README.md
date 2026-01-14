@@ -225,11 +225,6 @@ node scripts/migrate-product-images.js      # Migrar imágenes
 5. Configurar variables de entorno
 6. Configurar dominio y SSL
 
-### Vercel
-1. Conectar repositorio GitHub
-2. Configurar variables de entorno
-3. Deploy automático en cada push
-
 Ver documentación detallada en `docs/deployment/`
 
 ## 🔐 Seguridad

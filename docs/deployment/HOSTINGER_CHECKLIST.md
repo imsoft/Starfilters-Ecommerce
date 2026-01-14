@@ -261,16 +261,11 @@ tail -f ~/logs/nodejs/error.log
 
 ## 📝 NOTAS IMPORTANTES
 
-### ⚠️ Consideraciones de Hostinger
-1. **No es ideal para SSR**: Hostinger está optimizado para sitios estáticos, no para aplicaciones Node.js con SSR
-2. **Rendimiento**: Puede ser más lento que Vercel/Netlify
-3. **Deploy automático**: Necesitarás hacer deploys manuales
-4. **SSL**: Debes configurarlo manualmente
-
-### 🎯 Alternativa Recomendada
-Si tienes problemas de rendimiento, considera:
-- **Vercel**: Gratis, mucho más fácil, optimizado para Astro
-- **Netlify**: Similar a Vercel
+### ⚠️ Consideraciones de Hostinger VPS
+1. **SSR con Node.js**: El proyecto usa `@astrojs/node` para SSR en el VPS
+2. **Deploy manual**: Necesitarás hacer deploys manuales con git pull y pnpm build
+3. **SSL**: Configurado con Certbot
+4. **PM2**: Gestión de procesos con PM2 para mantener la aplicación corriendo
 
 ---
 
@@ -300,9 +295,10 @@ npm install --production
 ## 📞 CONTACTO
 
 Si tienes problemas:
-1. Revisar logs: `tail -f ~/logs/nodejs/error.log`
-2. Contactar soporte de Hostinger
-3. Considerar migrar a Vercel (gratis y más fácil)
+1. Revisar logs: `pm2 logs starfilters-app`
+2. Verificar estado: `pm2 status`
+3. Revisar documentación: `docs/VPS_UPDATE_FILTER_CATEGORIES.md`
+4. Contactar soporte de Hostinger si es necesario
 
 ---
 

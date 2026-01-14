@@ -427,25 +427,13 @@ pnpm add @astrojs/node
 nano astro.config.mjs
 ```
 
-**Busca la línea que dice:**
-
-```javascript
-import vercel from '@astrojs/vercel';
-```
-
-**Cámbiala por:**
+**Verifica que la configuración sea:**
 
 ```javascript
 import node from '@astrojs/node';
 ```
 
-**Busca la línea que dice:**
-
-```javascript
-adapter: vercel(),
-```
-
-**Cámbiala por:**
+**Y que el adapter sea:**
 
 ```javascript
 adapter: node({
