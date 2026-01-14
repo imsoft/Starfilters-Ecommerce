@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script para actualizar la base de datos con todos los campos necesarios
-# para el sistema completo de categorías de filtros
+# Versión que detecta automáticamente el nombre de la base de datos
 
 set -e
 
@@ -17,13 +17,34 @@ else
 fi
 
 # Verificar que las variables estén definidas
-if [ -z "$DB_HOST" ] || [ -z "$DB_USER" ] || [ -z "$DB_NAME" ]; then
-    echo "❌ Error: Variables de entorno DB_HOST, DB_USER o DB_NAME no están definidas"
+if [ -z "$DB_HOST" ] || [ -z "$DB_USER" ]; then
+    echo "❌ Error: Variables de entorno DB_HOST o DB_USER no están definidas"
     exit 1
 fi
 
+# Detectar el nombre de la base de datos
+if [ -z "$DB_NAME" ]; then
+    echo "⚠️  DB_NAME no está definido en .env, intentando detectar..."
+    
+    # Intentar encontrar la base de datos
+    if [ -z "$DB_PASSWORD" ]; then
+        DB_NAME=$(mysql -h "$DB_HOST" -u "$DB_USER" -e "SHOW DATABASES;" 2>/dev/null | grep -E "starfilters|ecommerce" | head -1 || echo "")
+    else
+        DB_NAME=$(mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -e "SHOW DATABASES;" 2>/dev/null | grep -E "starfilters|ecommerce" | head -1 || echo "")
+    fi
+    
+    if [ -z "$DB_NAME" ]; then
+        echo "❌ No se pudo detectar el nombre de la base de datos"
+        echo "   Por favor, actualiza tu .env con: DB_NAME=starfilters_ecommerce_db"
+        exit 1
+    fi
+    
+    echo "✅ Base de datos detectada: $DB_NAME"
+    echo ""
+fi
+
 # Verificar que la base de datos existe
-echo "🔍 Verificando que la base de datos existe..."
+echo "🔍 Verificando que la base de datos '$DB_NAME' existe..."
 if [ -z "$DB_PASSWORD" ]; then
     DB_EXISTS=$(mysql -h "$DB_HOST" -u "$DB_USER" -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep -c "$DB_NAME" || echo "0")
 else
@@ -39,11 +60,6 @@ if [ "$DB_EXISTS" = "0" ]; then
     else
         mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -e "SHOW DATABASES;" 2>/dev/null || mysql -u root -p"$DB_PASSWORD" -e "SHOW DATABASES;" 2>/dev/null
     fi
-    echo ""
-    echo "💡 Opciones:"
-    echo "   1. Crear la base de datos: mysql -u root -p -e \"CREATE DATABASE $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\""
-    echo "   2. Verificar el nombre en tu archivo .env (variable DB_NAME)"
-    echo "   3. Ejecutar: ./scripts/check-database-name.sh para ver todas las bases de datos"
     exit 1
 fi
 
