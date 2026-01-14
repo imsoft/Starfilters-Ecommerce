@@ -1,351 +1,383 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
-import { Button } from "@/components/ui/button";
-import { createProduct } from "@/lib/product-service";
-import { getAllCategories } from "@/lib/filter-category-service";
-import { requireAdmin } from "@/lib/auth-utils";
+import {
+  createProduct,
+} from "@/lib/product-service";
+import { getAuthenticatedUser } from '@/lib/auth-utils';
+import { isUserAdmin } from '@/lib/database';
 import { generateUUID } from "@/lib/database";
+import CategoryImageManagerCreate from "@/components/admin/CategoryImageManagerCreate.astro";
 
-// Verificar que el usuario es administrador
-const { redirect } = await requireAdmin(Astro.cookies);
-if (redirect) {
-  return Astro.redirect(redirect);
+export const prerender = false;
+
+const user = getAuthenticatedUser(Astro.cookies);
+
+if (!user) {
+  return Astro.redirect('/login');
 }
 
-// Obtener categorías de filtros para el dropdown
-let filterCategories: any[] = [];
-try {
-  filterCategories = await getAllCategories();
-} catch (error) {
-  console.error('Error obteniendo categorías:', error);
+const userIsAdmin = await isUserAdmin(user.id);
+
+if (!userIsAdmin) {
+  return Astro.redirect('/');
 }
 
-// Manejar envío del formulario
-let errorMessage = '';
+let error: string | null = null;
+let success = false;
 
-if (Astro.request.method === 'POST') {
+// Procesar formulario
+if (Astro.request.method === "POST") {
   try {
     const formData = await Astro.request.formData();
 
-    const filterCategoryId = formData.get('filter_category_id')?.toString();
-    const productData = {
-      uuid: generateUUID(),
-      filter_category_id: filterCategoryId ? parseInt(filterCategoryId) : null,
-      bind_code: formData.get('bind_code')?.toString() || null,
-      name: formData.get('name')?.toString() || '',
-      description: formData.get('description')?.toString() || '',
-      nominal_size: formData.get('nominal_size')?.toString() || null,
-      real_size: formData.get('real_size')?.toString() || null,
-      price: parseFloat(formData.get('price')?.toString() || '0'),
-      currency: (formData.get('currency') as 'MXN' | 'USD') || 'MXN',
-      price_usd: formData.get('price_usd') ? parseFloat(formData.get('price_usd')?.toString() || '0') : null,
-      category: formData.get('category')?.toString() || '',
-      stock: parseInt(formData.get('stock')?.toString() || '0'),
-      weight: formData.get('weight')?.toString() || undefined,
-      tags: formData.get('tags')?.toString() || undefined,
-      status: 'active' as const
-    };
+    // Crear UUID para el producto
+    const uuid = generateUUID();
 
-    console.log('📝 Creando producto con datos:', productData);
+    // Crear el producto (solo campos básicos)
+    const productId = await createProduct({
+      uuid: uuid,
+      name: formData.get("name") as string,
+      name_en: formData.get("name_en") as string || null,
+      description: formData.get("description") as string || null,
+      description_en: formData.get("description_en") as string || null,
+      price: 0, // Precio por defecto, se puede actualizar después
+      status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
+    });
 
-    // Validar datos requeridos
-    if (!productData.name || !productData.description || productData.price <= 0) {
-      throw new Error('Nombre, descripción y precio son campos requeridos');
-    }
-
-    // Crear el producto en la base de datos local
-    console.log('✨ Creando producto en la base de datos...');
-    const productId = await createProduct(productData);
-
-    if (productId) {
-      console.log('✅ Producto creado con ID:', productId);
-      return Astro.redirect(`/admin/products?success=created`);
+    if (!productId) {
+      error = "Error al crear el producto";
     } else {
-      errorMessage = 'Error al crear el producto';
+      // Procesar imágenes pendientes desde localStorage
+      try {
+        // Procesar imagen principal
+        const pendingPrimaryImage = formData.get("pending_primary_image") as string;
+        const pendingPrimaryImageName = formData.get("pending_primary_image_name") as string;
+        
+        if (pendingPrimaryImage && pendingPrimaryImageName) {
+          // Convertir base64 a buffer y subir
+          const base64Data = pendingPrimaryImage.split(',')[1];
+          const buffer = Buffer.from(base64Data, 'base64');
+          
+          const { uploadProductImage } = await import('@/lib/cloudinary');
+          const imageUrl = await uploadProductImage(buffer, productId.toString(), pendingPrimaryImageName);
+          
+          // Agregar imagen principal al producto
+          const { addProductImage, setPrimaryProductImage } = await import('@/lib/database');
+          const imageId = await addProductImage({
+            uuid: generateUUID(),
+            product_id: productId,
+            image_url: imageUrl,
+            alt_text: pendingPrimaryImageName,
+            is_primary: true,
+            sort_order: 0,
+          });
+          
+          if (imageId) {
+            await setPrimaryProductImage(productId, imageId);
+          }
+        }
+
+        // Procesar imágenes de carrusel
+        const pendingCarouselImages = formData.get("pending_carousel_images") as string;
+        if (pendingCarouselImages) {
+          const carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
+          const { uploadProductImage } = await import('@/lib/cloudinary');
+          const { addProductImage } = await import('@/lib/database');
+          
+          for (let i = 0; i < carouselData.length && i < 4; i++) {
+            const { name, data } = carouselData[i];
+            const base64Data = data.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            const imageUrl = await uploadProductImage(buffer, productId, name);
+            
+            await addProductImage({
+              uuid: generateUUID(),
+              product_id: productId,
+              image_url: imageUrl,
+              alt_text: `${name} - Carrusel ${i + 1}`,
+              is_primary: false,
+              sort_order: i + 1,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error procesando imágenes:", err);
+        // No fallar la creación si hay error con las imágenes
+      }
+
+      success = true;
+      // Redirigir a la página de edición después de crear
+      return Astro.redirect(`/admin/products/edit/${productId}`);
     }
-  } catch (error) {
-    console.error('Error creando producto:', error);
-    errorMessage = error instanceof Error ? error.message : 'Error al crear el producto';
+  } catch (err) {
+    console.error("Error creando producto:", err);
+    error = err instanceof Error ? err.message : "Error desconocido";
   }
 }
 ---
 
-<AdminLayout title="Agregar Producto">
-  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="mt-10 mb-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-3xl font-bold tracking-tight text-foreground">Agregar Producto</h1>
-            <p class="mt-2 text-muted-foreground">
-              Completa la información del nuevo producto (variante de categoría de filtro)
+<AdminLayout title="Nuevo Producto">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center gap-4">
+        <a
+          href="/admin/products"
+          class="text-gray-600 hover:text-gray-900"
+        >
+          <svg
+            class="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+        </a>
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">
+            Nuevo Producto
+          </h1>
+          <p class="mt-2 text-gray-600">
+            Crea un nuevo producto con sus características
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes -->
+    {error && (
+      <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
+        <div class="flex">
+          <svg
+            class="h-5 w-5 text-red-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-red-800">{error}</p>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {success && (
+      <div class="mb-6 rounded-lg border border-green-300 bg-green-50 p-4">
+        <div class="flex">
+          <svg
+            class="h-5 w-5 text-green-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-green-800">
+              Producto creado exitosamente
             </p>
           </div>
-          <a href="/admin/products">
-            <Button variant="outline" className="border-border text-foreground hover:bg-muted">
-              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-              </svg>
-              Volver
-            </Button>
-          </a>
+        </div>
+      </div>
+    )}
+
+    <!-- Formulario -->
+    <form method="POST" class="space-y-8">
+      <!-- Información Básica -->
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Información Básica
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Nombre y descripción del producto en español e inglés
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="name" class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <span>Nombre (Español)</span>
+              <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              placeholder="Ej: Mini pleat sello gel downstream"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            <p class="mt-1.5 text-xs text-gray-500">
+              Nombre principal del producto en español
+            </p>
+          </div>
+
+          <div>
+            <label
+              for="name_en"
+              class="mb-2 block text-sm font-semibold text-gray-700"
+            >
+              Nombre (Inglés)
+            </label>
+            <input
+              type="text"
+              id="name_en"
+              name="name_en"
+              placeholder="Ej: Mini pleat gel seal downstream"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            <p class="mt-1.5 text-xs text-gray-500">
+              Nombre del producto en inglés (opcional)
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 grid gap-6 md:grid-cols-2">
+          <div>
+            <label
+              for="description"
+              class="mb-2 block text-sm font-semibold text-gray-700"
+            >
+              Descripción (Español)
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows="5"
+              placeholder="Describe el producto, su función, características principales y uso típico..."
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            ></textarea>
+            <p class="mt-1.5 text-xs text-gray-500">
+              Descripción detallada del producto en español
+            </p>
+          </div>
+
+          <div>
+            <label
+              for="description_en"
+              class="mb-2 block text-sm font-semibold text-gray-700"
+            >
+              Descripción (Inglés)
+            </label>
+            <textarea
+              id="description_en"
+              name="description_en"
+              rows="5"
+              placeholder="Describe the product, its function, main characteristics and typical use..."
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            ></textarea>
+            <p class="mt-1.5 text-xs text-gray-500">
+              Descripción detallada del producto en inglés (opcional)
+            </p>
+          </div>
         </div>
       </div>
 
-      <!-- Mensajes de error -->
-      {errorMessage && (
-        <div class="mb-6 rounded-md bg-red-50 border border-red-200 p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">Error</h3>
-              <div class="mt-2 text-sm text-red-700">
-                <p>{errorMessage}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <!-- Formulario -->
-      <form method="POST" class="space-y-8">
-        <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-6">Información Básica</h2>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Nombre del Producto (Title en Bind) -->
-            <div class="md:col-span-2">
-              <label for="name" class="block text-sm font-medium text-foreground mb-2">
-                Nombre del Producto <span class="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Ej: Filtro HEPA H13 para Cuarto Limpio"
-              />
-            </div>
-
-            <!-- Categoría de Filtro -->
-            <div>
-              <label for="filter_category_id" class="block text-sm font-medium text-foreground mb-2">
-                Categoría de Filtro
-              </label>
-              <select
-                id="filter_category_id"
-                name="filter_category_id"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Sin categoría de filtro</option>
-                {filterCategories.map(cat => (
-                  <option value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-              <p class="mt-1 text-sm text-muted-foreground">Selecciona la categoría de filtro a la que pertenece este producto</p>
-            </div>
-
-            <!-- Código Bind -->
-            <div>
-              <label for="bind_code" class="block text-sm font-medium text-foreground mb-2">
-                Código Bind
-              </label>
-              <input
-                type="text"
-                id="bind_code"
-                name="bind_code"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Ej: HGD1"
-              />
-              <p class="mt-1 text-sm text-muted-foreground">Código del producto en Bind ERP</p>
-            </div>
-
-            <!-- Categoría General -->
-            <div>
-              <label for="category" class="block text-sm font-medium text-foreground mb-2">
-                Categoría General
-              </label>
-              <input
-                type="text"
-                id="category"
-                name="category"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Ej: Filtros de Aire"
-              />
-              <p class="mt-1 text-sm text-muted-foreground">Categoría general del producto</p>
-            </div>
-
-            <!-- Precio MXN -->
-            <div>
-              <label for="price" class="block text-sm font-medium text-foreground mb-2">
-                Precio (MXN) <span class="text-red-500">*</span>
-              </label>
-              <div class="relative">
-                <span class="absolute left-3 top-2 text-muted-foreground">$</span>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  required
-                  min="0"
-                  step="0.01"
-                  class="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <!-- Precio USD -->
-            <div>
-              <label for="price_usd" class="block text-sm font-medium text-foreground mb-2">
-                Precio (USD)
-              </label>
-              <div class="relative">
-                <span class="absolute left-3 top-2 text-muted-foreground">$</span>
-                <input
-                  type="number"
-                  id="price_usd"
-                  name="price_usd"
-                  min="0"
-                  step="0.01"
-                  class="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <!-- Moneda -->
-            <div>
-              <label for="currency" class="block text-sm font-medium text-foreground mb-2">
-                Moneda Principal
-              </label>
-              <select
-                id="currency"
-                name="currency"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="MXN">MXN - Pesos Mexicanos</option>
-                <option value="USD">USD - Dólares Americanos</option>
-              </select>
-            </div>
-
-            <!-- Stock/Inventario -->
-            <div>
-              <label for="stock" class="block text-sm font-medium text-foreground mb-2">
-                Stock/Inventario
-              </label>
-              <input
-                type="number"
-                id="stock"
-                name="stock"
-                min="0"
-                value="0"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="0"
-              />
-              <p class="mt-1 text-sm text-muted-foreground">Cantidad disponible en inventario</p>
-            </div>
-
-            <!-- Medida Nominal -->
-            <div>
-              <label for="nominal_size" class="block text-sm font-medium text-foreground mb-2">
-                Medida Nominal
-              </label>
-              <input
-                type="text"
-                id="nominal_size"
-                name="nominal_size"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder='Ej: 9.125" x 9.125" x 3"'
-              />
-            </div>
-
-            <!-- Medida Real -->
-            <div>
-              <label for="real_size" class="block text-sm font-medium text-foreground mb-2">
-                Medida Real
-              </label>
-              <input
-                type="text"
-                id="real_size"
-                name="real_size"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Ej: 231 x 231 x 75 mm"
-              />
-            </div>
-
-            <!-- Descripción -->
-            <div class="md:col-span-2">
-              <label for="description" class="block text-sm font-medium text-foreground mb-2">
-                Descripción <span class="text-red-500">*</span>
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                required
-                rows="4"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Describe las características y beneficios del producto..."
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Información Adicional -->
-        <div class="rounded-lg border border-border bg-background p-6">
-          <h2 class="text-lg font-semibold text-foreground mb-6">Información Adicional</h2>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Peso -->
-            <div>
-              <label for="weight" class="block text-sm font-medium text-foreground mb-2">
-                Peso
-              </label>
-              <input
-                type="text"
-                id="weight"
-                name="weight"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Ej: 2.5 kg"
-              />
-            </div>
-
-            <!-- Tags/Etiquetas -->
-            <div>
-              <label for="tags" class="block text-sm font-medium text-foreground mb-2">
-                Etiquetas
-              </label>
-              <input
-                type="text"
-                id="tags"
-                name="tags"
-                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Ej: hepa, filtro, h13"
-              />
-              <p class="mt-1 text-sm text-muted-foreground">Separadas por comas</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Botones de acción -->
-        <div class="flex items-center justify-end gap-4 pb-8">
-          <a href="/admin/products">
-            <Button type="button" variant="outline" className="border-border text-foreground hover:bg-muted">
-              Cancelar
-            </Button>
-          </a>
-          <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      <!-- Imágenes -->
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-100">
+            <svg class="h-6 w-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            Crear Producto
-          </Button>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Imágenes
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Imagen principal y hasta 4 imágenes de carrusel
+            </p>
+          </div>
         </div>
-      </form>
+        <CategoryImageManagerCreate />
+      </div>
+
+      <!-- Estado -->
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+            <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-gray-900">
+              Estado de Publicación
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Define si el producto estará visible para los usuarios
+            </p>
+          </div>
+        </div>
+        <div>
+          <label for="status" class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <span>Estado</span>
+            <span class="text-red-500">*</span>
+          </label>
+          <select
+            id="status"
+            name="status"
+            required
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          >
+            <option value="active">Activo - Visible para usuarios</option>
+            <option value="draft">Borrador - Solo visible en admin</option>
+            <option value="inactive">Inactivo - No visible</option>
+          </select>
+          <p class="mt-1.5 text-xs text-gray-500">
+            Los productos activos aparecerán en la página de productos
+          </p>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex items-center justify-end gap-4 border-t border-gray-200 pt-6">
+        <a
+          href="/admin/products"
+          class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Cancelar
+        </a>
+        <button
+          type="submit"
+          class="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          Crear Producto
+        </button>
+      </div>
+    </form>
   </div>
 </AdminLayout>
+
+<script>
+  // Script simplificado - las variantes ahora se gestionan como productos en la sección de productos
+</script>
