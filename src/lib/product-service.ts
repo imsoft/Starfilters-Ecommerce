@@ -87,18 +87,24 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
 
     const result = await query(
       `INSERT INTO products (
-        uuid, bind_id, name, name_en, description, description_en,
-        price, category, category_en, stock, status, tags,
+        uuid, filter_category_id, bind_id, bind_code, name, name_en, description, description_en,
+        price, currency, price_usd, nominal_size, real_size, category, category_en, stock, status, tags,
         dimensions, weight, material, warranty
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         productData.uuid,
+        productData.filter_category_id || null,
         productData.bind_id || null,
+        productData.bind_code || null,
         productData.name,
         productData.name_en || null,
         productData.description,
         productData.description_en || null,
         productData.price,
+        productData.currency || 'MXN',
+        productData.price_usd || null,
+        productData.nominal_size || null,
+        productData.real_size || null,
         productData.category,
         productData.category_en || null,
         productData.stock || 0,
@@ -128,17 +134,23 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
 
     await query(
       `UPDATE products SET
-        name = ?, name_en = ?, description = ?, description_en = ?,
-        price = ?, category = ?, category_en = ?, stock = ?,
+        filter_category_id = ?, name = ?, name_en = ?, description = ?, description_en = ?,
+        price = ?, currency = ?, price_usd = ?, nominal_size = ?, real_size = ?,
+        category = ?, category_en = ?, stock = ?,
         status = ?, tags = ?, dimensions = ?, weight = ?,
-        material = ?, warranty = ?, bind_id = ?
+        material = ?, warranty = ?, bind_id = ?, bind_code = ?
       WHERE id = ?`,
       [
+        productData.filter_category_id || null,
         productData.name,
         productData.name_en || null,
         productData.description,
         productData.description_en || null,
         productData.price,
+        productData.currency || 'MXN',
+        productData.price_usd || null,
+        productData.nominal_size || null,
+        productData.real_size || null,
         productData.category,
         productData.category_en || null,
         productData.stock,
@@ -149,6 +161,7 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
         productData.material || null,
         productData.warranty || null,
         productData.bind_id || null,
+        productData.bind_code || null,
         id,
       ]
     );
@@ -215,7 +228,7 @@ export const searchProducts = async (searchTerm: string, category?: string): Pro
 };
 
 /**
- * Obtener productos por categoría
+ * Obtener productos por categoría (nombre de categoría)
  */
 export const getProductsByCategory = async (category: string): Promise<Product[]> => {
   try {
@@ -230,6 +243,26 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
     return products;
   } catch (error) {
     console.error('❌ Error obteniendo productos por categoría:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtener productos por filter_category_id
+ */
+export const getProductsByFilterCategory = async (filterCategoryId: number): Promise<Product[]> => {
+  try {
+    console.log('🔍 Obteniendo productos de filter_category_id:', filterCategoryId);
+
+    const products = await query(
+      'SELECT * FROM products WHERE filter_category_id = ? AND status = "active" ORDER BY created_at DESC',
+      [filterCategoryId]
+    ) as Product[];
+
+    console.log(`✅ ${products.length} productos encontrados para categoría ${filterCategoryId}`);
+    return products;
+  } catch (error) {
+    console.error('❌ Error obteniendo productos por filter_category_id:', error);
     return [];
   }
 };
@@ -309,6 +342,7 @@ export default {
   deleteProduct,
   searchProducts,
   getProductsByCategory,
+  getProductsByFilterCategory,
   getActiveProducts,
   getRecentProducts,
   getProductStats,

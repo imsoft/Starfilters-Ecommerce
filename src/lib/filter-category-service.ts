@@ -19,19 +19,6 @@ export interface FilterCategory {
   description?: string;
   description_en?: string;
   main_image?: string;
-  efficiency?: string;
-  efficiency_en?: string;
-  efficiency_class?: string;
-  characteristics?: string;
-  characteristics_en?: string;
-  typical_installation?: string;
-  typical_installation_en?: string;
-  applications?: string;
-  applications_en?: string;
-  benefits?: string;
-  benefits_en?: string;
-  max_temperature?: string;
-  frame_material?: string;
   status: 'active' | 'inactive' | 'draft';
   created_at?: Date;
   updated_at?: Date;
@@ -166,11 +153,8 @@ export const createCategory = async (categoryData: Partial<FilterCategory>): Pro
 
     const result = await query(
       `INSERT INTO filter_categories (
-        name, name_en, slug, description, description_en,
-        main_image, efficiency, efficiency_en, efficiency_class, characteristics, characteristics_en,
-        typical_installation, typical_installation_en, applications, applications_en,
-        benefits, benefits_en, max_temperature, frame_material, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        name, name_en, slug, description, description_en, main_image, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         categoryData.name,
         categoryData.name_en || null,
@@ -178,19 +162,6 @@ export const createCategory = async (categoryData: Partial<FilterCategory>): Pro
         categoryData.description || null,
         categoryData.description_en || null,
         categoryData.main_image || null,
-        categoryData.efficiency || null,
-        categoryData.efficiency_en || null,
-        categoryData.efficiency_class || null,
-        categoryData.characteristics || null,
-        categoryData.characteristics_en || null,
-        categoryData.typical_installation || null,
-        categoryData.typical_installation_en || null,
-        categoryData.applications || null,
-        categoryData.applications_en || null,
-        categoryData.benefits || null,
-        categoryData.benefits_en || null,
-        categoryData.max_temperature || null,
-        categoryData.frame_material || null,
         categoryData.status || 'active',
       ]
     ) as ResultSetHeader;
@@ -213,9 +184,7 @@ export const updateCategory = async (id: number, categoryData: Partial<FilterCat
     await query(
       `UPDATE filter_categories SET
         name = ?, name_en = ?, slug = ?, description = ?, description_en = ?,
-        main_image = ?, efficiency = ?, efficiency_en = ?, efficiency_class = ?, characteristics = ?, characteristics_en = ?,
-        typical_installation = ?, typical_installation_en = ?, applications = ?, applications_en = ?,
-        benefits = ?, benefits_en = ?, max_temperature = ?, frame_material = ?, status = ?
+        main_image = ?, status = ?
       WHERE id = ?`,
       [
         categoryData.name,
@@ -224,19 +193,6 @@ export const updateCategory = async (id: number, categoryData: Partial<FilterCat
         categoryData.description || null,
         categoryData.description_en || null,
         categoryData.main_image || null,
-        categoryData.efficiency || null,
-        categoryData.efficiency_en || null,
-        categoryData.efficiency_class || null,
-        categoryData.characteristics || null,
-        categoryData.characteristics_en || null,
-        categoryData.typical_installation || null,
-        categoryData.typical_installation_en || null,
-        categoryData.applications || null,
-        categoryData.applications_en || null,
-        categoryData.benefits || null,
-        categoryData.benefits_en || null,
-        categoryData.max_temperature || null,
-        categoryData.frame_material || null,
         categoryData.status,
         id,
       ]

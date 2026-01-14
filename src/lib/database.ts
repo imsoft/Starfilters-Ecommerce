@@ -17,12 +17,18 @@ export const generateUUID = (): string => {
 export interface Product {
   id: number;
   uuid: string;
+  filter_category_id?: number | null;
   bind_id?: string | null;
+  bind_code?: string | null;
   name: string;
   name_en?: string;
   description: string;
   description_en?: string;
   price: number;
+  currency?: 'MXN' | 'USD';
+  price_usd?: number | null;
+  nominal_size?: string | null;
+  real_size?: string | null;
   category: string;
   category_en?: string;
   stock: number;

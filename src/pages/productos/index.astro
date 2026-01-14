@@ -2,16 +2,35 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getActiveProducts } from "@/lib/product-service";
+import { getActiveProducts, getProductsByFilterCategory } from "@/lib/product-service";
+import { getCategoryById } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
 export const prerender = false;
 
-// Obtener parámetro de categoría de la URL
-const categoryParam = Astro.url.searchParams.get('category');
+// Obtener parámetro de filter_category_id de la URL
+const filterCategoryIdParam = Astro.url.searchParams.get('filter_category_id');
+const filterCategoryId = filterCategoryIdParam ? parseInt(filterCategoryIdParam) : null;
 
-// Obtener productos activos desde la base de datos
+// Obtener información de la categoría si existe
+let categoryInfo: { id: number; name: string; description?: string } | null = null;
+if (filterCategoryId) {
+  try {
+    const category = await getCategoryById(filterCategoryId);
+    if (category) {
+      categoryInfo = {
+        id: category.id,
+        name: category.name,
+        description: category.description || undefined
+      };
+    }
+  } catch (error) {
+    console.error('❌ Error obteniendo información de categoría:', error);
+  }
+}
+
+// Obtener productos desde la base de datos
 let products: Array<{
   id: number;
   uuid: string;
@@ -21,15 +40,26 @@ let products: Array<{
   price: number;
   stock: number;
   imageUrl: string;
+  nominal_size?: string;
+  real_size?: string;
+  bind_code?: string;
 }> = [];
 
 try {
-  const allProducts = await getActiveProducts();
-  console.log(`📦 Página /productos: ${allProducts.length} productos activos encontrados`);
-  console.log('📦 Productos encontrados:', allProducts.map(p => ({ id: p.id, name: p.name, category: p.category, status: p.status })));
+  let allProducts;
+  
+  // Si hay filter_category_id, obtener productos de esa categoría
+  if (filterCategoryId) {
+    allProducts = await getProductsByFilterCategory(filterCategoryId);
+    console.log(`📦 Página /productos: ${allProducts.length} productos encontrados para categoría ${filterCategoryId}`);
+  } else {
+    // Si no, obtener todos los productos activos
+    allProducts = await getActiveProducts();
+    console.log(`📦 Página /productos: ${allProducts.length} productos activos encontrados`);
+  }
 
   // Preparar productos con imágenes
-  let productsWithImages = allProducts.map(product => {
+  products = allProducts.map(product => {
     const imageUrl = getProductPlaceholderImage(product.category || 'productos');
     return {
       id: product.id,
@@ -39,17 +69,13 @@ try {
       category: product.category || 'Sin categoría',
       price: product.price || 0,
       stock: product.stock || 0,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      nominal_size: product.nominal_size || undefined,
+      real_size: product.real_size || undefined,
+      bind_code: product.bind_code || undefined
     };
   });
   
-  // Si hay un parámetro de categoría, filtrar por esa categoría
-  if (categoryParam) {
-    productsWithImages = productsWithImages.filter(p => p.category === categoryParam);
-    console.log(`📦 Filtrando por categoría: ${categoryParam}`);
-  }
-  
-  products = productsWithImages;
   console.log(`✅ Página /productos: ${products.length} productos listos para mostrar`);
 } catch (error) {
   console.error('❌ Error en página /productos:', error);
@@ -69,16 +95,23 @@ const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
 
 // Generar datos SEO
 const siteUrl = Astro.site?.href || Astro.url.origin;
-const breadcrumbSchema = generateBreadcrumbSchema([
+const pageTitle = categoryInfo ? categoryInfo.name : 'Productos';
+const breadcrumbItems = [
   { name: 'Inicio', url: siteUrl },
-  { name: 'Productos', url: `${siteUrl}/productos` }
-]);
+  { name: 'Filtros de Aire', url: `${siteUrl}/filtros` }
+];
+if (categoryInfo) {
+  breadcrumbItems.push({ name: categoryInfo.name, url: `${siteUrl}/productos?filter_category_id=${categoryInfo.id}` });
+} else {
+  breadcrumbItems.push({ name: 'Productos', url: `${siteUrl}/productos` });
+}
+const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 ---
 
 <WebsiteLayout 
-  title="Productos"
-  seoTitle="Productos - Catálogo StarFilters"
-  description="Explora nuestro catálogo completo de productos. Productos de alta calidad con envío a toda la República Mexicana."
+  title={pageTitle}
+  seoTitle={`${pageTitle} - Catálogo StarFilters`}
+  description={categoryInfo?.description || "Explora nuestro catálogo completo de productos. Productos de alta calidad con envío a toda la República Mexicana."}
   keywords={[
     'catálogo productos',
     'comprar productos',
@@ -113,7 +146,22 @@ const breadcrumbSchema = generateBreadcrumbSchema([
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
             </svg>
           </li>
-          <li class="text-foreground font-medium">Productos</li>
+          <li>
+            <a href="/filtros" class="hover:text-foreground transition-colors">Filtros de Aire</a>
+          </li>
+          {categoryInfo && (
+            <>
+              <li>
+                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+              </li>
+              <li class="text-foreground font-medium">{categoryInfo.name}</li>
+            </>
+          )}
+          {!categoryInfo && (
+            <li class="text-foreground font-medium">Productos</li>
+          )}
         </ol>
       </nav>
     </div>
@@ -127,17 +175,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           id="collection-heading"
           class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
         >
-          {categoryParam ? `Productos: ${categoryParam}` : 'Productos StarFilters'}
+          {categoryInfo ? categoryInfo.name : 'Productos StarFilters'}
         </h1>
         <p class="mt-4 text-lg text-muted-foreground">
-          {categoryParam 
-            ? `Productos de la categoría ${categoryParam}. Calidad garantizada y envío rápido.`
-            : 'Explora nuestro catálogo completo de productos. Calidad garantizada y envío rápido.'
-          }
+          {categoryInfo?.description || 'Explora nuestro catálogo completo de productos. Calidad garantizada y envío rápido.'}
         </p>
-        {categoryParam && (
+        {categoryInfo && (
           <a 
-            href="/productos" 
+            href="/filtros" 
             class="mt-4 inline-flex items-center text-sm text-primary hover:text-primary/80 transition-colors"
           >
             ← Ver todas las categorías
