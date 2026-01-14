@@ -301,29 +301,46 @@ if (Astro.request.method === "POST") {
     <!-- Formulario -->
     <form method="POST" class="space-y-8">
       <!-- Información Básica -->
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 class="mb-4 text-xl font-bold text-gray-900">
-          Información Básica
-        </h2>
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Información Básica
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Nombre y descripción del filtro en español e inglés
+            </p>
+          </div>
+        </div>
 
         <div class="grid gap-6 md:grid-cols-2">
           <div>
-            <label for="name" class="block text-sm font-medium text-gray-700">
-              Nombre (Español) *
+            <label for="name" class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <span>Nombre (Español)</span>
+              <span class="text-red-500">*</span>
             </label>
             <input
               type="text"
               id="name"
               name="name"
               required
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Ej: Mini pleat sello gel downstream"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
+            <p class="mt-1.5 text-xs text-gray-500">
+              Nombre principal del filtro en español
+            </p>
           </div>
 
           <div>
             <label
               for="name_en"
-              class="block text-sm font-medium text-gray-700"
+              class="mb-2 block text-sm font-semibold text-gray-700"
             >
               Nombre (Inglés)
             </label>
@@ -331,13 +348,11 @@ if (Astro.request.method === "POST") {
               type="text"
               id="name_en"
               name="name_en"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Ej: Mini pleat gel seal downstream"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
-          </div>
-
-          <div class="md:col-span-2">
-            <p class="text-sm text-gray-600">
-              Las imágenes se pueden agregar en la sección de imágenes más abajo.
+            <p class="mt-1.5 text-xs text-gray-500">
+              Nombre del filtro en inglés (opcional)
             </p>
           </div>
         </div>
@@ -346,46 +361,66 @@ if (Astro.request.method === "POST") {
           <div>
             <label
               for="description"
-              class="block text-sm font-medium text-gray-700"
+              class="mb-2 block text-sm font-semibold text-gray-700"
             >
               Descripción (Español)
             </label>
             <textarea
               id="description"
               name="description"
-              rows="4"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              rows="5"
+              placeholder="Describe el filtro, su función, características principales y uso típico..."
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             ></textarea>
+            <p class="mt-1.5 text-xs text-gray-500">
+              Descripción detallada del filtro en español
+            </p>
           </div>
 
           <div>
             <label
               for="description_en"
-              class="block text-sm font-medium text-gray-700"
+              class="mb-2 block text-sm font-semibold text-gray-700"
             >
               Descripción (Inglés)
             </label>
             <textarea
               id="description_en"
               name="description_en"
-              rows="4"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              rows="5"
+              placeholder="Describe the filter, its function, main characteristics and typical use..."
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             ></textarea>
+            <p class="mt-1.5 text-xs text-gray-500">
+              Descripción detallada del filtro en inglés (opcional)
+            </p>
           </div>
         </div>
       </div>
 
       <!-- Especificaciones Técnicas -->
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 class="mb-4 text-xl font-bold text-gray-900">
-          Especificaciones Técnicas
-        </h2>
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+            <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Especificaciones Técnicas
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Eficiencia, clase, características y especificaciones del filtro
+            </p>
+          </div>
+        </div>
 
         <div class="grid gap-6 md:grid-cols-3">
           <div>
             <label
               for="efficiency_class"
-              class="block text-sm font-medium text-gray-700"
+              class="mb-2 block text-sm font-semibold text-gray-700"
             >
               Clase de Eficiencia
             </label>
@@ -394,14 +429,17 @@ if (Astro.request.method === "POST") {
               id="efficiency_class"
               name="efficiency_class"
               placeholder="EN1822 Clase: H14"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
+            <p class="mt-1.5 text-xs text-gray-500">
+              Ej: EN1822 Clase: H14
+            </p>
           </div>
 
           <div>
             <label
               for="max_temperature"
-              class="block text-sm font-medium text-gray-700"
+              class="mb-2 block text-sm font-semibold text-gray-700"
             >
               Temperatura Máxima
             </label>
@@ -410,14 +448,17 @@ if (Astro.request.method === "POST") {
               id="max_temperature"
               name="max_temperature"
               placeholder="70ºC"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
+            <p class="mt-1.5 text-xs text-gray-500">
+              Temperatura máxima de operación
+            </p>
           </div>
 
           <div>
             <label
               for="frame_material"
-              class="block text-sm font-medium text-gray-700"
+              class="mb-2 block text-sm font-semibold text-gray-700"
             >
               Material del Marco
             </label>
@@ -426,8 +467,11 @@ if (Astro.request.method === "POST") {
               id="frame_material"
               name="frame_material"
               placeholder="Aluminio"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
+            <p class="mt-1.5 text-xs text-gray-500">
+              Material del marco del filtro
+            </p>
           </div>
         </div>
 
@@ -437,14 +481,14 @@ if (Astro.request.method === "POST") {
             name="efficiency"
             label="Eficiencia (Español)"
             placeholder="Ej: 99.997%"
-            helpText="Agrega cada valor de eficiencia como un elemento de la lista"
+            helpText="Agrega cada valor de eficiencia como un elemento de la lista (ej: 99.997%)"
           />
           <DynamicListInput
             id="efficiency_en"
             name="efficiency_en"
             label="Eficiencia (Inglés)"
             placeholder="Ej: 99.997%"
-            helpText="Agrega cada valor de eficiencia como un elemento de la lista"
+            helpText="Add each efficiency value as a list item (e.g., 99.997%)"
           />
         </div>
 
@@ -461,47 +505,67 @@ if (Astro.request.method === "POST") {
             name="characteristics_en"
             label="Características (Inglés)"
             placeholder="Ej: Aluminum frame"
-            helpText="Agrega cada característica como un elemento de la lista"
+            helpText="Add each characteristic as a list item"
           />
         </div>
       </div>
 
       <!-- Información Adicional -->
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 class="mb-4 text-xl font-bold text-gray-900">
-          Información Adicional
-        </h2>
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Información Adicional
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Instalación, aplicaciones y beneficios del filtro
+            </p>
+          </div>
+        </div>
 
         <div class="space-y-6">
           <div class="grid gap-6 md:grid-cols-2">
             <div>
               <label
                 for="typical_installation"
-                class="block text-sm font-medium text-gray-700"
+                class="mb-2 block text-sm font-semibold text-gray-700"
               >
                 Instalación Típica (Español)
               </label>
               <textarea
                 id="typical_installation"
                 name="typical_installation"
-                rows="3"
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                rows="4"
+                placeholder="Ej: En techos de cuartos limpios donde el aire fluye hacia abajo (por ejemplo, plafones o gabinetes terminales HEPA tipo laminar flow)."
+                class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               ></textarea>
+              <p class="mt-1.5 text-xs text-gray-500">
+                Describe dónde y cómo se instala típicamente este filtro
+              </p>
             </div>
 
             <div>
               <label
                 for="typical_installation_en"
-                class="block text-sm font-medium text-gray-700"
+                class="mb-2 block text-sm font-semibold text-gray-700"
               >
                 Instalación Típica (Inglés)
               </label>
               <textarea
                 id="typical_installation_en"
                 name="typical_installation_en"
-                rows="3"
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                rows="4"
+                placeholder="Ej: In cleanroom ceilings where air flows downward (e.g., HEPA terminal plenums or laminar flow cabinets)."
+                class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               ></textarea>
+              <p class="mt-1.5 text-xs text-gray-500">
+                Describe where and how this filter is typically installed
+              </p>
             </div>
           </div>
 
@@ -509,31 +573,39 @@ if (Astro.request.method === "POST") {
             <div>
               <label
                 for="applications"
-                class="block text-sm font-medium text-gray-700"
+                class="mb-2 block text-sm font-semibold text-gray-700"
               >
                 Aplicaciones (Español)
               </label>
               <textarea
                 id="applications"
                 name="applications"
-                rows="3"
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                rows="4"
+                placeholder="Ej: Cuartos limpios ISO. Industria de productos electrónicos, producción de semiconductores, industria farmacéutica, máquinas de precisión, hospitales e industria alimentaria."
+                class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               ></textarea>
+              <p class="mt-1.5 text-xs text-gray-500">
+                Lista las industrias y aplicaciones donde se usa este filtro
+              </p>
             </div>
 
             <div>
               <label
                 for="applications_en"
-                class="block text-sm font-medium text-gray-700"
+                class="mb-2 block text-sm font-semibold text-gray-700"
               >
                 Aplicaciones (Inglés)
               </label>
               <textarea
                 id="applications_en"
                 name="applications_en"
-                rows="3"
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                rows="4"
+                placeholder="Ej: ISO cleanrooms. Electronics industry, semiconductor production, pharmaceutical industry, precision machinery, hospitals and food industry."
+                class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               ></textarea>
+              <p class="mt-1.5 text-xs text-gray-500">
+                List the industries and applications where this filter is used
+              </p>
             </div>
           </div>
 
@@ -543,80 +615,139 @@ if (Astro.request.method === "POST") {
               name="benefits"
               label="Beneficios (Español)"
               placeholder="Ej: Compacto y liviano"
-              helpText="Agrega cada beneficio como un elemento de la lista"
+              helpText="Agrega cada beneficio como un elemento de la lista (ej: Compacto y liviano, Alta capacidad y tiempo de vida, Fácil instalación)"
             />
             <DynamicListInput
               id="benefits_en"
               name="benefits_en"
               label="Beneficios (Inglés)"
               placeholder="Ej: Compact and lightweight"
-              helpText="Agrega cada beneficio como un elemento de la lista"
+              helpText="Add each benefit as a list item (e.g., Compact and lightweight, High capacity and lifetime, Easy installation)"
             />
           </div>
         </div>
       </div>
 
       <!-- Imágenes -->
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 class="mb-4 text-xl font-bold text-gray-900">
-          Imágenes
-        </h2>
-        <p class="mb-4 text-sm text-gray-600">
-          Puedes subir una imagen principal y hasta 4 imágenes de carrusel. Las imágenes se procesarán automáticamente después de crear la categoría.
-        </p>
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-100">
+            <svg class="h-6 w-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Imágenes
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Imagen principal y hasta 4 imágenes de carrusel
+            </p>
+          </div>
+        </div>
         <CategoryImageManagerCreate />
       </div>
 
       <!-- Variantes/Tamaños -->
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 class="mb-4 text-xl font-bold text-gray-900">
-          Variantes/Tamaños
-        </h2>
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
+            <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <h2 class="text-xl font-bold text-gray-900">
+              Variantes/Tamaños
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Agrega los diferentes tamaños disponibles con sus códigos Bind, medidas y precios
+            </p>
+          </div>
+        </div>
 
         <div id="variants-container" class="space-y-4">
-          <!-- Los campos de variante se agregarán aquí dinámicamente -->
+          <div class="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <p class="mt-2 text-sm text-gray-600">
+              No hay variantes agregadas aún
+            </p>
+            <p class="mt-1 text-xs text-gray-500">
+              Haz clic en "Agregar Variante" para comenzar
+            </p>
+          </div>
         </div>
 
         <button
           type="button"
           id="add-variant-btn"
-          class="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          class="mt-6 flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          + Agregar Variante
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Agregar Variante
         </button>
       </div>
 
       <!-- Estado -->
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+            <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-gray-900">
+              Estado de Publicación
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Define si la categoría estará visible para los usuarios
+            </p>
+          </div>
+        </div>
         <div>
-          <label for="status" class="block text-sm font-medium text-gray-700">
-            Estado *
+          <label for="status" class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <span>Estado</span>
+            <span class="text-red-500">*</span>
           </label>
           <select
             id="status"
             name="status"
             required
-            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
-            <option value="active">Activo</option>
-            <option value="inactive">Inactivo</option>
-            <option value="draft">Borrador</option>
+            <option value="active">Activo - Visible para usuarios</option>
+            <option value="draft">Borrador - Solo visible en admin</option>
+            <option value="inactive">Inactivo - No visible</option>
           </select>
+          <p class="mt-1.5 text-xs text-gray-500">
+            Las categorías activas aparecerán en la página de filtros
+          </p>
         </div>
       </div>
 
       <!-- Botones -->
-      <div class="flex items-center justify-end gap-4">
+      <div class="flex items-center justify-end gap-4 border-t border-gray-200 pt-6">
         <a
           href="/admin/filter-categories"
-          class="rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
         >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
           Cancelar
         </a>
         <button
           type="submit"
-          class="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+          class="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
           Crear Categoría
         </button>
       </div>
@@ -633,79 +764,101 @@ if (Astro.request.method === "POST") {
 
     const variantIndex = variantCounter++;
     const variantDiv = document.createElement('div');
-    variantDiv.className = 'rounded-lg border border-gray-200 bg-gray-50 p-4';
+    variantDiv.className = 'rounded-lg border-2 border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md';
     variantDiv.setAttribute('data-variant-index', variantIndex.toString());
 
     variantDiv.innerHTML = `
-      <div class="mb-3 flex items-center justify-between">
-        <h3 class="text-sm font-medium text-gray-700">Variante ${variantIndex + 1}</h3>
+      <div class="mb-4 flex items-center justify-between border-b border-gray-200 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
+            ${variantIndex + 1}
+          </div>
+          <h3 class="text-base font-semibold text-gray-900">Variante ${variantIndex + 1}</h3>
+        </div>
         <button
           type="button"
-          class="remove-variant-btn rounded-md bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600"
+          class="remove-variant-btn flex items-center gap-1 rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
           data-variant-index="${variantIndex}"
         >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
           Eliminar
         </button>
       </div>
-      <div class="grid grid-cols-4 gap-4">
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <label class="block text-xs font-medium text-gray-700 mb-1">
-            Código Bind *
+          <label class="mb-2 flex items-center gap-1 text-xs font-semibold text-gray-700">
+            <span>Código Bind</span>
+            <span class="text-red-500">*</span>
           </label>
           <input
             type="text"
             name="variant_bind_code_${variantIndex}"
             id="bind_code_${variantIndex}"
-            class="bind-code-input block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            class="bind-code-input block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             placeholder="Ej: HGD1"
             required
           />
+          <p class="mt-1 text-xs text-gray-500">Código del producto en Bind</p>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-700 mb-1">
+          <label class="mb-2 block text-xs font-semibold text-gray-700">
             Medida Nominal
           </label>
           <input
             type="text"
             name="variant_nominal_size_${variantIndex}"
             id="nominal_size_${variantIndex}"
-            class="block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-600"
-            placeholder="Ej: 9.125&quot; x 9.125&quot; x 3&quot;"
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-600"
+            placeholder='Ej: 9.125" x 9.125" x 3"'
             disabled
           />
+          <p class="mt-1 text-xs text-gray-500">Se llenará automáticamente</p>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-700 mb-1">
+          <label class="mb-2 block text-xs font-semibold text-gray-700">
             Medida Real
           </label>
           <input
             type="text"
             name="variant_real_size_${variantIndex}"
             id="real_size_${variantIndex}"
-            class="block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-600"
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-600"
             placeholder="Ej: 231 x 231 x 75 mm"
             disabled
           />
+          <p class="mt-1 text-xs text-gray-500">Se llenará automáticamente</p>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-700 mb-1">
-            Precio
+          <label class="mb-2 block text-xs font-semibold text-gray-700">
+            Precio (USD)
           </label>
-          <input
-            type="number"
-            name="variant_price_${variantIndex}"
-            id="price_${variantIndex}"
-            step="0.01"
-            min="0"
-            class="block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-600"
-            placeholder="0.00"
-            disabled
-          />
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">$</span>
+            <input
+              type="number"
+              name="variant_price_${variantIndex}"
+              id="price_${variantIndex}"
+              step="0.01"
+              min="0"
+              class="block w-full rounded-lg border border-gray-300 bg-gray-50 pl-8 pr-3 py-2.5 text-sm text-gray-600"
+              placeholder="0.00"
+              disabled
+            />
+          </div>
+          <p class="mt-1 text-xs text-gray-500">Se llenará automáticamente</p>
         </div>
       </div>
-      <div id="bind_search_status_${variantIndex}" class="mt-2 text-xs"></div>
+      <div id="bind_search_status_${variantIndex}" class="mt-3 text-xs"></div>
     `;
 
+    // Remover el estado vacío si existe
+    const emptyState = container.querySelector('.border-dashed');
+    if (emptyState) {
+      emptyState.remove();
+    }
+    
     container.appendChild(variantDiv);
 
     // Agregar listener al input de código Bind
@@ -737,6 +890,20 @@ if (Astro.request.method === "POST") {
     if (removeBtn) {
       removeBtn.addEventListener('click', function() {
         variantDiv.remove();
+        // Si no hay más variantes, mostrar el estado vacío
+        const remainingVariants = container.querySelectorAll('[data-variant-index]');
+        if (remainingVariants.length === 0) {
+          const emptyState = document.createElement('div');
+          emptyState.className = 'rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center';
+          emptyState.innerHTML = `
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <p class="mt-2 text-sm text-gray-600">No hay variantes agregadas aún</p>
+            <p class="mt-1 text-xs text-gray-500">Haz clic en "Agregar Variante" para comenzar</p>
+          `;
+          container.appendChild(emptyState);
+        }
       });
     }
   }

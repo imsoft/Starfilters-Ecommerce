@@ -191,82 +191,168 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       </div>
     </div>
 
-    <!-- Technical Specifications Section (Diseño Tailwind) -->
-    <div class="mx-auto mt-16 grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 sm:mt-20 lg:max-w-7xl lg:grid-cols-2">
-      <div>
-        <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Especificaciones Técnicas</h2>
-        <p class="mt-4 text-gray-500">{category.description || `Conoce las especificaciones técnicas y características de nuestros ${category.name}.`}</p>
-
-        <dl class="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
-          {category.efficiency && (
-            <div class="border-t border-gray-200 pt-4">
-              <dt class="font-medium text-gray-900">Eficiencia</dt>
-              <dd class="mt-2 text-sm text-gray-500 whitespace-pre-line">{category.efficiency}</dd>
-            </div>
-          )}
-          {category.efficiency_class && (
-            <div class="border-t border-gray-200 pt-4">
-              <dt class="font-medium text-gray-900">Clase de Eficiencia</dt>
-              <dd class="mt-2 text-sm text-gray-500">{category.efficiency_class}</dd>
-            </div>
-          )}
-          {category.frame_material && (
-            <div class="border-t border-gray-200 pt-4">
-              <dt class="font-medium text-gray-900">Material</dt>
-              <dd class="mt-2 text-sm text-gray-500">{category.frame_material}</dd>
-            </div>
-          )}
-          {category.max_temperature && (
-            <div class="border-t border-gray-200 pt-4">
-              <dt class="font-medium text-gray-900">Temperatura Máxima</dt>
-              <dd class="mt-2 text-sm text-gray-500">{category.max_temperature}</dd>
-            </div>
-          )}
-          {category.characteristics && (
-            <div class="border-t border-gray-200 pt-4">
-              <dt class="font-medium text-gray-900">Características</dt>
-              <dd class="mt-2 text-sm text-gray-500 whitespace-pre-line">{category.characteristics}</dd>
-            </div>
-          )}
-          {category.applications && (
-            <div class="border-t border-gray-200 pt-4">
-              <dt class="font-medium text-gray-900">Aplicaciones</dt>
-              <dd class="mt-2 text-sm text-gray-500">{category.applications}</dd>
-            </div>
-          )}
-          {category.benefits && (
-            <div class="border-t border-gray-200 pt-4">
-              <dt class="font-medium text-gray-900">Beneficios</dt>
-              <dd class="mt-2 text-sm text-gray-500 whitespace-pre-line">{category.benefits}</dd>
-            </div>
-          )}
-          {category.typical_installation && (
-            <div class="border-t border-gray-200 pt-4">
-              <dt class="font-medium text-gray-900">Instalación Típica</dt>
-              <dd class="mt-2 text-sm text-gray-500">{category.typical_installation}</dd>
-            </div>
-          )}
-        </dl>
-      </div>
-
-      <!-- Galería de imágenes 2x2 (Diseño Tailwind) -->
-      <div class="grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 lg:gap-8">
-        {carouselImages.slice(0, 4).map((img, index) => (
-          <LazyImage
-            src={img.image_url}
-            alt={img.alt_text || category.name}
-            class="rounded-lg bg-gray-100 w-full h-full object-cover object-center aspect-square"
-          />
-        ))}
-        {carouselImages.length < 4 && Array.from({ length: 4 - carouselImages.length }).map((_, index) => (
-          <div class="rounded-lg bg-gray-100 aspect-square flex items-center justify-center">
-            <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>
+    <!-- Descripción Completa -->
+    {category.description && (
+      <div class="mx-auto mt-16 max-w-3xl">
+        <div class="rounded-lg bg-gray-50 p-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Descripción</h2>
+          <div class="prose prose-sm max-w-none text-gray-700 whitespace-pre-line">
+            {category.description}
           </div>
-        ))}
+        </div>
+      </div>
+    )}
+
+    <!-- Especificaciones Técnicas -->
+    <div class="mx-auto mt-16 max-w-7xl">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Columna principal de especificaciones -->
+        <div class="lg:col-span-2 space-y-8">
+          <div>
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-6">Especificaciones Técnicas</h2>
+            
+            <!-- Eficiencia -->
+            {(category.efficiency || category.efficiency_class) && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Eficiencia
+                </h3>
+                {category.efficiency && (
+                  <div class="mb-3">
+                    <p class="text-sm font-medium text-gray-700 mb-1">Eficiencia de filtración:</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-1">
+                      {category.efficiency.split('\n').filter(line => line.trim()).map((line) => (
+                        <li>{line.trim()}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {category.efficiency_class && (
+                  <div>
+                    <p class="text-sm font-medium text-gray-700 mb-1">Clase EN1822:</p>
+                    <p class="text-gray-600">{category.efficiency_class}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <!-- Características -->
+            {category.characteristics && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Características
+                </h3>
+                <ul class="list-disc list-inside text-gray-600 space-y-2">
+                  {category.characteristics.split('\n').filter(line => line.trim()).map((line) => (
+                    <li>{line.trim()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <!-- Instalación Típica -->
+            {category.typical_installation && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  Instalación Típica
+                </h3>
+                <p class="text-gray-700 leading-relaxed">{category.typical_installation}</p>
+              </div>
+            )}
+
+            <!-- Aplicaciones -->
+            {category.applications && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Aplicaciones
+                </h3>
+                <p class="text-gray-700 leading-relaxed">{category.applications}</p>
+              </div>
+            )}
+
+            <!-- Beneficios -->
+            {category.benefits && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                  Beneficios
+                </h3>
+                <ul class="list-disc list-inside text-gray-600 space-y-2">
+                  {category.benefits.split('\n').filter(line => line.trim()).map((line) => (
+                    <li>{line.trim()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <!-- Sidebar con especificaciones rápidas -->
+        <div class="lg:col-span-1">
+          <div class="sticky top-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Especificaciones Rápidas</h3>
+            <dl class="space-y-4">
+              {category.efficiency_class && (
+                <div class="border-b border-gray-200 pb-3">
+                  <dt class="text-sm font-medium text-gray-500">Clase EN1822</dt>
+                  <dd class="mt-1 text-base font-semibold text-gray-900">{category.efficiency_class}</dd>
+                </div>
+              )}
+              {category.frame_material && (
+                <div class="border-b border-gray-200 pb-3">
+                  <dt class="text-sm font-medium text-gray-500">Material del Marco</dt>
+                  <dd class="mt-1 text-base font-semibold text-gray-900">{category.frame_material}</dd>
+                </div>
+              )}
+              {category.max_temperature && (
+                <div class="border-b border-gray-200 pb-3">
+                  <dt class="text-sm font-medium text-gray-500">Temperatura Máxima</dt>
+                  <dd class="mt-1 text-base font-semibold text-gray-900">{category.max_temperature}</dd>
+                </div>
+              )}
+              {activeVariants.length > 0 && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Tamaños Disponibles</dt>
+                  <dd class="mt-1 text-base font-semibold text-gray-900">{activeVariants.length} variantes</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Galería de imágenes adicionales -->
+    {carouselImages.length > 0 && (
+      <div class="mx-auto mt-16 max-w-7xl">
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-8">Galería de Imágenes</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+          {carouselImages.map((img) => (
+            <div class="aspect-square overflow-hidden rounded-lg bg-gray-100">
+              <LazyImage
+                src={img.image_url}
+                alt={img.alt_text || category.name}
+                class="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
   </div>
 </WebsiteLayout>
 
