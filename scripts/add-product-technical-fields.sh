@@ -26,7 +26,16 @@ fi
 
 # Ejecutar el script SQL
 echo "📝 Ejecutando migración SQL..."
-$MYSQL_CMD $DB_NAME < migrations/add_product_technical_fields.sql
+echo "   Usando versión compatible con MySQL antiguo..."
+
+# Intentar primero con la versión simple (más rápida)
+# Si falla, usar la versión segura
+if $MYSQL_CMD $DB_NAME < migrations/add_product_technical_fields.sql 2>/dev/null; then
+    echo "✅ Migración ejecutada con versión simple"
+else
+    echo "⚠️  La versión simple falló, usando versión segura..."
+    $MYSQL_CMD $DB_NAME < migrations/add_product_technical_fields_safe.sql
+fi
 
 if [ $? -eq 0 ]; then
     echo "✅ Campos técnicos agregados exitosamente"
