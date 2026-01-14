@@ -4,6 +4,7 @@ import {
   getProductById,
   updateProduct as updateProductService,
 } from "@/lib/product-service";
+import { getAllCategories } from "@/lib/filter-category-service";
 import { getProductImages } from "@/lib/database";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
@@ -33,6 +34,14 @@ if (!product) {
 
 let images = await getProductImages(productId);
 
+// Obtener categorías de filtros para el dropdown
+let filterCategories: any[] = [];
+try {
+  filterCategories = await getAllCategories();
+} catch (error) {
+  console.error('Error obteniendo categorías:', error);
+}
+
 let error: string | null = null;
 let success: string | null = null;
 
@@ -43,13 +52,47 @@ if (Astro.request.method === "POST") {
     const action = formData.get("action") as string;
 
     if (action === "update_product") {
-      // Actualizar el producto
+      // Procesar todos los campos
+      const filterCategoryId = formData.get("filter_category_id") ? parseInt(formData.get("filter_category_id") as string) : null;
+      const bindCode = formData.get("bind_code") as string || null;
+      const nominalSize = formData.get("nominal_size") as string || null;
+      const realSize = formData.get("real_size") as string || null;
+      const price = parseFloat(formData.get("price") as string || "0");
+      const currency = (formData.get("currency") as "MXN" | "USD") || "MXN";
+      const priceUsd = formData.get("price_usd") ? parseFloat(formData.get("price_usd") as string) : null;
+      const stock = parseInt(formData.get("stock") as string || "0");
+      const category = formData.get("category") as string || product.category;
+
+      // Actualizar el producto con todos los campos
       const updated = await updateProductService(productId, {
+        filter_category_id: filterCategoryId,
+        bind_code: bindCode,
         name: formData.get("name") as string,
         name_en: (formData.get("name_en") as string) || null,
         description: (formData.get("description") as string) || null,
         description_en: (formData.get("description_en") as string) || null,
+        price: price,
+        currency: currency,
+        price_usd: priceUsd,
+        nominal_size: nominalSize,
+        real_size: realSize,
+        category: category,
+        stock: stock,
         status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
+        // Campos técnicos
+        efficiency: formData.get("efficiency") as string || null,
+        efficiency_en: formData.get("efficiency_en") as string || null,
+        efficiency_class: formData.get("efficiency_class") as string || null,
+        characteristics: formData.get("characteristics") as string || null,
+        characteristics_en: formData.get("characteristics_en") as string || null,
+        frame_material: formData.get("frame_material") as string || null,
+        max_temperature: formData.get("max_temperature") as string || null,
+        typical_installation: formData.get("typical_installation") as string || null,
+        typical_installation_en: formData.get("typical_installation_en") as string || null,
+        applications: formData.get("applications") as string || null,
+        applications_en: formData.get("applications_en") as string || null,
+        benefits: formData.get("benefits") as string || null,
+        benefits_en: formData.get("benefits_en") as string || null,
       });
 
       // Actualizar imagen principal si viene del componente
@@ -254,6 +297,410 @@ if (Astro.request.method === "POST") {
             </div>
           </div>
         </div>
+
+      <!-- Categoría y Variante -->
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Categoría y Variante
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Asigna el producto a una categoría de filtro y define sus características de tamaño y precio
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="filter_category_id" class="mb-2 block text-sm font-semibold text-gray-700">
+              Categoría de Filtro
+            </label>
+            <select
+              id="filter_category_id"
+              name="filter_category_id"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="">Sin categoría</option>
+              {filterCategories.map(cat => (
+                <option value={cat.id} selected={product.filter_category_id === cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label for="bind_code" class="mb-2 block text-sm font-semibold text-gray-700">
+              Código Bind
+            </label>
+            <input
+              type="text"
+              id="bind_code"
+              name="bind_code"
+              value={product.bind_code || ""}
+              placeholder="Ej: HGD1"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="nominal_size" class="mb-2 block text-sm font-semibold text-gray-700">
+              Medida Nominal
+            </label>
+            <input
+              type="text"
+              id="nominal_size"
+              name="nominal_size"
+              value={product.nominal_size || ""}
+              placeholder='Ej: 9.125" x 9.125" x 3"'
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="real_size" class="mb-2 block text-sm font-semibold text-gray-700">
+              Medida Real
+            </label>
+            <input
+              type="text"
+              id="real_size"
+              name="real_size"
+              value={product.real_size || ""}
+              placeholder="Ej: 231 x 231 x 75 mm"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="price" class="mb-2 block text-sm font-semibold text-gray-700">
+              Precio (MXN) <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-gray-500">$</span>
+              <input
+                type="number"
+                id="price"
+                name="price"
+                required
+                min="0"
+                step="0.01"
+                value={product.price}
+                class="mt-1 block w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="price_usd" class="mb-2 block text-sm font-semibold text-gray-700">
+              Precio (USD)
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-gray-500">$</span>
+              <input
+                type="number"
+                id="price_usd"
+                name="price_usd"
+                min="0"
+                step="0.01"
+                value={product.price_usd || ""}
+                class="mt-1 block w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="currency" class="mb-2 block text-sm font-semibold text-gray-700">
+              Moneda Principal
+            </label>
+            <select
+              id="currency"
+              name="currency"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="MXN" selected={product.currency === 'MXN' || !product.currency}>MXN - Pesos Mexicanos</option>
+              <option value="USD" selected={product.currency === 'USD'}>USD - Dólares Americanos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="stock" class="mb-2 block text-sm font-semibold text-gray-700">
+              Stock/Inventario
+            </label>
+            <input
+              type="number"
+              id="stock"
+              name="stock"
+              min="0"
+              value={product.stock}
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Especificaciones Técnicas -->
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+            <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Especificaciones Técnicas
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Eficiencia, características y especificaciones técnicas del producto
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="efficiency" class="mb-2 block text-sm font-semibold text-gray-700">
+              Eficiencia (Español)
+            </label>
+            <input
+              type="text"
+              id="efficiency"
+              name="efficiency"
+              value={product.efficiency || ""}
+              placeholder="Ej: 99.997%"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="efficiency_en" class="mb-2 block text-sm font-semibold text-gray-700">
+              Eficiencia (Inglés)
+            </label>
+            <input
+              type="text"
+              id="efficiency_en"
+              name="efficiency_en"
+              value={product.efficiency_en || ""}
+              placeholder="Ej: 99.997%"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="efficiency_class" class="mb-2 block text-sm font-semibold text-gray-700">
+              Clase EN1822
+            </label>
+            <input
+              type="text"
+              id="efficiency_class"
+              name="efficiency_class"
+              value={product.efficiency_class || ""}
+              placeholder="Ej: H14"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="frame_material" class="mb-2 block text-sm font-semibold text-gray-700">
+              Material del Marco
+            </label>
+            <input
+              type="text"
+              id="frame_material"
+              name="frame_material"
+              value={product.frame_material || ""}
+              placeholder="Ej: Aluminio"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="max_temperature" class="mb-2 block text-sm font-semibold text-gray-700">
+              Temperatura Máxima
+            </label>
+            <input
+              type="text"
+              id="max_temperature"
+              name="max_temperature"
+              value={product.max_temperature || ""}
+              placeholder="Ej: 70ºC"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+        </div>
+
+        <div class="mt-6 grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="characteristics" class="mb-2 block text-sm font-semibold text-gray-700">
+              Características (Español)
+            </label>
+            <textarea
+              id="characteristics"
+              name="characteristics"
+              rows="4"
+              placeholder="Una característica por línea"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >{product.characteristics || ""}</textarea>
+          </div>
+
+          <div>
+            <label for="characteristics_en" class="mb-2 block text-sm font-semibold text-gray-700">
+              Características (Inglés)
+            </label>
+            <textarea
+              id="characteristics_en"
+              name="characteristics_en"
+              rows="4"
+              placeholder="One characteristic per line"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >{product.characteristics_en || ""}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instalación Típica -->
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
+            <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Instalación Típica
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Describe dónde y cómo se instala típicamente este producto
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="typical_installation" class="mb-2 block text-sm font-semibold text-gray-700">
+              Instalación Típica (Español)
+            </label>
+            <textarea
+              id="typical_installation"
+              name="typical_installation"
+              rows="4"
+              placeholder="Ej: En techos de cuartos limpios donde el aire fluye hacia abajo..."
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >{product.typical_installation || ""}</textarea>
+          </div>
+
+          <div>
+            <label for="typical_installation_en" class="mb-2 block text-sm font-semibold text-gray-700">
+              Instalación Típica (Inglés)
+            </label>
+            <textarea
+              id="typical_installation_en"
+              name="typical_installation_en"
+              rows="4"
+              placeholder="Ej: In cleanroom ceilings where air flows downward..."
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >{product.typical_installation_en || ""}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aplicaciones -->
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
+            <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Aplicaciones
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Describe los usos y aplicaciones típicas del producto
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="applications" class="mb-2 block text-sm font-semibold text-gray-700">
+              Aplicaciones (Español)
+            </label>
+            <textarea
+              id="applications"
+              name="applications"
+              rows="4"
+              placeholder="Ej: Cuartos limpios ISO. Industria de productos electrónicos..."
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >{product.applications || ""}</textarea>
+          </div>
+
+          <div>
+            <label for="applications_en" class="mb-2 block text-sm font-semibold text-gray-700">
+              Aplicaciones (Inglés)
+            </label>
+            <textarea
+              id="applications_en"
+              name="applications_en"
+              rows="4"
+              placeholder="Ej: ISO cleanrooms. Electronics industry..."
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >{product.applications_en || ""}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Beneficios -->
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
+            <svg class="h-6 w-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Beneficios
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Lista los beneficios principales del producto
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="benefits" class="mb-2 block text-sm font-semibold text-gray-700">
+              Beneficios (Español)
+            </label>
+            <textarea
+              id="benefits"
+              name="benefits"
+              rows="4"
+              placeholder="Un beneficio por línea"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >{product.benefits || ""}</textarea>
+          </div>
+
+          <div>
+            <label for="benefits_en" class="mb-2 block text-sm font-semibold text-gray-700">
+              Beneficios (Inglés)
+            </label>
+            <textarea
+              id="benefits_en"
+              name="benefits_en"
+              rows="4"
+              placeholder="One benefit per line"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >{product.benefits_en || ""}</textarea>
+          </div>
+        </div>
+      </div>
 
       <!-- Sección: Imágenes -->
       <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

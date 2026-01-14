@@ -38,6 +38,20 @@ export interface Product {
   weight?: string | null;
   material?: string | null;
   warranty?: string | null;
+  // Campos técnicos
+  efficiency?: string | null;
+  efficiency_en?: string | null;
+  efficiency_class?: string | null;
+  characteristics?: string | null;
+  characteristics_en?: string | null;
+  frame_material?: string | null;
+  max_temperature?: string | null;
+  typical_installation?: string | null;
+  typical_installation_en?: string | null;
+  applications?: string | null;
+  applications_en?: string | null;
+  benefits?: string | null;
+  benefits_en?: string | null;
   created_at: Date;
   updated_at: Date;
 }

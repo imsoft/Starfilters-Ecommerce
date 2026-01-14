@@ -89,8 +89,13 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
       `INSERT INTO products (
         uuid, filter_category_id, bind_id, bind_code, name, name_en, description, description_en,
         price, currency, price_usd, nominal_size, real_size, category, category_en, stock, status, tags,
-        dimensions, weight, material, warranty
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        dimensions, weight, material, warranty,
+        efficiency, efficiency_en, efficiency_class,
+        characteristics, characteristics_en, frame_material, max_temperature,
+        typical_installation, typical_installation_en,
+        applications, applications_en,
+        benefits, benefits_en
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         productData.uuid,
         productData.filter_category_id || null,
@@ -114,6 +119,19 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
         productData.weight || null,
         productData.material || null,
         productData.warranty || null,
+        productData.efficiency || null,
+        productData.efficiency_en || null,
+        productData.efficiency_class || null,
+        productData.characteristics || null,
+        productData.characteristics_en || null,
+        productData.frame_material || null,
+        productData.max_temperature || null,
+        productData.typical_installation || null,
+        productData.typical_installation_en || null,
+        productData.applications || null,
+        productData.applications_en || null,
+        productData.benefits || null,
+        productData.benefits_en || null,
       ]
     ) as ResultSetHeader;
 
@@ -138,7 +156,12 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
         price = ?, currency = ?, price_usd = ?, nominal_size = ?, real_size = ?,
         category = ?, category_en = ?, stock = ?,
         status = ?, tags = ?, dimensions = ?, weight = ?,
-        material = ?, warranty = ?, bind_id = ?, bind_code = ?
+        material = ?, warranty = ?, bind_id = ?, bind_code = ?,
+        efficiency = ?, efficiency_en = ?, efficiency_class = ?,
+        characteristics = ?, characteristics_en = ?, frame_material = ?, max_temperature = ?,
+        typical_installation = ?, typical_installation_en = ?,
+        applications = ?, applications_en = ?,
+        benefits = ?, benefits_en = ?
       WHERE id = ?`,
       [
         productData.filter_category_id || null,
@@ -162,6 +185,19 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
         productData.warranty || null,
         productData.bind_id || null,
         productData.bind_code || null,
+        productData.efficiency || null,
+        productData.efficiency_en || null,
+        productData.efficiency_class || null,
+        productData.characteristics || null,
+        productData.characteristics_en || null,
+        productData.frame_material || null,
+        productData.max_temperature || null,
+        productData.typical_installation || null,
+        productData.typical_installation_en || null,
+        productData.applications || null,
+        productData.applications_en || null,
+        productData.benefits || null,
+        productData.benefits_en || null,
         id,
       ]
     );
