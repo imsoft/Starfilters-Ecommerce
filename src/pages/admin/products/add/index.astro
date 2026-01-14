@@ -8,6 +8,8 @@ import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
 import { generateUUID } from "@/lib/database";
 import CategoryImageManagerCreate from "@/components/admin/CategoryImageManagerCreate.astro";
+import DynamicListInput from "@/components/admin/DynamicListInput.astro";
+import ProductSizesTable from "@/components/admin/ProductSizesTable.astro";
 
 export const prerender = false;
 
@@ -46,68 +48,141 @@ if (Astro.request.method === "POST") {
     // Crear UUID para el producto
     const uuid = generateUUID();
 
-    // Procesar campos técnicos
-    const efficiency = formData.get("efficiency") as string || null;
-    const efficiencyEn = formData.get("efficiency_en") as string || null;
+    // Procesar listas (eficiencia, características, aplicaciones, beneficios)
+    // Pueden venir como JSON string o como array
+    const processListField = (field: string | FormDataEntryValue | null): string | null => {
+      if (!field) return null;
+      if (typeof field === 'string') {
+        try {
+          const parsed = JSON.parse(field);
+          if (Array.isArray(parsed)) {
+            return parsed.filter(item => item && item.trim()).join('\n');
+          }
+          return field;
+        } catch {
+          return field;
+        }
+      }
+      return null;
+    };
+
+    const efficiency = processListField(formData.get("efficiency"));
+    const efficiencyEn = processListField(formData.get("efficiency_en"));
     const efficiencyClass = formData.get("efficiency_class") as string || null;
     
-    // Procesar características (puede venir como array o texto separado por saltos de línea)
-    const characteristics = formData.get("characteristics") as string || null;
-    const characteristicsEn = formData.get("characteristics_en") as string || null;
+    const characteristics = processListField(formData.get("characteristics"));
+    const characteristicsEn = processListField(formData.get("characteristics_en"));
     const frameMaterial = formData.get("frame_material") as string || null;
     const maxTemperature = formData.get("max_temperature") as string || null;
     
-    // Procesar instalación, aplicaciones y beneficios
     const typicalInstallation = formData.get("typical_installation") as string || null;
     const typicalInstallationEn = formData.get("typical_installation_en") as string || null;
-    const applications = formData.get("applications") as string || null;
-    const applicationsEn = formData.get("applications_en") as string || null;
-    const benefits = formData.get("benefits") as string || null;
-    const benefitsEn = formData.get("benefits_en") as string || null;
+    const applications = processListField(formData.get("applications"));
+    const applicationsEn = processListField(formData.get("applications_en"));
+    const benefits = processListField(formData.get("benefits"));
+    const benefitsEn = processListField(formData.get("benefits_en"));
     
-    // Procesar información básica del producto (variante)
+    // Procesar tabla de tamaños
+    const sizesJson = formData.get("product_sizes") as string;
+    let sizes: Array<{nominal_size: string; real_size: string; price: number; bind_code: string}> = [];
+    if (sizesJson) {
+      try {
+        sizes = JSON.parse(sizesJson);
+      } catch (error) {
+        console.error('Error parseando tamaños:', error);
+      }
+    }
+    
+    // Procesar información básica del producto
     const filterCategoryId = formData.get("filter_category_id") ? parseInt(formData.get("filter_category_id") as string) : null;
-    const bindCode = formData.get("bind_code") as string || null;
-    const nominalSize = formData.get("nominal_size") as string || null;
-    const realSize = formData.get("real_size") as string || null;
-    const price = parseFloat(formData.get("price") as string || "0");
+    const category = formData.get("category") as string || "Filtros de Aire";
+    
+    // Si hay tamaños, crear un producto por cada tamaño
+    // Si no hay tamaños, crear un solo producto con precio 0
+    const price = sizes.length > 0 ? 0 : parseFloat(formData.get("price") as string || "0");
     const currency = (formData.get("currency") as "MXN" | "USD") || "MXN";
     const priceUsd = formData.get("price_usd") ? parseFloat(formData.get("price_usd") as string) : null;
     const stock = parseInt(formData.get("stock") as string || "0");
-    const category = formData.get("category") as string || "Filtros de Aire";
 
-    // Crear el producto con todos los campos
-    const productId = await createProduct({
-      uuid: uuid,
-      filter_category_id: filterCategoryId,
-      bind_code: bindCode,
-      name: formData.get("name") as string,
-      name_en: formData.get("name_en") as string || null,
-      description: formData.get("description") as string || null,
-      description_en: formData.get("description_en") as string || null,
-      price: price,
-      currency: currency,
-      price_usd: priceUsd,
-      nominal_size: nominalSize,
-      real_size: realSize,
-      category: category,
-      stock: stock,
-      status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
-      // Campos técnicos
-      efficiency: efficiency,
-      efficiency_en: efficiencyEn,
-      efficiency_class: efficiencyClass,
-      characteristics: characteristics,
-      characteristics_en: characteristicsEn,
-      frame_material: frameMaterial,
-      max_temperature: maxTemperature,
-      typical_installation: typicalInstallation,
-      typical_installation_en: typicalInstallationEn,
-      applications: applications,
-      applications_en: applicationsEn,
-      benefits: benefits,
-      benefits_en: benefitsEn,
-    });
+    // Si hay tamaños, crear un producto por cada tamaño
+    // Si no hay tamaños, crear un solo producto
+    let productId: number | null = null;
+    
+    if (sizes.length > 0) {
+      // Crear un producto por cada tamaño
+      for (const size of sizes) {
+        const sizeUuid = generateUUID();
+        const sizeProductId = await createProduct({
+          uuid: sizeUuid,
+          filter_category_id: filterCategoryId,
+          bind_code: size.bind_code || null,
+          name: formData.get("name") as string,
+          name_en: formData.get("name_en") as string || null,
+          description: formData.get("description") as string || null,
+          description_en: formData.get("description_en") as string || null,
+          price: size.price || 0,
+          currency: currency,
+          price_usd: null,
+          nominal_size: size.nominal_size || null,
+          real_size: size.real_size || null,
+          category: category,
+          stock: stock,
+          status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
+          // Campos técnicos (compartidos entre todas las variantes)
+          efficiency: efficiency,
+          efficiency_en: efficiencyEn,
+          efficiency_class: efficiencyClass,
+          characteristics: characteristics,
+          characteristics_en: characteristicsEn,
+          frame_material: frameMaterial,
+          max_temperature: maxTemperature,
+          typical_installation: typicalInstallation,
+          typical_installation_en: typicalInstallationEn,
+          applications: applications,
+          applications_en: applicationsEn,
+          benefits: benefits,
+          benefits_en: benefitsEn,
+        });
+        
+        // Guardar el ID del primer producto creado
+        if (!productId) {
+          productId = sizeProductId;
+        }
+      }
+    } else {
+      // Crear un solo producto sin tamaño específico
+      productId = await createProduct({
+        uuid: uuid,
+        filter_category_id: filterCategoryId,
+        bind_code: null,
+        name: formData.get("name") as string,
+        name_en: formData.get("name_en") as string || null,
+        description: formData.get("description") as string || null,
+        description_en: formData.get("description_en") as string || null,
+        price: price,
+        currency: currency,
+        price_usd: priceUsd,
+        nominal_size: null,
+        real_size: null,
+        category: category,
+        stock: stock,
+        status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
+        // Campos técnicos
+        efficiency: efficiency,
+        efficiency_en: efficiencyEn,
+        efficiency_class: efficiencyClass,
+        characteristics: characteristics,
+        characteristics_en: characteristicsEn,
+        frame_material: frameMaterial,
+        max_temperature: maxTemperature,
+        typical_installation: typicalInstallation,
+        typical_installation_en: typicalInstallationEn,
+        applications: applications,
+        applications_en: applicationsEn,
+        benefits: benefits,
+        benefits_en: benefitsEn,
+      });
+    }
 
     if (!productId) {
       error = "Error al crear el producto";
@@ -184,7 +259,7 @@ if (Astro.request.method === "POST") {
 
 <AdminLayout title="Nuevo Producto">
   <div class="container mx-auto px-4 py-8">
-    <!-- Header -->
+      <!-- Header -->
     <div class="mb-8">
       <div class="flex items-center gap-4">
         <a
@@ -204,7 +279,7 @@ if (Astro.request.method === "POST") {
               d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
           </svg>
         </a>
-        <div>
+          <div>
           <h1 class="text-3xl font-bold text-gray-900">
             Nuevo Producto
           </h1>
@@ -239,7 +314,7 @@ if (Astro.request.method === "POST") {
 
     {success && (
       <div class="mb-6 rounded-lg border border-green-300 bg-green-50 p-4">
-        <div class="flex">
+          <div class="flex">
           <svg
             class="h-5 w-5 text-green-400"
             fill="currentColor"
@@ -250,18 +325,18 @@ if (Astro.request.method === "POST") {
               d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
               clip-rule="evenodd"
             />
-          </svg>
-          <div class="ml-3">
+              </svg>
+            <div class="ml-3">
             <p class="text-sm font-medium text-green-800">
               Producto creado exitosamente
             </p>
           </div>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
-    <!-- Formulario -->
-    <form method="POST" class="space-y-8">
+      <!-- Formulario -->
+      <form method="POST" class="space-y-8">
       <!-- Información Básica -->
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
@@ -285,29 +360,29 @@ if (Astro.request.method === "POST") {
             <label for="name" class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
               <span>Nombre (Español)</span>
               <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              required
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                required
               placeholder="Ej: Mini pleat sello gel downstream"
               class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
+              />
             <p class="mt-1.5 text-xs text-gray-500">
               Nombre principal del producto en español
             </p>
-          </div>
+            </div>
 
-          <div>
+            <div>
             <label
               for="name_en"
               class="mb-2 block text-sm font-semibold text-gray-700"
             >
               Nombre (Inglés)
-            </label>
-            <input
-              type="text"
+              </label>
+              <input
+                type="text"
               id="name_en"
               name="name_en"
               placeholder="Ej: Mini pleat gel seal downstream"
@@ -376,14 +451,14 @@ if (Astro.request.method === "POST") {
               Asigna el producto a una categoría de filtro y define sus características de tamaño y precio
             </p>
           </div>
-        </div>
+            </div>
 
         <div class="grid gap-6 md:grid-cols-2">
-          <div>
+            <div>
             <label for="filter_category_id" class="mb-2 block text-sm font-semibold text-gray-700">
               Categoría de Filtro
-            </label>
-            <select
+              </label>
+              <select
               id="filter_category_id"
               name="filter_category_id"
               class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -392,7 +467,7 @@ if (Astro.request.method === "POST") {
               {filterCategories.map(cat => (
                 <option value={cat.id} selected={preselectedCategoryId === cat.id}>{cat.name}</option>
               ))}
-            </select>
+              </select>
             <p class="mt-1.5 text-xs text-gray-500">
               Selecciona la categoría de filtro a la que pertenece este producto
             </p>
@@ -438,31 +513,31 @@ if (Astro.request.method === "POST") {
               placeholder="Ej: 231 x 231 x 75 mm"
               class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
-          </div>
-
-          <div>
-            <label for="price" class="mb-2 block text-sm font-semibold text-gray-700">
-              Precio (MXN) <span class="text-red-500">*</span>
-            </label>
-            <div class="relative">
-              <span class="absolute left-3 top-2.5 text-gray-500">$</span>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                required
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                class="mt-1 block w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
             </div>
-          </div>
 
-          <div>
+            <div>
+            <label for="price" class="mb-2 block text-sm font-semibold text-gray-700">
+                Precio (MXN) <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+              <span class="absolute left-3 top-2.5 text-gray-500">$</span>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                class="mt-1 block w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <div>
             <label for="price_usd" class="mb-2 block text-sm font-semibold text-gray-700">
               Precio (USD)
-            </label>
+              </label>
             <div class="relative">
               <span class="absolute left-3 top-2.5 text-gray-500">$</span>
               <input
@@ -489,12 +564,12 @@ if (Astro.request.method === "POST") {
               <option value="MXN">MXN - Pesos Mexicanos</option>
               <option value="USD">USD - Dólares Americanos</option>
             </select>
-          </div>
+            </div>
 
           <div>
             <label for="stock" class="mb-2 block text-sm font-semibold text-gray-700">
               Stock/Inventario
-            </label>
+              </label>
             <input
               type="number"
               id="stock"
@@ -517,7 +592,7 @@ if (Astro.request.method === "POST") {
             <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
-          </div>
+            </div>
           <div>
             <h2 class="text-xl font-bold text-gray-900">
               Especificaciones Técnicas
@@ -530,28 +605,22 @@ if (Astro.request.method === "POST") {
 
         <div class="grid gap-6 md:grid-cols-2">
           <div>
-            <label for="efficiency" class="mb-2 block text-sm font-semibold text-gray-700">
-              Eficiencia (Español)
-            </label>
-            <input
-              type="text"
+            <DynamicListInput
               id="efficiency"
               name="efficiency"
+              label="Eficiencia (Español)"
               placeholder="Ej: 99.997%"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              helpText="Agrega valores de eficiencia (uno por línea)"
             />
           </div>
 
           <div>
-            <label for="efficiency_en" class="mb-2 block text-sm font-semibold text-gray-700">
-              Eficiencia (Inglés)
-            </label>
-            <input
-              type="text"
+            <DynamicListInput
               id="efficiency_en"
               name="efficiency_en"
+              label="Eficiencia (Inglés)"
               placeholder="Ej: 99.997%"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              helpText="Add efficiency values (one per line)"
             />
           </div>
 
@@ -568,25 +637,25 @@ if (Astro.request.method === "POST") {
             />
           </div>
 
-          <div>
+            <div>
             <label for="frame_material" class="mb-2 block text-sm font-semibold text-gray-700">
               Material del Marco
-            </label>
-            <input
-              type="text"
+              </label>
+              <input
+                type="text"
               id="frame_material"
               name="frame_material"
               placeholder="Ej: Aluminio"
               class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-          </div>
+              />
+            </div>
 
-          <div>
+            <div>
             <label for="max_temperature" class="mb-2 block text-sm font-semibold text-gray-700">
               Temperatura Máxima
-            </label>
-            <input
-              type="text"
+              </label>
+              <input
+                type="text"
               id="max_temperature"
               name="max_temperature"
               placeholder="Ej: 70ºC"
@@ -597,32 +666,23 @@ if (Astro.request.method === "POST") {
 
         <div class="mt-6 grid gap-6 md:grid-cols-2">
           <div>
-            <label for="characteristics" class="mb-2 block text-sm font-semibold text-gray-700">
-              Características (Español)
-            </label>
-            <textarea
+            <DynamicListInput
               id="characteristics"
               name="characteristics"
-              rows="4"
-              placeholder="Una característica por línea&#10;Ej:&#10;Marco de aluminio&#10;Temperatura max. 70ºC"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            ></textarea>
-            <p class="mt-1.5 text-xs text-gray-500">
-              Una característica por línea
-            </p>
+              label="Características (Español)"
+              placeholder="Ej: Marco de aluminio"
+              helpText="Una característica por línea"
+            />
           </div>
 
           <div>
-            <label for="characteristics_en" class="mb-2 block text-sm font-semibold text-gray-700">
-              Características (Inglés)
-            </label>
-            <textarea
+            <DynamicListInput
               id="characteristics_en"
               name="characteristics_en"
-              rows="4"
-              placeholder="One characteristic per line"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            ></textarea>
+              label="Características (Inglés)"
+              placeholder="Ej: Aluminum frame"
+              helpText="One characteristic per line"
+            />
           </div>
         </div>
       </div>
@@ -694,29 +754,23 @@ if (Astro.request.method === "POST") {
 
         <div class="grid gap-6 md:grid-cols-2">
           <div>
-            <label for="applications" class="mb-2 block text-sm font-semibold text-gray-700">
-              Aplicaciones (Español)
-            </label>
-            <textarea
+            <DynamicListInput
               id="applications"
               name="applications"
-              rows="4"
-              placeholder="Ej: Cuartos limpios ISO. Industria de productos electrónicos..."
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            ></textarea>
+              label="Aplicaciones (Español)"
+              placeholder="Ej: Cuartos limpios ISO"
+              helpText="Una aplicación por línea"
+            />
           </div>
 
           <div>
-            <label for="applications_en" class="mb-2 block text-sm font-semibold text-gray-700">
-              Aplicaciones (Inglés)
-            </label>
-            <textarea
+            <DynamicListInput
               id="applications_en"
               name="applications_en"
-              rows="4"
-              placeholder="Ej: ISO cleanrooms. Electronics industry..."
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            ></textarea>
+              label="Aplicaciones (Inglés)"
+              placeholder="Ej: ISO cleanrooms"
+              helpText="One application per line"
+            />
           </div>
         </div>
       </div>
@@ -741,34 +795,49 @@ if (Astro.request.method === "POST") {
 
         <div class="grid gap-6 md:grid-cols-2">
           <div>
-            <label for="benefits" class="mb-2 block text-sm font-semibold text-gray-700">
-              Beneficios (Español)
-            </label>
-            <textarea
+            <DynamicListInput
               id="benefits"
               name="benefits"
-              rows="4"
-              placeholder="Un beneficio por línea&#10;Ej:&#10;Compacto y liviano&#10;Alta capacidad y tiempo de vida"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            ></textarea>
-            <p class="mt-1.5 text-xs text-gray-500">
-              Un beneficio por línea
-            </p>
+              label="Beneficios (Español)"
+              placeholder="Ej: Compacto y liviano"
+              helpText="Un beneficio por línea"
+            />
           </div>
 
           <div>
-            <label for="benefits_en" class="mb-2 block text-sm font-semibold text-gray-700">
-              Beneficios (Inglés)
-            </label>
-            <textarea
+            <DynamicListInput
               id="benefits_en"
               name="benefits_en"
-              rows="4"
-              placeholder="One benefit per line"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            ></textarea>
+              label="Beneficios (Inglés)"
+              placeholder="Ej: Compact and lightweight"
+              helpText="One benefit per line"
+            />
           </div>
         </div>
+      </div>
+
+      <!-- Tabla de Tamaños -->
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100">
+            <svg class="h-6 w-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Tamaños/Variantes
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Agrega los diferentes tamaños disponibles para este producto. Si agregas tamaños, se crearán productos separados para cada uno.
+            </p>
+          </div>
+        </div>
+
+        <ProductSizesTable
+          id="product-sizes"
+          name="product_sizes"
+        />
       </div>
 
       <!-- Imágenes -->
@@ -865,8 +934,8 @@ if (Astro.request.method === "POST") {
           </svg>
           Crear Producto
         </button>
-      </div>
-    </form>
+        </div>
+      </form>
   </div>
 </AdminLayout>
 

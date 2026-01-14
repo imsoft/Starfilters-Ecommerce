@@ -10,6 +10,8 @@ import { getProductImages } from "@/lib/database";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
 import { ProductImageUploader } from "@/components/ui/ProductImageUploader";
+import DynamicListInput from "@/components/admin/DynamicListInput.astro";
+import ProductSizesTable from "@/components/admin/ProductSizesTable.astro";
 
 export const prerender = false;
 
@@ -125,6 +127,48 @@ if (Astro.request.method === "POST") {
     console.error("Error procesando formulario:", err);
     error = err instanceof Error ? err.message : "Error desconocido";
   }
+}
+
+// Función helper para procesar campos de lista
+function processListField(field: string | FormDataEntryValue | null): string | null {
+  if (!field) return null;
+  if (typeof field === 'string') {
+    try {
+      const parsed = JSON.parse(field);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(item => item && item.trim()).join('\n');
+      }
+      return field;
+    } catch {
+      return field;
+    }
+  }
+  return null;
+}
+
+// Función helper para convertir texto a array para DynamicListInput
+function textToArray(text: string | null | undefined): string[] {
+  if (!text) return [];
+  return text.split('\n').filter(item => item && item.trim());
+}
+
+// Preparar tamaños para la tabla (obtener de variantes relacionadas)
+let productSizes: Array<{nominal_size: string; real_size: string; price: number; bind_code: string}> = [];
+if (relatedVariants.length > 0) {
+  productSizes = relatedVariants.map(v => ({
+    nominal_size: v.nominal_size || '',
+    real_size: v.real_size || '',
+    price: v.price || 0,
+    bind_code: v.bind_code || ''
+  }));
+} else if (product.nominal_size || product.real_size || product.bind_code) {
+  // Si el producto actual tiene información de tamaño, agregarlo
+  productSizes.push({
+    nominal_size: product.nominal_size || '',
+    real_size: product.real_size || '',
+    price: product.price || 0,
+    bind_code: product.bind_code || ''
+  });
 }
 ---
 
@@ -475,30 +519,24 @@ if (Astro.request.method === "POST") {
 
         <div class="grid gap-6 md:grid-cols-2">
           <div>
-            <label for="efficiency" class="mb-2 block text-sm font-semibold text-gray-700">
-              Eficiencia (Español)
-            </label>
-            <input
-              type="text"
+            <DynamicListInput
               id="efficiency"
               name="efficiency"
-              value={product.efficiency || ""}
+              label="Eficiencia (Español)"
               placeholder="Ej: 99.997%"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              initialItems={textToArray(product.efficiency)}
+              helpText="Agrega valores de eficiencia (uno por línea)"
             />
           </div>
 
           <div>
-            <label for="efficiency_en" class="mb-2 block text-sm font-semibold text-gray-700">
-              Eficiencia (Inglés)
-            </label>
-            <input
-              type="text"
+            <DynamicListInput
               id="efficiency_en"
               name="efficiency_en"
-              value={product.efficiency_en || ""}
+              label="Eficiencia (Inglés)"
               placeholder="Ej: 99.997%"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              initialItems={textToArray(product.efficiency_en)}
+              helpText="Add efficiency values (one per line)"
             />
           </div>
 
@@ -641,29 +679,25 @@ if (Astro.request.method === "POST") {
 
         <div class="grid gap-6 md:grid-cols-2">
           <div>
-            <label for="applications" class="mb-2 block text-sm font-semibold text-gray-700">
-              Aplicaciones (Español)
-            </label>
-            <textarea
+            <DynamicListInput
               id="applications"
               name="applications"
-              rows="4"
-              placeholder="Ej: Cuartos limpios ISO. Industria de productos electrónicos..."
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >{product.applications || ""}</textarea>
+              label="Aplicaciones (Español)"
+              placeholder="Ej: Cuartos limpios ISO"
+              initialItems={textToArray(product.applications)}
+              helpText="Una aplicación por línea"
+            />
           </div>
 
           <div>
-            <label for="applications_en" class="mb-2 block text-sm font-semibold text-gray-700">
-              Aplicaciones (Inglés)
-            </label>
-            <textarea
+            <DynamicListInput
               id="applications_en"
               name="applications_en"
-              rows="4"
-              placeholder="Ej: ISO cleanrooms. Electronics industry..."
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >{product.applications_en || ""}</textarea>
+              label="Aplicaciones (Inglés)"
+              placeholder="Ej: ISO cleanrooms"
+              initialItems={textToArray(product.applications_en)}
+              helpText="One application per line"
+            />
           </div>
         </div>
       </div>
@@ -688,34 +722,55 @@ if (Astro.request.method === "POST") {
 
         <div class="grid gap-6 md:grid-cols-2">
           <div>
-            <label for="benefits" class="mb-2 block text-sm font-semibold text-gray-700">
-              Beneficios (Español)
-            </label>
-            <textarea
+            <DynamicListInput
               id="benefits"
               name="benefits"
-              rows="4"
-              placeholder="Un beneficio por línea"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >{product.benefits || ""}</textarea>
+              label="Beneficios (Español)"
+              placeholder="Ej: Compacto y liviano"
+              initialItems={textToArray(product.benefits)}
+              helpText="Un beneficio por línea"
+            />
           </div>
 
           <div>
-            <label for="benefits_en" class="mb-2 block text-sm font-semibold text-gray-700">
-              Beneficios (Inglés)
-            </label>
-            <textarea
+            <DynamicListInput
               id="benefits_en"
               name="benefits_en"
-              rows="4"
-              placeholder="One benefit per line"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >{product.benefits_en || ""}</textarea>
+              label="Beneficios (Inglés)"
+              placeholder="Ej: Compact and lightweight"
+              initialItems={textToArray(product.benefits_en)}
+              helpText="One benefit per line"
+            />
           </div>
         </div>
       </div>
 
-      <!-- Sección: Variantes/Tamaños -->
+      <!-- Tabla de Tamaños -->
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100">
+            <svg class="h-6 w-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Tamaños/Variantes
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Gestiona los diferentes tamaños disponibles para este producto. Nota: Los tamaños se gestionan como productos separados con el mismo filter_category_id.
+            </p>
+          </div>
+        </div>
+
+        <ProductSizesTable
+          id="product-sizes"
+          name="product_sizes"
+          initialSizes={productSizes}
+        />
+      </div>
+
+      <!-- Sección: Variantes/Tamaños (Lista de productos relacionados) -->
       <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div class="mb-6 flex items-center justify-between border-b border-gray-200 pb-4">
           <div class="flex items-center gap-3">
