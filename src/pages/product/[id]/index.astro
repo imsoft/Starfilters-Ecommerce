@@ -2,7 +2,7 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getProductByUuid, getActiveProducts } from "@/lib/product-service";
+import { getProductByUuid, getActiveProducts, getProductsByFilterCategory } from "@/lib/product-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
@@ -21,6 +21,18 @@ const product = await getProductByUuid(uuid);
 // Si no existe el producto, redirigir
 if (!product) {
   return Astro.redirect('/filtros');
+}
+
+// Obtener variantes relacionadas (otros productos con el mismo filter_category_id)
+let relatedVariants: Product[] = [];
+if (product.filter_category_id) {
+  try {
+    const allVariants = await getProductsByFilterCategory(product.filter_category_id);
+    // Excluir el producto actual y solo mostrar activos
+    relatedVariants = allVariants.filter(p => p.uuid !== product.uuid && p.status === 'active');
+  } catch (error) {
+    console.error('Error obteniendo variantes relacionadas:', error);
+  }
 }
 
 // Obtener productos relacionados
@@ -277,6 +289,185 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           />
         </div>
       </div>
+
+      <!-- Tabla de Tamaños/Variantes -->
+      {relatedVariants.length > 0 && (
+        <section class="mt-24">
+          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold tracking-tight text-foreground mb-8">
+              Tamaños Disponibles
+            </h2>
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                      Medida Nominal
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                      Medida Real
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                      Precio
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                      Código Bind
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                      Stock
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                      Acción
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  {relatedVariants.map((variant) => (
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {variant.nominal_size || '-'}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {variant.real_size || '-'}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {variant.currency === 'USD' && variant.price_usd ? (
+                          <div>
+                            <span class="text-xs text-gray-500 line-through">${variant.price_usd.toFixed(2)} USD</span>
+                            <br />
+                            <span class="font-semibold text-lg">{formatPrice(variant.price)}</span>
+                          </div>
+                        ) : (
+                          <span class="font-semibold text-lg">{formatPrice(variant.price)}</span>
+                        )}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {variant.bind_code || '-'}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {variant.stock > 0 ? (
+                          <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                            En stock ({variant.stock})
+                          </span>
+                        ) : (
+                          <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                            Agotado
+                          </span>
+                        )}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        {variant.stock > 0 ? (
+                          <a
+                            href={`/product/${variant.uuid}`}
+                            class="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+                          >
+                            Ver Detalles
+                          </a>
+                        ) : (
+                          <span class="text-gray-400">No disponible</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <!-- Especificaciones Técnicas -->
+      {(product.efficiency || product.efficiency_class || product.characteristics || product.applications || product.benefits) && (
+        <section class="mt-24">
+          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold tracking-tight text-foreground mb-8">
+              Especificaciones Técnicas
+            </h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Eficiencia */}
+              {(product.efficiency || product.efficiency_class) && (
+                <div class="rounded-lg border border-gray-200 bg-white p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Eficiencia
+                  </h3>
+                  {product.efficiency && (
+                    <p class="text-gray-700 mb-2">{product.efficiency}</p>
+                  )}
+                  {product.efficiency_class && (
+                    <p class="text-sm text-gray-600">
+                      <span class="font-medium">Clase EN1822:</span> {product.efficiency_class}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Características */}
+              {product.characteristics && (
+                <div class="rounded-lg border border-gray-200 bg-white p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Características
+                  </h3>
+                  <ul class="list-disc list-inside space-y-2 text-gray-700">
+                    {product.characteristics.split('\n').filter(line => line.trim()).map((line) => (
+                      <li>{line.trim()}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Aplicaciones */}
+              {product.applications && (
+                <div class="rounded-lg border border-gray-200 bg-white p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Aplicaciones
+                  </h3>
+                  <p class="text-gray-700">{product.applications}</p>
+                </div>
+              )}
+
+              {/* Beneficios */}
+              {product.benefits && (
+                <div class="rounded-lg border border-gray-200 bg-white p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Beneficios
+                  </h3>
+                  <ul class="list-disc list-inside space-y-2 text-gray-700">
+                    {product.benefits.split('\n').filter(line => line.trim()).map((line) => (
+                      <li>{line.trim()}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Instalación Típica */}
+              {product.typical_installation && (
+                <div class="rounded-lg border border-gray-200 bg-white p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Instalación Típica
+                  </h3>
+                  <p class="text-gray-700">{product.typical_installation}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       <!-- Productos relacionados -->
       {relatedProducts.length > 0 && (

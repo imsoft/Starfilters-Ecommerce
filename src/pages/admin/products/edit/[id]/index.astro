@@ -3,6 +3,7 @@ import AdminLayout from "@/layouts/adminLayout.astro";
 import {
   getProductById,
   updateProduct as updateProductService,
+  getProductsByFilterCategory,
 } from "@/lib/product-service";
 import { getAllCategories } from "@/lib/filter-category-service";
 import { getProductImages } from "@/lib/database";
@@ -40,6 +41,18 @@ try {
   filterCategories = await getAllCategories();
 } catch (error) {
   console.error('Error obteniendo categorías:', error);
+}
+
+// Obtener variantes relacionadas (otros productos con el mismo filter_category_id)
+let relatedVariants: any[] = [];
+if (product.filter_category_id) {
+  try {
+    const allVariants = await getProductsByFilterCategory(product.filter_category_id);
+    // Excluir el producto actual
+    relatedVariants = allVariants.filter(p => p.id !== product.id);
+  } catch (error) {
+    console.error('Error obteniendo variantes relacionadas:', error);
+  }
 }
 
 let error: string | null = null;
@@ -700,6 +713,143 @@ if (Astro.request.method === "POST") {
             >{product.benefits_en || ""}</textarea>
           </div>
         </div>
+      </div>
+
+      <!-- Sección: Variantes/Tamaños -->
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center justify-between border-b border-gray-200 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100">
+              <svg class="h-6 w-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-gray-900">
+                Tamaños/Variantes
+              </h2>
+              <p class="mt-1 text-sm text-gray-500">
+                Gestiona los diferentes tamaños y variantes de este producto
+              </p>
+            </div>
+          </div>
+          {product.filter_category_id && (
+            <a
+              href={`/admin/products/add?filter_category_id=${product.filter_category_id}`}
+              class="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Agregar Variante
+            </a>
+          )}
+        </div>
+
+        {relatedVariants.length > 0 ? (
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Código Bind
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Medida Nominal
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Medida Real
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Precio
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Stock
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                {relatedVariants.map((variant) => (
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {variant.bind_code || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {variant.nominal_size || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {variant.real_size || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {variant.currency === 'USD' && variant.price_usd ? (
+                        <>
+                          <span class="text-xs text-gray-500 line-through">${variant.price_usd.toFixed(2)} USD</span>
+                          <br />
+                          <span class="font-semibold">${variant.price.toFixed(2)} MXN</span>
+                        </>
+                      ) : (
+                        <span class="font-semibold">${variant.price.toFixed(2)} {variant.currency || 'MXN'}</span>
+                      )}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {variant.stock || 0}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                        variant.status === 'active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : variant.status === 'draft'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {variant.status === 'active' ? 'Activo' : variant.status === 'draft' ? 'Borrador' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <a
+                        href={`/admin/products/edit/${variant.id}`}
+                        class="text-blue-600 hover:text-blue-900"
+                      >
+                        Editar
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div class="text-center py-8">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No hay variantes</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              {product.filter_category_id 
+                ? 'Agrega variantes relacionadas a este producto.'
+                : 'Asigna una categoría de filtro para poder agregar variantes.'}
+            </p>
+            {product.filter_category_id && (
+              <div class="mt-6">
+                <a
+                  href={`/admin/products/add?filter_category_id=${product.filter_category_id}`}
+                  class="inline-flex items-center rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500"
+                >
+                  <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Agregar Primera Variante
+                </a>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <!-- Sección: Imágenes -->

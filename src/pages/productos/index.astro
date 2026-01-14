@@ -2,7 +2,7 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getActiveProducts, getProductsByFilterCategory } from "@/lib/product-service";
+import { getActiveProducts, getProductsByFilterCategory, getProductsByFilterCategory as getVariantsByCategory } from "@/lib/product-service";
 import { getCategoryById } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -43,6 +43,10 @@ let products: Array<{
   nominal_size?: string;
   real_size?: string;
   bind_code?: string;
+  filter_category_id?: number | null;
+  variantCount?: number;
+  minPrice?: number;
+  maxPrice?: number;
 }> = [];
 
 try {
@@ -58,9 +62,31 @@ try {
     console.log(`📦 Página /productos: ${allProducts.length} productos activos encontrados`);
   }
 
-  // Preparar productos con imágenes
-  products = allProducts.map(product => {
+  // Preparar productos con imágenes y contar variantes
+  products = await Promise.all(allProducts.map(async (product) => {
     const imageUrl = getProductPlaceholderImage(product.category || 'productos');
+    
+    // Contar variantes relacionadas si tiene filter_category_id
+    let variantCount = 0;
+    let minPrice = product.price || 0;
+    let maxPrice = product.price || 0;
+    
+    if (product.filter_category_id) {
+      try {
+        const variants = await getVariantsByCategory(product.filter_category_id);
+        variantCount = variants.length;
+        if (variants.length > 0) {
+          const prices = variants.map(v => v.price || 0).filter(p => p > 0);
+          if (prices.length > 0) {
+            minPrice = Math.min(...prices);
+            maxPrice = Math.max(...prices);
+          }
+        }
+      } catch (error) {
+        console.error('Error obteniendo variantes para producto', product.id, error);
+      }
+    }
+    
     return {
       id: product.id,
       uuid: product.uuid,
@@ -72,9 +98,13 @@ try {
       imageUrl: imageUrl,
       nominal_size: product.nominal_size || undefined,
       real_size: product.real_size || undefined,
-      bind_code: product.bind_code || undefined
+      bind_code: product.bind_code || undefined,
+      filter_category_id: product.filter_category_id || undefined,
+      variantCount: variantCount,
+      minPrice: minPrice,
+      maxPrice: maxPrice
     };
-  });
+  }));
   
   console.log(`✅ Página /productos: ${products.length} productos listos para mostrar`);
 } catch (error) {
@@ -323,23 +353,58 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
               </h3>
             </a>
             <p class="mt-1 text-sm text-muted-foreground">{product.category}</p>
-            <div class="mt-2 flex items-center justify-between">
-              <p class="text-lg font-medium text-foreground">
-                {formatPrice(product.price)}
+            
+            {/* Mostrar información de variantes si existe */}
+            {product.variantCount > 0 && (
+              <div class="mt-2">
+                <p class="text-xs text-blue-600 font-medium">
+                  {product.variantCount} {product.variantCount === 1 ? 'tamaño disponible' : 'tamaños disponibles'}
+                </p>
+                {product.minPrice !== product.maxPrice ? (
+                  <p class="text-sm font-medium text-foreground mt-1">
+                    {formatPrice(product.minPrice)} - {formatPrice(product.maxPrice)}
+                  </p>
+                ) : (
+                  <p class="text-lg font-medium text-foreground mt-1">
+                    {formatPrice(product.price)}
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {product.variantCount === 0 && (
+              <div class="mt-2 flex items-center justify-between">
+                <p class="text-lg font-medium text-foreground">
+                  {formatPrice(product.price)}
+                </p>
+                {product.stock > 0 ? (
+                  <span class="text-xs text-green-600 font-medium">
+                    En stock
+                  </span>
+                ) : (
+                  <span class="text-xs text-red-600 font-medium">
+                    Agotado
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {/* Mostrar tamaño actual si existe */}
+            {product.nominal_size && (
+              <p class="mt-1 text-xs text-muted-foreground">
+                Tamaño: {product.nominal_size}
               </p>
-              {product.stock > 0 ? (
-                <span class="text-xs text-green-600 font-medium">
-                  En stock
-                </span>
-              ) : (
-                <span class="text-xs text-red-600 font-medium">
-                  Agotado
-                </span>
-              )}
-            </div>
+            )}
             
             <div class="mt-auto pt-3">
-              {product.stock > 0 ? (
+              {product.variantCount > 0 ? (
+                <a
+                  href={`/product/${product.uuid}`}
+                  class="relative z-10 w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Ver Tamaños Disponibles
+                </a>
+              ) : product.stock > 0 ? (
                 <button
                   type="button"
                   class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
