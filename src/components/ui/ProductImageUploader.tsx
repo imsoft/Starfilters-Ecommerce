@@ -14,22 +14,77 @@ interface ProductImageUploaderProps {
 }
 
 export function ProductImageUploader({ productId, initialImages = [], onImagesChange }: ProductImageUploaderProps) {
-  const [images, setImages] = useState<ProductImage[]>(initialImages);
+  const [images, setImages] = useState<ProductImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Sincronizar imágenes cuando initialImages cambia (desde el servidor)
+  // Cargar imágenes desde el servidor al montar el componente
   useEffect(() => {
-    if (initialImages && initialImages.length > 0) {
-      console.log('📷 Actualizando imágenes desde initialImages:', initialImages.length);
-      setImages(initialImages);
-    } else if (initialImages && initialImages.length === 0 && images.length > 0) {
-      // Si initialImages está vacío pero tenemos imágenes en el estado, 
-      // podría ser que se recargó la página y debemos refrescar
-      console.log('📷 initialImages está vacío, manteniendo imágenes del estado');
-    }
-  }, [initialImages]);
+    const loadImages = async () => {
+      console.log('📷 [ProductImageUploader] Iniciando carga de imágenes...');
+      console.log('📷 [ProductImageUploader] initialImages recibidas:', initialImages);
+      console.log('📷 [ProductImageUploader] productId:', productId);
+      
+      try {
+        // Intentar cargar desde el servidor primero
+        const response = await fetch(`/api/products/${productId}/images`);
+        console.log('📷 [ProductImageUploader] Respuesta del servidor:', response.status);
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('📷 [ProductImageUploader] Resultado del servidor:', result);
+          
+          if (result.success && result.images && Array.isArray(result.images)) {
+            const serverImages = result.images.map((img: any) => ({
+              id: img.id.toString(),
+              url: img.url,
+              isPrimary: img.isPrimary === true || img.isPrimary === 1 || img.isPrimary === '1'
+            }));
+            console.log('📷 [ProductImageUploader] Imágenes cargadas desde servidor:', serverImages.length, serverImages);
+            setImages(serverImages);
+            onImagesChange?.(serverImages);
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Fallback: usar initialImages si no hay respuesta del servidor
+        if (initialImages && initialImages.length > 0) {
+          console.log('📷 [ProductImageUploader] Usando initialImages como fallback:', initialImages.length);
+          const mappedImages = initialImages.map(img => ({
+            id: img.id.toString(),
+            url: img.url,
+            isPrimary: img.isPrimary === true || img.isPrimary === 1 || img.isPrimary === '1'
+          }));
+          console.log('📷 [ProductImageUploader] Imágenes mapeadas:', mappedImages);
+          setImages(mappedImages);
+          onImagesChange?.(mappedImages);
+        } else {
+          console.log('📷 [ProductImageUploader] No hay imágenes para mostrar');
+          setImages([]);
+        }
+      } catch (error) {
+        console.error('📷 [ProductImageUploader] Error cargando imágenes:', error);
+        // Fallback a initialImages en caso de error
+        if (initialImages && initialImages.length > 0) {
+          console.log('📷 [ProductImageUploader] Usando initialImages por error:', initialImages.length);
+          const mappedImages = initialImages.map(img => ({
+            id: img.id.toString(),
+            url: img.url,
+            isPrimary: img.isPrimary === true || img.isPrimary === 1 || img.isPrimary === '1'
+          }));
+          setImages(mappedImages);
+          onImagesChange?.(mappedImages);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadImages();
+  }, [productId]); // Solo ejecutar cuando productId cambie
   
   // Función para refrescar imágenes desde el servidor
   const refreshImages = async () => {
@@ -245,8 +300,25 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground text-center py-4">
+          Cargando imágenes...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {/* Debug info - remover en producción */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+          Debug: {images.length} imagen(es) cargada(s)
+        </div>
+      )}
+      
       {/* Zona de carga */}
       <div
         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
