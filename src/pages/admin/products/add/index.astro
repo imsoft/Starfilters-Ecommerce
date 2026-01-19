@@ -196,27 +196,40 @@ if (Astro.request.method === "POST") {
 
         // Procesar imágenes de carrusel
         const pendingCarouselImages = formData.get("pending_carousel_images") as string;
+        console.log('📷 Imágenes de carrusel recibidas:', pendingCarouselImages ? 'Sí' : 'No');
+        
         if (pendingCarouselImages) {
-          const carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
-          const { uploadProductImage } = await import('@/lib/cloudinary');
-          const { addProductImage } = await import('@/lib/database');
-          
-          for (let i = 0; i < carouselData.length && i < 4; i++) {
-            const { name, data } = carouselData[i];
-            const base64Data = data.split(',')[1];
-            const buffer = Buffer.from(base64Data, 'base64');
+          try {
+            const carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
+            console.log(`📷 Número de imágenes de carrusel: ${carouselData.length}`);
             
-            const imageUrl = await uploadProductImage(buffer, productId, name);
+            const { uploadProductImage } = await import('@/lib/cloudinary');
+            const { addProductImage } = await import('@/lib/database');
             
-            await addProductImage({
-              uuid: generateUUID(),
-              product_id: productId,
-              image_url: imageUrl,
-              alt_text: `${name} - Carrusel ${i + 1}`,
-              is_primary: false,
-              sort_order: i + 1,
-            });
+            for (let i = 0; i < carouselData.length && i < 4; i++) {
+              const { name, data } = carouselData[i];
+              console.log(`📷 Procesando imagen de carrusel ${i + 1}: ${name}`);
+              
+              const base64Data = data.split(',')[1];
+              const buffer = Buffer.from(base64Data, 'base64');
+              
+              const imageUrl = await uploadProductImage(buffer, productId.toString(), name);
+              console.log(`📷 Imagen ${i + 1} subida a Cloudinary: ${imageUrl}`);
+              
+              const imageId = await addProductImage({
+                product_id: productId,
+                image_url: imageUrl,
+                alt_text: `${name} - Carrusel ${i + 1}`,
+                is_primary: false,
+                sort_order: i + 1,
+              });
+              console.log(`📷 Imagen ${i + 1} guardada en BD con ID: ${imageId}`);
+            }
+          } catch (carouselErr) {
+            console.error('❌ Error procesando imágenes de carrusel:', carouselErr);
           }
+        } else {
+          console.log('📷 No hay imágenes de carrusel pendientes');
         }
       } catch (err) {
         console.error("Error procesando imágenes:", err);
@@ -254,7 +267,7 @@ if (Astro.request.method === "POST") {
       excludeFields={["pending_primary_image", "pending_carousel_images"]}
     />
     
-    <!-- Header -->
+      <!-- Header -->
     <div class="mb-8">
       <div class="flex items-center gap-4">
         <a
