@@ -133,9 +133,9 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 
     <!-- Galería de imágenes de carrusel existentes -->
     {carouselImagesFiltered.length > 0 && (
-      <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4" id="carousel-images-container">
         {carouselImagesFiltered.map((image) => (
-          <div class="relative group">
+          <div class="relative group" data-image-id={image.id}>
             <img
               src={image.image_url}
               alt={image.alt_text || categoryName}
@@ -143,8 +143,8 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             />
             <button
               type="button"
-              onclick={`deleteCarouselImage(${image.id})`}
-              class="absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block"
+              data-delete-image-id={image.id}
+              class="delete-carousel-image-btn absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block cursor-pointer z-10"
               title="Eliminar imagen"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
