@@ -229,7 +229,19 @@ if (Astro.request.method === "POST") {
     }
   } catch (err) {
     console.error("Error creando producto:", err);
-    error = err instanceof Error ? err.message : "Error desconocido";
+    // Mostrar mensaje de error más detallado
+    if (err instanceof Error) {
+      error = `Error: ${err.message}`;
+      // Si es un error de SQL, mostrar más detalles
+      if ('code' in err) {
+        error += ` (Código: ${(err as any).code})`;
+      }
+      if ('sqlMessage' in err) {
+        error += ` - ${(err as any).sqlMessage}`;
+      }
+    } else {
+      error = "Error desconocido al crear el producto";
+    }
   }
 }
 ---
@@ -290,6 +302,9 @@ if (Astro.request.method === "POST") {
           </svg>
           <div class="ml-3">
             <p class="text-sm font-medium text-red-800">{error}</p>
+            <p class="mt-2 text-xs text-red-600">
+              Los datos del formulario se han guardado automáticamente. Recarga la página para recuperarlos.
+            </p>
           </div>
         </div>
       </div>

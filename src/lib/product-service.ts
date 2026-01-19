@@ -139,7 +139,8 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
     return result.insertId;
   } catch (error) {
     console.error('❌ Error creando producto:', error);
-    return null;
+    // Re-lanzar el error para que se pueda mostrar en el frontend
+    throw error;
   }
 };
 
