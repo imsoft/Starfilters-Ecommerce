@@ -512,22 +512,61 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     
     // Usar delegación de eventos para manejar clicks en los botones
     carouselImagesContainer.addEventListener('click', (e) => {
-      const deleteBtn = e.target.closest('.delete-carousel-image-btn');
-      if (deleteBtn) {
+      console.log('🖼️ Click detectado en contenedor de carrusel, target:', e.target);
+      console.log('🖼️ Target tagName:', e.target.tagName);
+      console.log('🖼️ Target classList:', e.target.classList);
+      
+      // Buscar el botón de eliminar (puede ser el SVG o el botón mismo)
+      let deleteBtn = e.target.closest('.delete-carousel-image-btn');
+      
+      // Si no se encuentra, puede ser que el click fue en el SVG dentro del botón
+      if (!deleteBtn && e.target.tagName === 'svg') {
+        deleteBtn = e.target.closest('button');
+        console.log('🖼️ SVG clickeado, buscando botón padre:', deleteBtn);
+      }
+      
+      // También buscar por el path dentro del SVG
+      if (!deleteBtn && e.target.tagName === 'path') {
+        deleteBtn = e.target.closest('button');
+        console.log('🖼️ Path clickeado, buscando botón padre:', deleteBtn);
+      }
+      
+      if (deleteBtn && deleteBtn.classList.contains('delete-carousel-image-btn')) {
         e.preventDefault();
         e.stopPropagation();
         
         const imageId = deleteBtn.getAttribute('data-delete-image-id');
+        console.log('🗑️ Botón eliminar encontrado, imageId:', imageId);
+        
         if (imageId) {
-          console.log('🗑️ Botón eliminar clickeado para imagen ID:', imageId);
+          console.log('🗑️ Eliminando imagen ID:', imageId);
           deleteCarouselImage(parseInt(imageId));
         } else {
           console.error('❌ No se encontró data-delete-image-id en el botón');
+          console.error('❌ Botón completo:', deleteBtn);
+          console.error('❌ Atributos del botón:', Array.from(deleteBtn.attributes).map(attr => `${attr.name}="${attr.value}"`).join(', '));
         }
+      } else {
+        console.log('🖼️ Click no fue en botón eliminar, ignorando');
       }
     });
+    
+    console.log('✅ Event listener agregado al contenedor de carrusel');
   } else {
     console.warn('⚠️ Contenedor carousel-images-container no encontrado');
+    console.warn('⚠️ Intentando buscar de nuevo después de 1 segundo...');
+    setTimeout(() => {
+      const retryContainer = document.getElementById('carousel-images-container');
+      if (retryContainer) {
+        console.log('✅ Contenedor encontrado en segundo intento');
+        // Agregar el listener aquí también
+      } else {
+        console.error('❌ Contenedor aún no encontrado después de 1 segundo');
+      }
+    }, 1000);
   }
+  
+  console.log('🖼️ [CategoryImageManager] Script inicializado completamente');
+  });
 </script>
 
