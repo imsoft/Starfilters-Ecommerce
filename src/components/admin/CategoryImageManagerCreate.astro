@@ -360,11 +360,15 @@
       }
 
       // Procesar imágenes de carrusel
+      console.log('📷 Archivos de carrusel en memoria:', carouselImageFiles.length);
       if (carouselImageFiles.length > 0) {
         try {
           const carouselData: Array<{ name: string; data: string }> = [];
           
-          for (const file of carouselImageFiles) {
+          for (let i = 0; i < carouselImageFiles.length; i++) {
+            const file = carouselImageFiles[i];
+            console.log(`📷 Procesando carrusel ${i + 1}/${carouselImageFiles.length}: ${file.name}`);
+            
             const base64 = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(reader.result as string);
@@ -376,6 +380,7 @@
               name: file.name,
               data: base64,
             });
+            console.log(`✅ Carrusel ${i + 1} convertido a base64`);
           }
           
           let input = form.querySelector('input[name="pending_carousel_images"]') as HTMLInputElement;
@@ -388,9 +393,12 @@
           input.value = JSON.stringify(carouselData);
           
           console.log('✅ Imágenes de carrusel procesadas:', carouselData.length);
+          console.log('📷 Tamaño del JSON:', input.value.length, 'bytes');
         } catch (err) {
           console.error('❌ Error procesando imágenes de carrusel:', err);
         }
+      } else {
+        console.log('⚠️ No hay imágenes de carrusel para procesar');
       }
 
       console.log('📝 Enviando formulario...');
