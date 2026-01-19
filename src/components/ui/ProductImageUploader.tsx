@@ -41,18 +41,25 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
             console.log('📷 [ProductImageUploader] Detalle de imágenes recibidas:', result.images);
             
             const serverImages = result.images.map((img: any) => {
-              const isPrimary = img.isPrimary === true || img.isPrimary === 1 || img.isPrimary === '1';
+              // Determinar si es principal: true, 1, '1', o cualquier valor truthy excepto 0, false, null, undefined
+              const isPrimary = img.isPrimary === true || img.isPrimary === 1 || img.isPrimary === '1' || (img.isPrimary !== false && img.isPrimary !== 0 && img.isPrimary !== null && img.isPrimary !== undefined && img.isPrimary !== '0');
               const mapped = {
                 id: img.id.toString(),
                 url: img.url,
-                isPrimary: isPrimary
+                isPrimary: Boolean(isPrimary) // Asegurar que sea boolean
               };
-              console.log(`📷 [ProductImageUploader] Mapeando imagen:`, { id: mapped.id, url: mapped.url.substring(0, 50) + '...', isPrimary: mapped.isPrimary });
+              console.log(`📷 [ProductImageUploader] Mapeando imagen:`, { 
+                id: mapped.id, 
+                url: mapped.url.substring(0, 50) + '...', 
+                isPrimary: mapped.isPrimary,
+                originalValue: img.isPrimary,
+                type: typeof img.isPrimary
+              });
               return mapped;
             });
             
-            const primaryCount = serverImages.filter(img => img.isPrimary).length;
-            const carouselCount = serverImages.filter(img => !img.isPrimary).length;
+            const primaryCount = serverImages.filter(img => img.isPrimary === true).length;
+            const carouselCount = serverImages.filter(img => img.isPrimary === false).length;
             
             console.log(`📷 [ProductImageUploader] Resumen: ${primaryCount} principal(es), ${carouselCount} carrusel`);
             console.log('📷 [ProductImageUploader] Todas las imágenes mapeadas:', serverImages);
@@ -439,7 +446,7 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
       {images.length > 0 && (
         <div className="space-y-4">
           {/* Mensaje si no hay imágenes de carrusel pero sí hay principal */}
-          {images.filter(img => img.isPrimary).length > 0 && images.filter(img => !img.isPrimary).length === 0 && (
+          {images.filter(img => img.isPrimary === true).length > 0 && images.filter(img => img.isPrimary === false).length === 0 && (
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
               <p className="text-sm text-yellow-800">
                 ℹ️ Solo hay imagen principal. Puedes agregar imágenes de carrusel arrastrándolas o seleccionándolas arriba.
@@ -448,11 +455,11 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
           )}
           
           {/* Imagen principal primero */}
-          {images.filter(img => img.isPrimary).length > 0 && (
+          {images.filter(img => img.isPrimary === true).length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-gray-700">Imagen Principal</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {images.filter(img => img.isPrimary).map((image) => (
+                {images.filter(img => img.isPrimary === true).map((image) => (
                   <div key={image.id} className="relative w-full h-48 group">
                     <img 
                       className="w-full h-full rounded-lg object-cover border-2 border-blue-500 border-border" 
@@ -485,14 +492,14 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
             </div>
           )}
           
-          {/* Imágenes de carrusel */}
-          {images.filter(img => !img.isPrimary).length > 0 && (
+          {/* Imágenes de carrusel - SIEMPRE mostrar si hay imágenes que NO son principales */}
+          {images.filter(img => img.isPrimary === false).length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-gray-700">
-                Imágenes de Carrusel ({images.filter(img => !img.isPrimary).length})
+                Imágenes de Carrusel ({images.filter(img => img.isPrimary === false).length})
               </h3>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {images.filter(img => !img.isPrimary).map((image) => (
+                {images.filter(img => img.isPrimary === false).map((image) => (
                   <div key={image.id} className="relative w-full h-32 group">
                     <img 
                       className="w-full h-full rounded-lg object-cover border border-border" 
