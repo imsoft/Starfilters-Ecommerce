@@ -89,17 +89,30 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
   // Función para refrescar imágenes desde el servidor
   const refreshImages = async () => {
     try {
+      console.log('🔄 Iniciando refresh de imágenes...');
       // Cargar imágenes directamente desde la base de datos
       const response = await fetch(`/api/products/${productId}/images`);
+      console.log('🔄 Respuesta del refresh:', response.status, response.ok);
+      
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.images) {
-          const serverImages = result.images.map((img: any) => ({
-            id: img.id.toString(),
-            url: img.url,
-            isPrimary: img.isPrimary === true || img.isPrimary === 1
-          }));
-          console.log('📷 Imágenes refrescadas desde servidor:', serverImages.length);
+        console.log('🔄 Resultado del refresh:', result);
+        
+        if (result.success && result.images && Array.isArray(result.images)) {
+          const serverImages = result.images.map((img: any) => {
+            const mapped = {
+              id: img.id.toString(),
+              url: img.url,
+              isPrimary: img.isPrimary === true || img.isPrimary === 1 || img.isPrimary === '1'
+            };
+            console.log('🔄 Mapeando imagen:', mapped);
+            return mapped;
+          });
+          
+          console.log(`🔄 Total de imágenes refrescadas: ${serverImages.length}`);
+          console.log('🔄 Imágenes:', serverImages);
+          
+          // Forzar actualización del estado
           setImages(serverImages);
           onImagesChange?.(serverImages);
           
@@ -107,10 +120,19 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
           window.dispatchEvent(new CustomEvent('product-images-changed', { 
             detail: { images: serverImages } 
           }));
+          
+          return serverImages;
+        } else {
+          console.warn('🔄 No se recibieron imágenes válidas en el refresh');
+          return [];
         }
+      } else {
+        console.error('🔄 Error en la respuesta del refresh:', response.status, response.statusText);
+        return [];
       }
     } catch (error) {
-      console.error('Error refrescando imágenes:', error);
+      console.error('❌ Error refrescando imágenes:', error);
+      return [];
     }
   };
 
@@ -215,11 +237,27 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
       }
       
       // Esperar un poco más para asegurar que la BD se haya actualizado
+      console.log('📷 Esperando 1 segundo para que la BD se actualice...');
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Refrescar todas las imágenes desde el servidor
-      console.log('📷 Refrescando imágenes desde el servidor...');
-      await refreshImages();
+      // Refrescar todas las imágenes desde el servidor (múltiples intentos)
+      console.log('📷 Refrescando imágenes desde el servidor (intento 1)...');
+      let refreshedImages = await refreshImages();
+      
+      // Si no hay imágenes o hay menos de las esperadas, intentar de nuevo
+      if (refreshedImages.length < files.length) {
+        console.log('📷 Pocas imágenes detectadas, esperando 1 segundo más...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('📷 Refrescando imágenes desde el servidor (intento 2)...');
+        refreshedImages = await refreshImages();
+      }
+      
+      if (refreshedImages.length === 0) {
+        console.warn('⚠️ No se pudieron cargar las imágenes después de las subidas');
+        alert('Las imágenes se subieron pero no se pudieron cargar. Por favor, recarga la página.');
+      } else {
+        console.log(`✅ Se cargaron ${refreshedImages.length} imagen(es) exitosamente`);
+      }
       
       // Limpiar input
       if (fileInputRef.current) {
@@ -309,12 +347,29 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
 
   return (
     <div className="space-y-4">
-      {/* Debug info - remover en producción */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
-          Debug: {images.length} imagen(es) cargada(s)
-        </div>
-      )}
+      {/* Botón para refrescar manualmente */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={async () => {
+            console.log('🔄 Refresh manual iniciado');
+            await refreshImages();
+          }}
+          className="rounded-md bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+        >
+          🔄 Actualizar imágenes
+        </button>
+      </div>
+      
+      {/* Debug info */}
+      <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+        <strong>Debug:</strong> {images.length} imagen(es) cargada(s) | Product ID: {productId}
+        {images.length > 0 && (
+          <div className="mt-1">
+            IDs: {images.map(img => img.id).join(', ')}
+          </div>
+        )}
+      </div>
       
       {/* Zona de carga */}
       <div
