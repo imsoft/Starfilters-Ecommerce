@@ -206,7 +206,8 @@ const carouselImagesFiltered = carouselImages.filter(img => !img.is_primary);
 
   if (primaryImageInput) {
     primaryImageInput.addEventListener('change', async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
+      const target = e.target;
+      const file = target && target.files ? target.files[0] : null;
       if (!file) return;
 
       // Validar tamaño (10MB)
@@ -319,7 +320,8 @@ const carouselImagesFiltered = carouselImages.filter(img => !img.is_primary);
 
   if (carouselImageInput) {
     carouselImageInput.addEventListener('change', async (e) => {
-      const files = Array.from((e.target as HTMLInputElement).files || []);
+      const target = e.target;
+      const files = target && target.files ? Array.from(target.files) : [];
       if (files.length === 0) return;
 
       // Obtener número actual de imágenes de carrusel
