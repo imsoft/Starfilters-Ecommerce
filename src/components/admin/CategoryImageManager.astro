@@ -9,9 +9,14 @@ interface Props {
 
 const { categoryId, categoryName, mainImageUrl } = Astro.props;
 
-// Obtener imágenes del carrusel
-const carouselImages = await getCategoryImages(categoryId);
-const carouselImagesFiltered = carouselImages.filter(img => !img.is_primary);
+// Obtener todas las imágenes de la categoría
+const allImages = await getCategoryImages(categoryId);
+console.log('🖼️ [CategoryImageManager] Imágenes obtenidas de BD:', allImages.length);
+console.log('🖼️ [CategoryImageManager] mainImageUrl recibido:', mainImageUrl);
+
+// Filtrar imágenes de carrusel (no principales)
+const carouselImagesFiltered = allImages.filter(img => !img.is_primary);
+console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', carouselImagesFiltered.length);
 ---
 
 <div class="space-y-8">
