@@ -176,14 +176,48 @@
         pendingPrimaryImageNameField.value = primaryImageName;
       }
       if (pendingCarouselImagesField) {
-        pendingCarouselImagesField.value = carouselImagesData.length > 0 
+        const carouselJson = carouselImagesData.length > 0 
           ? JSON.stringify(carouselImagesData) 
           : '';
+        pendingCarouselImagesField.value = carouselJson;
+        console.log('🖼️ Campo pending_carousel_images actualizado:', {
+          length: carouselImagesData.length,
+          jsonLength: carouselJson.length,
+          preview: carouselJson.substring(0, 100) + '...'
+        });
       }
       
       console.log('🖼️ Campos hidden actualizados:', {
         primaryImage: primaryImageBase64 ? 'Sí' : 'No',
-        carouselImages: carouselImagesData.length
+        primaryImageName: primaryImageName,
+        carouselImages: carouselImagesData.length,
+        carouselData: carouselImagesData.map(img => img.name)
+      });
+    }
+    
+    // Asegurar que los campos se actualicen antes de enviar el formulario
+    const form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        console.log('🖼️ Formulario siendo enviado, actualizando campos hidden...');
+        updateHiddenFields();
+        
+        // Verificar que los campos tengan valores
+        if (pendingCarouselImagesField) {
+          const value = pendingCarouselImagesField.value;
+          console.log('🖼️ Valor de pending_carousel_images al enviar:', {
+            length: value.length,
+            isEmpty: !value,
+            preview: value.substring(0, 100) + '...'
+          });
+          
+          if (!value && carouselImagesData.length > 0) {
+            console.error('❌ ERROR: Hay imágenes de carrusel pero el campo hidden está vacío!');
+            // Intentar actualizar nuevamente
+            pendingCarouselImagesField.value = JSON.stringify(carouselImagesData);
+            console.log('🖼️ Campo actualizado forzosamente');
+          }
+        }
       });
     }
 

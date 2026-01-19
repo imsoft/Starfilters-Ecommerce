@@ -204,11 +204,21 @@ if (Astro.request.method === "POST") {
         // Procesar imágenes de carrusel
         const pendingCarouselImages = formData.get("pending_carousel_images") as string;
         console.log('📷 Imágenes de carrusel recibidas:', pendingCarouselImages ? 'Sí' : 'No');
+        console.log('📷 Longitud del string recibido:', pendingCarouselImages?.length || 0);
+        console.log('📷 Primeros 200 caracteres:', pendingCarouselImages?.substring(0, 200) || 'N/A');
         
-        if (pendingCarouselImages) {
+        if (pendingCarouselImages && pendingCarouselImages.trim().length > 0) {
           try {
-            const carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
-            console.log(`📷 Número de imágenes de carrusel: ${carouselData.length}`);
+            let carouselData: Array<{ name: string; data: string }>;
+            try {
+              carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
+              console.log(`📷 JSON parseado exitosamente. Número de imágenes de carrusel: ${carouselData.length}`);
+              console.log(`📷 Detalle de imágenes:`, carouselData.map((img, idx) => ({ index: idx + 1, name: img.name, dataLength: img.data?.length || 0 })));
+            } catch (parseErr) {
+              console.error('❌ Error parseando JSON de carrusel:', parseErr);
+              console.error('📷 String recibido:', pendingCarouselImages.substring(0, 500));
+              throw parseErr;
+            }
             
             const { uploadProductImage } = await import('@/lib/cloudinary');
             const { addProductImage } = await import('@/lib/database');
