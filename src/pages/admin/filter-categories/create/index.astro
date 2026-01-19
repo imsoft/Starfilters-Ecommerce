@@ -76,9 +76,12 @@ if (Astro.request.method === "POST") {
               console.log(`📷 [Categoría] Buffer creado para imagen principal: ${buffer.length} bytes`);
               
               const { uploadCategoryPrimaryImage } = await import('@/lib/cloudinary');
+              const { addCategoryImage } = await import('@/lib/filter-category-service');
+              
               const imageUrl = await uploadCategoryPrimaryImage(buffer, categoryId, pendingPrimaryImageName);
               console.log(`📷 [Categoría] Imagen principal subida a Cloudinary: ${imageUrl}`);
               
+              // Guardar en category.main_image
               const updated = await updateCategory(categoryId, {
                 main_image: imageUrl,
               });
@@ -87,6 +90,21 @@ if (Astro.request.method === "POST") {
                 console.log(`✅ [Categoría] Imagen principal guardada en category.main_image: ${imageUrl}`);
               } else {
                 console.error(`❌ [Categoría] Error: updateCategory retornó false`);
+              }
+              
+              // También guardar en filter_category_images con is_primary=true para consistencia
+              const imageId = await addCategoryImage({
+                category_id: categoryId,
+                image_url: imageUrl,
+                alt_text: pendingPrimaryImageName,
+                is_primary: true,
+                sort_order: 0,
+              });
+              
+              if (imageId) {
+                console.log(`✅ [Categoría] Imagen principal también guardada en filter_category_images con ID: ${imageId}`);
+              } else {
+                console.warn(`⚠️ [Categoría] No se pudo guardar en filter_category_images, pero está en category.main_image`);
               }
             }
           } catch (primaryErr) {
