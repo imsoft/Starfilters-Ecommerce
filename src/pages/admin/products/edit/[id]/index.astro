@@ -136,16 +136,42 @@ function textToArray(text: string | null | undefined): string[] {
   return text.split('\n').filter(item => item && item.trim());
 }
 
-// Preparar tamaños para la tabla (obtener de variantes relacionadas)
+// Preparar tamaños para la tabla
+// Incluir el producto actual si tiene datos de tamaño
 let productSizes: Array<{nominal_size: string; real_size: string; price: number; bind_code: string}> = [];
+
+// Primero agregar el producto actual si tiene tamaño
+if (product.nominal_size || product.real_size || product.bind_code) {
+  productSizes.push({
+    nominal_size: product.nominal_size || '',
+    real_size: product.real_size || '',
+    price: product.price || 0,
+    bind_code: product.bind_code || ''
+  });
+}
+
+// Luego agregar las variantes relacionadas (si las hay)
 if (relatedVariants.length > 0) {
-  productSizes = relatedVariants.map(v => ({
+  const variantSizes = relatedVariants.map(v => ({
     nominal_size: v.nominal_size || '',
     real_size: v.real_size || '',
     price: v.price || 0,
     bind_code: v.bind_code || ''
   }));
+  productSizes = [...productSizes, ...variantSizes];
 }
+
+// Log para debugging
+console.log('📦 Producto:', { 
+  id: product.id, 
+  name: product.name,
+  nominal_size: product.nominal_size,
+  real_size: product.real_size,
+  price: product.price,
+  bind_code: product.bind_code
+});
+console.log('📦 Imágenes encontradas:', images.length);
+console.log('📦 Tamaños preparados:', productSizes.length);
 ---
 
 <AdminLayout title={`Editar: ${product.name}`}>

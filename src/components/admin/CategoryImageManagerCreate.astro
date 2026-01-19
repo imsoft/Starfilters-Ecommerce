@@ -317,55 +317,85 @@
   const form = document.querySelector('form');
   if (form) {
     form.addEventListener('submit', async (e) => {
-      // No prevenir el envío, solo agregar los datos de las imágenes
+      // Prevenir el envío para procesar las imágenes primero
+      e.preventDefault();
+
+      console.log('📷 Procesando imágenes antes de enviar...');
+      console.log('📷 Imagen principal:', primaryImageFile?.name || 'ninguna');
+      console.log('📷 Imágenes carrusel:', carouselImageFiles.length);
 
       // Procesar imagen principal
       if (primaryImageFile) {
-        const reader = new FileReader();
-        await new Promise((resolve) => {
-          reader.onload = () => {
-            const base64 = reader.result as string;
-            // Agregar campos hidden al formulario
-            const input1 = document.createElement('input');
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(primaryImageFile);
+          });
+          
+          // Agregar campos hidden al formulario
+          let input1 = form.querySelector('input[name="pending_primary_image"]') as HTMLInputElement;
+          if (!input1) {
+            input1 = document.createElement('input');
             input1.type = 'hidden';
             input1.name = 'pending_primary_image';
-            input1.value = base64;
-            form?.appendChild(input1);
+            form.appendChild(input1);
+          }
+          input1.value = base64;
 
-            const input2 = document.createElement('input');
+          let input2 = form.querySelector('input[name="pending_primary_image_name"]') as HTMLInputElement;
+          if (!input2) {
+            input2 = document.createElement('input');
             input2.type = 'hidden';
             input2.name = 'pending_primary_image_name';
-            input2.value = primaryImageFile!.name;
-            form?.appendChild(input2);
-            resolve(null);
-          };
-          reader.readAsDataURL(primaryImageFile);
-        });
+            form.appendChild(input2);
+          }
+          input2.value = primaryImageFile.name;
+          
+          console.log('✅ Imagen principal procesada');
+        } catch (err) {
+          console.error('❌ Error procesando imagen principal:', err);
+        }
       }
 
       // Procesar imágenes de carrusel
       if (carouselImageFiles.length > 0) {
-        const carouselData: Array<{ name: string; data: string }> = [];
-        for (const file of carouselImageFiles) {
-          const reader = new FileReader();
-          await new Promise((resolve) => {
-            reader.onload = () => {
-              carouselData.push({
-                name: file.name,
-                data: reader.result as string,
-              });
-              resolve(null);
-            };
-            reader.readAsDataURL(file);
-          });
+        try {
+          const carouselData: Array<{ name: string; data: string }> = [];
+          
+          for (const file of carouselImageFiles) {
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            
+            carouselData.push({
+              name: file.name,
+              data: base64,
+            });
+          }
+          
+          let input = form.querySelector('input[name="pending_carousel_images"]') as HTMLInputElement;
+          if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'pending_carousel_images';
+            form.appendChild(input);
+          }
+          input.value = JSON.stringify(carouselData);
+          
+          console.log('✅ Imágenes de carrusel procesadas:', carouselData.length);
+        } catch (err) {
+          console.error('❌ Error procesando imágenes de carrusel:', err);
         }
-        
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'pending_carousel_images';
-        input.value = JSON.stringify(carouselData);
-        form?.appendChild(input);
       }
+
+      console.log('📝 Enviando formulario...');
+      // Ahora sí enviar el formulario
+      form.submit();
     });
   }
 </script>
