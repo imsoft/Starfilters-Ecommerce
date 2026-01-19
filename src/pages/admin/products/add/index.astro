@@ -281,6 +281,11 @@ if (Astro.request.method === "POST") {
           }
         } else {
           console.log('📷 No hay imágenes de carrusel pendientes');
+          console.log('📷 Verificando si el campo existe en el formulario...');
+          const allFields = Array.from(formData.keys());
+          const imageFields = allFields.filter(f => f.includes('image') || f.includes('carousel') || f.includes('pending'));
+          console.log('📷 Campos relacionados con imágenes en el formulario:', imageFields);
+          console.log('📷 Todos los campos del formulario:', allFields);
         }
       } catch (err) {
         console.error("Error procesando imágenes:", err);
