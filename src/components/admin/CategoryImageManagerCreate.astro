@@ -230,16 +230,10 @@
         }
       });
       
-      // También actualizar campos periódicamente por si acaso
+      // Actualizar campos periódicamente (cada 500ms) para asegurar que siempre estén sincronizados
       setInterval(() => {
-        if (carouselImagesData.length > 0 && pendingCarouselImagesField) {
-          const currentValue = pendingCarouselImagesField.value;
-          const expectedValue = JSON.stringify(carouselImagesData);
-          if (currentValue !== expectedValue) {
-            pendingCarouselImagesField.value = expectedValue;
-          }
-        }
-      }, 1000);
+        updateHiddenFields();
+      }, 500);
     }
 
     function renderCarouselPreviews() {
