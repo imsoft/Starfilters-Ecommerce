@@ -2,6 +2,9 @@
 -- Crear tabla filter_category_images
 -- ============================================
 -- Esta tabla almacena las imágenes de carrusel para las categorías de filtros
+-- 
+-- USO:
+-- mysql -u root -p starfilters_ecommerce_db < migrations/create_filter_category_images_table.sql
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS filter_category_images (
