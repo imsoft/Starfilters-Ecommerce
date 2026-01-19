@@ -50,6 +50,24 @@ images.forEach((img, idx) => {
   });
 });
 
+// Si no hay main_image en category pero hay una imagen marcada como principal en filter_category_images, usarla
+let mainImageUrl = category.main_image;
+if (!mainImageUrl) {
+  const primaryImage = images.find(img => img.is_primary);
+  if (primaryImage) {
+    console.log('⚠️ [Edit Category] No hay main_image en category, usando imagen principal de filter_category_images');
+    mainImageUrl = primaryImage.image_url;
+    // Actualizar category.main_image para futuras cargas
+    await updateCategory(categoryId, {
+      main_image: primaryImage.image_url,
+    });
+  } else {
+    console.log('⚠️ [Edit Category] No hay imagen principal ni en category.main_image ni en filter_category_images');
+  }
+} else {
+  console.log('✅ [Edit Category] Imagen principal encontrada en category.main_image:', mainImageUrl);
+}
+
 let error: string | null = null;
 let success: string | null = null;
 
@@ -327,7 +345,7 @@ if (Astro.request.method === "POST") {
         <CategoryImageManager
           categoryId={categoryId}
           categoryName={category.name}
-          mainImageUrl={category.main_image}
+          mainImageUrl={mainImageUrl}
         />
       </div>
 
