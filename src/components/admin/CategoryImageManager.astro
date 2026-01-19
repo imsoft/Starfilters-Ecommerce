@@ -447,30 +447,32 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     }
   }
 
-  // Función para eliminar imagen de carrusel
-  async function deleteCarouselImage(imageId: number) {
+  // Función para eliminar imagen de carrusel (hacerla global)
+  window.deleteCarouselImage = async function(imageId) {
     if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
       return;
     }
 
     try {
+      console.log('🗑️ Eliminando imagen de carrusel ID:', imageId);
       const response = await fetch(`/api/filter-categories/images/${imageId}`, {
         method: 'DELETE',
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log('✅ Imagen eliminada correctamente');
         alert('Imagen eliminada correctamente');
         window.location.reload();
       } else {
-        alert('Error al eliminar la imagen');
+        console.error('❌ Error eliminando imagen:', result.message || 'Error desconocido');
+        alert('Error al eliminar la imagen: ' + (result.message || 'Error desconocido'));
       }
     } catch (error) {
-      console.error('Error eliminando imagen:', error);
+      console.error('❌ Error eliminando imagen:', error);
       alert('Error al eliminar la imagen');
     }
-  }
-
-  // Hacer función global
-  (window as any).deleteCarouselImage = deleteCarouselImage;
+  };
 </script>
 
