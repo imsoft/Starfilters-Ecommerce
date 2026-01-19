@@ -442,126 +442,104 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
         </p>
       </div>
 
-      {/* Vista previa de imágenes */}
+      {/* Vista previa de imágenes - Estilo similar a categorías */}
       {images.length > 0 && (
-        <div className="space-y-6">
-          {/* Mensaje si no hay imágenes de carrusel pero sí hay principal */}
-          {images.filter(img => img.isPrimary === true).length > 0 && images.filter(img => img.isPrimary === false).length === 0 && (
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-              <p className="text-sm text-yellow-800">
-                ℹ️ Solo hay imagen principal. Puedes agregar imágenes de carrusel arrastrándolas o seleccionándolas arriba.
-              </p>
-            </div>
-          )}
-          
-          {/* Imagen principal - Separación clara */}
-          {images.filter(img => img.isPrimary === true).length > 0 && (
-            <div className="rounded-lg border-2 border-blue-200 bg-blue-50/30 p-6 space-y-4">
-              <div className="flex items-center gap-2 border-b border-blue-300 pb-2">
-                <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-                <h3 className="text-lg font-bold text-blue-900">Imagen Principal</h3>
-              </div>
+        <div className="space-y-8">
+          {/* Imagen Principal - Sección separada */}
+          <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Imagen Principal</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Esta imagen se mostrará como la imagen principal.
+            </p>
+            
+            {images.filter(img => img.isPrimary === true).length > 0 ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {images.filter(img => img.isPrimary === true).map((image) => (
-                  <div key={image.id} className="relative w-full h-48 group bg-white rounded-lg overflow-hidden shadow-md">
-                    <img 
-                      className="w-full h-full object-cover" 
-                      src={image.url} 
-                      alt="Imagen principal del producto"
+                  <div key={image.id} className="relative inline-block group">
+                    <img
+                      src={image.url}
+                      alt="Imagen principal actual"
+                      className="h-48 w-48 rounded-lg border border-gray-300 object-cover"
                       onError={(e) => {
                         console.error('❌ Error cargando imagen:', image.url);
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
-                    
-                    {/* Botón eliminar */}
                     <button
                       type="button"
                       onClick={() => handleDelete(image.id)}
-                      className="absolute top-2 right-2 h-8 w-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-10"
+                      className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 z-10 cursor-pointer"
+                      title="Eliminar imagen"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
-                    
-                    {/* Badge de imagen principal */}
-                    <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-md font-semibold shadow-md">
-                      ⭐ Principal
-                    </div>
                   </div>
                 ))}
               </div>
+            ) : (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ No hay imagen principal configurada. Sube una imagen para establecerla como principal.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Imágenes de Carrusel - Sección separada */}
+          <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Imágenes de Carrusel</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Puedes agregar hasta 4 imágenes adicionales para el carrusel.
+                </p>
+              </div>
+              <span className="text-sm text-gray-500">
+                {images.filter(img => img.isPrimary === false).length}/4
+              </span>
             </div>
-          )}
-          
-          {/* Separador visual */}
-          {images.filter(img => img.isPrimary === true).length > 0 && images.filter(img => img.isPrimary === false).length > 0 && (
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-4 text-gray-500">Imágenes adicionales</span>
-              </div>
-            </div>
-          )}
-          
-          {/* Imágenes de carrusel - Separación clara */}
-          {images.filter(img => img.isPrimary === false).length > 0 && (
-            <div className="rounded-lg border-2 border-gray-200 bg-gray-50/50 p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-gray-300 pb-2">
-                <div className="flex items-center gap-2">
-                  <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <h3 className="text-lg font-bold text-gray-900">
-                    Imágenes de Carrusel
-                  </h3>
-                </div>
-                <span className="text-sm font-medium text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
-                  {images.filter(img => img.isPrimary === false).length} imagen(es)
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+
+            {images.filter(img => img.isPrimary === false).length > 0 ? (
+              <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
                 {images.filter(img => img.isPrimary === false).map((image) => (
-                  <div key={image.id} className="relative w-full h-32 group bg-white rounded-lg overflow-hidden shadow-md border border-gray-200">
-                    <img 
-                      className="w-full h-full object-cover" 
-                      src={image.url} 
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.url}
                       alt="Imagen del carrusel"
+                      className="h-32 w-full rounded-lg border border-gray-300 object-cover"
                       onError={(e) => {
                         console.error('❌ Error cargando imagen:', image.url);
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
-                    
-                    {/* Botón eliminar */}
                     <button
                       type="button"
                       onClick={() => handleDelete(image.id)}
-                      className="absolute top-2 right-2 h-7 w-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-10"
+                      className="absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block cursor-pointer z-10"
+                      title="Eliminar imagen"
                     >
-                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
-                    
-                    {/* Botón para hacer principal */}
                     <button
                       type="button"
                       onClick={() => handleSetPrimary(image.id)}
-                      className="absolute bottom-2 left-2 right-2 bg-black/80 text-white text-xs px-2 py-1.5 rounded text-center hover:bg-black transition-colors font-medium shadow-md"
+                      className="absolute bottom-2 left-2 right-2 hidden bg-black/70 text-white text-xs px-2 py-1 rounded text-center hover:bg-black/90 transition-colors group-hover:block"
                     >
-                      ⭐ Hacer principal
+                      Hacer principal
                     </button>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                No hay imágenes de carrusel. Puedes agregar hasta 4 imágenes arrastrándolas o seleccionándolas arriba.
+              </p>
+            )}
+          </div>
         </div>
       )}
       
