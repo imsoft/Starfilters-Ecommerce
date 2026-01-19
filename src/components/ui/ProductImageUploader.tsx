@@ -37,16 +37,32 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
           console.log('📷 [ProductImageUploader] Resultado del servidor:', result);
           
           if (result.success && result.images && Array.isArray(result.images)) {
-            const serverImages = result.images.map((img: any) => ({
-              id: img.id.toString(),
-              url: img.url,
-              isPrimary: img.isPrimary === true || img.isPrimary === 1 || img.isPrimary === '1'
-            }));
-            console.log('📷 [ProductImageUploader] Imágenes cargadas desde servidor:', serverImages.length, serverImages);
+            console.log('📷 [ProductImageUploader] Total de imágenes recibidas del servidor:', result.images.length);
+            console.log('📷 [ProductImageUploader] Detalle de imágenes recibidas:', result.images);
+            
+            const serverImages = result.images.map((img: any) => {
+              const isPrimary = img.isPrimary === true || img.isPrimary === 1 || img.isPrimary === '1';
+              const mapped = {
+                id: img.id.toString(),
+                url: img.url,
+                isPrimary: isPrimary
+              };
+              console.log(`📷 [ProductImageUploader] Mapeando imagen:`, { id: mapped.id, url: mapped.url.substring(0, 50) + '...', isPrimary: mapped.isPrimary });
+              return mapped;
+            });
+            
+            const primaryCount = serverImages.filter(img => img.isPrimary).length;
+            const carouselCount = serverImages.filter(img => !img.isPrimary).length;
+            
+            console.log(`📷 [ProductImageUploader] Resumen: ${primaryCount} principal(es), ${carouselCount} carrusel`);
+            console.log('📷 [ProductImageUploader] Todas las imágenes mapeadas:', serverImages);
+            
             setImages(serverImages);
             onImagesChange?.(serverImages);
             setLoading(false);
             return;
+          } else {
+            console.warn('📷 [ProductImageUploader] Respuesta del servidor no tiene imágenes válidas:', result);
           }
         }
         
@@ -365,8 +381,15 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
       <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
         <strong>Debug:</strong> {images.length} imagen(es) cargada(s) | Product ID: {productId}
         {images.length > 0 && (
-          <div className="mt-1">
-            IDs: {images.map(img => img.id).join(', ')}
+          <div className="mt-1 space-y-1">
+            <div>IDs: {images.map(img => img.id).join(', ')}</div>
+            <div>
+              Principal: {images.filter(img => img.isPrimary).length} | 
+              Carrusel: {images.filter(img => !img.isPrimary).length}
+            </div>
+            <div className="text-xs">
+              {images.map(img => `ID ${img.id}: ${img.isPrimary ? 'Principal' : 'Carrusel'}`).join(', ')}
+            </div>
           </div>
         )}
       </div>
@@ -415,6 +438,15 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
       {/* Vista previa de imágenes */}
       {images.length > 0 && (
         <div className="space-y-4">
+          {/* Mensaje si no hay imágenes de carrusel pero sí hay principal */}
+          {images.filter(img => img.isPrimary).length > 0 && images.filter(img => !img.isPrimary).length === 0 && (
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+              <p className="text-sm text-yellow-800">
+                ℹ️ Solo hay imagen principal. Puedes agregar imágenes de carrusel arrastrándolas o seleccionándolas arriba.
+              </p>
+            </div>
+          )}
+          
           {/* Imagen principal primero */}
           {images.filter(img => img.isPrimary).length > 0 && (
             <div className="space-y-2">
