@@ -202,21 +202,44 @@ if (Astro.request.method === "POST") {
         }
 
         // Procesar imágenes de carrusel
+        console.log('📷 ===== PROCESANDO IMÁGENES DE CARRUSEL =====');
         const pendingCarouselImages = formData.get("pending_carousel_images") as string;
-        console.log('📷 Imágenes de carrusel recibidas:', pendingCarouselImages ? 'Sí' : 'No');
+        console.log('📷 Campo recibido del formulario:', pendingCarouselImages ? 'Sí' : 'No');
+        console.log('📷 Tipo:', typeof pendingCarouselImages);
         console.log('📷 Longitud del string recibido:', pendingCarouselImages?.length || 0);
+        console.log('📷 Está vacío?', !pendingCarouselImages || pendingCarouselImages.trim().length === 0);
         console.log('📷 Primeros 200 caracteres:', pendingCarouselImages?.substring(0, 200) || 'N/A');
+        
+        // Verificar todos los campos del formulario relacionados con imágenes
+        console.log('📷 Todos los campos del formulario relacionados con imágenes:');
+        for (const [key, value] of formData.entries()) {
+          if (key.includes('image') || key.includes('carousel') || key.includes('pending')) {
+            const valStr = typeof value === 'string' ? value : value.toString();
+            console.log(`📷   ${key}: ${valStr.length} caracteres, preview: ${valStr.substring(0, 50)}...`);
+          }
+        }
         
         if (pendingCarouselImages && pendingCarouselImages.trim().length > 0) {
           try {
             let carouselData: Array<{ name: string; data: string }>;
             try {
+              console.log('📷 Intentando parsear JSON...');
               carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
-              console.log(`📷 JSON parseado exitosamente. Número de imágenes de carrusel: ${carouselData.length}`);
-              console.log(`📷 Detalle de imágenes:`, carouselData.map((img, idx) => ({ index: idx + 1, name: img.name, dataLength: img.data?.length || 0 })));
+              console.log(`✅ JSON parseado exitosamente. Número de imágenes de carrusel: ${carouselData.length}`);
+              
+              if (carouselData.length === 0) {
+                console.warn('⚠️ Array de imágenes de carrusel está vacío');
+              } else {
+                console.log(`📷 Detalle de imágenes:`, carouselData.map((img, idx) => ({ 
+                  index: idx + 1, 
+                  name: img.name, 
+                  dataLength: img.data?.length || 0,
+                  dataPreview: img.data?.substring(0, 50) || 'sin data'
+                })));
+              }
             } catch (parseErr) {
               console.error('❌ Error parseando JSON de carrusel:', parseErr);
-              console.error('📷 String recibido:', pendingCarouselImages.substring(0, 500));
+              console.error('📷 String completo recibido (primeros 500 chars):', pendingCarouselImages.substring(0, 500));
               throw parseErr;
             }
             
