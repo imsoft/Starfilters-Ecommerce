@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from './button';
 
 interface ProductImage {
@@ -215,8 +215,8 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     });
   };
 
-  // Función para actualizar hidden fields (solo en modo creación)
-  const updateHiddenFields = () => {
+  // Función para actualizar hidden fields (solo en modo creación) - Memoizada con useCallback
+  const updateHiddenFields = useCallback(() => {
     if (!isCreating) return;
     
     const primaryImage = images.find(img => img.isPrimary === true);
@@ -257,7 +257,7 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
         carouselImages: carouselData.length
       });
     }
-  };
+  }, [images, isCreating]);
 
   const handleFiles = async (files: FileList) => {
     setUploading(true);
@@ -497,7 +497,7 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     if (isCreating) {
       updateHiddenFields();
     }
-  }, [images, isCreating]);
+  }, [isCreating, updateHiddenFields]);
 
   return (
     <div className="space-y-4">
