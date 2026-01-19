@@ -63,6 +63,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           <button
             type="button"
             id="remove-existing-primary-image"
+            onclick="window.deletePrimaryImage && window.deletePrimaryImage()"
             class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 z-10 cursor-pointer"
             title="Eliminar imagen"
           >
@@ -203,7 +204,39 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 </div>
 
 <script define:vars={{ categoryId }}>
-  console.log('🖼️ [CategoryImageManager] Script cargado, esperando DOM...');
+  // Log inmediato para verificar que el script se carga
+  console.log('🖼️ [CategoryImageManager] Script cargado, categoryId:', categoryId);
+  
+  // Función para eliminar imagen principal (disponible globalmente)
+  window.deletePrimaryImage = async function() {
+    console.log('🗑️ deletePrimaryImage llamada');
+    const categoryIdNum = parseInt(categoryId);
+    
+    if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Eliminando imagen principal, categoryId:', categoryIdNum);
+      const response = await fetch(`/api/filter-categories/${categoryIdNum}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ main_image: '' }),
+      });
+
+      const result = await response.json();
+      console.log('📡 Respuesta del servidor:', result);
+      if (result.success) {
+        alert('Imagen eliminada correctamente');
+        window.location.reload();
+      } else {
+        alert('Error: ' + (result.message || 'Error desconocido'));
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+      alert('Error al eliminar la imagen: ' + (error.message || 'Error desconocido'));
+    }
+  };
   
   document.addEventListener('DOMContentLoaded', () => {
     console.log('🖼️ [CategoryImageManager] DOMContentLoaded ejecutado, inicializando...');
