@@ -87,8 +87,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     console.log('✅ Imagen subida a Cloudinary:', uploadResult.url);
 
     // Verificar si es la primera imagen (para marcarla como principal)
+    // Usar una consulta atómica para evitar condiciones de carrera
     const existingImages = await getProductImages(parseInt(productId));
-    const isPrimary = existingImages.length === 0;
+    const primaryImage = existingImages.find(img => img.is_primary === 1 || img.is_primary === true);
+    const isPrimary = existingImages.length === 0 && !primaryImage;
 
     // Guardar en la base de datos
     const imageId = await addProductImage({
@@ -99,6 +101,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       is_primary: isPrimary,
       sort_order: existingImages.length,
     });
+    
+    console.log(`📷 Imagen guardada - ID: ${imageId}, isPrimary: ${isPrimary}, sortOrder: ${existingImages.length}`);
 
     if (!imageId) {
       console.error('❌ Error guardando imagen en la base de datos');
