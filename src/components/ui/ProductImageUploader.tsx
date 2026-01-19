@@ -102,6 +102,8 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
           console.log('📷 [ProductImageUploader] No hay imágenes para mostrar');
           setImages([]);
         }
+        // Asegurar que loading se establece en false después de todos los casos
+        setLoading(false);
       } catch (error) {
         console.error('📷 [ProductImageUploader] Error cargando imágenes:', error);
         // Fallback a initialImages en caso de error
@@ -114,14 +116,22 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
           }));
           setImages(mappedImages);
           onImagesChange?.(mappedImages);
+        } else {
+          setImages([]);
         }
-      } finally {
+        // Asegurar que loading se establece en false incluso en caso de error
         setLoading(false);
       }
     };
-
-    loadImages();
-  }, [productId, isCreating]); // Ejecutar cuando productId o isCreating cambien
+    
+    // Solo ejecutar si NO estamos en modo creación
+    if (!isCreating) {
+      loadImages();
+    } else {
+      // Si estamos en modo creación, asegurar que loading está en false
+      setLoading(false);
+    }
+  }, [productId, isCreating, initialImages, onImagesChange]);
   
   // Función para refrescar imágenes desde el servidor (solo en modo edición)
   const refreshImages = async () => {
