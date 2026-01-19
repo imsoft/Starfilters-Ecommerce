@@ -471,34 +471,31 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
-              
-              {/* Botón eliminar */}
-              <button
-                type="button"
-                onClick={() => handleDelete(image.id)}
-                className="absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10 opacity-0 group-hover:opacity-100"
-              >
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-              
-              {/* Badge de imagen principal */}
-              {image.isPrimary ? (
-                <div className="absolute bottom-1 left-1 right-1 bg-primary text-primary-foreground text-xs p-1 rounded text-center font-medium">
-                  Principal
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleSetPrimary(image.id)}
-                  className="absolute bottom-1 left-1 right-1 bg-black/50 text-white text-xs p-1 rounded text-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  Hacer principal
-                </button>
-              )}
+                    
+                    {/* Botón eliminar */}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(image.id)}
+                      className="absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10"
+                    >
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                    
+                    {/* Botón para hacer principal */}
+                    <button
+                      type="button"
+                      onClick={() => handleSetPrimary(image.id)}
+                      className="absolute bottom-1 left-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded text-center hover:bg-black/90 transition-colors"
+                    >
+                      Hacer principal
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
         </div>
       )}
       
