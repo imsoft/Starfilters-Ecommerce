@@ -414,14 +414,63 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
 
       {/* Vista previa de imágenes */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {images.map((image) => (
-            <div key={image.id} className="relative w-full h-32 group">
-              <img 
-                className="w-full h-full rounded-lg object-cover border border-border" 
-                src={image.url} 
-                alt="Imagen del producto"
-              />
+        <div className="space-y-4">
+          {/* Imagen principal primero */}
+          {images.filter(img => img.isPrimary).length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-gray-700">Imagen Principal</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {images.filter(img => img.isPrimary).map((image) => (
+                  <div key={image.id} className="relative w-full h-48 group">
+                    <img 
+                      className="w-full h-full rounded-lg object-cover border-2 border-blue-500 border-border" 
+                      src={image.url} 
+                      alt="Imagen principal del producto"
+                      onError={(e) => {
+                        console.error('❌ Error cargando imagen:', image.url);
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    
+                    {/* Botón eliminar */}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(image.id)}
+                      className="absolute top-2 right-2 h-8 w-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-10"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                    
+                    {/* Badge de imagen principal */}
+                    <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded font-medium">
+                      Principal
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Imágenes de carrusel */}
+          {images.filter(img => !img.isPrimary).length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-gray-700">
+                Imágenes de Carrusel ({images.filter(img => !img.isPrimary).length})
+              </h3>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {images.filter(img => !img.isPrimary).map((image) => (
+                  <div key={image.id} className="relative w-full h-32 group">
+                    <img 
+                      className="w-full h-full rounded-lg object-cover border border-border" 
+                      src={image.url} 
+                      alt="Imagen del carrusel"
+                      onError={(e) => {
+                        console.error('❌ Error cargando imagen:', image.url);
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
               
               {/* Botón eliminar */}
               <button
