@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './button';
 
 interface ProductImage {
@@ -18,6 +18,46 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sincronizar imágenes cuando initialImages cambia (desde el servidor)
+  useEffect(() => {
+    if (initialImages && initialImages.length > 0) {
+      console.log('📷 Actualizando imágenes desde initialImages:', initialImages.length);
+      setImages(initialImages);
+    } else if (initialImages && initialImages.length === 0 && images.length > 0) {
+      // Si initialImages está vacío pero tenemos imágenes en el estado, 
+      // podría ser que se recargó la página y debemos refrescar
+      console.log('📷 initialImages está vacío, manteniendo imágenes del estado');
+    }
+  }, [initialImages]);
+  
+  // Función para refrescar imágenes desde el servidor
+  const refreshImages = async () => {
+    try {
+      // Cargar imágenes directamente desde la base de datos
+      const response = await fetch(`/api/products/${productId}/images`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.images) {
+          const serverImages = result.images.map((img: any) => ({
+            id: img.id.toString(),
+            url: img.url,
+            isPrimary: img.isPrimary === true || img.isPrimary === 1
+          }));
+          console.log('📷 Imágenes refrescadas desde servidor:', serverImages.length);
+          setImages(serverImages);
+          onImagesChange?.(serverImages);
+          
+          // Emitir evento personalizado
+          window.dispatchEvent(new CustomEvent('product-images-changed', { 
+            detail: { images: serverImages } 
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error refrescando imágenes:', error);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -80,19 +120,51 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
         const result = await response.json();
         
         if (response.ok && result.success) {
-          newImages.push({
-            id: result.imageId || `temp-${Date.now()}-${i}`,
-            url: result.url,
-            isPrimary: images.length === 0 && newImages.length === 0
-          });
+          // Si la respuesta incluye todas las imágenes actualizadas, usarlas
+          if (result.allImages && Array.isArray(result.allImages)) {
+            console.log('📷 Recibidas todas las imágenes del servidor:', result.allImages.length);
+            const serverImages = result.allImages.map((img: any) => ({
+              id: img.id.toString(),
+              url: img.url,
+              isPrimary: img.isPrimary === true || img.isPrimary === 1
+            }));
+            setImages(serverImages);
+            onImagesChange?.(serverImages);
+            
+            // Emitir evento personalizado
+            window.dispatchEvent(new CustomEvent('product-images-changed', { 
+              detail: { images: serverImages } 
+            }));
+          } else {
+            // Fallback: agregar la imagen nueva al estado actual
+            newImages.push({
+              id: result.imageId || `temp-${Date.now()}-${i}`,
+              url: result.url,
+              isPrimary: result.isPrimary || (images.length === 0 && newImages.length === 0)
+            });
+          }
         } else {
           alert(`Error al subir ${file.name}: ${result.message}`);
         }
       }
       
-      const updatedImages = [...images, ...newImages];
-      setImages(updatedImages);
-      onImagesChange?.(updatedImages);
+      // Si no recibimos todas las imágenes en cada respuesta, refrescar al final
+      if (files.length > 1) {
+        // Esperar un poco para que todas las subidas terminen
+        setTimeout(async () => {
+          await refreshImages();
+        }, 500);
+      } else {
+        // Si solo hay una imagen y no recibimos allImages, refrescar
+        const lastResult = await fetch('/api/products/upload-image', {
+          method: 'POST',
+          body: new FormData()
+        }).then(r => r.json()).catch(() => null);
+        
+        if (!lastResult || !lastResult.allImages) {
+          await refreshImages();
+        }
+      }
       
       // Emitir evento personalizado
       window.dispatchEvent(new CustomEvent('product-images-changed', { 

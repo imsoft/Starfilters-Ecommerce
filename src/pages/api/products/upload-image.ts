@@ -113,11 +113,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     console.log('✅ Imagen guardada en BD con ID:', imageId);
 
+    // Obtener todas las imágenes actualizadas para retornar el estado completo
+    const updatedImages = await getProductImages(parseInt(productId));
+
     return new Response(JSON.stringify({ 
       success: true, 
       message: 'Imagen subida exitosamente',
       url: uploadResult.url,
-      imageId: imageId.toString()
+      imageId: imageId.toString(),
+      isPrimary: isPrimary,
+      allImages: updatedImages.map(img => ({
+        id: img.id.toString(),
+        url: img.image_url,
+        isPrimary: img.is_primary === 1 || img.is_primary === true
+      }))
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
