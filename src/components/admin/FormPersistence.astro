@@ -189,6 +189,7 @@ const storageKey = `form_draft_${formId}`;
      */
     const clearSavedData = () => {
       localStorage.removeItem(storageKey);
+      localStorage.removeItem(`${storageKey}_banner_seen`);
       if (restoreBanner) {
         restoreBanner.classList.add('hidden');
       }
@@ -214,8 +215,27 @@ const storageKey = `form_draft_${formId}`;
         const restored = restoreFormFields(data);
         
         if (restored && restoreBanner) {
-          restoreBanner.classList.remove('hidden');
-          hasRestoredData = true;
+          // Verificar si el usuario ya vio este banner antes
+          const bannerSeenKey = `${storageKey}_banner_seen`;
+          const bannerSeen = localStorage.getItem(bannerSeenKey);
+          
+          // Solo mostrar si no se ha visto antes o si han pasado más de 5 minutos
+          const shouldShow = !bannerSeen || (Date.now() - parseInt(bannerSeen) > 5 * 60 * 1000);
+          
+          if (shouldShow) {
+            restoreBanner.classList.remove('hidden');
+            hasRestoredData = true;
+            
+            // Marcar como visto
+            localStorage.setItem(bannerSeenKey, Date.now().toString());
+            
+            // Ocultar automáticamente después de 10 segundos
+            setTimeout(() => {
+              if (restoreBanner) {
+                restoreBanner.classList.add('hidden');
+              }
+            }, 10000);
+          }
         }
       } catch (error) {
         console.error('FormPersistence: Error restaurando datos:', error);
@@ -245,6 +265,10 @@ const storageKey = `form_draft_${formId}`;
       // Limpiar después de un pequeño delay para asegurar que el submit se procese
       setTimeout(() => {
         localStorage.removeItem(storageKey);
+        localStorage.removeItem(`${storageKey}_banner_seen`);
+        if (restoreBanner) {
+          restoreBanner.classList.add('hidden');
+        }
       }, 100);
     });
 
@@ -252,6 +276,10 @@ const storageKey = `form_draft_${formId}`;
     if (clearBtn) {
       clearBtn.addEventListener('click', () => {
         clearSavedData();
+        // Ocultar el banner inmediatamente
+        if (restoreBanner) {
+          restoreBanner.classList.add('hidden');
+        }
         // Opcional: recargar la página para limpiar el formulario
         if (confirm('¿Deseas limpiar el formulario también?')) {
           window.location.reload();
