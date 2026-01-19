@@ -145,7 +145,10 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     setUploading(true);
     
     try {
-      const newImages: ProductImage[] = [];
+      console.log(`📷 Iniciando subida de ${files.length} archivo(s)`);
+      
+      // Subir todas las imágenes en secuencia
+      const uploadPromises: Promise<void>[] = [];
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -162,77 +165,52 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
           continue;
         }
         
-        // Subir imagen
-        const formData = new FormData();
-        formData.append('image', file);
-        formData.append('productId', productId);
-        
-        const response = await fetch('/api/products/upload-image', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-          // Si la respuesta incluye todas las imágenes actualizadas, usarlas
-          if (result.allImages && Array.isArray(result.allImages)) {
-            console.log('📷 Recibidas todas las imágenes del servidor:', result.allImages.length);
-            const serverImages = result.allImages.map((img: any) => ({
-              id: img.id.toString(),
-              url: img.url,
-              isPrimary: img.isPrimary === true || img.isPrimary === 1
-            }));
-            setImages(serverImages);
-            onImagesChange?.(serverImages);
-            
-            // Emitir evento personalizado
-            window.dispatchEvent(new CustomEvent('product-images-changed', { 
-              detail: { images: serverImages } 
-            }));
+        // Crear promesa para subir cada imagen
+        const uploadPromise = (async () => {
+          const formData = new FormData();
+          formData.append('image', file);
+          formData.append('productId', productId);
+          
+          console.log(`📷 Subiendo imagen ${i + 1}/${files.length}: ${file.name}`);
+          
+          const response = await fetch('/api/products/upload-image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok && result.success) {
+            console.log(`✅ Imagen ${i + 1} subida exitosamente:`, result.url);
           } else {
-            // Fallback: agregar la imagen nueva al estado actual
-            newImages.push({
-              id: result.imageId || `temp-${Date.now()}-${i}`,
-              url: result.url,
-              isPrimary: result.isPrimary || (images.length === 0 && newImages.length === 0)
-            });
+            console.error(`❌ Error subiendo imagen ${i + 1}:`, result.message);
+            alert(`Error al subir ${file.name}: ${result.message}`);
           }
-        } else {
-          alert(`Error al subir ${file.name}: ${result.message}`);
-        }
-      }
-      
-      // Si no recibimos todas las imágenes en cada respuesta, refrescar al final
-      if (files.length > 1) {
-        // Esperar un poco para que todas las subidas terminen
-        setTimeout(async () => {
-          await refreshImages();
-        }, 500);
-      } else {
-        // Si solo hay una imagen y no recibimos allImages, refrescar
-        const lastResult = await fetch('/api/products/upload-image', {
-          method: 'POST',
-          body: new FormData()
-        }).then(r => r.json()).catch(() => null);
+        })();
         
-        if (!lastResult || !lastResult.allImages) {
-          await refreshImages();
-        }
+        uploadPromises.push(uploadPromise);
       }
       
-      // Emitir evento personalizado
-      window.dispatchEvent(new CustomEvent('product-images-changed', { 
-        detail: { images: updatedImages } 
-      }));
+      // Esperar a que todas las subidas terminen
+      console.log('📷 Esperando a que todas las subidas terminen...');
+      await Promise.all(uploadPromises);
+      
+      // Esperar un poco más para asegurar que la BD se haya actualizado
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Refrescar todas las imágenes desde el servidor
+      console.log('📷 Refrescando imágenes desde el servidor...');
+      await refreshImages();
       
       // Limpiar input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      
+      console.log('✅ Subida de imágenes completada');
     } catch (error) {
-      console.error('Error subiendo imágenes:', error);
-      alert('Error al subir las imágenes');
+      console.error('❌ Error subiendo imágenes:', error);
+      alert('Error al subir las imágenes: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setUploading(false);
     }
