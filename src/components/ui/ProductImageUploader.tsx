@@ -15,14 +15,15 @@ interface ProductImageUploaderProps {
 }
 
 export function ProductImageUploader({ productId, initialImages = [], onImagesChange, isCreateMode = false }: ProductImageUploaderProps) {
+  // Determinar si estamos en modo creación (productId no válido o es "new")
+  const isCreating = isCreateMode || productId === "new" || productId === "" || isNaN(parseInt(productId));
+  
+  // En modo creación, no necesitamos cargar nada, así que loading debe ser false inmediatamente
   const [images, setImages] = useState<ProductImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // Determinar si estamos en modo creación (productId no válido o es "new")
-  const isCreating = isCreateMode || productId === "new" || productId === "" || isNaN(parseInt(productId));
+  const [loading, setLoading] = useState(!isCreating); // false si estamos creando, true si estamos editando
 
   // Cargar imágenes desde el servidor al montar el componente
   useEffect(() => {
