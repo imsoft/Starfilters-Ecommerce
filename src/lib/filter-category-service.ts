@@ -6,6 +6,7 @@
  */
 
 import { query } from '@/config/database';
+import { generateUUID } from '@/lib/database';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 
 /**
@@ -256,11 +257,13 @@ export const addCategoryImage = async (imageData: Partial<FilterCategoryImage>):
   try {
     console.log('✨ Agregando imagen a categoría:', imageData.category_id);
 
+    const uuid = generateUUID();
     const result = await query(
       `INSERT INTO filter_category_images (
-        category_id, image_url, alt_text, is_primary, sort_order
-      ) VALUES (?, ?, ?, ?, ?)`,
+        uuid, category_id, image_url, alt_text, is_primary, sort_order
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
       [
+        uuid,
         imageData.category_id,
         imageData.image_url,
         imageData.alt_text || null,
@@ -269,7 +272,7 @@ export const addCategoryImage = async (imageData: Partial<FilterCategoryImage>):
       ]
     ) as ResultSetHeader;
 
-    console.log('✅ Imagen agregada con ID:', result.insertId);
+    console.log('✅ Imagen agregada con ID:', result.insertId, 'UUID:', uuid);
     return result.insertId;
   } catch (error) {
     console.error('❌ Error agregando imagen:', error);
