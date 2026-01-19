@@ -1,6 +1,6 @@
 ---
-// Componente simplificado para la creación de categorías
-// Guarda las imágenes temporalmente hasta que se cree la categoría
+// Componente simplificado para la creación de categorías/productos
+// Guarda las imágenes temporalmente hasta que se cree el registro
 ---
 
 <div class="space-y-8">
@@ -8,7 +8,7 @@
   <div class="rounded-lg border border-gray-200 bg-white p-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Imagen Principal</h3>
     <p class="text-sm text-gray-600 mb-4">
-      Esta imagen se mostrará como la imagen principal de la categoría.
+      Esta imagen se mostrará como la imagen principal.
     </p>
     
     <div class="space-y-4">
@@ -32,8 +32,11 @@
             </svg>
           </button>
         </div>
-        <input type="hidden" id="primary-image-url" name="main_image" value="" />
       </div>
+
+      <!-- Campo hidden para la imagen principal procesada -->
+      <input type="hidden" id="pending_primary_image" name="pending_primary_image" value="" />
+      <input type="hidden" id="pending_primary_image_name" name="pending_primary_image_name" value="" />
 
       <!-- Uploader de imagen principal -->
       <div>
@@ -68,9 +71,6 @@
           />
         </label>
         <div id="primary-image-upload-status" class="mt-2 text-sm"></div>
-        <p class="mt-2 text-xs text-gray-500">
-          La imagen se subirá a Cloudinary después de crear la categoría.
-        </p>
       </div>
     </div>
   </div>
@@ -94,6 +94,9 @@
       <!-- Las imágenes se mostrarán aquí dinámicamente -->
     </div>
 
+    <!-- Campo hidden para las imágenes de carrusel procesadas -->
+    <input type="hidden" id="pending_carousel_images" name="pending_carousel_images" value="" />
+
     <!-- Uploader de imágenes de carrusel -->
     <div>
       <label
@@ -115,7 +118,7 @@
             />
           </svg>
           <p class="mt-2 text-sm text-gray-600">
-            <span class="font-semibold">Click para subir</span> o arrastra y suelta
+            <span class="font-semibold">Click para agregar</span> imágenes al carrusel
           </p>
           <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
         </div>
@@ -128,283 +131,264 @@
         />
       </label>
       <div id="carousel-image-upload-status" class="mt-2 text-sm"></div>
-      <p class="mt-2 text-xs text-gray-500">
-        Las imágenes se subirán a Cloudinary después de crear la categoría.
-      </p>
     </div>
   </div>
 </div>
 
 <script>
-  // Almacenar imágenes temporalmente
-  let primaryImageFile: File | null = null;
-  const carouselImageFiles: File[] = [];
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('🖼️ CategoryImageManagerCreate: Inicializando...');
+    
+    // Variables para almacenar las imágenes como base64 (ya procesadas)
+    let primaryImageBase64 = '';
+    let primaryImageName = '';
+    const carouselImagesData: Array<{ name: string; data: string }> = [];
+    const maxCarouselImages = 4;
 
-  // ===== IMAGEN PRINCIPAL =====
-  const primaryImageInput = document.getElementById('primary-image-input');
-  const primaryImagePreview = document.getElementById('primary-image-preview');
-  const primaryImagePreviewImg = document.getElementById('primary-image-preview-img');
-  const primaryImageUrl = document.getElementById('primary-image-url') as HTMLInputElement;
-  const removePrimaryImageBtn = document.getElementById('remove-primary-image');
-  const primaryImageUploadStatus = document.getElementById('primary-image-upload-status');
+    // ===== ELEMENTOS DEL DOM =====
+    const primaryImageInput = document.getElementById('primary-image-input') as HTMLInputElement;
+    const primaryImagePreview = document.getElementById('primary-image-preview');
+    const primaryImagePreviewImg = document.getElementById('primary-image-preview-img') as HTMLImageElement;
+    const removePrimaryImageBtn = document.getElementById('remove-primary-image');
+    const primaryImageUploadStatus = document.getElementById('primary-image-upload-status');
+    const pendingPrimaryImageField = document.getElementById('pending_primary_image') as HTMLInputElement;
+    const pendingPrimaryImageNameField = document.getElementById('pending_primary_image_name') as HTMLInputElement;
 
-  if (primaryImageInput) {
-    primaryImageInput.addEventListener('change', (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
+    const carouselImageInput = document.getElementById('carousel-image-input') as HTMLInputElement;
+    const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
+    const carouselImagesPreview = document.getElementById('carousel-images-preview');
+    const carouselCount = document.getElementById('carousel-count');
+    const pendingCarouselImagesField = document.getElementById('pending_carousel_images') as HTMLInputElement;
 
-      // Validar tamaño (10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        if (primaryImageUploadStatus) {
-          primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
-          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-        }
+    // ===== FUNCIONES HELPER =====
+    function updateCarouselCount() {
+      if (carouselCount) {
+        carouselCount.textContent = `${carouselImagesData.length}/${maxCarouselImages}`;
+      }
+    }
+
+    function updateHiddenFields() {
+      // Actualizar campos hidden con los datos procesados
+      if (pendingPrimaryImageField) {
+        pendingPrimaryImageField.value = primaryImageBase64;
+      }
+      if (pendingPrimaryImageNameField) {
+        pendingPrimaryImageNameField.value = primaryImageName;
+      }
+      if (pendingCarouselImagesField) {
+        pendingCarouselImagesField.value = carouselImagesData.length > 0 
+          ? JSON.stringify(carouselImagesData) 
+          : '';
+      }
+      
+      console.log('🖼️ Campos hidden actualizados:', {
+        primaryImage: primaryImageBase64 ? 'Sí' : 'No',
+        carouselImages: carouselImagesData.length
+      });
+    }
+
+    function renderCarouselPreviews() {
+      if (!carouselImagesPreview) return;
+
+      if (carouselImagesData.length === 0) {
+        carouselImagesPreview.classList.add('hidden');
         return;
       }
 
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        if (primaryImageUploadStatus) {
-          primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
-          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-        }
-        return;
-      }
+      carouselImagesPreview.classList.remove('hidden');
+      carouselImagesPreview.innerHTML = '';
 
-      // Guardar archivo temporalmente
-      primaryImageFile = file;
-
-      // Mostrar preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (primaryImagePreviewImg && e.target?.result) {
-          primaryImagePreviewImg.src = e.target.result as string;
-        }
-        if (primaryImagePreview) {
-          primaryImagePreview.classList.remove('hidden');
-        }
-        if (primaryImageUploadStatus) {
-          primaryImageUploadStatus.textContent = '✅ Imagen seleccionada (se subirá al crear la categoría)';
-          primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  if (removePrimaryImageBtn) {
-    removePrimaryImageBtn.addEventListener('click', () => {
-      primaryImageFile = null;
-      if (primaryImagePreview) {
-        primaryImagePreview.classList.add('hidden');
-      }
-      if (primaryImageInput) {
-        (primaryImageInput as HTMLInputElement).value = '';
-      }
-      if (primaryImageUploadStatus) {
-        primaryImageUploadStatus.textContent = '';
-      }
-    });
-  }
-
-  // ===== IMÁGENES DE CARRUSEL =====
-  const carouselImageInput = document.getElementById('carousel-image-input');
-  const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
-  const carouselImagesPreview = document.getElementById('carousel-images-preview');
-  const carouselCount = document.getElementById('carousel-count');
-  const maxCarouselImages = 4;
-
-  function updateCarouselCount() {
-    if (carouselCount) {
-      carouselCount.textContent = `${carouselImageFiles.length}/${maxCarouselImages}`;
-    }
-  }
-
-  function renderCarouselPreviews() {
-    if (!carouselImagesPreview) return;
-
-    if (carouselImageFiles.length === 0) {
-      carouselImagesPreview.classList.add('hidden');
-      return;
-    }
-
-    carouselImagesPreview.classList.remove('hidden');
-    carouselImagesPreview.innerHTML = '';
-
-    carouselImageFiles.forEach((file, index) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+      carouselImagesData.forEach((imageData, index) => {
         const div = document.createElement('div');
         div.className = 'relative group';
         div.innerHTML = `
           <img
-            src="${e.target?.result}"
+            src="${imageData.data}"
             alt="Carrusel ${index + 1}"
             class="h-32 w-full rounded-lg border border-gray-300 object-cover"
           />
           <button
             type="button"
-            data-index="${index}"
-            class="remove-carousel-image absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block"
+            data-carousel-index="${index}"
+            class="remove-carousel-btn absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block"
             title="Eliminar imagen"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+          <span class="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded">${imageData.name}</span>
         `;
         carouselImagesPreview.appendChild(div);
 
         // Agregar listener para eliminar
-        const removeBtn = div.querySelector('.remove-carousel-image');
+        const removeBtn = div.querySelector('.remove-carousel-btn');
         if (removeBtn) {
           removeBtn.addEventListener('click', () => {
-            carouselImageFiles.splice(index, 1);
+            carouselImagesData.splice(index, 1);
             renderCarouselPreviews();
             updateCarouselCount();
+            updateHiddenFields();
+            
+            if (carouselImageUploadStatus) {
+              carouselImageUploadStatus.textContent = `✅ Imagen eliminada. ${carouselImagesData.length} imagen(es) en cola.`;
+              carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+            }
           });
         }
-      };
-      reader.readAsDataURL(file);
-    });
-  }
+      });
+    }
 
-  if (carouselImageInput) {
-    carouselImageInput.addEventListener('change', (e) => {
-      const files = Array.from((e.target as HTMLInputElement).files || []);
-      if (files.length === 0) return;
+    // ===== IMAGEN PRINCIPAL =====
+    if (primaryImageInput) {
+      primaryImageInput.addEventListener('change', async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
 
-      const availableSlots = maxCarouselImages - carouselImageFiles.length;
-      const filesToAdd = files.slice(0, availableSlots);
+        console.log('🖼️ Procesando imagen principal:', file.name);
 
-      if (files.length > availableSlots) {
-        if (carouselImageUploadStatus) {
-          carouselImageUploadStatus.textContent = `⚠️ Solo se agregaron ${availableSlots} imagen(es) (máximo 4)`;
-          carouselImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
-        }
-      }
-
-      for (const file of filesToAdd) {
         // Validar tamaño (10MB)
         if (file.size > 10 * 1024 * 1024) {
-          continue;
+          if (primaryImageUploadStatus) {
+            primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+          }
+          return;
         }
 
         // Validar tipo
         if (!file.type.startsWith('image/')) {
-          continue;
+          if (primaryImageUploadStatus) {
+            primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+          }
+          return;
         }
 
-        carouselImageFiles.push(file);
-      }
-
-      renderCarouselPreviews();
-      updateCarouselCount();
-
-      if (carouselImageUploadStatus) {
-        carouselImageUploadStatus.textContent = `✅ ${filesToAdd.length} imagen(es) seleccionada(s) (se subirán al crear la categoría)`;
-        carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-      }
-
-      // Limpiar input
-      if (carouselImageInput) {
-        (carouselImageInput as HTMLInputElement).value = '';
-      }
-    });
-  }
-
-  // Interceptar el envío del formulario para agregar imágenes al formulario
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      // Prevenir el envío para procesar las imágenes primero
-      e.preventDefault();
-
-      console.log('📷 Procesando imágenes antes de enviar...');
-      console.log('📷 Imagen principal:', primaryImageFile?.name || 'ninguna');
-      console.log('📷 Imágenes carrusel:', carouselImageFiles.length);
-
-      // Procesar imagen principal
-      if (primaryImageFile) {
         try {
+          // Convertir a base64 inmediatamente
           const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
-            reader.readAsDataURL(primaryImageFile);
+            reader.readAsDataURL(file);
           });
-          
-          // Agregar campos hidden al formulario
-          let input1 = form.querySelector('input[name="pending_primary_image"]') as HTMLInputElement;
-          if (!input1) {
-            input1 = document.createElement('input');
-            input1.type = 'hidden';
-            input1.name = 'pending_primary_image';
-            form.appendChild(input1);
-          }
-          input1.value = base64;
 
-          let input2 = form.querySelector('input[name="pending_primary_image_name"]') as HTMLInputElement;
-          if (!input2) {
-            input2 = document.createElement('input');
-            input2.type = 'hidden';
-            input2.name = 'pending_primary_image_name';
-            form.appendChild(input2);
+          primaryImageBase64 = base64;
+          primaryImageName = file.name;
+
+          // Mostrar preview
+          if (primaryImagePreviewImg) {
+            primaryImagePreviewImg.src = base64;
           }
-          input2.value = primaryImageFile.name;
+          if (primaryImagePreview) {
+            primaryImagePreview.classList.remove('hidden');
+          }
+          if (primaryImageUploadStatus) {
+            primaryImageUploadStatus.textContent = '✅ Imagen lista para subir';
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+          }
+
+          // Actualizar campos hidden
+          updateHiddenFields();
           
-          console.log('✅ Imagen principal procesada');
+          console.log('✅ Imagen principal procesada:', file.name);
         } catch (err) {
           console.error('❌ Error procesando imagen principal:', err);
+          if (primaryImageUploadStatus) {
+            primaryImageUploadStatus.textContent = '❌ Error al procesar la imagen';
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+          }
         }
-      }
+      });
+    }
 
-      // Procesar imágenes de carrusel
-      console.log('📷 Archivos de carrusel en memoria:', carouselImageFiles.length);
-      if (carouselImageFiles.length > 0) {
-        try {
-          const carouselData: Array<{ name: string; data: string }> = [];
-          
-          for (let i = 0; i < carouselImageFiles.length; i++) {
-            const file = carouselImageFiles[i];
-            console.log(`📷 Procesando carrusel ${i + 1}/${carouselImageFiles.length}: ${file.name}`);
-            
+    if (removePrimaryImageBtn) {
+      removePrimaryImageBtn.addEventListener('click', () => {
+        primaryImageBase64 = '';
+        primaryImageName = '';
+        
+        if (primaryImagePreview) {
+          primaryImagePreview.classList.add('hidden');
+        }
+        if (primaryImageInput) {
+          primaryImageInput.value = '';
+        }
+        if (primaryImageUploadStatus) {
+          primaryImageUploadStatus.textContent = '';
+        }
+
+        updateHiddenFields();
+        console.log('🖼️ Imagen principal eliminada');
+      });
+    }
+
+    // ===== IMÁGENES DE CARRUSEL =====
+    if (carouselImageInput) {
+      carouselImageInput.addEventListener('change', async (e) => {
+        const files = Array.from((e.target as HTMLInputElement).files || []);
+        if (files.length === 0) return;
+
+        console.log('🖼️ Procesando imágenes de carrusel:', files.length);
+
+        const availableSlots = maxCarouselImages - carouselImagesData.length;
+        const filesToAdd = files.slice(0, availableSlots);
+
+        if (files.length > availableSlots) {
+          if (carouselImageUploadStatus) {
+            carouselImageUploadStatus.textContent = `⚠️ Solo se agregarán ${availableSlots} imagen(es) (máximo 4)`;
+            carouselImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
+          }
+        }
+
+        let addedCount = 0;
+        for (const file of filesToAdd) {
+          // Validar tamaño (10MB)
+          if (file.size > 10 * 1024 * 1024) {
+            console.warn(`⚠️ ${file.name} es muy grande, saltando...`);
+            continue;
+          }
+
+          // Validar tipo
+          if (!file.type.startsWith('image/')) {
+            console.warn(`⚠️ ${file.name} no es una imagen, saltando...`);
+            continue;
+          }
+
+          try {
+            // Convertir a base64 inmediatamente
             const base64 = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(reader.result as string);
               reader.onerror = reject;
               reader.readAsDataURL(file);
             });
-            
-            carouselData.push({
+
+            carouselImagesData.push({
               name: file.name,
-              data: base64,
+              data: base64
             });
-            console.log(`✅ Carrusel ${i + 1} convertido a base64`);
+            addedCount++;
+            console.log(`✅ Imagen de carrusel procesada: ${file.name}`);
+          } catch (err) {
+            console.error(`❌ Error procesando ${file.name}:`, err);
           }
-          
-          let input = form.querySelector('input[name="pending_carousel_images"]') as HTMLInputElement;
-          if (!input) {
-            input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'pending_carousel_images';
-            form.appendChild(input);
-          }
-          input.value = JSON.stringify(carouselData);
-          
-          console.log('✅ Imágenes de carrusel procesadas:', carouselData.length);
-          console.log('📷 Tamaño del JSON:', input.value.length, 'bytes');
-        } catch (err) {
-          console.error('❌ Error procesando imágenes de carrusel:', err);
         }
-      } else {
-        console.log('⚠️ No hay imágenes de carrusel para procesar');
-      }
 
-      console.log('📝 Enviando formulario...');
-      // Ahora sí enviar el formulario
-      form.submit();
-    });
-  }
+        renderCarouselPreviews();
+        updateCarouselCount();
+        updateHiddenFields();
+
+        if (carouselImageUploadStatus && addedCount > 0) {
+          carouselImageUploadStatus.textContent = `✅ ${addedCount} imagen(es) lista(s) para subir. Total: ${carouselImagesData.length}`;
+          carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+        }
+
+        // Limpiar input
+        carouselImageInput.value = '';
+      });
+    }
+
+    console.log('🖼️ CategoryImageManagerCreate: Inicializado correctamente');
+  });
 </script>
-

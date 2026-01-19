@@ -77,25 +77,39 @@ if (Astro.request.method === "POST") {
 
         // Procesar imágenes de carrusel
         const pendingCarouselImages = formData.get("pending_carousel_images") as string;
-        if (pendingCarouselImages) {
-          const carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
-          const { uploadCategoryCarouselImage } = await import('@/lib/cloudinary');
-          
-          for (let i = 0; i < carouselData.length && i < 4; i++) {
-            const { name, data } = carouselData[i];
-            const base64Data = data.split(',')[1];
-            const buffer = Buffer.from(base64Data, 'base64');
+        console.log('📷 [Categoría] Imágenes de carrusel recibidas:', pendingCarouselImages ? `Sí (${pendingCarouselImages.length} bytes)` : 'No');
+        
+        if (pendingCarouselImages && pendingCarouselImages.trim() !== '') {
+          try {
+            const carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
+            console.log(`📷 [Categoría] Número de imágenes de carrusel: ${carouselData.length}`);
             
-            const imageUrl = await uploadCategoryCarouselImage(buffer, categoryId, name);
+            const { uploadCategoryCarouselImage } = await import('@/lib/cloudinary');
             
-            await addCategoryImage({
-              category_id: categoryId,
-              image_url: imageUrl,
-              alt_text: `${name} - Carrusel ${i + 1}`,
-              is_primary: false,
-              sort_order: i + 1,
-            });
+            for (let i = 0; i < carouselData.length && i < 4; i++) {
+              const { name, data } = carouselData[i];
+              console.log(`📷 [Categoría] Procesando imagen ${i + 1}: ${name}`);
+              
+              const base64Data = data.split(',')[1];
+              const buffer = Buffer.from(base64Data, 'base64');
+              
+              const imageUrl = await uploadCategoryCarouselImage(buffer, categoryId, name);
+              console.log(`📷 [Categoría] Imagen ${i + 1} subida: ${imageUrl}`);
+              
+              await addCategoryImage({
+                category_id: categoryId,
+                image_url: imageUrl,
+                alt_text: `${name} - Carrusel ${i + 1}`,
+                is_primary: false,
+                sort_order: i + 1,
+              });
+              console.log(`📷 [Categoría] Imagen ${i + 1} guardada en BD`);
+            }
+          } catch (carouselErr) {
+            console.error('❌ [Categoría] Error procesando carrusel:', carouselErr);
           }
+        } else {
+          console.log('📷 [Categoría] No hay imágenes de carrusel para procesar');
         }
       } catch (err) {
         console.error("Error procesando imágenes:", err);
