@@ -310,42 +310,81 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     });
   }
 
-  // Manejar eliminación de imagen principal existente
-  if (removeExistingPrimaryImageBtn) {
-    console.log('✅ Botón remove-existing-primary-image encontrado, agregando listener');
-    removeExistingPrimaryImageBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+  // Función para configurar el botón de eliminar imagen principal
+  function setupRemovePrimaryImageButton() {
+    const btn = document.getElementById('remove-existing-primary-image');
+    if (btn) {
+      console.log('✅ Botón remove-existing-primary-image encontrado, agregando listener');
       
-      console.log('🗑️ Botón eliminar imagen principal clickeado');
+      // Remover listeners anteriores si existen
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
       
-      if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
-        console.log('❌ Usuario canceló la eliminación');
-        return;
-      }
-
-      try {
-        console.log('🗑️ Eliminando imagen principal de la BD...');
-        const success = await savePrimaryImageToDB('');
+      newBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (success) {
-          console.log('✅ Imagen principal eliminada correctamente');
-          alert('Imagen principal eliminada correctamente');
-          // Recargar para actualizar la vista
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
-        } else {
-          console.error('❌ Error al eliminar imagen principal - savePrimaryImageToDB retornó false');
-          alert('Error al eliminar la imagen principal');
+        console.log('🗑️ Botón eliminar imagen principal clickeado');
+        
+        if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
+          console.log('❌ Usuario canceló la eliminación');
+          return;
         }
-      } catch (error) {
-        console.error('❌ Error eliminando imagen principal:', error);
-        alert('Error al eliminar la imagen principal: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+
+        try {
+          console.log('🗑️ Eliminando imagen principal de la BD...');
+          const success = await savePrimaryImageToDB('');
+          
+          if (success) {
+            console.log('✅ Imagen principal eliminada correctamente');
+            alert('Imagen principal eliminada correctamente');
+            // Recargar para actualizar la vista
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          } else {
+            console.error('❌ Error al eliminar imagen principal - savePrimaryImageToDB retornó false');
+            alert('Error al eliminar la imagen principal');
+          }
+        } catch (error) {
+          console.error('❌ Error eliminando imagen principal:', error);
+          alert('Error al eliminar la imagen principal: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+        }
+      });
+      
+      return true;
+    }
+    return false;
+  }
+
+  // Intentar configurar el botón inmediatamente
+  if (!setupRemovePrimaryImageButton()) {
+    console.warn('⚠️ Botón remove-existing-primary-image NO encontrado, intentando de nuevo...');
+    
+    // Intentar de nuevo después de un pequeño delay
+    setTimeout(() => {
+      if (!setupRemovePrimaryImageButton()) {
+        console.error('❌ Botón remove-existing-primary-image aún no encontrado después de 1 segundo');
+      }
+    }, 1000);
+    
+    // También usar MutationObserver para detectar cuando se agrega el botón
+    const observer = new MutationObserver(() => {
+      if (setupRemovePrimaryImageButton()) {
+        observer.disconnect();
+        console.log('✅ Botón encontrado mediante MutationObserver');
       }
     });
-  } else {
-    console.warn('⚠️ Botón remove-existing-primary-image NO encontrado en el DOM');
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    // Desconectar después de 5 segundos
+    setTimeout(() => {
+      observer.disconnect();
+    }, 5000);
   }
 
   // ===== IMÁGENES DE CARRUSEL =====
