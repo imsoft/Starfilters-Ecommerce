@@ -16,11 +16,30 @@ cd ~/starfilters-app
 git pull origin main
 ```
 
-### Paso 3: Crear la tabla filter_category_images
+### Paso 3: Encontrar el nombre correcto de la base de datos
 
-**Opción A: Usando el script SQL directamente**
+Primero, necesitas saber el nombre real de tu base de datos:
+
 ```bash
-mysql -u root -p starfilters_db < migrations/create_filter_category_images_table.sql
+# Ver el archivo .env para encontrar DB_NAME
+cat .env | grep DB_NAME
+
+# O listar todas las bases de datos disponibles
+mysql -u root -p -e "SHOW DATABASES;"
+```
+
+### Paso 4: Crear la tabla filter_category_images
+
+**Opción A: Usando el script automático (RECOMENDADO)**
+```bash
+./scripts/create-filter-category-images-table.sh
+```
+Este script detecta automáticamente el nombre de la BD desde .env
+
+**Opción B: Usando el script SQL directamente**
+```bash
+# Reemplaza 'NOMBRE_BD_REAL' con el nombre que encontraste
+mysql -u root -p NOMBRE_BD_REAL < migrations/create_filter_category_images_table.sql
 ```
 (Te pedirá la contraseña de MySQL)
 
@@ -32,7 +51,8 @@ chmod +x scripts/verify-image-tables.sh
 
 **Opción C: Manualmente en MySQL**
 ```bash
-mysql -u root -p starfilters_db
+# Reemplaza 'NOMBRE_BD_REAL' con el nombre que encontraste
+mysql -u root -p NOMBRE_BD_REAL
 ```
 
 Luego ejecuta:
@@ -53,9 +73,10 @@ CREATE TABLE IF NOT EXISTS filter_category_images (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-### Paso 4: Verificar que la tabla se creó
+### Paso 5: Verificar que la tabla se creó
 ```bash
-mysql -u root -p starfilters_db -e "DESCRIBE filter_category_images;"
+# Reemplaza 'NOMBRE_BD_REAL' con el nombre que encontraste
+mysql -u root -p NOMBRE_BD_REAL -e "DESCRIBE filter_category_images;"
 ```
 
 Deberías ver algo como:
@@ -74,13 +95,13 @@ Deberías ver algo como:
 +------------+--------------+------+-----+-------------------+-------------------+
 ```
 
-### Paso 5: Recompilar y reiniciar
+### Paso 6: Recompilar y reiniciar
 ```bash
 pnpm build
 pm2 restart all
 ```
 
-### Paso 6: Probar
+### Paso 7: Probar
 1. Ve a crear una categoría de filtro
 2. Sube una imagen principal y 2-3 imágenes de carrusel
 3. Crea la categoría
@@ -90,7 +111,8 @@ pm2 restart all
 
 Para verificar qué tablas de imágenes existen:
 ```bash
-mysql -u root -p starfilters_db -e "SHOW TABLES LIKE '%images%';"
+# Reemplaza 'NOMBRE_BD_REAL' con el nombre que encontraste
+mysql -u root -p NOMBRE_BD_REAL -e "SHOW TABLES LIKE '%images%';"
 ```
 
 Deberías ver:
