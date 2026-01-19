@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth-utils';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { addProductImage, getProductImages, generateUUID } from '@/lib/database';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const authResult = await requireAdmin(cookies);
@@ -83,13 +84,40 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    console.log('✅ Imagen subida exitosamente:', uploadResult.url);
+    console.log('✅ Imagen subida a Cloudinary:', uploadResult.url);
+
+    // Verificar si es la primera imagen (para marcarla como principal)
+    const existingImages = await getProductImages(parseInt(productId));
+    const isPrimary = existingImages.length === 0;
+
+    // Guardar en la base de datos
+    const imageId = await addProductImage({
+      uuid: generateUUID(),
+      product_id: parseInt(productId),
+      image_url: uploadResult.url,
+      alt_text: image.name || 'Imagen del producto',
+      is_primary: isPrimary,
+      sort_order: existingImages.length,
+    });
+
+    if (!imageId) {
+      console.error('❌ Error guardando imagen en la base de datos');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Error al guardar la imagen en la base de datos'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('✅ Imagen guardada en BD con ID:', imageId);
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: 'Imagen subida exitosamente',
       url: uploadResult.url,
-      imageId: imageName
+      imageId: imageId.toString()
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
