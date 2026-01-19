@@ -316,26 +316,7 @@ if (Astro.request.method === "POST") {
           </div>
           <div>
             <h2 class="text-xl font-bold text-gray-900">
-              Imágenes ({images.length})
-            </h2>
-            <p class="mt-1 text-sm text-gray-500">
-              Imagen principal y hasta 4 imágenes de carrusel
-            </p>
-          </div>
-        </div>
-
-
-      <!-- Sección: Imágenes -->
-      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-100">
-            <svg class="h-6 w-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div>
-            <h2 class="text-xl font-bold text-gray-900">
-              Imágenes ({images.length})
+              Imágenes ({mainImageUrl ? 1 : 0 + images.filter(img => !img.is_primary).length})
             </h2>
             <p class="mt-1 text-sm text-gray-500">
               Imagen principal y hasta 4 imágenes de carrusel

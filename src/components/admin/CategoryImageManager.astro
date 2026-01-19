@@ -310,19 +310,40 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 
   // Manejar eliminación de imagen principal existente
   if (removeExistingPrimaryImageBtn) {
-    removeExistingPrimaryImageBtn.addEventListener('click', async () => {
+    console.log('✅ Botón remove-existing-primary-image encontrado, agregando listener');
+    removeExistingPrimaryImageBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log('🗑️ Botón eliminar imagen principal clickeado');
+      
       if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
+        console.log('❌ Usuario canceló la eliminación');
         return;
       }
 
-      // Eliminar de la BD
-      await savePrimaryImageToDB('');
-
-      // Recargar para actualizar la vista
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      try {
+        console.log('🗑️ Eliminando imagen principal de la BD...');
+        const success = await savePrimaryImageToDB('');
+        
+        if (success) {
+          console.log('✅ Imagen principal eliminada correctamente');
+          alert('Imagen principal eliminada correctamente');
+          // Recargar para actualizar la vista
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        } else {
+          console.error('❌ Error al eliminar imagen principal - savePrimaryImageToDB retornó false');
+          alert('Error al eliminar la imagen principal');
+        }
+      } catch (error) {
+        console.error('❌ Error eliminando imagen principal:', error);
+        alert('Error al eliminar la imagen principal: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      }
     });
+  } else {
+    console.warn('⚠️ Botón remove-existing-primary-image NO encontrado en el DOM');
   }
 
   // ===== IMÁGENES DE CARRUSEL =====
