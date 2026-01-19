@@ -13,14 +13,14 @@ interface Props {
 const { id, name, initialSizes = [] } = Astro.props;
 ---
 
-<div class="space-y-4">
+<div class="space-y-4" data-sizes-table data-table-id={id} data-field-name={name}>
   <div class="flex items-center justify-between">
     <label class="block text-sm font-medium text-gray-700">
       Tamaños/Variantes
     </label>
     <button
       type="button"
-      id={`${id}-add-row`}
+      data-add-size-btn
       class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
     >
       <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,14 +51,14 @@ const { id, name, initialSizes = [] } = Astro.props;
           </th>
         </tr>
       </thead>
-      <tbody id={`${id}-tbody`} class="bg-white divide-y divide-gray-200">
+      <tbody data-sizes-tbody class="bg-white divide-y divide-gray-200">
         {initialSizes.length > 0 ? (
           initialSizes.map((size, index) => (
             <tr data-row-index={index} class="hover:bg-gray-50">
               <td class="px-4 py-3 whitespace-nowrap">
                 <input
                   type="text"
-                  name={`${name}[${index}][nominal_size]`}
+                  data-field="nominal_size"
                   value={size.nominal_size}
                   placeholder='Ej: 9.125" x 9.125" x 3"'
                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -67,7 +67,7 @@ const { id, name, initialSizes = [] } = Astro.props;
               <td class="px-4 py-3 whitespace-nowrap">
                 <input
                   type="text"
-                  name={`${name}[${index}][real_size]`}
+                  data-field="real_size"
                   value={size.real_size}
                   placeholder="Ej: 231 x 231 x 75 mm"
                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -78,7 +78,7 @@ const { id, name, initialSizes = [] } = Astro.props;
                   <span class="absolute left-2 top-2 text-gray-500 text-sm">$</span>
                   <input
                     type="number"
-                    name={`${name}[${index}][price]`}
+                    data-field="price"
                     value={size.price}
                     min="0"
                     step="0.01"
@@ -90,7 +90,7 @@ const { id, name, initialSizes = [] } = Astro.props;
               <td class="px-4 py-3 whitespace-nowrap">
                 <input
                   type="text"
-                  name={`${name}[${index}][bind_code]`}
+                  data-field="bind_code"
                   value={size.bind_code}
                   placeholder="Ej: HGD1"
                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -99,7 +99,7 @@ const { id, name, initialSizes = [] } = Astro.props;
               <td class="px-4 py-3 whitespace-nowrap text-center">
                 <button
                   type="button"
-                  data-remove-row={index}
+                  data-remove-row
                   class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
                 >
                   <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +110,7 @@ const { id, name, initialSizes = [] } = Astro.props;
             </tr>
           ))
         ) : (
-          <tr id={`${id}-empty-row`}>
+          <tr data-empty-row>
             <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">
               No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.
             </td>
@@ -123,192 +123,162 @@ const { id, name, initialSizes = [] } = Astro.props;
   <!-- Campo hidden para almacenar el JSON de los tamaños -->
   <input
     type="hidden"
-    id={`${id}-json`}
+    data-sizes-json
     name={name}
     value={JSON.stringify(initialSizes)}
   />
 </div>
 
-<script define:vars={{ tableId: id, fieldName: name }}>
-  document.addEventListener('DOMContentLoaded', function() {
-    const addButton = document.getElementById(`${tableId}-add-row`);
-    const tbody = document.getElementById(`${tableId}-tbody`);
-    const jsonInput = document.getElementById(`${tableId}-json`);
-    let emptyRow = document.getElementById(`${tableId}-empty-row`);
+<script>
+  function initSizesTable() {
+    const tables = document.querySelectorAll('[data-sizes-table]');
+    
+    tables.forEach(function(container) {
+      const tableId = container.getAttribute('data-table-id');
+      const fieldName = container.getAttribute('data-field-name');
+      const addButton = container.querySelector('[data-add-size-btn]');
+      const tbody = container.querySelector('[data-sizes-tbody]');
+      const jsonInput = container.querySelector('[data-sizes-json]');
 
-    console.log('ProductSizesTable init:', { addButton: !!addButton, tbody: !!tbody, jsonInput: !!jsonInput });
-
-    if (!addButton || !tbody || !jsonInput) {
-      console.error('ProductSizesTable: elementos no encontrados', { addButton, tbody, jsonInput });
-      return;
-    }
-
-    function updateJson() {
-      const rows = tbody.querySelectorAll('tr[data-row-index]');
-      const sizes: Array<{nominal_size: string; real_size: string; price: number; bind_code: string}> = [];
-      
-      rows.forEach((row) => {
-        const index = row.getAttribute('data-row-index');
-        if (index === null) return;
-        
-        const nominalInput = row.querySelector(`input[name="${fieldName}[${index}][nominal_size]"]`) as HTMLInputElement;
-        const realInput = row.querySelector(`input[name="${fieldName}[${index}][real_size]"]`) as HTMLInputElement;
-        const priceInput = row.querySelector(`input[name="${fieldName}[${index}][price]"]`) as HTMLInputElement;
-        const bindCodeInput = row.querySelector(`input[name="${fieldName}[${index}][bind_code]"]`) as HTMLInputElement;
-        
-        if (nominalInput && realInput && priceInput && bindCodeInput) {
-          sizes.push({
-            nominal_size: nominalInput.value || '',
-            real_size: realInput.value || '',
-            price: parseFloat(priceInput.value) || 0,
-            bind_code: bindCodeInput.value || ''
-          });
-        }
-      });
-      
-      jsonInput.value = JSON.stringify(sizes);
-    }
-
-    function addRow() {
-      // Remover fila vacía si existe
-      const currentEmptyRow = document.getElementById(`${tableId}-empty-row`);
-      if (currentEmptyRow) {
-        currentEmptyRow.remove();
+      if (!addButton || !tbody || !jsonInput) {
+        console.error('ProductSizesTable: elementos no encontrados para tabla:', tableId);
+        return;
       }
 
-      const rows = tbody.querySelectorAll('tr[data-row-index]');
-      const newIndex = rows.length;
-
-      const newRow = document.createElement('tr');
-      newRow.className = 'hover:bg-gray-50';
-      newRow.setAttribute('data-row-index', newIndex.toString());
-
-      newRow.innerHTML = `
-        <td class="px-4 py-3 whitespace-nowrap">
-          <input
-            type="text"
-            name="${fieldName}[${newIndex}][nominal_size]"
-            placeholder='Ej: 9.125" x 9.125" x 3"'
-            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </td>
-        <td class="px-4 py-3 whitespace-nowrap">
-          <input
-            type="text"
-            name="${fieldName}[${newIndex}][real_size]"
-            placeholder="Ej: 231 x 231 x 75 mm"
-            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </td>
-        <td class="px-4 py-3 whitespace-nowrap">
-          <div class="relative">
-            <span class="absolute left-2 top-2 text-gray-500 text-sm">$</span>
-            <input
-              type="number"
-              name="${fieldName}[${newIndex}][price]"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              class="w-full rounded-md border border-gray-300 pl-6 pr-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        </td>
-        <td class="px-4 py-3 whitespace-nowrap">
-          <input
-            type="text"
-            name="${fieldName}[${newIndex}][bind_code]"
-            placeholder="Ej: HGD1"
-            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </td>
-        <td class="px-4 py-3 whitespace-nowrap text-center">
-          <button
-            type="button"
-            data-remove-row="${newIndex}"
-            class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
-          >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </td>
-      `;
-
-      tbody.appendChild(newRow);
-
-      // Agregar listener al botón de eliminar
-      const removeBtn = newRow.querySelector(`[data-remove-row="${newIndex}"]`);
-      if (removeBtn) {
-        removeBtn.addEventListener('click', () => {
-          newRow.remove();
-          updateJson();
-          // Si no hay más filas, mostrar el mensaje vacío
-          if (tbody.querySelectorAll('tr[data-row-index]').length === 0) {
-            const emptyRowNew = document.createElement('tr');
-            emptyRowNew.id = `${tableId}-empty-row`;
-            emptyRowNew.innerHTML = `
-              <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">
-                No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.
-              </td>
-            `;
-            tbody.appendChild(emptyRowNew);
+      function updateJson() {
+        var rows = tbody.querySelectorAll('tr[data-row-index]');
+        var sizes = [];
+        
+        rows.forEach(function(row) {
+          var nominalInput = row.querySelector('[data-field="nominal_size"]');
+          var realInput = row.querySelector('[data-field="real_size"]');
+          var priceInput = row.querySelector('[data-field="price"]');
+          var bindCodeInput = row.querySelector('[data-field="bind_code"]');
+          
+          if (nominalInput && realInput && priceInput && bindCodeInput) {
+            sizes.push({
+              nominal_size: nominalInput.value || '',
+              real_size: realInput.value || '',
+              price: parseFloat(priceInput.value) || 0,
+              bind_code: bindCodeInput.value || ''
+            });
           }
         });
+        
+        jsonInput.value = JSON.stringify(sizes);
       }
 
-      // Agregar listeners a los inputs para actualizar JSON
-      const inputs = newRow.querySelectorAll('input');
-      inputs.forEach(input => {
+      function showEmptyRow() {
+        if (tbody.querySelectorAll('tr[data-row-index]').length === 0) {
+          var emptyRow = document.createElement('tr');
+          emptyRow.setAttribute('data-empty-row', '');
+          emptyRow.innerHTML = '<td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.</td>';
+          tbody.appendChild(emptyRow);
+        }
+      }
+
+      function removeRow(row) {
+        row.remove();
+        updateJson();
+        showEmptyRow();
+      }
+
+      function addRow() {
+        // Remover fila vacía si existe
+        var emptyRow = container.querySelector('[data-empty-row]');
+        if (emptyRow) {
+          emptyRow.remove();
+        }
+
+        var rows = tbody.querySelectorAll('tr[data-row-index]');
+        var newIndex = rows.length;
+
+        var newRow = document.createElement('tr');
+        newRow.className = 'hover:bg-gray-50';
+        newRow.setAttribute('data-row-index', newIndex.toString());
+
+        newRow.innerHTML = 
+          '<td class="px-4 py-3 whitespace-nowrap">' +
+            '<input type="text" data-field="nominal_size" placeholder=\'Ej: 9.125" x 9.125" x 3"\' class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
+          '</td>' +
+          '<td class="px-4 py-3 whitespace-nowrap">' +
+            '<input type="text" data-field="real_size" placeholder="Ej: 231 x 231 x 75 mm" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
+          '</td>' +
+          '<td class="px-4 py-3 whitespace-nowrap">' +
+            '<div class="relative">' +
+              '<span class="absolute left-2 top-2 text-gray-500 text-sm">$</span>' +
+              '<input type="number" data-field="price" min="0" step="0.01" placeholder="0.00" class="w-full rounded-md border border-gray-300 pl-6 pr-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
+            '</div>' +
+          '</td>' +
+          '<td class="px-4 py-3 whitespace-nowrap">' +
+            '<input type="text" data-field="bind_code" placeholder="Ej: HGD1" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
+          '</td>' +
+          '<td class="px-4 py-3 whitespace-nowrap text-center">' +
+            '<button type="button" data-remove-row class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">' +
+              '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />' +
+              '</svg>' +
+            '</button>' +
+          '</td>';
+
+        tbody.appendChild(newRow);
+
+        // Agregar listener al botón de eliminar
+        var removeBtn = newRow.querySelector('[data-remove-row]');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            removeRow(newRow);
+          });
+        }
+
+        // Agregar listeners a los inputs para actualizar JSON
+        var inputs = newRow.querySelectorAll('input');
+        inputs.forEach(function(input) {
+          input.addEventListener('input', updateJson);
+        });
+
+        updateJson();
+
+        // Enfocar el primer input
+        var firstInput = newRow.querySelector('input');
+        if (firstInput) firstInput.focus();
+      }
+
+      // Agregar listener al botón de agregar
+      addButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        addRow();
+      });
+
+      // Agregar listeners a los botones de eliminar existentes
+      var removeButtons = tbody.querySelectorAll('[data-remove-row]');
+      removeButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var row = e.currentTarget.closest('tr[data-row-index]');
+          if (row) {
+            removeRow(row);
+          }
+        });
+      });
+
+      // Agregar listeners a los inputs existentes
+      var existingInputs = tbody.querySelectorAll('input');
+      existingInputs.forEach(function(input) {
         input.addEventListener('input', updateJson);
       });
 
+      // Inicializar JSON
       updateJson();
-
-      // Enfocar el primer input
-      const firstInput = newRow.querySelector('input') as HTMLInputElement;
-      if (firstInput) firstInput.focus();
-    }
-
-    // Agregar listener al botón de agregar
-    addButton.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('Botón agregar clickeado');
-      addRow();
     });
+  }
 
-    // Agregar listeners a los botones de eliminar existentes
-    const removeButtons = tbody.querySelectorAll('[data-remove-row]');
-    removeButtons.forEach((btn) => {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const row = (e.currentTarget as HTMLElement).closest('tr[data-row-index]');
-        if (row) {
-          row.remove();
-          updateJson();
-          // Si no hay más filas, mostrar el mensaje vacío
-          if (tbody.querySelectorAll('tr[data-row-index]').length === 0) {
-            const emptyRowNew = document.createElement('tr');
-            emptyRowNew.id = `${tableId}-empty-row`;
-            emptyRowNew.innerHTML = `
-              <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">
-                No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.
-              </td>
-            `;
-            tbody.appendChild(emptyRowNew);
-          }
-        }
-      });
-    });
-
-    // Agregar listeners a los inputs existentes
-    const existingInputs = tbody.querySelectorAll('input');
-    existingInputs.forEach(input => {
-      input.addEventListener('input', updateJson);
-    });
-
-    // Inicializar JSON
-    updateJson();
-    console.log('ProductSizesTable: inicializado correctamente');
-  });
+  // Ejecutar cuando el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSizesTable);
+  } else {
+    initSizesTable();
+  }
 </script>
