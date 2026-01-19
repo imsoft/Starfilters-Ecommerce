@@ -7,7 +7,7 @@ import { getActiveCategories } from "@/lib/filter-category-service";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
 import { generateUUID } from "@/lib/database";
-import CategoryImageManagerCreate from "@/components/admin/CategoryImageManagerCreate.astro";
+import { ProductImageUploader } from "@/components/ui/ProductImageUploader";
 import DynamicListInput from "@/components/admin/DynamicListInput.astro";
 import ProductSizesTable from "@/components/admin/ProductSizesTable.astro";
 import FormPersistence from "@/components/admin/FormPersistence.astro";
@@ -788,7 +788,11 @@ if (Astro.request.method === "POST") {
             </p>
           </div>
         </div>
-        <CategoryImageManagerCreate />
+        <ProductImageUploader
+          productId="new"
+          initialImages={[]}
+          isCreateMode={true}
+        />
       </div>
 
 

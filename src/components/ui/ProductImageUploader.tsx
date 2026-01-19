@@ -11,14 +11,18 @@ interface ProductImageUploaderProps {
   productId: string;
   initialImages?: ProductImage[];
   onImagesChange?: (images: ProductImage[]) => void;
+  isCreateMode?: boolean; // Si es true, guarda en hidden fields en lugar de subir por API
 }
 
-export function ProductImageUploader({ productId, initialImages = [], onImagesChange }: ProductImageUploaderProps) {
+export function ProductImageUploader({ productId, initialImages = [], onImagesChange, isCreateMode = false }: ProductImageUploaderProps) {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Determinar si estamos en modo creación (productId no válido o es "new")
+  const isCreating = isCreateMode || productId === "new" || productId === "" || isNaN(parseInt(productId));
 
   // Cargar imágenes desde el servidor al montar el componente
   useEffect(() => {
@@ -186,100 +190,194 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     }
   };
 
+  // Función para convertir File a base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Función para actualizar hidden fields (solo en modo creación)
+  const updateHiddenFields = () => {
+    if (!isCreating) return;
+    
+    const primaryImage = images.find(img => img.isPrimary === true);
+    const carouselImages = images.filter(img => img.isPrimary === false);
+    
+    // Actualizar campo de imagen principal
+    const pendingPrimaryImageField = document.getElementById('pending_primary_image') as HTMLInputElement;
+    const pendingPrimaryImageNameField = document.getElementById('pending_primary_image_name') as HTMLInputElement;
+    
+    if (pendingPrimaryImageField && primaryImage) {
+      // Si la imagen tiene base64 en su URL (data:image), guardarla directamente
+      if (primaryImage.url.startsWith('data:')) {
+        pendingPrimaryImageField.value = primaryImage.url;
+        if (pendingPrimaryImageNameField) {
+          pendingPrimaryImageNameField.value = primaryImage.url.substring(5, primaryImage.url.indexOf(';')) || 'image.jpg';
+        }
+      }
+    } else if (pendingPrimaryImageField && !primaryImage) {
+      pendingPrimaryImageField.value = '';
+      if (pendingPrimaryImageNameField) {
+        pendingPrimaryImageNameField.value = '';
+      }
+    }
+    
+    // Actualizar campo de imágenes de carrusel
+    const pendingCarouselImagesField = document.getElementById('pending_carousel_images') as HTMLInputElement;
+    if (pendingCarouselImagesField) {
+      const carouselData = carouselImages
+        .filter(img => img.url.startsWith('data:'))
+        .map(img => ({
+          name: img.url.substring(5, img.url.indexOf(';')) || 'image.jpg',
+          data: img.url
+        }));
+      
+      pendingCarouselImagesField.value = JSON.stringify(carouselData);
+      console.log('📷 [ProductImageUploader] Campos hidden actualizados:', {
+        primaryImage: primaryImage ? 'Sí' : 'No',
+        carouselImages: carouselData.length
+      });
+    }
+  };
+
   const handleFiles = async (files: FileList) => {
     setUploading(true);
     
     try {
-      console.log(`📷 Iniciando subida de ${files.length} archivo(s)`);
+      console.log(`📷 Iniciando procesamiento de ${files.length} archivo(s)`);
+      console.log(`📷 Modo creación: ${isCreating}`);
       
-      // Subir todas las imágenes en secuencia
-      const uploadPromises: Promise<void>[] = [];
-      
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      // Si estamos en modo creación, guardar como base64 en hidden fields
+      if (isCreating) {
+        console.log('📷 Modo creación: guardando imágenes como base64 en hidden fields');
         
-        // Validar tipo de archivo
-        if (!file.type.startsWith('image/')) {
-          alert(`El archivo ${file.name} no es una imagen válida`);
-          continue;
-        }
+        const newImages: ProductImage[] = [];
         
-        // Validar tamaño (10MB)
-        if (file.size > 10 * 1024 * 1024) {
-          alert(`El archivo ${file.name} es demasiado grande (máximo 10MB)`);
-          continue;
-        }
-        
-        // Crear promesa para subir cada imagen
-        const uploadPromise = (async () => {
-          try {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('productId', productId);
-            
-            console.log(`📷 Subiendo imagen ${i + 1}/${files.length}: ${file.name}`);
-            
-            const response = await fetch('/api/products/upload-image', {
-              method: 'POST',
-              body: formData
-            });
-            
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
-              console.log(`✅ Imagen ${i + 1} subida exitosamente:`, result.url);
-              console.log(`📷 Total de imágenes después de esta subida: ${result.allImages?.length || 'N/A'}`);
-            } else {
-              throw new Error(result.message || 'Error desconocido');
-            }
-          } catch (error) {
-            console.error(`❌ Error subiendo imagen ${i + 1} (${file.name}):`, error);
-            // No hacer alert aquí para no interrumpir las otras subidas
-            // Solo loguear el error y continuar
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          
+          // Validar tipo de archivo
+          if (!file.type.startsWith('image/')) {
+            alert(`El archivo ${file.name} no es una imagen válida`);
+            continue;
           }
-        })();
+          
+          // Validar tamaño (10MB)
+          if (file.size > 10 * 1024 * 1024) {
+            alert(`El archivo ${file.name} es demasiado grande (máximo 10MB)`);
+            continue;
+          }
+          
+          try {
+            const base64 = await fileToBase64(file);
+            const isPrimary = newImages.length === 0 && images.filter(img => img.isPrimary === true).length === 0;
+            
+            const newImage: ProductImage = {
+              id: `temp-${Date.now()}-${i}`,
+              url: base64,
+              isPrimary: isPrimary
+            };
+            
+            newImages.push(newImage);
+            console.log(`✅ Imagen ${i + 1} procesada como base64: ${file.name}`);
+          } catch (error) {
+            console.error(`❌ Error procesando imagen ${i + 1} (${file.name}):`, error);
+            alert(`Error al procesar la imagen ${file.name}`);
+          }
+        }
         
-        uploadPromises.push(uploadPromise);
-      }
-      
-      // Esperar a que todas las subidas terminen (incluso si algunas fallan)
-      console.log('📷 Esperando a que todas las subidas terminen...');
-      const results = await Promise.allSettled(uploadPromises);
-      
-      // Contar éxitos y fallos
-      const successes = results.filter(r => r.status === 'fulfilled').length;
-      const failures = results.filter(r => r.status === 'rejected').length;
-      console.log(`📷 Subidas completadas: ${successes} exitosas, ${failures} fallidas`);
-      
-      if (failures > 0) {
-        alert(`Se subieron ${successes} imagen(es) exitosamente, pero ${failures} fallaron. Por favor revisa la consola para más detalles.`);
-      }
-      
-      // Esperar un poco más para asegurar que la BD se haya actualizado
-      console.log('📷 Esperando 1 segundo para que la BD se actualice...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Refrescar todas las imágenes desde el servidor (múltiples intentos)
-      console.log('📷 Refrescando imágenes desde el servidor (intento 1)...');
-      let refreshedImages = await refreshImages();
-      
-      // Si no hay imágenes o hay menos de las esperadas, intentar de nuevo
-      if (refreshedImages.length < files.length) {
-        console.log('📷 Pocas imágenes detectadas, esperando 1 segundo más...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('📷 Refrescando imágenes desde el servidor (intento 2)...');
-        refreshedImages = await refreshImages();
-      }
-      
-      if (refreshedImages.length === 0) {
-        console.warn('⚠️ No se pudieron cargar las imágenes después de las subidas');
-        alert('Las imágenes se subieron pero no se pudieron cargar. Por favor, recarga la página.');
+        // Actualizar estado
+        const updatedImages = [...images, ...newImages];
+        setImages(updatedImages);
+        onImagesChange?.(updatedImages);
+        
+        // Actualizar hidden fields
+        setTimeout(() => {
+          updateHiddenFields();
+        }, 100);
+        
+        console.log(`✅ ${newImages.length} imagen(es) procesada(s) en modo creación`);
       } else {
-        console.log(`✅ Se cargaron ${refreshedImages.length} imagen(es) exitosamente`);
+        // Modo edición: subir por API
+        console.log('📷 Modo edición: subiendo imágenes por API');
+        
+        // Subir todas las imágenes en secuencia
+        const uploadPromises: Promise<void>[] = [];
+        
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          
+          // Validar tipo de archivo
+          if (!file.type.startsWith('image/')) {
+            alert(`El archivo ${file.name} no es una imagen válida`);
+            continue;
+          }
+          
+          // Validar tamaño (10MB)
+          if (file.size > 10 * 1024 * 1024) {
+            alert(`El archivo ${file.name} es demasiado grande (máximo 10MB)`);
+            continue;
+          }
+          
+          // Crear promesa para subir cada imagen
+          const uploadPromise = (async () => {
+            try {
+              const formData = new FormData();
+              formData.append('image', file);
+              formData.append('productId', productId);
+              
+              console.log(`📷 Subiendo imagen ${i + 1}/${files.length}: ${file.name}`);
+              
+              const response = await fetch('/api/products/upload-image', {
+                method: 'POST',
+                body: formData
+              });
+              
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              }
+              
+              const result = await response.json();
+              
+              if (result.success) {
+                console.log(`✅ Imagen ${i + 1} subida exitosamente:`, result.url);
+                console.log(`📷 Total de imágenes después de esta subida: ${result.allImages?.length || 'N/A'}`);
+              } else {
+                throw new Error(result.message || 'Error desconocido');
+              }
+            } catch (error) {
+              console.error(`❌ Error subiendo imagen ${i + 1} (${file.name}):`, error);
+            }
+          })();
+          
+          uploadPromises.push(uploadPromise);
+        }
+        
+        // Esperar a que todas las subidas terminen
+        const results = await Promise.allSettled(uploadPromises);
+        const successes = results.filter(r => r.status === 'fulfilled').length;
+        const failures = results.filter(r => r.status === 'rejected').length;
+        
+        if (failures > 0) {
+          alert(`Se subieron ${successes} imagen(es) exitosamente, pero ${failures} fallaron.`);
+        }
+        
+        // Refrescar imágenes desde el servidor
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        let refreshedImages = await refreshImages();
+        
+        if (refreshedImages.length < files.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          refreshedImages = await refreshImages();
+        }
+        
+        if (refreshedImages.length === 0) {
+          alert('Las imágenes se subieron pero no se pudieron cargar. Por favor, recarga la página.');
+        }
       }
       
       // Limpiar input
@@ -287,10 +385,10 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
         fileInputRef.current.value = '';
       }
       
-      console.log('✅ Subida de imágenes completada');
+      console.log('✅ Procesamiento de imágenes completado');
     } catch (error) {
-      console.error('❌ Error subiendo imágenes:', error);
-      alert('Error al subir las imágenes: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      console.error('❌ Error procesando imágenes:', error);
+      alert('Error al procesar las imágenes: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setUploading(false);
     }
@@ -301,6 +399,17 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
       return;
     }
     
+    // Si estamos en modo creación, solo eliminar del estado local
+    if (isCreating) {
+      const updatedImages = images.filter(img => img.id !== imageId);
+      setImages(updatedImages);
+      onImagesChange?.(updatedImages);
+      updateHiddenFields();
+      console.log('✅ Imagen eliminada del estado local (modo creación)');
+      return;
+    }
+    
+    // En modo edición, eliminar por API
     try {
       const response = await fetch('/api/products/delete-image', {
         method: 'POST',
@@ -368,38 +477,55 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     );
   }
 
+  // Actualizar hidden fields cuando cambien las imágenes (solo en modo creación)
+  useEffect(() => {
+    if (isCreating) {
+      updateHiddenFields();
+    }
+  }, [images, isCreating]);
+
   return (
     <div className="space-y-4">
-      {/* Botón para refrescar manualmente */}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={async () => {
-            console.log('🔄 Refresh manual iniciado');
-            await refreshImages();
-          }}
-          className="rounded-md bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-        >
-          🔄 Actualizar imágenes
-        </button>
-      </div>
+      {/* Hidden fields para modo creación */}
+      {isCreating && (
+        <>
+          <input type="hidden" id="pending_primary_image" name="pending_primary_image" />
+          <input type="hidden" id="pending_primary_image_name" name="pending_primary_image_name" />
+          <input type="hidden" id="pending_carousel_images" name="pending_carousel_images" />
+        </>
+      )}
+      
+      {/* Botón para refrescar manualmente (solo en modo edición) */}
+      {!isCreating && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={async () => {
+              console.log('🔄 Refresh manual iniciado');
+              await refreshImages();
+            }}
+            className="rounded-md bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+          >
+            🔄 Actualizar imágenes
+          </button>
+        </div>
+      )}
       
       {/* Debug info */}
-      <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
-        <strong>Debug:</strong> {images.length} imagen(es) cargada(s) | Product ID: {productId}
-        {images.length > 0 && (
-          <div className="mt-1 space-y-1">
-            <div>IDs: {images.map(img => img.id).join(', ')}</div>
-            <div>
-              Principal: {images.filter(img => img.isPrimary).length} | 
-              Carrusel: {images.filter(img => !img.isPrimary).length}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+          <strong>Debug:</strong> {images.length} imagen(es) cargada(s) | Product ID: {productId} | Modo: {isCreating ? 'Creación' : 'Edición'}
+          {images.length > 0 && (
+            <div className="mt-1 space-y-1">
+              <div>IDs: {images.map(img => img.id).join(', ')}</div>
+              <div>
+                Principal: {images.filter(img => img.isPrimary).length} | 
+                Carrusel: {images.filter(img => !img.isPrimary).length}
+              </div>
             </div>
-            <div className="text-xs">
-              {images.map(img => `ID ${img.id}: ${img.isPrimary ? 'Principal' : 'Carrusel'}`).join(', ')}
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
       
       {/* Zona de carga */}
       <div

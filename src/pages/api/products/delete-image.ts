@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth-utils';
+import { deleteProductImage } from '@/lib/database';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const authResult = await requireAdmin(cookies);
@@ -23,13 +24,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    console.log('🗑️ Eliminando imagen:', { imageId, productId });
+    console.log('🗑️ Eliminando imagen de producto:', { imageId, productId });
+
+    // Eliminar de la base de datos
+    await deleteProductImage(parseInt(imageId.toString()));
 
     // Aquí podrías eliminar la imagen de Cloudinary si lo deseas
     // const publicId = `starfilters-ecommerce/productos/${productId}/imagenes/${imageId}`;
     // await deleteImage(publicId);
 
-    console.log('✅ Imagen eliminada exitosamente');
+    console.log('✅ Imagen de producto eliminada exitosamente');
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -40,7 +44,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
 
   } catch (error) {
-    console.error('❌ Error eliminando imagen:', error);
+    console.error('❌ Error eliminando imagen de producto:', error);
     return new Response(JSON.stringify({ 
       success: false, 
       message: 'Error interno del servidor: ' + (error instanceof Error ? error.message : 'Error desconocido')
