@@ -119,6 +119,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Obtener todas las imágenes actualizadas para retornar el estado completo
     const updatedImages = await getProductImages(parseInt(productId));
+    console.log(`📷 Total de imágenes del producto después de subir: ${updatedImages.length}`);
+
+    const mappedAllImages = updatedImages.map(img => {
+      const imgIsPrimary = img.is_primary === 1 || img.is_primary === true || img.is_primary === '1';
+      return {
+        id: img.id.toString(),
+        url: img.image_url,
+        isPrimary: imgIsPrimary
+      };
+    });
+
+    console.log(`📷 Retornando ${mappedAllImages.length} imágenes en la respuesta`);
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -126,11 +138,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       url: uploadResult.url,
       imageId: imageId.toString(),
       isPrimary: isPrimary,
-      allImages: updatedImages.map(img => ({
-        id: img.id.toString(),
-        url: img.image_url,
-        isPrimary: img.is_primary === 1 || img.is_primary === true
-      }))
+      allImages: mappedAllImages
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

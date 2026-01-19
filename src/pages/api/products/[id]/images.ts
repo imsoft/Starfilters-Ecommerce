@@ -25,17 +25,28 @@ export const GET: APIRoute = async ({ params, cookies }) => {
       });
     }
 
+    console.log(`📷 Obteniendo imágenes del producto ${productId}...`);
     const images = await getProductImages(productId);
+    console.log(`📷 Imágenes encontradas en BD: ${images.length}`);
+
+    const mappedImages = images.map(img => {
+      // MySQL puede retornar is_primary como 0/1, true/false, o número
+      const isPrimary = img.is_primary === 1 || img.is_primary === true || img.is_primary === '1';
+      return {
+        id: img.id,
+        url: img.image_url,
+        isPrimary: isPrimary,
+        altText: img.alt_text,
+        sortOrder: img.sort_order
+      };
+    });
+
+    console.log(`📷 Imágenes mapeadas:`, mappedImages.length);
+    console.log(`📷 Detalles:`, mappedImages.map(img => ({ id: img.id, url: img.url.substring(0, 50) + '...', isPrimary: img.isPrimary })));
 
     return new Response(JSON.stringify({ 
       success: true, 
-      images: images.map(img => ({
-        id: img.id,
-        url: img.image_url,
-        isPrimary: img.is_primary === 1 || img.is_primary === true,
-        altText: img.alt_text,
-        sortOrder: img.sort_order
-      }))
+      images: mappedImages
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
