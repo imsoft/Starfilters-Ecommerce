@@ -62,17 +62,39 @@ if (Astro.request.method === "POST") {
         const pendingPrimaryImage = formData.get("pending_primary_image") as string;
         const pendingPrimaryImageName = formData.get("pending_primary_image_name") as string;
         
+        console.log('📷 [Categoría] Imagen principal recibida:', pendingPrimaryImage ? `Sí (${pendingPrimaryImage.length} bytes)` : 'No');
+        console.log('📷 [Categoría] Nombre imagen principal:', pendingPrimaryImageName || 'No proporcionado');
+        
         if (pendingPrimaryImage && pendingPrimaryImageName) {
-          // Convertir base64 a buffer y subir
-          const base64Data = pendingPrimaryImage.split(',')[1];
-          const buffer = Buffer.from(base64Data, 'base64');
-          
-          const { uploadCategoryPrimaryImage } = await import('@/lib/cloudinary');
-          const imageUrl = await uploadCategoryPrimaryImage(buffer, categoryId, pendingPrimaryImageName);
-          
-          await updateCategory(categoryId, {
-            main_image: imageUrl,
-          });
+          try {
+            // Convertir base64 a buffer y subir
+            const base64Data = pendingPrimaryImage.split(',')[1];
+            if (!base64Data) {
+              console.error('❌ [Categoría] No se pudo extraer base64 de la imagen principal');
+            } else {
+              const buffer = Buffer.from(base64Data, 'base64');
+              console.log(`📷 [Categoría] Buffer creado para imagen principal: ${buffer.length} bytes`);
+              
+              const { uploadCategoryPrimaryImage } = await import('@/lib/cloudinary');
+              const imageUrl = await uploadCategoryPrimaryImage(buffer, categoryId, pendingPrimaryImageName);
+              console.log(`📷 [Categoría] Imagen principal subida a Cloudinary: ${imageUrl}`);
+              
+              const updated = await updateCategory(categoryId, {
+                main_image: imageUrl,
+              });
+              
+              if (updated) {
+                console.log(`✅ [Categoría] Imagen principal guardada en category.main_image: ${imageUrl}`);
+              } else {
+                console.error(`❌ [Categoría] Error: updateCategory retornó false`);
+              }
+            }
+          } catch (primaryErr) {
+            console.error('❌ [Categoría] Error procesando imagen principal:', primaryErr);
+            console.error('❌ [Categoría] Stack trace:', primaryErr instanceof Error ? primaryErr.stack : 'No stack trace');
+          }
+        } else {
+          console.log('📷 [Categoría] No hay imagen principal para procesar (campo vacío o null)');
         }
 
         // Procesar imágenes de carrusel
