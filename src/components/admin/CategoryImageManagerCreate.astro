@@ -142,23 +142,23 @@
     // Variables para almacenar las imágenes como base64 (ya procesadas)
     let primaryImageBase64 = '';
     let primaryImageName = '';
-    const carouselImagesData: Array<{ name: string; data: string }> = [];
+    const carouselImagesData = [];
     const maxCarouselImages = 4;
 
     // ===== ELEMENTOS DEL DOM =====
-    const primaryImageInput = document.getElementById('primary-image-input') as HTMLInputElement;
+    const primaryImageInput = document.getElementById('primary-image-input');
     const primaryImagePreview = document.getElementById('primary-image-preview');
-    const primaryImagePreviewImg = document.getElementById('primary-image-preview-img') as HTMLImageElement;
+    const primaryImagePreviewImg = document.getElementById('primary-image-preview-img');
     const removePrimaryImageBtn = document.getElementById('remove-primary-image');
     const primaryImageUploadStatus = document.getElementById('primary-image-upload-status');
-    const pendingPrimaryImageField = document.getElementById('pending_primary_image') as HTMLInputElement;
-    const pendingPrimaryImageNameField = document.getElementById('pending_primary_image_name') as HTMLInputElement;
+    const pendingPrimaryImageField = document.getElementById('pending_primary_image');
+    const pendingPrimaryImageNameField = document.getElementById('pending_primary_image_name');
 
-    const carouselImageInput = document.getElementById('carousel-image-input') as HTMLInputElement;
+    const carouselImageInput = document.getElementById('carousel-image-input');
     const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
     const carouselImagesPreview = document.getElementById('carousel-images-preview');
     const carouselCount = document.getElementById('carousel-count');
-    const pendingCarouselImagesField = document.getElementById('pending_carousel_images') as HTMLInputElement;
+    const pendingCarouselImagesField = document.getElementById('pending_carousel_images');
 
     // ===== FUNCIONES HELPER =====
     function updateCarouselCount() {
@@ -242,7 +242,8 @@
     // ===== IMAGEN PRINCIPAL =====
     if (primaryImageInput) {
       primaryImageInput.addEventListener('change', async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
+        const target = e.target;
+        const file = target && target.files ? target.files[0] : null;
         if (!file) return;
 
         console.log('🖼️ Procesando imagen principal:', file.name);
@@ -267,9 +268,9 @@
 
         try {
           // Convertir a base64 inmediatamente
-          const base64 = await new Promise<string>((resolve, reject) => {
+          const base64 = await new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
+            reader.onload = () => resolve(reader.result);
             reader.onerror = reject;
             reader.readAsDataURL(file);
           });
@@ -326,7 +327,8 @@
     // ===== IMÁGENES DE CARRUSEL =====
     if (carouselImageInput) {
       carouselImageInput.addEventListener('change', async (e) => {
-        const files = Array.from((e.target as HTMLInputElement).files || []);
+        const target = e.target;
+        const files = target && target.files ? Array.from(target.files) : [];
         if (files.length === 0) return;
 
         console.log('🖼️ Procesando imágenes de carrusel:', files.length);
@@ -357,9 +359,9 @@
 
           try {
             // Convertir a base64 inmediatamente
-            const base64 = await new Promise<string>((resolve, reject) => {
+            const base64 = await new Promise((resolve, reject) => {
               const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
+              reader.onload = () => resolve(reader.result);
               reader.onerror = reject;
               reader.readAsDataURL(file);
             });
