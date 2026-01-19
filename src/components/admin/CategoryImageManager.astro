@@ -203,7 +203,9 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 </div>
 
 <script define:vars={{ categoryId }}>
-  const categoryIdNum = parseInt(categoryId);
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('🖼️ [CategoryImageManager] Script inicializando...');
+    const categoryIdNum = parseInt(categoryId);
 
   // ===== IMAGEN PRINCIPAL =====
   const primaryImageInput = document.getElementById('primary-image-input');
