@@ -35,6 +35,21 @@ if (!category) {
 
 let images = await getCategoryImages(categoryId);
 
+// Log para diagnóstico
+console.log('🔍 [Edit Category] Categoría cargada:', {
+  id: category.id,
+  name: category.name,
+  main_image: category.main_image
+});
+console.log('🔍 [Edit Category] Imágenes obtenidas:', images.length);
+images.forEach((img, idx) => {
+  console.log(`  Imagen ${idx + 1}:`, {
+    id: img.id,
+    is_primary: img.is_primary,
+    image_url: img.image_url?.substring(0, 50) + '...'
+  });
+});
+
 let error: string | null = null;
 let success: string | null = null;
 
