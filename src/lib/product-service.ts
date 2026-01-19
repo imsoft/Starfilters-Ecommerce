@@ -80,66 +80,144 @@ export const getProductById = async (id: number): Promise<Product | null> => {
 
 /**
  * Crear un nuevo producto en la base de datos local
+ * Usa INSERT dinámico para mayor compatibilidad con diferentes esquemas de BD
  */
 export const createProduct = async (productData: Partial<Product>): Promise<number | null> => {
   try {
     console.log('✨ Creando producto en la base de datos...');
 
-    const result = await query(
-      `INSERT INTO products (
-        uuid, filter_category_id, bind_id, bind_code, name, name_en, description, description_en,
-        price, currency, price_usd, nominal_size, real_size, category, category_en, stock, status, tags,
-        dimensions, weight, material, warranty,
-        efficiency, efficiency_en, efficiency_class,
-        characteristics, characteristics_en, frame_material, max_temperature,
-        typical_installation, typical_installation_en,
-        applications, applications_en,
-        benefits, benefits_en
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        productData.uuid,
-        productData.filter_category_id || null,
-        productData.bind_id || null,
-        productData.bind_code || null,
-        productData.name,
-        productData.name_en || null,
-        productData.description,
-        productData.description_en || null,
-        productData.price,
-        productData.currency || 'MXN',
-        productData.price_usd || null,
-        productData.nominal_size || null,
-        productData.real_size || null,
-        productData.category,
-        productData.category_en || null,
-        productData.stock || 0,
-        productData.status || 'active',
-        productData.tags || null,
-        productData.dimensions || null,
-        productData.weight || null,
-        productData.material || null,
-        productData.warranty || null,
-        productData.efficiency || null,
-        productData.efficiency_en || null,
-        productData.efficiency_class || null,
-        productData.characteristics || null,
-        productData.characteristics_en || null,
-        productData.frame_material || null,
-        productData.max_temperature || null,
-        productData.typical_installation || null,
-        productData.typical_installation_en || null,
-        productData.applications || null,
-        productData.applications_en || null,
-        productData.benefits || null,
-        productData.benefits_en || null,
-      ]
-    ) as ResultSetHeader;
+    // Construir INSERT dinámico con solo los campos que tienen valor
+    const fields: string[] = [];
+    const values: any[] = [];
+    const placeholders: string[] = [];
+
+    // Campos requeridos
+    if (productData.uuid) {
+      fields.push('uuid');
+      values.push(productData.uuid);
+      placeholders.push('?');
+    }
+    
+    if (productData.name) {
+      fields.push('name');
+      values.push(productData.name);
+      placeholders.push('?');
+    }
+
+    // Campos opcionales básicos
+    const optionalFields: { field: keyof Product; dbColumn: string }[] = [
+      { field: 'filter_category_id', dbColumn: 'filter_category_id' },
+      { field: 'bind_id', dbColumn: 'bind_id' },
+      { field: 'bind_code', dbColumn: 'bind_code' },
+      { field: 'name_en', dbColumn: 'name_en' },
+      { field: 'description', dbColumn: 'description' },
+      { field: 'description_en', dbColumn: 'description_en' },
+      { field: 'price', dbColumn: 'price' },
+      { field: 'currency', dbColumn: 'currency' },
+      { field: 'price_usd', dbColumn: 'price_usd' },
+      { field: 'nominal_size', dbColumn: 'nominal_size' },
+      { field: 'real_size', dbColumn: 'real_size' },
+      { field: 'category', dbColumn: 'category' },
+      { field: 'category_en', dbColumn: 'category_en' },
+      { field: 'stock', dbColumn: 'stock' },
+      { field: 'status', dbColumn: 'status' },
+      { field: 'tags', dbColumn: 'tags' },
+      { field: 'dimensions', dbColumn: 'dimensions' },
+      { field: 'weight', dbColumn: 'weight' },
+      { field: 'material', dbColumn: 'material' },
+      { field: 'warranty', dbColumn: 'warranty' },
+      // Campos técnicos (pueden no existir en todas las BD)
+      { field: 'efficiency', dbColumn: 'efficiency' },
+      { field: 'efficiency_en', dbColumn: 'efficiency_en' },
+      { field: 'efficiency_class', dbColumn: 'efficiency_class' },
+      { field: 'characteristics', dbColumn: 'characteristics' },
+      { field: 'characteristics_en', dbColumn: 'characteristics_en' },
+      { field: 'frame_material', dbColumn: 'frame_material' },
+      { field: 'max_temperature', dbColumn: 'max_temperature' },
+      { field: 'typical_installation', dbColumn: 'typical_installation' },
+      { field: 'typical_installation_en', dbColumn: 'typical_installation_en' },
+      { field: 'applications', dbColumn: 'applications' },
+      { field: 'applications_en', dbColumn: 'applications_en' },
+      { field: 'benefits', dbColumn: 'benefits' },
+      { field: 'benefits_en', dbColumn: 'benefits_en' },
+    ];
+
+    for (const { field, dbColumn } of optionalFields) {
+      const value = productData[field];
+      if (value !== undefined) {
+        fields.push(dbColumn);
+        values.push(value === null ? null : value);
+        placeholders.push('?');
+      }
+    }
+
+    // Valores por defecto si no se proporcionaron
+    if (!fields.includes('price')) {
+      fields.push('price');
+      values.push(0);
+      placeholders.push('?');
+    }
+    if (!fields.includes('stock')) {
+      fields.push('stock');
+      values.push(0);
+      placeholders.push('?');
+    }
+    if (!fields.includes('status')) {
+      fields.push('status');
+      values.push('active');
+      placeholders.push('?');
+    }
+    if (!fields.includes('currency')) {
+      fields.push('currency');
+      values.push('MXN');
+      placeholders.push('?');
+    }
+    if (!fields.includes('category')) {
+      fields.push('category');
+      values.push('Filtros de Aire');
+      placeholders.push('?');
+    }
+
+    const sql = `INSERT INTO products (${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
+    
+    console.log('📝 SQL:', sql);
+    console.log('📝 Valores:', values.length);
+
+    const result = await query(sql, values) as ResultSetHeader;
 
     console.log('✅ Producto creado con ID:', result.insertId);
     return result.insertId;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error creando producto:', error);
-    // Re-lanzar el error para que se pueda mostrar en el frontend
+    
+    // Si el error es por columnas que no existen, intentar con campos básicos
+    if (error.code === 'ER_BAD_FIELD_ERROR' || error.code === 'ER_WRONG_VALUE_COUNT_ON_ROW') {
+      console.log('⚠️ Intentando crear producto con campos básicos...');
+      
+      try {
+        const basicResult = await query(
+          `INSERT INTO products (uuid, name, description, price, currency, category, stock, status) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            productData.uuid,
+            productData.name,
+            productData.description || null,
+            productData.price || 0,
+            productData.currency || 'MXN',
+            productData.category || 'Filtros de Aire',
+            productData.stock || 0,
+            productData.status || 'active'
+          ]
+        ) as ResultSetHeader;
+        
+        console.log('✅ Producto creado con campos básicos, ID:', basicResult.insertId);
+        return basicResult.insertId;
+      } catch (basicError) {
+        console.error('❌ Error creando producto con campos básicos:', basicError);
+        throw basicError;
+      }
+    }
+    
     throw error;
   }
 };
