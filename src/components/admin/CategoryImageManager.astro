@@ -608,7 +608,51 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     }, 1000);
   }
   
-  console.log('🖼️ [CategoryImageManager] Script inicializado completamente');
+    console.log('🖼️ [CategoryImageManager] Script inicializado completamente');
   });
+  
+  // Setup alternativo inmediato si el DOM ya está listo
+  if (document.readyState !== 'loading') {
+    console.log('🖼️ [CategoryImageManager] DOM ya listo, ejecutando setup alternativo...');
+    setTimeout(() => {
+      const btn = document.getElementById('remove-existing-primary-image');
+      if (btn) {
+        console.log('✅ Botón encontrado en setup alternativo');
+        btn.onclick = async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🗑️ CLICK EN BOTÓN ELIMINAR - FUNCIONA!');
+          
+          if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
+            return;
+          }
+
+          try {
+            const categoryIdNum = parseInt(categoryId);
+            console.log('🗑️ Eliminando imagen principal, categoryId:', categoryIdNum);
+            const response = await fetch(`/api/filter-categories/${categoryIdNum}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ main_image: '' }),
+            });
+
+            const result = await response.json();
+            console.log('📡 Respuesta del servidor:', result);
+            if (result.success) {
+              alert('Imagen eliminada correctamente');
+              window.location.reload();
+            } else {
+              alert('Error: ' + (result.message || 'Error desconocido'));
+            }
+          } catch (error) {
+            console.error('❌ Error:', error);
+            alert('Error al eliminar la imagen: ' + error.message);
+          }
+        };
+      } else {
+        console.warn('⚠️ Botón no encontrado en setup alternativo');
+      }
+    }, 1000);
+  }
 </script>
 
