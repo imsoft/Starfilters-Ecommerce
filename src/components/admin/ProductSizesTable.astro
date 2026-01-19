@@ -130,13 +130,18 @@ const { id, name, initialSizes = [] } = Astro.props;
 </div>
 
 <script define:vars={{ tableId: id, fieldName: name }}>
-  (function() {
+  document.addEventListener('DOMContentLoaded', function() {
     const addButton = document.getElementById(`${tableId}-add-row`);
     const tbody = document.getElementById(`${tableId}-tbody`);
-    const jsonInput = document.getElementById(`${tableId}-json`) as HTMLInputElement;
-    const emptyRow = document.getElementById(`${tableId}-empty-row`);
+    const jsonInput = document.getElementById(`${tableId}-json`);
+    let emptyRow = document.getElementById(`${tableId}-empty-row`);
 
-    if (!addButton || !tbody || !jsonInput) return;
+    console.log('ProductSizesTable init:', { addButton: !!addButton, tbody: !!tbody, jsonInput: !!jsonInput });
+
+    if (!addButton || !tbody || !jsonInput) {
+      console.error('ProductSizesTable: elementos no encontrados', { addButton, tbody, jsonInput });
+      return;
+    }
 
     function updateJson() {
       const rows = tbody.querySelectorAll('tr[data-row-index]');
@@ -166,8 +171,9 @@ const { id, name, initialSizes = [] } = Astro.props;
 
     function addRow() {
       // Remover fila vacía si existe
-      if (emptyRow) {
-        emptyRow.remove();
+      const currentEmptyRow = document.getElementById(`${tableId}-empty-row`);
+      if (currentEmptyRow) {
+        currentEmptyRow.remove();
       }
 
       const rows = tbody.querySelectorAll('tr[data-row-index]');
@@ -264,8 +270,10 @@ const { id, name, initialSizes = [] } = Astro.props;
     }
 
     // Agregar listener al botón de agregar
-    addButton.addEventListener('click', (e) => {
+    addButton.addEventListener('click', function(e) {
       e.preventDefault();
+      e.stopPropagation();
+      console.log('Botón agregar clickeado');
       addRow();
     });
 
@@ -301,5 +309,6 @@ const { id, name, initialSizes = [] } = Astro.props;
 
     // Inicializar JSON
     updateJson();
-  })();
+    console.log('ProductSizesTable: inicializado correctamente');
+  });
 </script>
