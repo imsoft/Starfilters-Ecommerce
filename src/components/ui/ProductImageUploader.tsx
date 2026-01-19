@@ -167,36 +167,55 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
         
         // Crear promesa para subir cada imagen
         const uploadPromise = (async () => {
-          const formData = new FormData();
-          formData.append('image', file);
-          formData.append('productId', productId);
-          
-          console.log(`📷 Subiendo imagen ${i + 1}/${files.length}: ${file.name}`);
-          
-          const response = await fetch('/api/products/upload-image', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const result = await response.json();
-          
-          if (response.ok && result.success) {
-            console.log(`✅ Imagen ${i + 1} subida exitosamente:`, result.url);
-          } else {
-            console.error(`❌ Error subiendo imagen ${i + 1}:`, result.message);
-            alert(`Error al subir ${file.name}: ${result.message}`);
+          try {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('productId', productId);
+            
+            console.log(`📷 Subiendo imagen ${i + 1}/${files.length}: ${file.name}`);
+            
+            const response = await fetch('/api/products/upload-image', {
+              method: 'POST',
+              body: formData
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              console.log(`✅ Imagen ${i + 1} subida exitosamente:`, result.url);
+              console.log(`📷 Total de imágenes después de esta subida: ${result.allImages?.length || 'N/A'}`);
+            } else {
+              throw new Error(result.message || 'Error desconocido');
+            }
+          } catch (error) {
+            console.error(`❌ Error subiendo imagen ${i + 1} (${file.name}):`, error);
+            // No hacer alert aquí para no interrumpir las otras subidas
+            // Solo loguear el error y continuar
           }
         })();
         
         uploadPromises.push(uploadPromise);
       }
       
-      // Esperar a que todas las subidas terminen
+      // Esperar a que todas las subidas terminen (incluso si algunas fallan)
       console.log('📷 Esperando a que todas las subidas terminen...');
-      await Promise.all(uploadPromises);
+      const results = await Promise.allSettled(uploadPromises);
+      
+      // Contar éxitos y fallos
+      const successes = results.filter(r => r.status === 'fulfilled').length;
+      const failures = results.filter(r => r.status === 'rejected').length;
+      console.log(`📷 Subidas completadas: ${successes} exitosas, ${failures} fallidas`);
+      
+      if (failures > 0) {
+        alert(`Se subieron ${successes} imagen(es) exitosamente, pero ${failures} fallaron. Por favor revisa la consola para más detalles.`);
+      }
       
       // Esperar un poco más para asegurar que la BD se haya actualizado
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Refrescar todas las imágenes desde el servidor
       console.log('📷 Refrescando imágenes desde el servidor...');
