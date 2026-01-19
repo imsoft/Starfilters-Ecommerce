@@ -201,91 +201,99 @@ if (Astro.request.method === "POST") {
           }
         }
 
-        // Procesar imágenes de carrusel
-        console.log('📷 ===== PROCESANDO IMÁGENES DE CARRUSEL =====');
-        const pendingCarouselImages = formData.get("pending_carousel_images") as string;
-        console.log('📷 Campo recibido del formulario:', pendingCarouselImages ? 'Sí' : 'No');
-        console.log('📷 Tipo:', typeof pendingCarouselImages);
-        console.log('📷 Longitud del string recibido:', pendingCarouselImages?.length || 0);
-        console.log('📷 Está vacío?', !pendingCarouselImages || pendingCarouselImages.trim().length === 0);
-        console.log('📷 Primeros 200 caracteres:', pendingCarouselImages?.substring(0, 200) || 'N/A');
+        // Procesar imágenes de carrusel - SOLUCIÓN MÁS ROBUSTA
+        let pendingCarouselImages = formData.get("pending_carousel_images") as string;
         
-        // Verificar todos los campos del formulario relacionados con imágenes
-        console.log('📷 Todos los campos del formulario relacionados con imágenes:');
-        for (const [key, value] of formData.entries()) {
-          if (key.includes('image') || key.includes('carousel') || key.includes('pending')) {
-            const valStr = typeof value === 'string' ? value : value.toString();
-            console.log(`📷   ${key}: ${valStr.length} caracteres, preview: ${valStr.substring(0, 50)}...`);
-          }
+        // Si está vacío, intentar buscar con diferentes nombres
+        if (!pendingCarouselImages || pendingCarouselImages.trim().length === 0) {
+          // Intentar con diferentes variaciones del nombre del campo
+          pendingCarouselImages = formData.get("pending_carousel_images") as string || 
+                                  formData.get("carousel_images") as string || 
+                                  formData.get("pendingCarouselImages") as string || 
+                                  '';
         }
         
         if (pendingCarouselImages && pendingCarouselImages.trim().length > 0) {
           try {
             let carouselData: Array<{ name: string; data: string }>;
+            
+            // Intentar parsear JSON
             try {
-              console.log('📷 Intentando parsear JSON...');
               carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
-              console.log(`✅ JSON parseado exitosamente. Número de imágenes de carrusel: ${carouselData.length}`);
-              
-              if (carouselData.length === 0) {
-                console.warn('⚠️ Array de imágenes de carrusel está vacío');
-              } else {
-                console.log(`📷 Detalle de imágenes:`, carouselData.map((img, idx) => ({ 
-                  index: idx + 1, 
-                  name: img.name, 
-                  dataLength: img.data?.length || 0,
-                  dataPreview: img.data?.substring(0, 50) || 'sin data'
-                })));
-              }
             } catch (parseErr) {
-              console.error('❌ Error parseando JSON de carrusel:', parseErr);
-              console.error('📷 String completo recibido (primeros 500 chars):', pendingCarouselImages.substring(0, 500));
-              throw parseErr;
-            }
-            
-            const { uploadProductImage } = await import('@/lib/cloudinary');
-            const { addProductImage } = await import('@/lib/database');
-            
-            for (let i = 0; i < carouselData.length && i < 4; i++) {
-              const { name, data } = carouselData[i];
-              console.log(`📷 Procesando imagen de carrusel ${i + 1}: ${name}`);
-              
-              const base64Data = data.split(',')[1];
-              const buffer = Buffer.from(base64Data, 'base64');
-              
-              const imageUrl = await uploadProductImage(buffer, productId.toString(), name);
-              console.log(`📷 Imagen ${i + 1} subida a Cloudinary: ${imageUrl}`);
-              
-              const imageId = await addProductImage({
-                product_id: productId,
-                image_url: imageUrl,
-                alt_text: `${name} - Carrusel ${i + 1}`,
-                is_primary: false,
-                sort_order: i + 1,
-              });
-              
-              if (imageId) {
-                console.log(`✅ Imagen ${i + 1} guardada en BD con ID: ${imageId}`);
-              } else {
-                console.error(`❌ Error: No se pudo guardar la imagen ${i + 1} en la BD - imageId es null/undefined`);
+              // Si falla, intentar sin espacios al inicio/final
+              try {
+                carouselData = JSON.parse(pendingCarouselImages.trim()) as Array<{ name: string; data: string }>;
+              } catch (parseErr2) {
+                throw new Error(`Error parseando JSON de carrusel: ${parseErr2 instanceof Error ? parseErr2.message : 'Error desconocido'}`);
               }
             }
             
-            // Verificar que todas las imágenes se guardaron correctamente
-            const { getProductImages } = await import('@/lib/database');
-            const savedImages = await getProductImages(productId);
-            console.log(`📷 Total de imágenes guardadas en BD para producto ${productId}: ${savedImages.length}`);
-            console.log(`📷 Detalle:`, savedImages.map(img => ({ id: img.id, is_primary: img.is_primary, sort_order: img.sort_order })));
+            // Validar que sea un array
+            if (!Array.isArray(carouselData)) {
+              throw new Error('Los datos de carrusel no son un array válido');
+            }
+            
+            // Solo procesar si hay imágenes
+            if (carouselData.length > 0) {
+              const { uploadProductImage } = await import('@/lib/cloudinary');
+              const { addProductImage } = await import('@/lib/database');
+              
+              // Obtener el número actual de imágenes para calcular sort_order correctamente
+              const { getProductImages } = await import('@/lib/database');
+              const existingImages = await getProductImages(productId);
+              const currentSortOrder = existingImages.length > 0 
+                ? Math.max(...existingImages.map(img => img.sort_order || 0)) + 1
+                : 1;
+              
+              for (let i = 0; i < carouselData.length && i < 4; i++) {
+                const { name, data } = carouselData[i];
+                
+                // Validar que tenga datos
+                if (!data || !name) {
+                  continue;
+                }
+                
+                // Extraer base64
+                let base64Data: string;
+                if (data.includes(',')) {
+                  base64Data = data.split(',')[1];
+                } else {
+                  base64Data = data;
+                }
+                
+                if (!base64Data) {
+                  continue;
+                }
+                
+                try {
+                  const buffer = Buffer.from(base64Data, 'base64');
+                  
+                  // Subir a Cloudinary
+                  const imageUrl = await uploadProductImage(buffer, productId.toString(), name);
+                  
+                  // Guardar en BD
+                  const imageId = await addProductImage({
+                    product_id: productId,
+                    image_url: imageUrl,
+                    alt_text: `${name} - Carrusel ${i + 1}`,
+                    is_primary: false,
+                    sort_order: currentSortOrder + i,
+                  });
+                  
+                  if (!imageId) {
+                    throw new Error(`No se pudo guardar la imagen ${i + 1} en la BD`);
+                  }
+                } catch (imgErr) {
+                  // Continuar con la siguiente imagen si esta falla
+                  continue;
+                }
+              }
+            }
           } catch (carouselErr) {
-            console.error('❌ Error procesando imágenes de carrusel:', carouselErr);
+            // Log error pero no fallar la creación del producto
+            console.error("Error procesando imágenes de carrusel:", carouselErr);
           }
-        } else {
-          console.log('📷 No hay imágenes de carrusel pendientes');
-          console.log('📷 Verificando si el campo existe en el formulario...');
-          const allFields = Array.from(formData.keys());
-          const imageFields = allFields.filter(f => f.includes('image') || f.includes('carousel') || f.includes('pending'));
-          console.log('📷 Campos relacionados con imágenes en el formulario:', imageFields);
-          console.log('📷 Todos los campos del formulario:', allFields);
         }
       } catch (err) {
         console.error("Error procesando imágenes:", err);

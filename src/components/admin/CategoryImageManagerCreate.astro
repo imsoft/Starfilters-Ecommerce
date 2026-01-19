@@ -198,27 +198,48 @@
     // Asegurar que los campos se actualicen antes de enviar el formulario
     const form = document.querySelector('form');
     if (form) {
+      // Actualizar campos ANTES de enviar (sin preventDefault, solo asegurar valores)
       form.addEventListener('submit', (e) => {
-        console.log('🖼️ Formulario siendo enviado, actualizando campos hidden...');
+        // Actualizar campos hidden siempre antes de enviar
         updateHiddenFields();
         
-        // Verificar que los campos tengan valores
-        if (pendingCarouselImagesField) {
-          const value = pendingCarouselImagesField.value;
-          console.log('🖼️ Valor de pending_carousel_images al enviar:', {
-            length: value.length,
-            isEmpty: !value,
-            preview: value.substring(0, 100) + '...'
-          });
-          
-          if (!value && carouselImagesData.length > 0) {
-            console.error('❌ ERROR: Hay imágenes de carrusel pero el campo hidden está vacío!');
-            // Intentar actualizar nuevamente
-            pendingCarouselImagesField.value = JSON.stringify(carouselImagesData);
-            console.log('🖼️ Campo actualizado forzosamente');
+        // Si hay imágenes de carrusel, asegurar que el campo tenga el valor
+        if (carouselImagesData.length > 0) {
+          if (pendingCarouselImagesField) {
+            const carouselJson = JSON.stringify(carouselImagesData);
+            pendingCarouselImagesField.value = carouselJson;
+            
+            // Verificar que se guardó
+            if (pendingCarouselImagesField.value !== carouselJson) {
+              // Si no se guardó, usar un pequeño delay y reintentar
+              setTimeout(() => {
+                pendingCarouselImagesField.value = carouselJson;
+              }, 10);
+            }
+          }
+        }
+        
+        // También asegurar imagen principal
+        if (primaryImageBase64) {
+          if (pendingPrimaryImageField) {
+            pendingPrimaryImageField.value = primaryImageBase64;
+          }
+          if (pendingPrimaryImageNameField) {
+            pendingPrimaryImageNameField.value = primaryImageName;
           }
         }
       });
+      
+      // También actualizar campos periódicamente por si acaso
+      setInterval(() => {
+        if (carouselImagesData.length > 0 && pendingCarouselImagesField) {
+          const currentValue = pendingCarouselImagesField.value;
+          const expectedValue = JSON.stringify(carouselImagesData);
+          if (currentValue !== expectedValue) {
+            pendingCarouselImagesField.value = expectedValue;
+          }
+        }
+      }, 1000);
     }
 
     function renderCarouselPreviews() {
