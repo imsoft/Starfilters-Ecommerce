@@ -3,6 +3,7 @@ import AdminLayout from "@/layouts/adminLayout.astro";
 import {
   createProduct,
 } from "@/lib/product-service";
+import { getActiveCategories } from "@/lib/filter-category-service";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
 import { generateUUID } from "@/lib/database";
@@ -28,6 +29,8 @@ if (!userIsAdmin) {
 let error: string | null = null;
 let success = false;
 
+// Obtener categorías de filtro para el selector
+const filterCategories = await getActiveCategories();
 
 // Procesar formulario
 if (Astro.request.method === "POST") {
@@ -80,6 +83,8 @@ if (Astro.request.method === "POST") {
     
     // Procesar información básica del producto
     const category = formData.get("category") as string || "Filtros de Aire";
+    const filterCategoryIdStr = formData.get("filter_category_id") as string;
+    const filterCategoryId = filterCategoryIdStr ? parseInt(filterCategoryIdStr) : null;
 
     // Si hay tamaños, crear un producto por cada tamaño
     // Si no hay tamaños, crear un solo producto
@@ -91,7 +96,7 @@ if (Astro.request.method === "POST") {
         const sizeUuid = generateUUID();
         const sizeProductId = await createProduct({
           uuid: sizeUuid,
-          filter_category_id: null,
+          filter_category_id: filterCategoryId,
           bind_code: size.bind_code || null,
           name: formData.get("name") as string,
           name_en: formData.get("name_en") as string || null,
@@ -130,7 +135,7 @@ if (Astro.request.method === "POST") {
       // Crear un solo producto sin tamaño específico
       productId = await createProduct({
         uuid: uuid,
-        filter_category_id: null,
+        filter_category_id: filterCategoryId,
         bind_code: null,
         name: formData.get("name") as string,
         name_en: formData.get("name_en") as string || null,
@@ -443,6 +448,44 @@ if (Astro.request.method === "POST") {
               Descripción detallada del producto en inglés (opcional)
             </p>
           </div>
+        </div>
+      </div>
+
+      <!-- Categoría de Filtro -->
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
+            <svg class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              Categoría de Filtro
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Asigna este producto a una categoría de filtro
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label for="filter_category_id" class="mb-2 block text-sm font-semibold text-gray-700">
+            Categoría
+          </label>
+          <select
+            id="filter_category_id"
+            name="filter_category_id"
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          >
+            <option value="">Sin categoría</option>
+            {filterCategories.map((cat) => (
+              <option value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+          <p class="mt-1.5 text-xs text-gray-500">
+            Selecciona la categoría de filtro a la que pertenece este producto
+          </p>
         </div>
       </div>
 
