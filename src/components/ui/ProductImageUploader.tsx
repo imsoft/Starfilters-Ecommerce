@@ -30,9 +30,18 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
       console.log('📷 [ProductImageUploader] Iniciando carga de imágenes...');
       console.log('📷 [ProductImageUploader] initialImages recibidas:', initialImages);
       console.log('📷 [ProductImageUploader] productId:', productId);
+      console.log('📷 [ProductImageUploader] isCreating:', isCreating);
+      
+      // Si estamos en modo creación, no intentar cargar del servidor
+      if (isCreating) {
+        console.log('📷 [ProductImageUploader] Modo creación: no se cargan imágenes del servidor');
+        setImages([]);
+        setLoading(false);
+        return;
+      }
       
       try {
-        // Intentar cargar desde el servidor primero
+        // Intentar cargar desde el servidor primero (solo en modo edición)
         const response = await fetch(`/api/products/${productId}/images`);
         console.log('📷 [ProductImageUploader] Respuesta del servidor:', response.status);
         
@@ -111,10 +120,16 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     };
 
     loadImages();
-  }, [productId]); // Solo ejecutar cuando productId cambie
+  }, [productId, isCreating]); // Ejecutar cuando productId o isCreating cambien
   
-  // Función para refrescar imágenes desde el servidor
+  // Función para refrescar imágenes desde el servidor (solo en modo edición)
   const refreshImages = async () => {
+    // Si estamos en modo creación, no hacer refresh
+    if (isCreating) {
+      console.log('🔄 Modo creación: no se puede refrescar desde el servidor');
+      return [];
+    }
+    
     try {
       console.log('🔄 Iniciando refresh de imágenes...');
       // Cargar imágenes directamente desde la base de datos
