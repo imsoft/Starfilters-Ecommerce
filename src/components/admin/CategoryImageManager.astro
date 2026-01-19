@@ -52,17 +52,18 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       </div>
 
       <!-- Imagen principal existente -->
-      {mainImageUrl && (
-        <div id="existing-primary-image" class="relative inline-block">
+      {mainImageUrl ? (
+        <div id="existing-primary-image" class="relative inline-block mb-4">
           <img
             src={mainImageUrl}
             alt="Imagen principal actual"
             class="h-48 w-48 rounded-lg border border-gray-300 object-cover"
+            onerror="console.error('❌ Error cargando imagen principal:', this.src); this.parentElement.innerHTML='<div class=\'text-red-600 text-sm\'>Error al cargar la imagen: ' + this.src.substring(0, 50) + '...</div>';"
           />
           <button
             type="button"
             id="remove-existing-primary-image"
-            class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+            class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 z-10 cursor-pointer"
             title="Eliminar imagen"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,6 +71,12 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             </svg>
           </button>
           <input type="hidden" id="primary-image-url-existing" name="main_image" value={mainImageUrl} />
+        </div>
+      ) : (
+        <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p class="text-sm text-yellow-800">
+            ⚠️ No hay imagen principal configurada. Sube una imagen para establecerla como principal.
+          </p>
         </div>
       )}
 
