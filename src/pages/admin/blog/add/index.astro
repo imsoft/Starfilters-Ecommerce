@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BlogImageUploader } from "@/components/ui/BlogImageUploader";
 import { BlogContentEditor } from "@/components/ui/BlogContentEditor";
 import { createBlogPost, generateSlug } from "@/lib/database";
+import FormPersistence from "@/components/admin/FormPersistence.astro";
 
 // Manejar envío del formulario
 if (Astro.request.method === 'POST') {
@@ -103,6 +104,12 @@ const errorDetails = url.searchParams.get('details');
 
 <AdminLayout title="Nuevo Artículo">
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <!-- Persistencia de formulario -->
+    <FormPersistence 
+      formId="blog-add" 
+      excludeFields={["featured_image"]}
+    />
+    
     <!-- Header -->
     <div class="mt-10 mb-8">
       <div class="flex items-center justify-between">

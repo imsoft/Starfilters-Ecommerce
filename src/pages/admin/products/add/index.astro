@@ -9,6 +9,7 @@ import { generateUUID } from "@/lib/database";
 import CategoryImageManagerCreate from "@/components/admin/CategoryImageManagerCreate.astro";
 import DynamicListInput from "@/components/admin/DynamicListInput.astro";
 import ProductSizesTable from "@/components/admin/ProductSizesTable.astro";
+import FormPersistence from "@/components/admin/FormPersistence.astro";
 
 export const prerender = false;
 
@@ -235,7 +236,13 @@ if (Astro.request.method === "POST") {
 
 <AdminLayout title="Nuevo Producto">
   <div class="container mx-auto px-4 py-8">
-      <!-- Header -->
+    <!-- Persistencia de formulario -->
+    <FormPersistence 
+      formId="product-add" 
+      excludeFields={["pending_primary_image", "pending_carousel_images"]}
+    />
+    
+    <!-- Header -->
     <div class="mb-8">
       <div class="flex items-center gap-4">
         <a
@@ -507,10 +514,10 @@ if (Astro.request.method === "POST") {
             ></textarea>
           </div>
 
-          <div>
+            <div>
             <label for="typical_installation_en" class="mb-2 block text-sm font-semibold text-gray-700">
               Instalación Típica (Inglés)
-            </label>
+              </label>
             <textarea
               id="typical_installation_en"
               name="typical_installation_en"
@@ -589,10 +596,10 @@ if (Astro.request.method === "POST") {
               label="Beneficios (Español)"
               placeholder="Ej: Compacto y liviano"
               helpText="Un beneficio por línea"
-            />
-          </div>
+              />
+            </div>
 
-          <div>
+            <div>
             <DynamicListInput
               id="benefits_en"
               name="benefits_en"
@@ -611,7 +618,7 @@ if (Astro.request.method === "POST") {
             <svg class="h-6 w-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
-          </div>
+            </div>
           <div>
             <h2 class="text-xl font-bold text-gray-900">
               Tamaños/Variantes
@@ -696,7 +703,7 @@ if (Astro.request.method === "POST") {
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
-          Cancelar
+              Cancelar
         </a>
         <button
           type="submit"

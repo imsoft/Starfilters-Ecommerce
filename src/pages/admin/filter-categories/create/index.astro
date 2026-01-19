@@ -9,6 +9,7 @@ import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
 import CategoryImageManagerCreate from "@/components/admin/CategoryImageManagerCreate.astro";
 import DynamicListInput from "@/components/admin/DynamicListInput.astro";
+import FormPersistence from "@/components/admin/FormPersistence.astro";
 
 export const prerender = false;
 
@@ -114,6 +115,12 @@ if (Astro.request.method === "POST") {
 
 <AdminLayout title="Nueva Categoría de Filtros">
   <div class="container mx-auto px-4 py-8">
+    <!-- Persistencia de formulario -->
+    <FormPersistence 
+      formId="category-create" 
+      excludeFields={["pending_primary_image", "pending_carousel_images"]}
+    />
+    
     <!-- Header -->
     <div class="mb-8">
       <div class="flex items-center gap-4">
@@ -202,8 +209,8 @@ if (Astro.request.method === "POST") {
           </div>
           <div>
             <h2 class="text-xl font-bold text-gray-900">
-              Información Básica
-            </h2>
+          Información Básica
+        </h2>
             <p class="mt-1 text-sm text-gray-500">
               Nombre y descripción del filtro en español e inglés
             </p>
@@ -318,7 +325,7 @@ if (Astro.request.method === "POST") {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <div>
+            <div>
             <h2 class="text-lg font-bold text-gray-900">
               Estado de Publicación
             </h2>

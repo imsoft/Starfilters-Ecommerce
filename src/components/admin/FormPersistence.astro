@@ -1,0 +1,268 @@
+---
+/**
+ * Componente para persistir datos de formulario en localStorage
+ * Guarda automáticamente los cambios y los restaura al recargar la página
+ * Limpia los datos guardados cuando el formulario se envía exitosamente
+ */
+
+interface Props {
+  /**
+   * Identificador único para el formulario (ej: 'product-add', 'category-create')
+   * Se usará como clave en localStorage
+   */
+  formId: string;
+  /**
+   * Selector CSS del formulario (por defecto 'form')
+   */
+  formSelector?: string;
+  /**
+   * Mostrar indicador de datos guardados
+   */
+  showIndicator?: boolean;
+  /**
+   * Campos a excluir de la persistencia (ej: contraseñas, tokens)
+   */
+  excludeFields?: string[];
+}
+
+const { 
+  formId, 
+  formSelector = 'form', 
+  showIndicator = true,
+  excludeFields = []
+} = Astro.props;
+
+const storageKey = `form_draft_${formId}`;
+---
+
+{showIndicator && (
+  <div id="form-persistence-indicator" class="fixed bottom-4 right-4 z-50 hidden">
+    <div class="flex items-center gap-2 rounded-lg bg-green-100 border border-green-300 px-4 py-2 shadow-lg">
+      <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      <span class="text-sm font-medium text-green-800">Borrador guardado</span>
+    </div>
+  </div>
+)}
+
+<div id="form-persistence-restore-banner" class="hidden mb-6 rounded-lg border border-blue-300 bg-blue-50 p-4">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <div>
+        <p class="text-sm font-medium text-blue-800">Se encontró un borrador guardado</p>
+        <p class="text-xs text-blue-600">Los datos anteriores han sido restaurados automáticamente</p>
+      </div>
+    </div>
+    <button
+      type="button"
+      id="form-persistence-clear-btn"
+      class="rounded-md bg-blue-200 px-3 py-1.5 text-xs font-medium text-blue-800 hover:bg-blue-300 transition-colors"
+    >
+      Limpiar borrador
+    </button>
+  </div>
+</div>
+
+<script define:vars={{ storageKey, formSelector, excludeFields, showIndicator }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector(formSelector);
+    if (!form) {
+      console.warn('FormPersistence: No se encontró el formulario con selector:', formSelector);
+      return;
+    }
+
+    const indicator = document.getElementById('form-persistence-indicator');
+    const restoreBanner = document.getElementById('form-persistence-restore-banner');
+    const clearBtn = document.getElementById('form-persistence-clear-btn');
+
+    let saveTimeout = null;
+    let hasRestoredData = false;
+
+    /**
+     * Obtener todos los campos del formulario
+     */
+    const getFormFields = () => {
+      const fields = {};
+      const inputs = form.querySelectorAll('input, textarea, select');
+      
+      inputs.forEach(input => {
+        const name = input.name || input.id;
+        if (!name || excludeFields.includes(name)) return;
+        
+        // Excluir campos ocultos que se generan automáticamente
+        if (input.type === 'hidden' && (
+          name.includes('pending_') || 
+          name.includes('_token') ||
+          name.includes('csrf')
+        )) return;
+
+        if (input.type === 'checkbox') {
+          fields[name] = input.checked;
+        } else if (input.type === 'radio') {
+          if (input.checked) {
+            fields[name] = input.value;
+          }
+        } else {
+          fields[name] = input.value;
+        }
+      });
+
+      return fields;
+    };
+
+    /**
+     * Restaurar campos del formulario desde datos guardados
+     */
+    const restoreFormFields = (data) => {
+      if (!data || Object.keys(data).length === 0) return false;
+
+      let restoredAny = false;
+
+      Object.entries(data).forEach(([name, value]) => {
+        // Buscar por name o id
+        let input = form.querySelector(`[name="${name}"]`) || form.querySelector(`#${name}`);
+        
+        if (!input) return;
+
+        if (input.type === 'checkbox') {
+          input.checked = value === true || value === 'true';
+          restoredAny = true;
+        } else if (input.type === 'radio') {
+          const radio = form.querySelector(`[name="${name}"][value="${value}"]`);
+          if (radio) {
+            radio.checked = true;
+            restoredAny = true;
+          }
+        } else if (input.tagName === 'SELECT') {
+          input.value = value;
+          restoredAny = true;
+        } else {
+          // Para inputs y textareas, solo restaurar si están vacíos
+          if (!input.value || input.value.trim() === '') {
+            input.value = value;
+            restoredAny = true;
+          }
+        }
+      });
+
+      // Disparar evento de input para actualizar cualquier lógica dependiente
+      if (restoredAny) {
+        form.querySelectorAll('input, textarea, select').forEach(input => {
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+      }
+
+      return restoredAny;
+    };
+
+    /**
+     * Guardar datos del formulario en localStorage
+     */
+    const saveFormData = () => {
+      const data = getFormFields();
+      
+      // Solo guardar si hay datos significativos
+      const hasData = Object.values(data).some(v => v && v.toString().trim() !== '');
+      
+      if (hasData) {
+        localStorage.setItem(storageKey, JSON.stringify({
+          data,
+          timestamp: Date.now()
+        }));
+
+        // Mostrar indicador brevemente
+        if (showIndicator && indicator) {
+          indicator.classList.remove('hidden');
+          setTimeout(() => {
+            indicator.classList.add('hidden');
+          }, 2000);
+        }
+      }
+    };
+
+    /**
+     * Limpiar datos guardados
+     */
+    const clearSavedData = () => {
+      localStorage.removeItem(storageKey);
+      if (restoreBanner) {
+        restoreBanner.classList.add('hidden');
+      }
+    };
+
+    /**
+     * Intentar restaurar datos guardados
+     */
+    const tryRestoreData = () => {
+      try {
+        const savedItem = localStorage.getItem(storageKey);
+        if (!savedItem) return;
+
+        const { data, timestamp } = JSON.parse(savedItem);
+        
+        // Solo restaurar si los datos tienen menos de 7 días
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        if (Date.now() - timestamp > sevenDaysMs) {
+          localStorage.removeItem(storageKey);
+          return;
+        }
+
+        const restored = restoreFormFields(data);
+        
+        if (restored && restoreBanner) {
+          restoreBanner.classList.remove('hidden');
+          hasRestoredData = true;
+        }
+      } catch (error) {
+        console.error('FormPersistence: Error restaurando datos:', error);
+        localStorage.removeItem(storageKey);
+      }
+    };
+
+    // Restaurar datos al cargar la página
+    tryRestoreData();
+
+    // Guardar cambios con debounce
+    const handleInput = () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+      saveTimeout = setTimeout(saveFormData, 1000); // Guardar después de 1 segundo de inactividad
+    };
+
+    // Agregar listeners a todos los campos
+    form.querySelectorAll('input, textarea, select').forEach(input => {
+      input.addEventListener('input', handleInput);
+      input.addEventListener('change', handleInput);
+    });
+
+    // Limpiar datos al enviar el formulario exitosamente
+    form.addEventListener('submit', () => {
+      // Limpiar después de un pequeño delay para asegurar que el submit se procese
+      setTimeout(() => {
+        localStorage.removeItem(storageKey);
+      }, 100);
+    });
+
+    // Botón para limpiar borrador
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        clearSavedData();
+        // Opcional: recargar la página para limpiar el formulario
+        if (confirm('¿Deseas limpiar el formulario también?')) {
+          window.location.reload();
+        }
+      });
+    }
+
+    // Limpiar datos si la navegación es exitosa (para SPAs)
+    window.addEventListener('beforeunload', (e) => {
+      // Guardar una última vez antes de salir
+      saveFormData();
+    });
+  });
+</script>

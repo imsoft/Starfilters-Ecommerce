@@ -3,6 +3,7 @@ import AdminLayout from '@/layouts/adminLayout.astro';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
 import { createDiscountCode } from '@/lib/discount-codes';
+import FormPersistence from "@/components/admin/FormPersistence.astro";
 
 export const prerender = false;
 
@@ -92,6 +93,9 @@ if (Astro.request.method === 'POST') {
 
 <AdminLayout title="Crear Código de Descuento">
   <div class="px-4 sm:px-6 lg:px-8">
+    <!-- Persistencia de formulario -->
+    <FormPersistence formId="discount-code-create" />
+    
     <div class="mb-8">
       <a
         href="/admin/discount-codes"
