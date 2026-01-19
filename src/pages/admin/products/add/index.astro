@@ -186,7 +186,6 @@ if (Astro.request.method === "POST") {
           // Agregar imagen principal al producto
           const { addProductImage, setPrimaryProductImage } = await import('@/lib/database');
           const imageId = await addProductImage({
-            uuid: generateUUID(),
             product_id: productId,
             image_url: imageUrl,
             alt_text: pendingPrimaryImageName,
@@ -195,7 +194,10 @@ if (Astro.request.method === "POST") {
           });
           
           if (imageId) {
+            console.log(`✅ Imagen principal guardada en BD con ID: ${imageId}`);
             await setPrimaryProductImage(productId, imageId);
+          } else {
+            console.error(`❌ Error: No se pudo guardar la imagen principal en la BD - imageId es null/undefined`);
           }
         }
 
@@ -228,7 +230,12 @@ if (Astro.request.method === "POST") {
                 is_primary: false,
                 sort_order: i + 1,
               });
-              console.log(`📷 Imagen ${i + 1} guardada en BD con ID: ${imageId}`);
+              
+              if (imageId) {
+                console.log(`✅ Imagen ${i + 1} guardada en BD con ID: ${imageId}`);
+              } else {
+                console.error(`❌ Error: No se pudo guardar la imagen ${i + 1} en la BD - imageId es null/undefined`);
+              }
             }
           } catch (carouselErr) {
             console.error('❌ Error procesando imágenes de carrusel:', carouselErr);
