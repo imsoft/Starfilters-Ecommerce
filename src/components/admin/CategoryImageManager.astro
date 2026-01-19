@@ -475,8 +475,8 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     }
   }
 
-  // Función para eliminar imagen de carrusel (hacerla global)
-  window.deleteCarouselImage = async function(imageId) {
+  // Función para eliminar imagen de carrusel
+  async function deleteCarouselImage(imageId) {
     if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
       return;
     }
@@ -501,6 +501,31 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       console.error('❌ Error eliminando imagen:', error);
       alert('Error al eliminar la imagen');
     }
-  };
+  }
+
+  // Agregar event listeners a todos los botones de eliminar carrusel usando event delegation
+  const carouselImagesContainer = document.getElementById('carousel-images-container');
+  if (carouselImagesContainer) {
+    console.log('✅ Contenedor de imágenes de carrusel encontrado');
+    
+    // Usar delegación de eventos para manejar clicks en los botones
+    carouselImagesContainer.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('.delete-carousel-image-btn');
+      if (deleteBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const imageId = deleteBtn.getAttribute('data-delete-image-id');
+        if (imageId) {
+          console.log('🗑️ Botón eliminar clickeado para imagen ID:', imageId);
+          deleteCarouselImage(parseInt(imageId));
+        } else {
+          console.error('❌ No se encontró data-delete-image-id en el botón');
+        }
+      }
+    });
+  } else {
+    console.warn('⚠️ Contenedor carousel-images-container no encontrado');
+  }
 </script>
 
