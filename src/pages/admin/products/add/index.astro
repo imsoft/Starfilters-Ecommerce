@@ -237,6 +237,12 @@ if (Astro.request.method === "POST") {
                 console.error(`❌ Error: No se pudo guardar la imagen ${i + 1} en la BD - imageId es null/undefined`);
               }
             }
+            
+            // Verificar que todas las imágenes se guardaron correctamente
+            const { getProductImages } = await import('@/lib/database');
+            const savedImages = await getProductImages(productId);
+            console.log(`📷 Total de imágenes guardadas en BD para producto ${productId}: ${savedImages.length}`);
+            console.log(`📷 Detalle:`, savedImages.map(img => ({ id: img.id, is_primary: img.is_primary, sort_order: img.sort_order })));
           } catch (carouselErr) {
             console.error('❌ Error procesando imágenes de carrusel:', carouselErr);
           }
@@ -249,6 +255,12 @@ if (Astro.request.method === "POST") {
       }
 
       success = true;
+      
+      // Verificar una última vez que las imágenes estén guardadas antes de redirigir
+      const { getProductImages } = await import('@/lib/database');
+      const finalImages = await getProductImages(productId);
+      console.log(`📷 Imágenes finales en BD antes de redirigir: ${finalImages.length}`);
+      
       // Redirigir a la página de edición después de crear
       return Astro.redirect(`/admin/products/edit/${productId}`);
     }
