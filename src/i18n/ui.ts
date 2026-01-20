@@ -35,8 +35,8 @@ export const ui = {
     'stats.projectsNumber': '+40',
     'stats.experience': 'de cuartos limpios construidos',
     'stats.experienceNumber': '+20,000 m²',
-    'stats.clients': 'margen de error en producción',
-    'stats.clientsNumber': '0%',
+    'stats.clients': '+1 millón de filtros vendidos',
+    'stats.clientsNumber': '',
 
     // Features
     'features.title': 'Tus aliados en control de partículas',
@@ -254,8 +254,8 @@ export const ui = {
     'stats.projectsNumber': '+40',
     'stats.experience': 'of cleanrooms built',
     'stats.experienceNumber': '+20,000 m²',
-    'stats.clients': 'error margin in production',
-    'stats.clientsNumber': '0%',
+    'stats.clients': '+1 million filters sold',
+    'stats.clientsNumber': '',
 
     // Features
     'features.title': 'Why StarFilters',
