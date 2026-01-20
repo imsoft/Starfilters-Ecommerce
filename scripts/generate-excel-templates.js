@@ -47,6 +47,7 @@ const productosHeaders = [
 ];
 
 const productosExample = [
+  // Producto activo
   [
     'Filtro HEPA H13',
     'HEPA Filter H13',
@@ -85,6 +86,45 @@ const productosExample = [
     'https://ejemplo.com/imagen-principal.jpg',
     'https://ejemplo.com/imagen1.jpg,https://ejemplo.com/imagen2.jpg',
   ],
+  // Producto inactivo
+  [
+    'Filtro Prefiltro G4',
+    'Pre-filter G4',
+    'Prefiltro de baja eficiencia para sistemas de ventilación',
+    'Low efficiency pre-filter for ventilation systems',
+    '250.00',
+    'MXN',
+    '12.50',
+    'Filtros de Aire',
+    'Air Filters',
+    'Prefiltros',
+    '50',
+    'inactive',
+    'prefiltro, ventilacion',
+    '20x20x2',
+    '20x20x2',
+    '500x500x50mm',
+    '1.5kg',
+    'Cartón',
+    '6 meses',
+    '',
+    'PRE-G4-20-20',
+    '35% a 0.3µm',
+    '35% at 0.3µm',
+    'G4',
+    'Marco de cartón, fácil instalación',
+    'Cardboard frame, easy installation',
+    'Cartón',
+    '60°C',
+    'Sistemas de ventilación general',
+    'General ventilation systems',
+    'Oficinas, comercios',
+    'Offices, commercial',
+    'Bajo costo, fácil mantenimiento',
+    'Low cost, easy maintenance',
+    '',
+    '',
+  ],
 ];
 
 // Template para Categorías
@@ -98,6 +138,7 @@ const categoriasHeaders = [
 ];
 
 const categoriasExample = [
+  // Categoría activa
   [
     'Filtros HEPA',
     'HEPA Filters',
@@ -105,6 +146,15 @@ const categoriasExample = [
     'High efficiency particulate air filters',
     'https://ejemplo.com/hepa-category.jpg',
     'active',
+  ],
+  // Categoría inactiva
+  [
+    'Filtros Descontinuados',
+    'Discontinued Filters',
+    'Categoría de filtros que ya no se fabrican',
+    'Category of filters that are no longer manufactured',
+    '',
+    'inactive',
   ],
 ];
 
