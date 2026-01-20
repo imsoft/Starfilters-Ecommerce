@@ -1,0 +1,369 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { getUserById, updateUser } from "@/lib/database";
+import { validateEmail, validatePhone, generateJWT } from "@/lib/auth";
+
+// Verify authentication
+const user = getAuthenticatedUser(Astro.cookies);
+if (!user) {
+  return Astro.redirect('/en/login?redirect=' + encodeURIComponent(Astro.url.pathname));
+}
+
+// Get complete user data
+const fullUser = await getUserById(user.id);
+if (!fullUser) {
+  return Astro.redirect('/en/login');
+}
+
+let error: string | null = null;
+let success: string | null = null;
+
+// Handle profile update
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    
+    const updateData: Partial<typeof fullUser> = {
+      first_name: (formData.get("firstName") as string).trim(),
+      last_name: (formData.get("lastName") as string).trim(),
+      phone: (formData.get("phone") as string).trim() || undefined,
+      address: (formData.get("address") as string).trim() || undefined,
+      city: (formData.get("city") as string).trim() || undefined,
+      postal_code: (formData.get("postalCode") as string).trim() || undefined,
+      country: (formData.get("country") as string).trim() || fullUser.country
+    };
+
+    // Validations
+    const errors: string[] = [];
+    
+    if (!updateData.first_name || updateData.first_name.length < 2) {
+      errors.push('First name must be at least 2 characters');
+    }
+    
+    if (!updateData.last_name || updateData.last_name.length < 2) {
+      errors.push('Last name must be at least 2 characters');
+    }
+    
+    if (updateData.phone && !validatePhone(updateData.phone)) {
+      errors.push('Invalid phone number');
+    }
+
+    if (errors.length > 0) {
+      error = errors.join(', ');
+    } else {
+      // Update user
+      const updateSuccess = await updateUser(user.id, updateData);
+      
+      if (updateSuccess) {
+        success = 'Profile updated successfully';
+        
+        // Update data in memory to show changes
+        Object.assign(fullUser, updateData);
+        
+        // Regenerate JWT with new data
+        const updatedAuthUser = {
+          id: user.id,
+          email: user.email,
+          firstName: updateData.first_name || user.firstName,
+          lastName: updateData.last_name || user.lastName,
+          status: user.status,
+          emailVerified: user.emailVerified
+        };
+        
+        const newToken = generateJWT(updatedAuthUser);
+        
+        // Update session cookie
+        const isSecure = Astro.url.protocol === 'https:' || process.env.FORCE_SECURE_COOKIES === 'true';
+        Astro.cookies.set('auth-token', newToken, {
+          httpOnly: true,
+          secure: isSecure,
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          path: '/'
+        });
+      } else {
+        error = 'Error updating profile';
+      }
+    }
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    error = 'Internal server error';
+  }
+}
+
+// Format registration date
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(new Date(date));
+};
+---
+
+<WebsiteLayout title="My Profile">
+  <div class="min-h-screen bg-background py-24">
+    <div class="mx-auto max-w-4xl px-6 lg:px-8">
+      <!-- Breadcrumb -->
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+          <li>
+            <a href="/en" class="hover:text-foreground transition-colors">Home</a>
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li class="text-foreground font-medium">My Profile</li>
+        </ol>
+      </nav>
+
+      <!-- Header -->
+      <div class="mb-12">
+        <div class="flex items-center gap-4">
+          <div class="avatar-circle bg-primary text-primary-foreground text-lg font-bold">
+            {fullUser.first_name.charAt(0)}{fullUser.last_name.charAt(0)}
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold text-foreground">
+              {fullUser.first_name} {fullUser.last_name}
+            </h1>
+            <p class="text-muted-foreground">{fullUser.email}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      {error && (
+        <div class="mb-6 rounded-md bg-red-50 p-4">
+          <div class="text-sm text-red-700">{error}</div>
+        </div>
+      )}
+      
+      {success && (
+        <div class="mb-6 rounded-md bg-green-50 p-4">
+          <div class="text-sm text-green-700">{success}</div>
+        </div>
+      )}
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <!-- Account Information -->
+        <div class="lg:col-span-1">
+          <div class="bg-card rounded-lg border border-border p-6">
+            <h2 class="text-lg font-semibold text-foreground mb-4">Account Information</h2>
+            
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm font-medium text-muted-foreground">Account Status</label>
+                <div class="mt-1">
+                  <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    fullUser.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {fullUser.status === 'active' ? '✅ Active' : '⏳ Pending'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-sm font-medium text-muted-foreground">Email Verified</label>
+                <div class="mt-1">
+                  <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    fullUser.email_verified 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {fullUser.email_verified ? '✅ Verified' : '❌ Not verified'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-sm font-medium text-muted-foreground">Member since</label>
+                <p class="mt-1 text-sm text-foreground">{formatDate(fullUser.created_at)}</p>
+              </div>
+
+              <div class="pt-4 border-t border-border">
+                <a
+                  href="/en/change-password"
+                  class="block w-full text-center rounded-md bg-secondary px-3 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 transition-colors"
+                >
+                  Change Password
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="lg:col-span-2">
+          <div class="bg-card rounded-lg border border-border p-6">
+            <h2 class="text-lg font-semibold text-foreground mb-6">Edit Personal Information</h2>
+            
+            <form method="POST" class="space-y-6">
+              <!-- First Name and Last Name -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="firstName" class="block text-sm font-medium text-foreground">
+                    First Name
+                  </label>
+                  <div class="mt-2">
+                    <input
+                      id="firstName"
+                      type="text"
+                      name="firstName"
+                      required
+                      value={fullUser.first_name}
+                      class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label for="lastName" class="block text-sm font-medium text-foreground">
+                    Last Name
+                  </label>
+                  <div class="mt-2">
+                    <input
+                      id="lastName"
+                      type="text"
+                      name="lastName"
+                      required
+                      value={fullUser.last_name}
+                      class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label for="email" class="block text-sm font-medium text-foreground">
+                  Email Address
+                </label>
+                <div class="mt-2">
+                  <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    required
+                    value={fullUser.email}
+                    disabled
+                    class="block w-full rounded-md bg-muted px-3 py-1.5 text-base text-muted-foreground outline-1 -outline-offset-1 outline-border cursor-not-allowed sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <!-- Phone -->
+              <div>
+                <label for="phone" class="block text-sm font-medium text-foreground">
+                  Phone (optional)
+                </label>
+                <div class="mt-2">
+                  <input
+                    id="phone"
+                    type="tel"
+                    name="phone"
+                    value={fullUser.phone || ''}
+                    class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm"
+                    placeholder="+52 123 456 7890"
+                  />
+                </div>
+              </div>
+
+              <!-- Address -->
+              <div>
+                <label for="address" class="block text-sm font-medium text-foreground">
+                  Address (optional)
+                </label>
+                <div class="mt-2">
+                  <input
+                    id="address"
+                    type="text"
+                    name="address"
+                    value={fullUser.address || ''}
+                    class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm"
+                    placeholder="Street and number"
+                  />
+                </div>
+              </div>
+
+              <!-- City and Postal Code -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="city" class="block text-sm font-medium text-foreground">
+                    City (optional)
+                  </label>
+                  <div class="mt-2">
+                    <input
+                      id="city"
+                      type="text"
+                      name="city"
+                      value={fullUser.city || ''}
+                      class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label for="postalCode" class="block text-sm font-medium text-foreground">
+                    Postal Code (optional)
+                  </label>
+                  <div class="mt-2">
+                    <input
+                      id="postalCode"
+                      type="text"
+                      name="postalCode"
+                      value={fullUser.postal_code || ''}
+                      class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Country -->
+              <div>
+                <label for="country" class="block text-sm font-medium text-foreground">
+                  Country
+                </label>
+                <div class="mt-2">
+                  <select
+                    id="country"
+                    name="country"
+                    class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm"
+                  >
+                    <option value="México" selected={fullUser.country === 'México'}>Mexico</option>
+                    <option value="Estados Unidos" selected={fullUser.country === 'Estados Unidos'}>United States</option>
+                    <option value="España" selected={fullUser.country === 'España'}>Spain</option>
+                    <option value="Argentina" selected={fullUser.country === 'Argentina'}>Argentina</option>
+                    <option value="Colombia" selected={fullUser.country === 'Colombia'}>Colombia</option>
+                    <option value="Chile" selected={fullUser.country === 'Chile'}>Chile</option>
+                    <option value="Perú" selected={fullUser.country === 'Perú'}>Peru</option>
+                    <option value="Otro" selected={!['México', 'Estados Unidos', 'España', 'Argentina', 'Colombia', 'Chile', 'Perú'].includes(fullUser.country)}>Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Buttons -->
+              <div class="flex gap-4 pt-4">
+                <button
+                  type="submit"
+                  class="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors"
+                >
+                  Save Changes
+                </button>
+                <a
+                  href="/en"
+                  class="flex-1 text-center rounded-md bg-secondary px-3 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary transition-colors"
+                >
+                  Cancel
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>

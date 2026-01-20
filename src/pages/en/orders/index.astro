@@ -1,0 +1,501 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import CustomModal from "@/components/shared/CustomModal.astro";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { getUserOrders } from "@/lib/database";
+import type { Order } from "@/lib/database";
+
+// Verify authentication
+const user = getAuthenticatedUser(Astro.cookies);
+if (!user) {
+  return Astro.redirect('/en/login?redirect=' + encodeURIComponent(Astro.url.pathname));
+}
+
+// Get user orders
+const orders = await getUserOrders(user.id);
+
+// Calculate statistics
+const stats = {
+  total: orders.length,
+  pending: orders.filter(o => o.status === 'pending').length,
+  processing: orders.filter(o => o.status === 'processing').length,
+  shipped: orders.filter(o => o.status === 'shipped').length,
+  delivered: orders.filter(o => o.status === 'delivered').length,
+  cancelled: orders.filter(o => o.status === 'cancelled').length,
+  totalSpent: orders.reduce((sum, o) => sum + o.total_amount, 0)
+};
+
+// Utility functions
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(date));
+};
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  }).format(amount);
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'processing':
+      return 'bg-blue-100 text-blue-800';
+    case 'shipped':
+      return 'bg-purple-100 text-purple-800';
+    case 'delivered':
+      return 'bg-green-100 text-green-800';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'Pending';
+    case 'processing':
+      return 'Processing';
+    case 'shipped':
+      return 'Shipped';
+    case 'delivered':
+      return 'Delivered';
+    case 'cancelled':
+      return 'Cancelled';
+    default:
+      return status;
+  }
+};
+---
+
+<WebsiteLayout title="My Orders">
+  <div class="min-h-screen bg-background">
+    <div class="mx-auto max-w-6xl px-6 lg:px-8">
+      <!-- Breadcrumb -->
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+          <li>
+            <a href="/en" class="hover:text-foreground transition-colors">Home</a>
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li class="text-foreground font-medium">My Orders</li>
+        </ol>
+      </nav>
+
+      <!-- Header -->
+      <div class="mb-12">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-foreground">My Orders</h1>
+            <p class="mt-2 text-muted-foreground">
+              Review the status and details of your orders
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      {orders.length > 0 && (
+        <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <!-- Total orders -->
+          <div class="bg-card rounded-lg border border-border p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-muted-foreground">Total Orders</p>
+                <p class="text-2xl font-semibold text-foreground">{stats.total}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total spent -->
+          <div class="bg-card rounded-lg border border-border p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-muted-foreground">Total Spent</p>
+                <p class="text-2xl font-semibold text-foreground">{formatCurrency(stats.totalSpent)}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivered -->
+          <div class="bg-card rounded-lg border border-border p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-muted-foreground">Delivered</p>
+                <p class="text-2xl font-semibold text-foreground">{stats.delivered}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- In process -->
+          <div class="bg-card rounded-lg border border-border p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-muted-foreground">In Process</p>
+                <p class="text-2xl font-semibold text-foreground">{stats.processing + stats.shipped + stats.pending}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <!-- Filters and search -->
+      {orders.length > 0 && (
+        <div class="mb-8 rounded-lg border border-border bg-card p-4">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <!-- Search -->
+            <div class="relative flex-1 max-w-md">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <input
+                type="text"
+                id="search-orders"
+                placeholder="Search by order number..."
+                class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            <!-- Status filter -->
+            <select
+              id="filter-status"
+              class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="all">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            <!-- Date filter -->
+            <select
+              id="filter-date"
+              class="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="all">All dates</option>
+              <option value="week">Last week</option>
+              <option value="month">Last month</option>
+              <option value="3months">Last 3 months</option>
+              <option value="year">Last year</option>
+            </select>
+
+            <!-- Results counter -->
+            <div class="text-sm text-muted-foreground">
+              Showing <span id="filter-count" class="font-semibold text-foreground">{orders.length}</span> of {orders.length} orders
+            </div>
+          </div>
+        </div>
+      )}
+
+      {orders.length === 0 ? (
+        <!-- Empty state -->
+        <div class="text-center py-12">
+          <div class="mx-auto max-w-md">
+            <svg
+              class="mx-auto h-24 w-24 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              ></path>
+            </svg>
+            <h3 class="mt-6 text-lg font-medium text-foreground">
+              You don't have any orders yet
+            </h3>
+            <p class="mt-2 text-sm text-muted-foreground">
+              When you make your first purchase, it will appear here
+            </p>
+            <div class="mt-6">
+              <a
+                href="/en/filters"
+                class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Explore Products
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <!-- Orders list -->
+        <div id="orders-list" class="space-y-8">
+          {orders.map((order: Order) => (
+            <div 
+              class="order-card bg-card rounded-lg border border-border shadow-sm overflow-hidden"
+              data-order-number={order.order_number}
+              data-status={order.status}
+              data-date={order.created_at.toISOString()}
+            >
+              <!-- Order header -->
+              <div class="bg-muted/50 px-6 py-4 border-b border-border">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div>
+                      <h3 class="text-lg font-semibold text-foreground">
+                        Order #{order.order_number}
+                      </h3>
+                      <p class="text-sm text-muted-foreground">
+                        {formatDate(order.created_at)}
+                      </p>
+                    </div>
+                    <span class={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(order.status)}`}>
+                      {getStatusText(order.status)}
+                    </span>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm text-muted-foreground">Total</p>
+                    <p class="text-xl font-bold text-foreground">
+                      {formatCurrency(order.total_amount)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Order content -->
+              <div class="p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <!-- Order information -->
+                  <div>
+                    <h4 class="text-sm font-medium text-foreground mb-3">
+                      Order Information
+                    </h4>
+                    <div class="space-y-2 text-sm">
+                      <div class="flex justify-between">
+                        <span class="text-muted-foreground">Customer:</span>
+                        <span class="text-foreground">{order.customer_name}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="text-muted-foreground">Email:</span>
+                        <span class="text-foreground">{order.customer_email}</span>
+                      </div>
+                      {order.customer_phone && (
+                        <div class="flex justify-between">
+                          <span class="text-muted-foreground">Phone:</span>
+                          <span class="text-foreground">{order.customer_phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <!-- Shipping address -->
+                  {order.shipping_address && (
+                    <div>
+                      <h4 class="text-sm font-medium text-foreground mb-3">
+                        Shipping Address
+                      </h4>
+                      <p class="text-sm text-foreground whitespace-pre-line">
+                        {order.shipping_address}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                  <a
+                    href={`/en/orders/${order.id}`}
+                    class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    View Details
+                  </a>
+                  {order.status === 'delivered' && (
+                    <a
+                      href={`/orders/${order.id}/invoice`}
+                      class="inline-flex items-center justify-center rounded-md bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 transition-colors"
+                    >
+                      Download Invoice
+                    </a>
+                  )}
+                  {(order.status === 'pending' || order.status === 'processing') && (
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+                      onclick={`cancelOrder(${order.id})`}
+                    >
+                      Cancel Order
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <!-- Pagination (if needed in the future) -->
+        {orders.length >= 50 && (
+          <div class="mt-8 flex justify-center">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="rounded-md bg-secondary px-3 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 transition-colors"
+              >
+                Load more orders
+              </button>
+            </div>
+          </div>
+        )}
+      )}
+
+      <!-- Navigation links -->
+      <div class="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/en/profile"
+          class="inline-flex items-center justify-center rounded-md bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 transition-colors"
+        >
+          ← My Profile
+        </a>
+        <a
+          href="/en/filters"
+          class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Continue Shopping
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom confirmation modal -->
+  <CustomModal id="confirm-dialog" />
+</WebsiteLayout>
+
+<script>
+  // Filtering and search functionality
+  function filterOrders(): void {
+    const searchInput = document.getElementById('search-orders') as HTMLInputElement;
+    const statusFilter = document.getElementById('filter-status') as HTMLSelectElement;
+    const dateFilter = document.getElementById('filter-date') as HTMLSelectElement;
+    const ordersList = document.getElementById('orders-list');
+    const filterCount = document.getElementById('filter-count');
+    
+    if (!ordersList || !filterCount) return;
+    
+    const searchTerm = searchInput?.value.toLowerCase() || '';
+    const statusValue = statusFilter?.value || 'all';
+    const dateValue = dateFilter?.value || 'all';
+    
+    const orderCards = ordersList.querySelectorAll('.order-card');
+    let visibleCount = 0;
+    
+    orderCards.forEach((card) => {
+      const htmlCard = card as HTMLElement;
+      const orderNumber = htmlCard.dataset.orderNumber?.toLowerCase() || '';
+      const status = htmlCard.dataset.status || '';
+      const dateStr = htmlCard.dataset.date || '';
+      
+      // Search filter
+      const matchesSearch = !searchTerm || orderNumber.includes(searchTerm);
+      
+      // Status filter
+      const matchesStatus = statusValue === 'all' || status === statusValue;
+      
+      // Date filter
+      let matchesDate = true;
+      if (dateValue !== 'all' && dateStr) {
+        const orderDate = new Date(dateStr);
+        const now = new Date();
+        const diffTime = now.getTime() - orderDate.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        
+        switch (dateValue) {
+          case 'week':
+            matchesDate = diffDays <= 7;
+            break;
+          case 'month':
+            matchesDate = diffDays <= 30;
+            break;
+          case '3months':
+            matchesDate = diffDays <= 90;
+            break;
+          case 'year':
+            matchesDate = diffDays <= 365;
+            break;
+        }
+      }
+      
+      if (matchesSearch && matchesStatus && matchesDate) {
+        htmlCard.style.display = '';
+        visibleCount++;
+      } else {
+        htmlCard.style.display = 'none';
+      }
+    });
+    
+    // Update counter
+    filterCount.textContent = visibleCount.toString();
+  }
+  
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-orders');
+    const statusFilter = document.getElementById('filter-status');
+    const dateFilter = document.getElementById('filter-date');
+    
+    searchInput?.addEventListener('input', filterOrders);
+    statusFilter?.addEventListener('change', filterOrders);
+    dateFilter?.addEventListener('change', filterOrders);
+  });
+  
+  // Function to cancel order
+  function cancelOrder(orderId: number) {
+    if (typeof (window as any).showCustomModal === 'function') {
+      (window as any).showCustomModal(
+        'confirm-dialog',
+        'Cancel order',
+        'Are you sure you want to cancel this order?',
+        () => {
+          // Implement cancellation logic
+          console.log(`Cancelling order ${orderId}`);
+          // TODO: Implement backend call to cancel
+        },
+        'Cancel order',
+        "Don't cancel"
+      );
+    }
+  }
+
+  // Make function global
+  (window as any).cancelOrder = cancelOrder;
+</script>

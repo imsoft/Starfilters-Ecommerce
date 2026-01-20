@@ -1,0 +1,775 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import LazyImage from "@/components/shared/LazyImage.astro";
+import CustomModal from "@/components/shared/CustomModal.astro";
+import { getProducts, getProductImages, getProductById } from "@/lib/database";
+import { getProductPlaceholderImage } from "@/lib/image-utils";
+
+// Get some products to show as recommended
+const recommendedProducts = await getProducts(4, 0);
+
+// Get primary image for each recommended product
+const recommendedProductsWithImages = await Promise.all(
+  recommendedProducts.map(async (product) => {
+    const images = await getProductImages(product.id);
+    const primaryImage = images.find(img => img.is_primary) || images[0];
+    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(product.category);
+    return { ...product, imageUrl };
+  })
+);
+
+// Function to format price
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+  }).format(price);
+};
+---
+
+<WebsiteLayout title="Shopping Cart">
+  <div class="bg-background pt-24">
+    <!-- Breadcrumb -->
+    <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+          <li>
+            <a href="/en" class="hover:text-foreground transition-colors"
+              >Home</a
+            >
+          </li>
+          <li>
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"></path>
+            </svg>
+          </li>
+          <li class="text-foreground font-medium">Cart</li>
+        </ol>
+      </nav>
+    </div>
+
+    <main class="mx-auto max-w-2xl px-4 pb-24 sm:px-6 lg:max-w-7xl lg:px-8">
+      <h1
+        class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-12"
+      >
+        Shopping Cart
+      </h1>
+
+      <!-- Main cart container -->
+      <div id="cart-container">
+        <!-- Loading state -->
+        <div id="cart-loading" class="text-center py-12">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"
+          >
+          </div>
+          <p class="mt-4 text-muted-foreground">Loading cart...</p>
+        </div>
+
+        <!-- Empty state -->
+        <div id="cart-empty" class="text-center py-12 hidden">
+          <svg
+            class="mx-auto h-24 w-24 text-muted-foreground"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1"
+              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+          <h3 class="mt-6 text-lg font-medium text-foreground">
+            Your cart is empty
+          </h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Add some products to continue
+          </p>
+          <div class="mt-6">
+            <a
+              href="/en/filters"
+              class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Explore Products
+            </a>
+          </div>
+        </div>
+
+        <!-- Cart with items -->
+        <div id="cart-content" class="hidden">
+          <div
+            class="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12 xl:gap-x-16"
+          >
+            <!-- Product list -->
+            <section aria-labelledby="cart-heading" class="lg:col-span-7">
+              <h2 id="cart-heading" class="sr-only">
+                Items in your shopping cart
+              </h2>
+
+              <ul
+                id="cart-items"
+                role="list"
+                class="divide-y divide-border border-t border-b border-border"
+              >
+                <!-- Items will be loaded dynamically -->
+              </ul>
+            </section>
+
+            <!-- Order summary -->
+            <section
+              aria-labelledby="summary-heading"
+              class="mt-16 rounded-lg bg-card border border-border px-4 py-6 sm:p-6 lg:col-span-5 lg:mt-0 lg:p-8"
+            >
+              <h2
+                id="summary-heading"
+                class="text-lg font-medium text-foreground"
+              >
+                Order Summary
+              </h2>
+
+              <dl class="mt-6 space-y-4" id="cart-summary">
+                <!-- Summary will be loaded dynamically -->
+              </dl>
+
+              <div class="mt-6">
+                <a
+                  href="/en/checkout"
+                  id="checkout-btn"
+                  class="block w-full text-center rounded-md border border-transparent bg-primary px-4 py-3 text-base font-medium text-primary-foreground shadow-xs hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden transition-colors cursor-pointer"
+                >
+                  Proceed to Checkout
+                </a>
+              </div>
+
+              <div class="mt-6 text-center text-sm text-muted-foreground">
+                <p>
+                  or
+                  <a
+                    href="/en/filters"
+                    class="font-medium text-primary hover:text-primary/90"
+                  >
+                    Continue Shopping
+                    <span aria-hidden="true"> &rarr;</span>
+                  </a>
+                </p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related products -->
+      <section aria-labelledby="related-heading" class="mt-24">
+        <h2 id="related-heading" class="text-lg font-medium text-foreground">
+          You may also like...
+        </h2>
+
+        <div
+          class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8"
+        >
+          {
+            recommendedProductsWithImages.map((product) => (
+              <div class="group relative flex flex-col">
+                <a
+                  href={`/en/product/${product.uuid}`}
+                  class="block flex-shrink-0"
+                >
+                  <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
+                    <LazyImage
+                      src={
+                        product.imageUrl ||
+                        getProductPlaceholderImage(product.category)
+                      }
+                      alt={product.name}
+                      class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
+                    />
+                  </div>
+                </a>
+                <div class="mt-4 flex justify-between">
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-sm text-foreground line-clamp-2 min-h-[2.5rem]">
+                      <a
+                        href={`/en/product/${product.uuid}`}
+                        class="hover:text-primary transition-colors"
+                      >
+                        {product.name}
+                      </a>
+                    </h3>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                      {product.category}
+                    </p>
+                  </div>
+                  <p class="text-sm font-medium text-foreground ml-2 flex-shrink-0">
+                    {formatPrice(product.price)}
+                  </p>
+                </div>
+                <div class="mt-auto pt-3">
+                  <button
+                    type="button"
+                    class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    onclick={`event.stopPropagation(); addProductToCart('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl || ""}', '${product.category || ""}')`}
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Custom confirmation modal -->
+  <CustomModal id="confirm-dialog" />
+</WebsiteLayout>
+
+<script>
+  // Cart management
+  const CART_STORAGE_KEY = "starfilters_cart";
+
+  interface CartItem {
+    uuid: string;
+    product_id: number;
+    name: string;
+    price: number;
+    quantity: number;
+    image_url?: string;
+    color?: string;
+    size?: string;
+    category?: string;
+    width?: string;
+    height?: string;
+    length?: string;
+  }
+
+  interface Cart {
+    items: CartItem[];
+    total: number;
+    itemCount: number;
+  }
+
+  function getCart(): Cart {
+    try {
+      const cartData = localStorage.getItem(CART_STORAGE_KEY);
+      if (cartData) {
+        const cart = JSON.parse(cartData) as Cart;
+        return {
+          ...cart,
+          total: calculateTotal(cart.items),
+          itemCount: calculateItemCount(cart.items),
+        };
+      }
+    } catch (error) {
+      console.error("Error reading cart:", error);
+    }
+    return { items: [], total: 0, itemCount: 0 };
+  }
+
+  function saveCart(cart: Cart): void {
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      window.dispatchEvent(new CustomEvent("cartUpdated", { detail: cart }));
+    } catch (error) {
+      console.error("Error saving cart:", error);
+    }
+  }
+
+  function calculateTotal(items: CartItem[]): number {
+    return items.reduce((total, item) => total + item.price * item.quantity, 0);
+  }
+
+  function calculateItemCount(items: CartItem[]): number {
+    return items.reduce((count, item) => count + item.quantity, 0);
+  }
+
+  function formatPrice(price: number): string {
+    return new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+    }).format(price);
+  }
+
+  function addProductToCart(
+    uuid: string,
+    product_id: number,
+    name: string,
+    price: number,
+    image_url: string,
+    category: string
+  ): void {
+    const cart = getCart();
+
+    const existingItemIndex = cart.items.findIndex(
+      (item) => item.uuid === uuid
+    );
+
+    if (existingItemIndex >= 0) {
+      cart.items[existingItemIndex].quantity += 1;
+    } else {
+      cart.items.push({
+        uuid,
+        product_id,
+        name,
+        price,
+        quantity: 1,
+        image_url,
+        category,
+      });
+    }
+
+    cart.total = calculateTotal(cart.items);
+    cart.itemCount = calculateItemCount(cart.items);
+    saveCart(cart);
+
+    showNotification(`${name} added to cart`);
+    renderCart();
+  }
+
+  // Function to show custom modal
+  function showCustomModal(
+    modalId: string,
+    title: string,
+    description: string,
+    onConfirm: () => void,
+    confirmText: string = "Confirm",
+    cancelText: string = "Cancel"
+  ): void {
+    console.log('🎯 showCustomModal called with modalId:', modalId);
+    console.log('🔍 Looking for modal elements...');
+    
+    const modal = document.getElementById(modalId);
+    const modalTitle = document.getElementById(`${modalId}-title`);
+    const modalDescription = document.getElementById(`${modalId}-description`);
+    const confirmBtn = document.getElementById(`${modalId}-confirm`);
+    const cancelBtn = document.getElementById(`${modalId}-cancel`);
+    const overlay = document.getElementById(`${modalId}-overlay`);
+
+    console.log('Elements found:', {
+      modal: !!modal,
+      modalTitle: !!modalTitle,
+      modalDescription: !!modalDescription,
+      confirmBtn: !!confirmBtn,
+      cancelBtn: !!cancelBtn,
+      overlay: !!overlay
+    });
+
+    if (!modal || !modalTitle || !modalDescription || !confirmBtn || !cancelBtn) {
+      console.error('❌ Not all modal elements found');
+      console.error('IDs searched:', {
+        modal: modalId,
+        title: `${modalId}-title`,
+        description: `${modalId}-description`,
+        confirm: `${modalId}-confirm`,
+        cancel: `${modalId}-cancel`,
+        overlay: `${modalId}-overlay`
+      });
+      // Search for all elements with IDs containing "confirm-dialog"
+      const allElements = document.querySelectorAll('[id*="confirm"]');
+      console.log('Elements with "confirm" in ID:', Array.from(allElements).map(el => el.id));
+      return;
+    }
+
+    // Set content
+    modalTitle.textContent = title;
+    modalDescription.textContent = description;
+    confirmBtn.textContent = confirmText;
+    cancelBtn.textContent = cancelText;
+
+    // Show modal - remove 'hidden' class and set display
+    modal.classList.remove("hidden");
+    modal.style.display = "flex";
+    modal.style.visibility = "visible";
+    modal.style.opacity = "1";
+    document.body.style.overflow = "hidden";
+    
+    // Ensure content is visible
+    const modalContent = document.getElementById(`${modalId}-content`);
+    if (modalContent) {
+      modalContent.style.display = "block";
+      modalContent.style.visibility = "visible";
+      modalContent.style.opacity = "1";
+    }
+    
+    console.log('✅ Modal shown - classes:', modal.className, 'style:', modal.style.cssText);
+
+    // Handlers
+    const handleConfirm = () => {
+      onConfirm();
+      closeModal();
+    };
+
+    const handleCancel = () => {
+      closeModal();
+    };
+
+    const closeModal = () => {
+      // Hide modal - add 'hidden' class and set display
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+      modal.style.visibility = "hidden";
+      document.body.style.overflow = "";
+      // Remove listeners by cloning elements
+      const newConfirmBtn = confirmBtn.cloneNode(true) as HTMLButtonElement;
+      const newCancelBtn = cancelBtn.cloneNode(true) as HTMLButtonElement;
+      const newOverlay = overlay?.cloneNode(true) as HTMLDivElement;
+      
+      confirmBtn.replaceWith(newConfirmBtn);
+      cancelBtn.replaceWith(newCancelBtn);
+      if (overlay) overlay.replaceWith(newOverlay);
+    };
+
+    // Add listeners to current elements
+    confirmBtn.addEventListener("click", handleConfirm);
+    cancelBtn.addEventListener("click", handleCancel);
+    if (overlay) overlay.addEventListener("click", handleCancel);
+
+    // Close with ESC
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleCancel();
+        document.removeEventListener("keydown", handleEscape);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+  }
+
+  function removeFromCart(uuid: string): void {
+    console.log('🔴 removeFromCart called with uuid:', uuid);
+    console.log('🔍 Checking if modal exists in DOM...');
+    const modal = document.getElementById("confirm-dialog");
+    console.log('Modal found:', !!modal);
+    if (modal) {
+      console.log('Modal HTML:', modal.outerHTML.substring(0, 200));
+    }
+    
+    try {
+      showCustomModal(
+        "confirm-dialog",
+        "Remove product",
+        "Are you sure you want to remove this product from your cart?",
+        () => {
+          const cart = getCart();
+          cart.items = cart.items.filter((item) => item.uuid !== uuid);
+          cart.total = calculateTotal(cart.items);
+          cart.itemCount = calculateItemCount(cart.items);
+          saveCart(cart);
+          renderCart();
+        },
+        "Remove",
+        "Cancel"
+      );
+    } catch (error) {
+      console.error('❌ Error showing modal:', error);
+    }
+  }
+
+  function updateQuantity(uuid: string, quantity: number): void {
+    const cart = getCart();
+    const itemIndex = cart.items.findIndex((item) => item.uuid === uuid);
+
+    if (itemIndex >= 0) {
+      if (quantity <= 0) {
+        cart.items.splice(itemIndex, 1);
+      } else {
+        cart.items[itemIndex].quantity = quantity;
+      }
+    }
+
+    cart.total = calculateTotal(cart.items);
+    cart.itemCount = calculateItemCount(cart.items);
+    saveCart(cart);
+    renderCart();
+  }
+
+  function updateQuantityFromInput(uuid: string): void {
+    const quantityInput = document.getElementById(`quantity-${uuid}`) as HTMLInputElement;
+    
+    if (quantityInput) {
+      let quantity = parseInt(quantityInput.value) || 1;
+      
+      // Validate that it's at least 1
+      if (quantity < 1) {
+        quantity = 1;
+        quantityInput.value = "1";
+      }
+      
+      updateQuantity(uuid, quantity);
+    }
+  }
+
+  function updateMeasurements(uuid: string, width: string, height: string, length: string): void {
+    const cart = getCart();
+    const itemIndex = cart.items.findIndex((item) => item.uuid === uuid);
+
+    if (itemIndex >= 0) {
+      cart.items[itemIndex].width = width || undefined;
+      cart.items[itemIndex].height = height || undefined;
+      cart.items[itemIndex].length = length || undefined;
+    }
+
+    saveCart(cart);
+    renderCart();
+  }
+
+  function updateMeasurementsFromInputs(uuid: string): void {
+    const widthSelect = document.getElementById(`width-${uuid}`) as HTMLSelectElement;
+    const heightSelect = document.getElementById(`height-${uuid}`) as HTMLSelectElement;
+    const lengthSelect = document.getElementById(`length-${uuid}`) as HTMLSelectElement;
+
+    if (widthSelect && heightSelect && lengthSelect) {
+      updateMeasurements(
+        uuid,
+        widthSelect.value.trim() || undefined,
+        heightSelect.value.trim() || undefined,
+        lengthSelect.value.trim() || undefined
+      );
+    }
+  }
+
+  // Function to parse dimensions from format "30 x 20 x 15 cm" or "30x20x15"
+  function parseDimensions(dimensionsString: string | undefined | null): { length?: string; width?: string; height?: string } {
+    if (!dimensionsString) return {};
+    
+    // Expected format: "30 x 20 x 15 cm" or "30x20x15" or "30 x 20 x 15"
+    const match = dimensionsString.match(/(\d+)\s*x\s*(\d+)\s*x\s*(\d+)/i);
+    if (match) {
+      return {
+        length: match[1],
+        width: match[2],
+        height: match[3]
+      };
+    }
+    return {};
+  }
+
+  // Function to load dimensions from product if not in cart
+  async function loadProductDimensions(item: CartItem): Promise<{ length?: string; width?: string; height?: string }> {
+    // If already has parsed dimensions, use them
+    if (item.length || item.width || item.height) {
+      return {
+        length: item.length,
+        width: item.width,
+        height: item.height
+      };
+    }
+    
+    // If no dimensions, get them from product
+    try {
+      const response = await fetch(`/api/get-product-dimensions?product_id=${item.product_id}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.dimensions) {
+          const parsed = parseDimensions(data.dimensions);
+          // Save parsed dimensions to cart
+          updateMeasurements(item.uuid, parsed.width || '', parsed.height || '', parsed.length || '');
+          return {
+            length: parsed.length,
+            width: parsed.width,
+            height: parsed.height
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error loading product dimensions:', error);
+    }
+    
+    return {};
+  }
+
+  async function renderCart(): Promise<void> {
+    const cart = getCart();
+    const cartLoading = document.getElementById("cart-loading");
+    const cartEmpty = document.getElementById("cart-empty");
+    const cartContent = document.getElementById("cart-content");
+    const cartItems = document.getElementById("cart-items");
+    const cartSummary = document.getElementById("cart-summary");
+
+    if (
+      !cartLoading ||
+      !cartEmpty ||
+      !cartContent ||
+      !cartItems ||
+      !cartSummary
+    )
+      return;
+
+    // Hide loading
+    cartLoading.classList.add("hidden");
+
+    if (cart.items.length === 0) {
+      cartEmpty.classList.remove("hidden");
+      cartContent.classList.add("hidden");
+    } else {
+      cartEmpty.classList.add("hidden");
+      cartContent.classList.remove("hidden");
+
+      // Render items - first load dimensions if not present
+      const itemsWithDimensions = await Promise.all(
+        cart.items.map(async (item) => {
+          const dimensions = await loadProductDimensions(item);
+          return { ...item, ...dimensions };
+        })
+      );
+
+      // Update cartItems with loaded dimensions
+      const updatedCart = {
+        ...cart,
+        items: itemsWithDimensions.map((item, index) => ({
+          ...cart.items[index],
+          length: item.length,
+          width: item.width,
+          height: item.height
+        }))
+      };
+      
+      // Save updated cart with dimensions
+      saveCart(updatedCart);
+
+      // Render items
+      cartItems.innerHTML = itemsWithDimensions
+        .map(
+          (item) => `
+        <li class="flex py-6 sm:py-10">
+          <div class="shrink-0">
+            <img
+              src="${item.image_url || "/images/products/placeholder-product.svg"}"
+              alt="${item.name}"
+              class="size-24 rounded-md object-cover sm:size-48"
+            />
+          </div>
+          <div class="ml-4 flex flex-1 flex-col justify-between sm:ml-6">
+            <div class="relative pr-9 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:pr-0">
+              <div>
+                <h3 class="text-sm font-medium text-foreground">${item.name}</h3>
+                ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">${item.category}</p>` : ""}
+                <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
+                
+                <!-- Product dimensions -->
+                ${item.length || item.width || item.height 
+                  ? `<div class="mt-4 space-y-1">
+                      <p class="text-xs font-medium text-foreground">Dimensions (L x W x H):</p>
+                      <p class="text-xs text-muted-foreground">${item.length || "-"} x ${item.width || "-"} x ${item.height || "-"} cm</p>
+                    </div>` 
+                  : ""}
+              </div>
+              <div class="mt-4 sm:mt-0 sm:pr-9">
+                <label class="block text-xs text-muted-foreground mb-1">Quantity</label>
+                <input
+                  type="number"
+                  id="quantity-${item.uuid}"
+                  value="${item.quantity}"
+                  min="1"
+                  step="1"
+                  onchange="updateQuantityFromInput('${item.uuid}')"
+                  onblur="updateQuantityFromInput('${item.uuid}')"
+                  class="w-20 rounded-md border border-border bg-background py-1.5 px-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+                <div class="absolute top-0 right-0">
+                  <button
+                    type="button"
+                    onclick="removeFromCart('${item.uuid}')"
+                    class="-m-2 inline-flex p-2 text-muted-foreground hover:text-red-600 transition-colors"
+                  >
+                    <span class="sr-only">Remove</span>
+                    <svg class="size-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"></path>
+                    </svg>
+                  </button>
+          </div>
+              </div>
+            </div>
+            <p class="mt-4 flex space-x-2 text-sm text-green-600">
+              <svg class="size-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+              </svg>
+              <span>In stock</span>
+            </p>
+          </div>
+        </li>
+      `
+        )
+        .join("");
+
+      // Render summary
+      const subtotal = cart.total;
+      const shipping = subtotal > 500 ? 0 : 99;
+      const tax = subtotal * 0.16;
+      const total = subtotal + shipping + tax;
+
+      cartSummary.innerHTML = `
+        <div class="flex items-center justify-between">
+          <dt class="text-sm text-muted-foreground">Subtotal</dt>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(subtotal)}</dd>
+        </div>
+        <div class="flex items-center justify-between border-t border-border pt-4">
+          <dt class="text-sm text-muted-foreground">Shipping</dt>
+          <dd class="text-sm font-medium text-foreground">${shipping === 0 ? "Free" : formatPrice(shipping)}</dd>
+        </div>
+        <div class="flex items-center justify-between border-t border-border pt-4">
+          <dt class="text-sm text-muted-foreground">Tax (16%)</dt>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(tax)}</dd>
+        </div>
+        <div class="flex items-center justify-between border-t border-border pt-4">
+          <dt class="text-base font-medium text-foreground">Total</dt>
+          <dd class="text-base font-medium text-foreground">${formatPrice(total)}</dd>
+        </div>
+      `;
+    }
+  }
+
+  function showNotification(message: string): void {
+    const notification = document.createElement("div");
+    notification.className =
+      "fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
+    notification.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>${message}</span>
+  </div>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.remove(), 3000);
+  }
+
+
+  // Global functions (before DOMContentLoaded so they're available)
+  (window as any).addProductToCart = addProductToCart;
+  (window as any).removeFromCart = removeFromCart;
+  (window as any).updateQuantity = updateQuantity;
+  (window as any).updateQuantityFromInput = updateQuantityFromInput;
+  (window as any).updateMeasurements = updateMeasurements;
+  (window as any).updateMeasurementsFromInputs = updateMeasurementsFromInputs;
+  (window as any).showCustomModal = showCustomModal;
+
+  // Initialize cart
+  document.addEventListener("DOMContentLoaded", async () => {
+    await renderCart();
+    
+    // Verify modal is in DOM
+    const modal = document.getElementById("confirm-dialog");
+    console.log('🔍 Modal in DOM after renderCart:', !!modal);
+    if (modal) {
+      console.log('✅ Modal found:', modal);
+      console.log('Modal classes:', modal.className);
+      console.log('Modal style:', modal.style.cssText);
+    } else {
+      console.error('❌ Modal NOT found in DOM');
+      // Search for all elements with id containing "confirm"
+      const allWithConfirm = document.querySelectorAll('[id*="confirm"]');
+      console.log('Elements with "confirm" in ID:', Array.from(allWithConfirm).map(el => ({
+        id: el.id,
+        tag: el.tagName,
+        classes: el.className
+      })));
+    }
+  });
+</script>
