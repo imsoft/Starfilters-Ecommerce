@@ -62,7 +62,6 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
           <button
             type="button"
             id="remove-existing-primary-image"
-            onclick="window.deletePrimaryImage && window.deletePrimaryImage()"
             class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 z-10 cursor-pointer"
             title="Eliminar imagen"
           >
@@ -142,8 +141,8 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
             />
             <button
               type="button"
-              onclick={`window.deleteCarouselImage(${image.id})`}
-              class="absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block cursor-pointer z-10"
+              class="delete-carousel-btn absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block cursor-pointer z-10"
+              data-image-id={image.id}
               title="Eliminar imagen"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,8 +203,8 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
 <script define:vars={{ productId }}>
   console.log('🖼️ [ProductImageManagerEdit] Script cargado, productId:', productId);
   
-  // Función para eliminar imagen principal (disponible globalmente)
-  window.deletePrimaryImage = async function() {
+  // Función para eliminar imagen principal
+  async function deletePrimaryImage() {
     console.log('🗑️ deletePrimaryImage llamada');
     const productIdNum = parseInt(productId);
     
@@ -236,16 +235,20 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
           } else {
             alert('Error: ' + (deleteResult.message || 'Error desconocido'));
           }
+        } else {
+          alert('No se encontró la imagen principal');
         }
+      } else {
+        alert('Error al obtener las imágenes del producto');
       }
     } catch (error) {
       console.error('❌ Error:', error);
       alert('Error al eliminar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     }
-  };
+  }
 
-  // Función para eliminar imagen de carrusel (disponible globalmente)
-  window.deleteCarouselImage = async function(imageId: number) {
+  // Función para eliminar imagen de carrusel
+  async function deleteCarouselImage(imageId: number) {
     console.log('🗑️ deleteCarouselImage llamada, imageId:', imageId);
     const productIdNum = parseInt(productId);
     
@@ -271,7 +274,7 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
       console.error('❌ Error:', error);
       alert('Error al eliminar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     }
-  };
+  }
   
   document.addEventListener('DOMContentLoaded', () => {
     console.log('🖼️ [ProductImageManagerEdit] DOMContentLoaded ejecutado, inicializando...');
@@ -283,12 +286,31 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
     const primaryImagePreview = document.getElementById('primary-image-preview') as HTMLDivElement | null;
     const primaryImagePreviewImg = document.getElementById('primary-image-preview-img') as HTMLImageElement | null;
     const removePrimaryImageBtn = document.getElementById('remove-primary-image') as HTMLButtonElement | null;
+    const removeExistingPrimaryImageBtn = document.getElementById('remove-existing-primary-image') as HTMLButtonElement | null;
     const primaryImageUploadStatus = document.getElementById('primary-image-upload-status') as HTMLDivElement | null;
     const existingPrimaryImage = document.getElementById('existing-primary-image') as HTMLDivElement | null;
 
     const carouselImageInput = document.getElementById('carousel-image-input') as HTMLInputElement | null;
     const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status') as HTMLDivElement | null;
     const carouselCount = document.getElementById('carousel-count') as HTMLSpanElement | null;
+
+    // Agregar event listeners para botones de eliminar carrusel
+    const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
+    deleteCarouselButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const imageId = parseInt((btn as HTMLElement).getAttribute('data-image-id') || '0');
+        if (imageId) {
+          deleteCarouselImage(imageId);
+        }
+      });
+    });
+
+    // Agregar event listener para botón de eliminar imagen principal existente
+    if (removeExistingPrimaryImageBtn) {
+      removeExistingPrimaryImageBtn.addEventListener('click', () => {
+        deletePrimaryImage();
+      });
+    }
 
     // Función para actualizar contador de carrusel
     function updateCarouselCount() {
