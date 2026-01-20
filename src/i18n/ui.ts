@@ -39,8 +39,8 @@ export const ui = {
     'stats.clientsNumber': '',
 
     // Features
-    'features.title': 'Tus aliados en control de partículas',
-    'features.subtitle': 'Soluciones integrales en control de partículas',
+    'features.title': 'Tu aliado en control de partículas',
+    'features.subtitle': 'Protegemos tus procesos de manufactura a la exposición a partículas y contaminantes.',
     'features.certifications.title': 'Cuartos Limpios',
     'features.certifications.description': 'Ambientes hasta 50,000 veces más puros. Diseñamos y construimos cuartos limpios con ingeniería de precisión y control total de partículas, temperatura y presión.',
     'features.installation.title': 'Filtros de Aire',
@@ -258,8 +258,8 @@ export const ui = {
     'stats.clientsNumber': '',
 
     // Features
-    'features.title': 'Why StarFilters',
-    'features.subtitle': 'Integrated particle control solutions',
+    'features.title': 'Your Partner in Particle Control',
+    'features.subtitle': 'We protect your manufacturing processes from exposure to particles and contaminants.',
     'features.certifications.title': 'Cleanrooms',
     'features.certifications.description': 'Environments up to 50,000 times purer. We design and build cleanrooms with precision engineering and total control of particles, temperature, and pressure.',
     'features.installation.title': 'Air Filters',
