@@ -11,7 +11,9 @@ export const prerender = false;
 
 // Detectar idioma actual
 const lang = getLangFromUrl(Astro.url);
-const productsRoute = lang === 'en' ? '/en/products' : '/productos';
+// Por ahora usar /productos para ambos idiomas hasta que se cree /en/products
+// El parámetro filter_category_id funcionará igual en ambos casos
+const productsRoute = '/productos';
 
 // Obtener categorías activas
 let filterCategories: any[] = [];
