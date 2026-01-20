@@ -63,10 +63,10 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           <button
             type="button"
             id="remove-existing-primary-image"
-            class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 z-10 cursor-pointer"
+            class="absolute -top-2 -right-2 z-50 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto"
             title="Eliminar imagen"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -143,11 +143,11 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             />
             <button
               type="button"
-              class="delete-carousel-btn absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block cursor-pointer z-10"
+              class="delete-carousel-btn absolute -top-2 -right-2 z-50 hidden rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 group-hover:block cursor-pointer pointer-events-auto"
               data-image-id={image.id}
               title="Eliminar imagen"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -283,12 +283,17 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 
     // Agregar event listener para botón de eliminar imagen principal existente
     if (removeExistingPrimaryImageBtn) {
-      console.log('✅ Botón de eliminar imagen principal encontrado');
+      console.log('✅ Botón de eliminar imagen principal encontrado:', removeExistingPrimaryImageBtn);
       removeExistingPrimaryImageBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         console.log('🖱️ Click en botón eliminar imagen principal');
         deletePrimaryImage();
+      });
+      
+      // También agregar mousedown para debugging
+      removeExistingPrimaryImageBtn.addEventListener('mousedown', function(e) {
+        console.log('🖱️ MouseDown en botón eliminar imagen principal');
       });
     } else {
       console.warn('⚠️ No se encontró el botón de eliminar imagen principal');
@@ -297,15 +302,28 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     // Agregar event listeners para botones de eliminar carrusel
     const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
     console.log('🔍 Botones de eliminar carrusel encontrados:', deleteCarouselButtons.length);
-    deleteCarouselButtons.forEach(btn => {
+    deleteCarouselButtons.forEach((btn, index) => {
+      console.log(`🔍 Botón ${index + 1}:`, {
+        element: btn,
+        imageId: btn.getAttribute('data-image-id'),
+        classes: btn.className
+      });
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        console.log('🖱️ Click detectado en botón eliminar carrusel');
         const imageId = parseInt(this.getAttribute('data-image-id') || '0');
         console.log('🖱️ Click en botón eliminar carrusel, imageId:', imageId);
         if (imageId) {
           deleteCarouselImage(imageId);
+        } else {
+          console.error('❌ No se pudo obtener imageId del botón');
         }
+      });
+      
+      // También agregar mousedown para debugging
+      btn.addEventListener('mousedown', function(e) {
+        console.log('🖱️ MouseDown en botón eliminar carrusel');
       });
     });
 
