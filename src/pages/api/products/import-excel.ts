@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import * as XLSX from 'xlsx';
 import { createProduct } from '@/lib/product-service';
 import { generateUUID } from '@/lib/database';
-import { getFilterCategoryIdByName } from '@/lib/filter-category-service';
+import { getFilterCategoryIdByName, createCategory } from '@/lib/filter-category-service';
 
 // Función helper para normalizar listas separadas por comas
 // Maneja tanto "item1, item2" como "item1,item2" y los normaliza
@@ -123,6 +123,8 @@ export const POST: APIRoute = async ({ request }) => {
     const results = {
       success: [] as any[],
       errors: [] as any[],
+      warnings: [] as any[],
+      createdCategories: [] as any[],
     };
 
     // Procesar cada fila (empezando desde la fila 2, índice 1)
@@ -178,7 +180,49 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Procesar filter_category si se proporcionó
         if (productData.filter_category && !productData.filter_category_id) {
-          const categoryId = await getFilterCategoryIdByName(productData.filter_category);
+          let categoryId = await getFilterCategoryIdByName(productData.filter_category);
+          
+          // Si la categoría no existe, crearla automáticamente
+          if (!categoryId) {
+            try {
+              // Generar slug desde el nombre
+              const slug = productData.filter_category
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+              
+              categoryId = await createCategory({
+                name: productData.filter_category,
+                slug: slug,
+                status: 'active',
+              });
+              
+              if (categoryId) {
+                results.createdCategories.push({
+                  id: categoryId,
+                  name: productData.filter_category,
+                  row: i + 1
+                });
+                results.warnings.push({
+                  row: i + 1,
+                  message: `Categoría "${productData.filter_category}" no existía y fue creada automáticamente`
+                });
+              } else {
+                results.warnings.push({
+                  row: i + 1,
+                  message: `No se pudo crear la categoría "${productData.filter_category}". El producto se creará sin categoría de filtro.`
+                });
+              }
+            } catch (error) {
+              results.warnings.push({
+                row: i + 1,
+                message: `Error al crear categoría "${productData.filter_category}": ${error instanceof Error ? error.message : 'Error desconocido'}`
+              });
+            }
+          }
+          
           if (categoryId) {
             productData.filter_category_id = categoryId;
           }
@@ -209,6 +253,8 @@ export const POST: APIRoute = async ({ request }) => {
         success: true,
         successCount: results.success.length,
         errorCount: results.errors.length,
+        warningCount: results.warnings.length,
+        createdCategoriesCount: results.createdCategories.length,
         results,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }

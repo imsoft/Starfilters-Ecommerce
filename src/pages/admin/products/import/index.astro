@@ -209,6 +209,8 @@ if (!userIsAdmin) {
         statusDetails.innerHTML = `
           <p>✅ Productos importados exitosamente: ${result.successCount || 0}</p>
           ${result.errorCount > 0 ? `<p>❌ Errores: ${result.errorCount}</p>` : ''}
+          ${result.warningCount > 0 ? `<p>⚠️ Advertencias: ${result.warningCount}</p>` : ''}
+          ${result.createdCategoriesCount > 0 ? `<p>📁 Categorías creadas automáticamente: ${result.createdCategoriesCount}</p>` : ''}
         `;
 
         // Mostrar resultados detallados
@@ -228,6 +230,22 @@ if (!userIsAdmin) {
             html += '<div><h4 class="font-semibold text-red-600 mb-2">❌ Errores:</h4><ul class="list-disc list-inside space-y-1 text-sm">';
             result.results.errors.forEach((error: any) => {
               html += `<li>Fila ${error.row}: ${error.message}</li>`;
+            });
+            html += '</ul></div>';
+          }
+
+          if (result.results.warnings && result.results.warnings.length > 0) {
+            html += '<div class="mt-4"><h4 class="font-semibold text-yellow-600 mb-2">⚠️ Advertencias:</h4><ul class="list-disc list-inside space-y-1 text-sm">';
+            result.results.warnings.forEach((warning: any) => {
+              html += `<li>Fila ${warning.row}: ${warning.message}</li>`;
+            });
+            html += '</ul></div>';
+          }
+
+          if (result.results.createdCategories && result.results.createdCategories.length > 0) {
+            html += '<div class="mt-4"><h4 class="font-semibold text-blue-600 mb-2">📁 Categorías Creadas Automáticamente:</h4><ul class="list-disc list-inside space-y-1 text-sm">';
+            result.results.createdCategories.forEach((cat: any) => {
+              html += `<li>${cat.name} (ID: ${cat.id}) - Fila ${cat.row}</li>`;
             });
             html += '</ul></div>';
           }
