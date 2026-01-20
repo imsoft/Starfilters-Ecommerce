@@ -43,8 +43,8 @@ const t = useTranslations(lang);
             </h1>
             <p
               class="hero-description mt-8 text-lg font-medium text-pretty text-muted-foreground sm:text-xl/8"
+              set:html={t('hero.description')}
             >
-              {t('hero.description')}
             </p>
             <div class="hero-cta mt-10 flex items-center gap-x-6">
               <a
