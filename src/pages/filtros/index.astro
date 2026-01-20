@@ -5,8 +5,13 @@ import LazyImage from "@/components/shared/LazyImage.astro";
 import { getActiveCategories } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getLangFromUrl } from "@/i18n/utils";
 
 export const prerender = false;
+
+// Detectar idioma actual
+const lang = getLangFromUrl(Astro.url);
+const productsRoute = lang === 'en' ? '/en/products' : '/productos';
 
 // Obtener categorías activas
 let filterCategories: any[] = [];
@@ -125,7 +130,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
           return (
             <a
-              href={`/productos?filter_category_id=${category.id}`}
+              href={`${productsRoute}?filter_category_id=${category.id}`}
               class="group category-card relative flex flex-col cursor-pointer transition-transform hover:scale-105"
               data-name={category.name.toLowerCase()}
             >
