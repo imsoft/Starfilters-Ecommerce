@@ -202,14 +202,14 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
   </div>
 </div>
 
-<script define:vars={{ categoryId }}>
-  // Log inmediato para verificar que el script se carga
-  console.log('🖼️ [CategoryImageManager] Script cargado, categoryId:', categoryId);
+<script is:inline define:vars={{ categoryId }}>
+  console.log('🖼️ [CategoryImageManager] Script iniciado, categoryId:', categoryId);
   
   // Función para eliminar imagen principal
   async function deletePrimaryImage() {
     console.log('🗑️ deletePrimaryImage llamada');
-    const categoryIdNum = parseInt(categoryId);
+    const categoryIdNum = parseInt(String(categoryId));
+    console.log('🗑️ categoryIdNum:', categoryIdNum);
     
     if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
       return;
@@ -239,17 +239,21 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 
   // Función para eliminar imagen de carrusel
   async function deleteCarouselImage(imageId) {
+    console.log('🗑️ deleteCarouselImage llamada, imageId:', imageId);
+    
     if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
       return;
     }
 
     try {
       console.log('🗑️ Eliminando imagen de carrusel ID:', imageId);
-      const response = await fetch(`/api/filter-categories/images/${imageId}`, {
+      const response = await fetch('/api/filter-categories/images/' + imageId, {
         method: 'DELETE',
       });
 
+      console.log('📡 Respuesta HTTP:', response.status, response.statusText);
       const result = await response.json();
+      console.log('📡 Resultado de eliminación:', result);
 
       if (response.ok && result.success) {
         console.log('✅ Imagen eliminada correctamente');
@@ -265,9 +269,9 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     }
   }
   
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('🖼️ [CategoryImageManager] DOMContentLoaded ejecutado, inicializando...');
-    const categoryIdNum = parseInt(categoryId);
+  function initImageButtons() {
+    console.log('🖼️ [CategoryImageManager] Inicializando botones...');
+    const categoryIdNum = parseInt(String(categoryId));
     console.log('🖼️ [CategoryImageManager] categoryIdNum:', categoryIdNum);
 
   // ===== IMAGEN PRINCIPAL =====
