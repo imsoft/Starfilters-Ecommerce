@@ -30,19 +30,51 @@ if (!userIsAdmin) {
     <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
       <form id="import-form" enctype="multipart/form-data">
         <div class="space-y-6">
+          <!-- Zona de carga estilo imagen -->
           <div>
-            <label for="excel-file" class="block text-sm font-medium text-foreground mb-2">
-              Archivo Excel (.xlsx)
+            <label
+              for="excel-file"
+              id="excel-dropzone"
+              class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 px-4 py-12 transition-colors hover:border-primary/50 hover:bg-muted/50"
+            >
+              <div class="text-center">
+                <!-- Ícono de Excel/Documento -->
+                <svg
+                  class="mx-auto h-16 w-16 text-muted-foreground"
+                  stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 48 48"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2zM14 22H6a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V24a2 2 0 00-2-2zM30 2h-8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2zM30 22h-8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V24a2 2 0 00-2-2z"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M28 8h8M28 28h8M14 8h8M14 28h8"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <p class="mt-4 text-sm font-medium text-foreground">
+                  <span class="font-semibold">Click para subir</span> o arrastra y suelta
+                </p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                  XLSX, XLS hasta 10MB
+                </p>
+                <p id="file-name" class="mt-2 text-sm font-medium text-primary hidden"></p>
+              </div>
+              <input
+                type="file"
+                id="excel-file"
+                name="excel-file"
+                accept=".xlsx,.xls"
+                required
+                class="hidden"
+              />
             </label>
-            <input
-              type="file"
-              id="excel-file"
-              name="excel-file"
-              accept=".xlsx,.xls"
-              required
-              class="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-            />
-            <p class="mt-2 text-xs text-muted-foreground">
+            <p class="mt-3 text-xs text-muted-foreground">
               El archivo debe tener las columnas: nombre, nombre_en, descripción, descripción_en, imagen_principal, status.
             </p>
           </div>
@@ -51,7 +83,7 @@ if (!userIsAdmin) {
             <button
               type="submit"
               id="import-btn"
-              class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Importar Categorías
             </button>
@@ -89,15 +121,59 @@ if (!userIsAdmin) {
 </AdminLayout>
 
 <script>
-  const form = document.getElementById('import-form') as HTMLFormElement;
-  const fileInput = document.getElementById('excel-file') as HTMLInputElement;
-  const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
-  const statusDiv = document.getElementById('import-status') as HTMLDivElement;
-  const statusMessage = document.getElementById('status-message') as HTMLParagraphElement;
-  const statusDetails = document.getElementById('status-details') as HTMLDivElement;
-  const statusIcon = document.getElementById('status-icon') as HTMLDivElement;
-  const resultsDiv = document.getElementById('import-results') as HTMLDivElement;
-  const resultsContent = document.getElementById('results-content') as HTMLDivElement;
+  const form = document.getElementById('import-form');
+  const fileInput = document.getElementById('excel-file');
+  const dropzone = document.getElementById('excel-dropzone');
+  const fileName = document.getElementById('file-name');
+  const importBtn = document.getElementById('import-btn');
+  const statusDiv = document.getElementById('import-status');
+  const statusMessage = document.getElementById('status-message');
+  const statusDetails = document.getElementById('status-details');
+  const statusIcon = document.getElementById('status-icon');
+  const resultsDiv = document.getElementById('import-results');
+  const resultsContent = document.getElementById('results-content');
+
+  // Manejar drag and drop
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => {
+      dropzone.classList.add('border-primary', 'bg-primary/10');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => {
+      dropzone.classList.remove('border-primary', 'bg-primary/10');
+    }, false);
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files.length > 0) {
+      fileInput.files = files;
+      updateFileName();
+    }
+  }, false);
+
+  fileInput.addEventListener('change', updateFileName);
+
+  function updateFileName() {
+    if (fileInput.files && fileInput.files.length > 0) {
+      fileName.textContent = `📄 ${fileInput.files[0].name}`;
+      fileName.classList.remove('hidden');
+    } else {
+      fileName.classList.add('hidden');
+    }
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -168,6 +244,7 @@ if (!userIsAdmin) {
 
         // Limpiar formulario
         form.reset();
+        updateFileName();
       } else {
         statusIcon.textContent = '❌';
         statusMessage.textContent = 'Error en la importación';
