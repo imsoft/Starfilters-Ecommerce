@@ -26,7 +26,7 @@ export const ui = {
     'hero.badge': 'Más de 40 años liderando la filtración industrial en México.',
     'hero.badgeLink': 'Conoce nuestra historia.',
     'hero.title': 'Líder en cuartos limpios en Norteamérica',
-    'hero.description': 'Con 40 años de experiencia, Star Filters es tu mejor opción en <a href="/cuartos-limpios" class="text-primary underline hover:text-primary/80">cuartos limpios</a>, control de partículas y contaminantes en el aire. Hacemos desde el diseño, construcción, <a href="/servicios" class="text-primary underline hover:text-primary/80">validación de tu cuarto limpio</a>. También fabricamos una alta gama de filtros de aire incluyendo filtros HEPA, para lograr la mayor pureza del aire.',
+    'hero.description': 'Con 40 años de experiencia, Star Filters es tu mejor opción en <a href="/cuartos-limpios" class="text-primary hover:text-primary/80">cuartos limpios</a>, control de partículas y contaminantes en el aire. Hacemos desde el diseño, construcción, <a href="/servicios" class="text-primary hover:text-primary/80">validación de tu cuarto limpio</a>. También fabricamos una alta gama de filtros de aire incluyendo filtros HEPA, para lograr la mayor pureza del aire.',
     'hero.cta': 'Contáctanos',
     'hero.ctaSecondary': 'Nuestros filtros',
 
@@ -251,7 +251,7 @@ export const ui = {
     'hero.badge': 'Over 40 years leading industrial filtration in Mexico.',
     'hero.badgeLink': 'Learn more.',
     'hero.title': 'Cleanroom Leader in North America',
-    'hero.description': 'With 40 years of experience, Star Filters is your best choice for <a href="/en/cleanrooms" class="text-primary underline hover:text-primary/80">cleanrooms</a>, particle control, and air contaminants. We handle everything from design, construction, to <a href="/en/services" class="text-primary underline hover:text-primary/80">cleanroom validation</a>. We also manufacture a wide range of air filters including HEPA filters, to achieve the highest air purity.',
+    'hero.description': 'With 40 years of experience, Star Filters is your best choice for <a href="/en/cleanrooms" class="text-primary hover:text-primary/80">cleanrooms</a>, particle control, and air contaminants. We handle everything from design, construction, to <a href="/en/services" class="text-primary hover:text-primary/80">cleanroom validation</a>. We also manufacture a wide range of air filters including HEPA filters, to achieve the highest air purity.',
     'hero.cta': 'Contact us',
     'hero.ctaSecondary': 'Our filters',
 
