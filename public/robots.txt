@@ -45,7 +45,7 @@ Disallow: /scripts/
 Disallow: /database/
 
 # Sitemap
-Sitemap: https://starfilters.com/sitemap.xml
+Sitemap: https://starfilters.mx/sitemap.xml
 
 # Configuración para bots específicos
 User-agent: Googlebot

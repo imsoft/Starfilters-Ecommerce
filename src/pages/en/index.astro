@@ -10,9 +10,20 @@ import TestimonialSections from '@/components/shared/TestimonialSections.astro';
 import FaqSection from '@/components/shared/FaqSection.astro';
 import FooterSection from '@/components/shared/FooterSection.astro';
 import WhatsAppButton from '@/components/shared/WhatsAppButton.astro';
-import { generateOrganizationSchema } from '@/lib/seo-utils';
+import { generateOrganizationSchema, generateFAQSchema } from '@/lib/seo-utils';
+import { useTranslations } from '@/i18n/utils';
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
+const t = useTranslations('en');
+
+// Generar FAQs para schema
+const faqs = Array.from({ length: 7 }, (_, index) => {
+  const question = t(`faq.q${index + 1}`);
+  const answer = t(`faq.a${index + 1}`);
+  return question && answer ? { question, answer } : null;
+}).filter(Boolean);
+
+const faqSchema = generateFAQSchema(faqs);
 ---
 
 <html lang="en">
@@ -23,8 +34,8 @@ const siteUrl = Astro.site?.href || Astro.url.origin;
 		<meta name="generator" content={Astro.generator} />
 
 		<SEO
-			title="High-Quality Industrial Filters and Cleanrooms"
-			description="StarFilters is a leader in industrial filters, HEPA filters, and cleanrooms in Mexico. Guaranteed quality, fast shipping, and professional service. Improve air quality in your industry."
+			title="Cleanroom and Industrial Filter Leader | StarFilters"
+			description="With over 40 years of experience, StarFilters is a leader in cleanroom design and construction, HEPA filters, and industrial filtration systems in North America. NEBB validation, certified quality, and professional technical support."
 			ogType="website"
 			keywords={[
 				'industrial filters',
@@ -35,12 +46,22 @@ const siteUrl = Astro.site?.href || Astro.url.origin;
 				'industrial air filters',
 				'filtration systems',
 				'air quality',
-				'professional filters'
+				'professional filters',
+				'NEBB validation',
+				'ISO 14644 cleanrooms',
+				'particle control'
+			]}
+			alternateLanguages={[
+				{ lang: 'es', url: siteUrl },
+				{ lang: 'x-default', url: siteUrl }
 			]}
 		/>
 
 		<!-- Organization Schema -->
 		<script type="application/ld+json" set:html={JSON.stringify(generateOrganizationSchema(siteUrl))} />
+		
+		<!-- FAQ Schema -->
+		<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 	</head>
 
 	<body>

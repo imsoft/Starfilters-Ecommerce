@@ -158,15 +158,24 @@ export function generateOrganizationSchema(siteUrl: string) {
     "name": "StarFilters",
     "url": siteUrl,
     "logo": `${siteUrl}/logos/logo-starfilters.png`,
-    "description": "Líder en filtros industriales y cuartos limpios en México. Calidad garantizada y servicio profesional.",
+    "description": "Líder en diseño y construcción de cuartos limpios, filtros HEPA y sistemas de filtración industrial en Norteamérica. Más de 40 años de experiencia. Validación NEBB y calidad certificada.",
+    "foundingDate": "1984",
     "address": {
       "@type": "PostalAddress",
-      "addressCountry": "MX"
+      "addressCountry": "MX",
+      "addressRegion": "México"
     },
     "contactPoint": {
       "@type": "ContactPoint",
       "contactType": "customer service",
-      "availableLanguage": ["Spanish"]
+      "availableLanguage": ["Spanish", "English"]
+    },
+    "sameAs": [
+      // Aquí puedes agregar redes sociales cuando estén disponibles
+    ],
+    "areaServed": {
+      "@type": "Place",
+      "name": "North America"
     }
   };
 }
@@ -257,4 +266,22 @@ export function generateArticleSchema(post: {
  */
 export function formatPriceForMeta(price: number): string {
   return price.toFixed(2);
+}
+
+/**
+ * Genera structured data para FAQ
+ */
+export function generateFAQSchema(faqs: Array<{ question: string; answer: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer.replace(/\n/g, ' ').trim()
+      }
+    }))
+  };
 }

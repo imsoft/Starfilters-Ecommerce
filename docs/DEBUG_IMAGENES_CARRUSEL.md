@@ -25,6 +25,8 @@ cd ~/starfilters-app
 git pull origin main
 pnpm build
 pm2 restart all
+
+git pull origin main && pnpm build && pm2 restart all
 ```
 
 2. Abre la consola del navegador (F12 → Console) en la página de creación

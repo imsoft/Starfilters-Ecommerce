@@ -21,6 +21,7 @@ export interface Props {
   noindex?: boolean;
   nofollow?: boolean;
   keywords?: string[];
+  alternateLanguages?: Array<{ lang: string; url: string }>;
 }
 
 const {
@@ -34,7 +35,8 @@ const {
   product,
   noindex = false,
   nofollow = false,
-  keywords = []
+  keywords = [],
+  alternateLanguages = []
 } = Astro.props;
 
 // URL base del sitio
@@ -70,6 +72,11 @@ const siteKeywords = [
 <meta name="keywords" content={siteKeywords.join(', ')} />
 <link rel="canonical" href={canonicalUrl} />
 
+<!-- Hreflang tags para i18n -->
+{alternateLanguages.length > 0 && alternateLanguages.map(alt => (
+  <link rel="alternate" hreflang={alt.lang} href={alt.url} />
+))}
+
 <!-- Robots -->
 <meta name="robots" content={robotsContent} />
 <meta name="googlebot" content={robotsContent} />
@@ -83,6 +90,10 @@ const siteKeywords = [
 {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
 <meta property="og:site_name" content="StarFilters" />
 <meta property="og:locale" content="es_MX" />
+<meta property="og:locale:alternate" content="en_US" />
+{alternateLanguages.length > 0 && alternateLanguages.map(alt => (
+  <meta property="og:locale:alternate" content={alt.lang === 'en' ? 'en_US' : alt.lang} />
+))}
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />

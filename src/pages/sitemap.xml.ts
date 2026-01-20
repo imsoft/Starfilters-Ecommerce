@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { getProducts, getBlogPosts } from '@/lib/database';
 
 export const GET: APIRoute = async ({ site }) => {
-  const siteUrl = site?.href || 'https://starfilters.com';
+  const siteUrl = site?.href || 'https://starfilters.mx';
   
   // Obtener productos y posts del blog
   const products = await getProducts(1000, 0);
