@@ -8,7 +8,7 @@ import { getActiveCategories } from "@/lib/filter-category-service";
 import { getProductImages } from "@/lib/database";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
-import { ProductImageUploader } from "@/components/ui/ProductImageUploader";
+import ProductImageManagerEdit from "@/components/admin/ProductImageManagerEdit.astro";
 import DynamicListInput from "@/components/admin/DynamicListInput.astro";
 import ProductSizesTable from "@/components/admin/ProductSizesTable.astro";
 
@@ -59,9 +59,9 @@ if (Astro.request.method === "POST") {
         filter_category_id: filterCategoryId,
         bind_code: null,
         name: formData.get("name") as string,
-        name_en: (formData.get("name_en") as string) || null,
-        description: (formData.get("description") as string) || null,
-        description_en: (formData.get("description_en") as string) || null,
+        name_en: (formData.get("name_en") as string) || undefined,
+        description: (formData.get("description") as string) || undefined,
+        description_en: (formData.get("description_en") as string) || undefined,
         price: 0,
         currency: "MXN",
         price_usd: null,
@@ -625,14 +625,9 @@ console.log('📦 Tamaños preparados:', productSizes.length);
           </div>
         </div>
 
-        <ProductImageUploader
-          client:load
-          productId={productId.toString()}
-          initialImages={images.map(img => ({
-            id: img.id.toString(),
-            url: img.image_url,
-            isPrimary: img.is_primary
-          }))}
+        <ProductImageManagerEdit
+          productId={productId}
+          productName={product.name}
         />
       </div>
 
