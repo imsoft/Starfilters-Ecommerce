@@ -265,7 +265,7 @@ export const ui = {
     'features.installation.title': 'Air Filters',
     'features.installation.description': 'Efficiency at every stage. Particle and air contaminant control systems from pre-filters to HEPA filters, for clean air and reliable processes.',
     'features.technology.title': 'Validation Services',
-    'features.technology.description': 'Certification that guarantees results. NEBB tests and validations that ensure the performance and regulatory compliance of cleanrooms.',
+    'features.technology.description': 'We offer specialized validation services to ensure the correct operation and performance of filtration and particle control systems in cleanrooms and critical areas based on applicable regulations.',
     'features.support.title': 'Cleanroom Accessories',
     'features.support.description': 'Everything for your cleanroom. Air Handling Units, specialized doors and windows, air showers, cabinets, ready to integrate into your project.',
 
