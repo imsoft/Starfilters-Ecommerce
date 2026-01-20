@@ -24,7 +24,7 @@ export const ui = {
 
     // Hero
     'hero.badge': 'Más de 40 años liderando la filtración industrial en México.',
-    'hero.badgeLink': 'Conocer más.',
+    'hero.badgeLink': 'Conoce nuestra historia.',
     'hero.title': 'Control de partículas para tu proceso industrial',
     'hero.description': 'Especialistas en filtros de aire, cuartos limpios y sistemas de filtración industrial. Calidad certificada, instalación profesional y soporte técnico continuo para proteger tu operación.',
     'hero.cta': 'Contáctanos',
