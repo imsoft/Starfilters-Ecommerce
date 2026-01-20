@@ -201,13 +201,17 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
 </div>
 
 <script define:vars={{ productId }}>
+  console.log('🖼️ [ProductImageManagerEdit] Script cargado, productId:', productId);
+  
   (function() {
-    console.log('🖼️ [ProductImageManagerEdit] Script cargado, productId:', productId);
+    const productIdValue = String(productId);
+    console.log('🖼️ [ProductImageManagerEdit] productIdValue:', productIdValue);
+    console.log('🖼️ [ProductImageManagerEdit] Tipo de productId:', typeof productId);
     
     // Función para eliminar imagen principal
     async function deletePrimaryImage() {
       console.log('🗑️ deletePrimaryImage llamada');
-      const productIdNum = parseInt(productId);
+      const productIdNum = parseInt(productIdValue);
       
       if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
         return;
@@ -257,7 +261,7 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
     // Función para eliminar imagen de carrusel
     async function deleteCarouselImage(imageId) {
       console.log('🗑️ deleteCarouselImage llamada, imageId:', imageId);
-      const productIdNum = parseInt(productId);
+      const productIdNum = parseInt(productIdValue);
       
       if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
         return;
@@ -288,7 +292,7 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
     
     function initImageButtons() {
       console.log('🖼️ [ProductImageManagerEdit] Inicializando botones...');
-      const productIdNum = parseInt(productId);
+      const productIdNum = parseInt(productIdValue);
       
       // Agregar event listeners para botones de eliminar carrusel
       const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
