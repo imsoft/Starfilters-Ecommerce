@@ -2,68 +2,70 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
-import { getProducts, getProductImages } from "@/lib/database";
+import { getActiveCategories } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getLangFromUrl } from "@/i18n/utils";
 
-// Get products from database
-const products = await getProducts(12, 0);
+export const prerender = false;
 
-// Get primary image for each product
-const productsWithImages = await Promise.all(
-  products.map(async (product) => {
-    const images = await getProductImages(product.id);
-    const primaryImage = images.find(img => img.is_primary) || images[0];
-    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(product.category);
-    return { ...product, imageUrl };
-  })
-);
+// Detect current language
+const lang = getLangFromUrl(Astro.url);
+// Use /en/products for English
+const productsRoute = '/en/products';
 
-// Function to format price
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(price);
-};
+// Get active categories
+let filterCategories: any[] = [];
 
-// Get unique categories
-const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+try {
+  filterCategories = await getActiveCategories();
+  console.log(`📦 Page /en/filters: ${filterCategories.length} active categories found`);
+  
+  // Log for debugging
+  if (filterCategories.length === 0) {
+    console.warn('⚠️ No active categories found. Verify that categories with status="active" or status IS NULL exist in the database.');
+  } else {
+    console.log('✅ Categories found:', filterCategories.map(c => ({ id: c.id, name: c.name, status: c.status })));
+  }
+} catch (error) {
+  console.error('❌ Error in page /en/filters:', error);
+  filterCategories = [];
+}
 
 // Generate SEO data
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: `${siteUrl}/en` },
-  { name: 'Products', url: `${siteUrl}/en/filters` }
+  { name: 'Air Filters', url: `${siteUrl}/en/filters` }
 ]);
 ---
 
-<WebsiteLayout
-  title="Filters and Products"
-  seoTitle="Industrial Filters and Products - StarFilters Catalog"
-  description="Explore our complete catalog of industrial filters, HEPA filters, cleanrooms and accessories. High-quality products with shipping throughout Mexico."
+<WebsiteLayout 
+  title="Air Filters"
+  seoTitle="Air Filters - StarFilters Catalog"
+  description="Browse our complete catalog of air filters. High-quality products with shipping throughout Mexico."
   keywords={[
-    'filter catalog',
-    'buy industrial filters',
-    'HEPA filters price',
-    'filtration products',
-    'filters store Mexico'
+    'air filters',
+    'buy air filters',
+    'industrial filters',
+    'filter store Mexico'
   ]}
 >
-  <SEO
+  <SEO 
     slot="seo"
-    title="Industrial Filters and Products"
-    description="Explore our complete catalog of industrial filters, HEPA filters, cleanrooms and accessories. High-quality products with shipping throughout Mexico."
+    title="Air Filters"
+    description="Browse our complete catalog of air filters. High-quality products with shipping throughout Mexico."
     ogType="website"
     keywords={[
-      'filter catalog',
-      'buy industrial filters',
-      'HEPA filters price'
+      'air filters',
+      'buy air filters',
+      'industrial filters'
     ]}
   />
-
+  
   <!-- Breadcrumb Schema -->
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  
   <div class="bg-background py-24">
     <!-- Breadcrumb -->
     <div class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
@@ -77,7 +79,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
             </svg>
           </li>
-          <li class="text-foreground font-medium">Products</li>
+          <li class="text-foreground font-medium">Air Filters</li>
         </ol>
       </nav>
     </div>
@@ -91,191 +93,83 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           id="collection-heading"
           class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
         >
-          StarFilters Filters and Products
+          Air Filter Categories
         </h1>
         <p class="mt-4 text-lg text-muted-foreground">
-          Find the best filters for your vehicle. Guaranteed quality and fast shipping.
+          Select a category to view all available products.
         </p>
       </div>
 
-      <!-- Filters -->
-      <div class="mb-8 space-y-6">
-        <!-- Search -->
-        <div>
-          <label for="search-products" class="block text-sm font-medium text-foreground mb-2">
-            Search products
-          </label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-            <input
-              type="text"
-              id="search-products"
-              placeholder="Search by name..."
-              class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
+      <!-- Search -->
+      <div class="mb-8">
+        <label for="search-categories" class="block text-sm font-medium text-foreground mb-2">
+          Search categories
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
           </div>
-        </div>
-
-        <!-- Category filters -->
-        {categories.length > 0 && (
-          <div>
-            <h3 class="text-lg font-medium text-foreground mb-4">Filter by category</h3>
-            <div class="flex flex-wrap gap-2">
-              <button
-                type="button"
-                class="filter-btn inline-flex items-center rounded-full border border-border bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
-                data-category="all"
-              >
-                All ({products.length})
-              </button>
-              {categories.map(category => {
-                const count = products.filter(p => p.category === category).length;
-                return (
-                  <button
-                    type="button"
-                    class="filter-btn inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                    data-category={category}
-                  >
-                    {category} ({count})
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <!-- Price and availability filters -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Sort by -->
-          <div>
-            <label for="sort-by" class="block text-sm font-medium text-foreground mb-2">
-              Sort by
-            </label>
-            <select
-              id="sort-by"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="default">Default</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="name-asc">Name: A-Z</option>
-              <option value="name-desc">Name: Z-A</option>
-            </select>
-          </div>
-
-          <!-- Availability filter -->
-          <div>
-            <label for="stock-filter" class="block text-sm font-medium text-foreground mb-2">
-              Availability
-            </label>
-            <select
-              id="stock-filter"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="all">All</option>
-              <option value="in-stock">In Stock</option>
-              <option value="out-of-stock">Out of Stock</option>
-            </select>
-          </div>
-
-          <!-- Price range -->
-          <div>
-            <label for="price-range" class="block text-sm font-medium text-foreground mb-2">
-              Max price
-            </label>
-            <input
-              type="range"
-              id="price-range"
-              min="0"
-              max="10000"
-              value="10000"
-              step="100"
-              class="w-full"
-            />
-            <div class="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>$0</span>
-              <span id="price-range-value">$10,000</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Results counter -->
-        <div class="text-sm text-muted-foreground">
-          Showing <span id="results-count" class="font-medium text-foreground">{products.length}</span> of {products.length} products
+          <input
+            type="text"
+            id="search-categories"
+            placeholder="Search by name..."
+            class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
         </div>
       </div>
 
-      <!-- Products grid -->
-      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="products-grid">
-        {productsWithImages.map((product) => (
-          <div
-            class="group product-card relative flex flex-col"
-            data-category={product.category}
-            data-price={product.price}
-            data-stock={product.stock}
-          >
-            <a href={`/en/product/${product.uuid}`} class="block flex-shrink-0">
-              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
+      <!-- Results counter -->
+      <div class="mb-6 text-sm text-muted-foreground">
+        Showing <span id="results-count" class="font-medium text-foreground">{filterCategories.length}</span> of {filterCategories.length} categories
+      </div>
+
+      <!-- Categories grid -->
+      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="categories-grid">
+        {filterCategories.map((category) => {
+          const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
+          return (
+            <a
+              href={`${productsRoute}?filter_category_id=${category.id}`}
+              class="group category-card relative flex flex-col cursor-pointer transition-transform hover:scale-105"
+              data-name={category.name.toLowerCase()}
+            >
+              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted shadow-md">
                 <LazyImage
-                  src={product.imageUrl}
-                  alt={product.name}
+                  src={imageUrl}
+                  alt={category.name}
                   class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
                 />
               </div>
-              <h3 class="mt-4 text-sm text-foreground font-medium hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">
-                {product.name}
+              <h3 class="mt-4 text-lg text-foreground font-semibold group-hover:text-primary transition-colors">
+                {category.name}
               </h3>
+              {category.description && (
+                <p class="mt-2 text-sm text-muted-foreground line-clamp-3">
+                  {category.description}
+                </p>
+              )}
+              <div class="mt-auto pt-4">
+                <span class="inline-flex items-center text-sm font-medium text-primary group-hover:text-primary/80 transition-colors">
+                  View products
+                  <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                  </svg>
+                </span>
+              </div>
             </a>
-            <p class="mt-1 text-sm text-muted-foreground">{product.category}</p>
-            <div class="mt-2 flex items-center justify-between">
-              <p class="text-lg font-medium text-foreground">
-                {formatPrice(product.price)}
-              </p>
-              {product.stock > 0 ? (
-                <span class="text-xs text-green-600 font-medium">
-                  In stock
-                </span>
-              ) : (
-                <span class="text-xs text-red-600 font-medium">
-                  Out of stock
-                </span>
-              )}
-            </div>
-
-            <div class="mt-auto pt-3">
-              {product.stock > 0 ? (
-                <button
-                  type="button"
-                  class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl}', '${product.category || ''}')`}
-                >
-                  Add to Cart
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  class="relative z-10 w-full rounded-md bg-gray-300 px-3 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed"
-                >
-                  Not Available
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {products.length === 0 && (
+      {filterCategories.length === 0 && (
         <div class="text-center py-12">
           <h3 class="text-lg font-medium text-foreground">
-            No products available
+            No categories available
           </h3>
           <p class="mt-2 text-sm text-muted-foreground">
-            Come back soon to see new products
+            Check back soon to see new filter categories
           </p>
         </div>
       )}
@@ -284,39 +178,18 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 </WebsiteLayout>
 
 <script>
-  import type { Product } from '@/lib/database';
-
-  // Product data from server
-  const allProducts = document.querySelectorAll('.product-card');
-  let currentCategory = 'all';
-  let currentSortBy = 'default';
-  let currentStockFilter = 'all';
-  let currentMaxPrice = 10000;
-  let currentSearchTerm = '';
-
-  // Main filtering function
-  function applyFilters(): void {
-    const productCards = Array.from(allProducts);
+  // Search function
+  function applySearch(): void {
+    const searchInput = document.getElementById('search-categories') as HTMLInputElement;
+    const searchTerm = searchInput?.value.toLowerCase() || '';
+    const categoryCards = document.querySelectorAll('.category-card');
     let visibleCount = 0;
 
-    productCards.forEach(card => {
+    categoryCards.forEach(card => {
       const element = card as HTMLElement;
-      const productName = element.querySelector('h3')?.textContent?.toLowerCase() || '';
-      const productCategory = element.getAttribute('data-category') || '';
-      const priceText = element.querySelector('.text-lg.font-medium')?.textContent || '';
-      const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
-      const stockElement = element.querySelector('.text-xs.text-green-600, .text-xs.text-red-600');
-      const inStock = stockElement?.textContent?.includes('In stock') || false;
+      const categoryName = element.getAttribute('data-name') || '';
 
-      // Apply filters
-      const matchesSearch = currentSearchTerm === '' || productName.includes(currentSearchTerm.toLowerCase());
-      const matchesCategory = currentCategory === 'all' || productCategory === currentCategory;
-      const matchesPrice = price <= currentMaxPrice;
-      const matchesStock = currentStockFilter === 'all' ||
-        (currentStockFilter === 'in-stock' && inStock) ||
-        (currentStockFilter === 'out-of-stock' && !inStock);
-
-      if (matchesSearch && matchesCategory && matchesPrice && matchesStock) {
+      if (categoryName.includes(searchTerm)) {
         element.style.display = '';
         visibleCount++;
       } else {
@@ -329,188 +202,13 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     if (resultsCount) {
       resultsCount.textContent = visibleCount.toString();
     }
-
-    // Apply sorting
-    sortProducts();
   }
 
-  // Sorting function
-  function sortProducts(): void {
-    const grid = document.getElementById('products-grid');
-    if (!grid) return;
-
-    const visibleCards = Array.from(grid.querySelectorAll('.product-card'))
-      .filter(card => (card as HTMLElement).style.display !== 'none');
-
-    visibleCards.sort((a, b) => {
-      const aElement = a as HTMLElement;
-      const bElement = b as HTMLElement;
-
-      switch (currentSortBy) {
-        case 'price-asc': {
-          const aPrice = parseFloat(aElement.querySelector('.text-lg.font-medium')?.textContent?.replace(/[^0-9.]/g, '') || '0');
-          const bPrice = parseFloat(bElement.querySelector('.text-lg.font-medium')?.textContent?.replace(/[^0-9.]/g, '') || '0');
-          return aPrice - bPrice;
-        }
-        case 'price-desc': {
-          const aPrice = parseFloat(aElement.querySelector('.text-lg.font-medium')?.textContent?.replace(/[^0-9.]/g, '') || '0');
-          const bPrice = parseFloat(bElement.querySelector('.text-lg.font-medium')?.textContent?.replace(/[^0-9.]/g, '') || '0');
-          return bPrice - aPrice;
-        }
-        case 'name-asc': {
-          const aName = aElement.querySelector('h3')?.textContent || '';
-          const bName = bElement.querySelector('h3')?.textContent || '';
-          return aName.localeCompare(bName);
-        }
-        case 'name-desc': {
-          const aName = aElement.querySelector('h3')?.textContent || '';
-          const bName = bElement.querySelector('h3')?.textContent || '';
-          return bName.localeCompare(aName);
-        }
-        default:
-          return 0;
-      }
-    });
-
-    // Reorganize elements in DOM
-    visibleCards.forEach(card => grid.appendChild(card));
-  }
-
-  // Function to filter by category
-  function filterByCategory(category: string): void {
-    currentCategory = category;
-
-    // Update active buttons
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-      if (btn.getAttribute('data-category') === category) {
-        btn.classList.add('bg-primary', 'text-primary-foreground');
-        btn.classList.remove('bg-background', 'text-foreground');
-      } else {
-        btn.classList.remove('bg-primary', 'text-primary-foreground');
-        btn.classList.add('bg-background', 'text-foreground');
-      }
-    });
-
-    applyFilters();
-  }
-
-  // Function to add to cart from grid
-  function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): void {
-    // Get current cart
-    const cartData = localStorage.getItem('starfilters_cart');
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
-
-    // Check if product already exists
-    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
-
-    if (existingItemIndex >= 0) {
-      cart.items[existingItemIndex].quantity += 1;
-    } else {
-      cart.items.push({
-        uuid,
-        product_id,
-        name,
-        price,
-        quantity: 1,
-        image_url,
-        category
-      });
-    }
-
-    // Recalculate totals
-    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
-    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
-
-    // Save to localStorage
-    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
-
-    // Show notification
-    showNotification(`${name} added to cart`);
-
-    // Trigger event to update navbar
-    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
-  }
-
-  function showNotification(message: string): void {
-    // Create temporary notification
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
-    notification.innerHTML = `
-      <div class="flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <span>${message}</span>
-      </div>
-    `;
-    document.body.appendChild(notification);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-
-  // Make functions global
-  (window as any).filterByCategory = filterByCategory;
-  (window as any).addToCartQuick = addToCartQuick;
-
-  // Event listeners
+  // Event listener for search
   document.addEventListener('DOMContentLoaded', () => {
-    // Search
-    const searchInput = document.getElementById('search-products');
+    const searchInput = document.getElementById('search-categories');
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        currentSearchTerm = (e.target as HTMLInputElement).value;
-        applyFilters();
-      });
+      searchInput.addEventListener('input', applySearch);
     }
-
-    // Sorting
-    const sortBy = document.getElementById('sort-by');
-    if (sortBy) {
-      sortBy.addEventListener('change', (e) => {
-        currentSortBy = (e.target as HTMLSelectElement).value;
-        applyFilters();
-      });
-    }
-
-    // Stock filter
-    const stockFilter = document.getElementById('stock-filter');
-    if (stockFilter) {
-      stockFilter.addEventListener('change', (e) => {
-        currentStockFilter = (e.target as HTMLSelectElement).value;
-        applyFilters();
-      });
-    }
-
-    // Price range
-    const priceRange = document.getElementById('price-range');
-    const priceRangeValue = document.getElementById('price-range-value');
-    if (priceRange && priceRangeValue) {
-      priceRange.addEventListener('input', (e) => {
-        const value = parseInt((e.target as HTMLInputElement).value);
-        currentMaxPrice = value;
-        priceRangeValue.textContent = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 0
-        }).format(value);
-        applyFilters();
-      });
-    }
-
-    // Category buttons
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const category = btn.getAttribute('data-category') || 'all';
-        filterByCategory(category);
-      });
-    });
-
-    console.log('🎯 Product filters initialized');
   });
 </script>
