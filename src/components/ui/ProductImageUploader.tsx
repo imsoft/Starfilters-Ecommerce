@@ -228,46 +228,91 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
 
   // Función para actualizar hidden fields (solo en modo creación) - Memoizada con useCallback
   const updateHiddenFields = useCallback(() => {
-    if (!isCreating) return;
+    if (!isCreating) {
+      console.log('📷 [updateHiddenFields] No estamos en modo creación, saliendo');
+      return;
+    }
+    
+    console.log('📷 [updateHiddenFields] Iniciando actualización de campos hidden');
+    console.log('📷 [updateHiddenFields] Total de imágenes:', images.length);
     
     const primaryImage = images.find(img => img.isPrimary === true);
     const carouselImages = images.filter(img => img.isPrimary === false);
+    
+    console.log('📷 [updateHiddenFields] Imagen principal:', primaryImage ? 'Sí' : 'No');
+    console.log('📷 [updateHiddenFields] Imágenes de carrusel:', carouselImages.length);
     
     // Actualizar campo de imagen principal
     const pendingPrimaryImageField = document.getElementById('pending_primary_image') as HTMLInputElement;
     const pendingPrimaryImageNameField = document.getElementById('pending_primary_image_name') as HTMLInputElement;
     
-    if (pendingPrimaryImageField && primaryImage) {
-      // Si la imagen tiene base64 en su URL (data:image), guardarla directamente
-      if (primaryImage.url.startsWith('data:')) {
-        pendingPrimaryImageField.value = primaryImage.url;
-        if (pendingPrimaryImageNameField) {
-          pendingPrimaryImageNameField.value = primaryImage.url.substring(5, primaryImage.url.indexOf(';')) || 'image.jpg';
-        }
+    if (!pendingPrimaryImageField) {
+      console.error('❌ [updateHiddenFields] No se encontró el campo pending_primary_image');
+    } else if (primaryImage && primaryImage.url.startsWith('data:')) {
+      // Extraer el tipo MIME correctamente (ej: image/jpeg, image/png)
+      const mimeMatch = primaryImage.url.match(/data:([^;]+);/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      
+      // Generar un nombre de archivo basado en el tipo MIME
+      let extension = 'jpg';
+      if (mimeType.includes('png')) extension = 'png';
+      else if (mimeType.includes('gif')) extension = 'gif';
+      else if (mimeType.includes('webp')) extension = 'webp';
+      
+      const fileName = `product-image-${Date.now()}.${extension}`;
+      
+      pendingPrimaryImageField.value = primaryImage.url;
+      if (pendingPrimaryImageNameField) {
+        pendingPrimaryImageNameField.value = fileName;
       }
-    } else if (pendingPrimaryImageField && !primaryImage) {
+      
+      console.log('✅ [updateHiddenFields] Imagen principal guardada:', {
+        fileName,
+        mimeType,
+        dataLength: primaryImage.url.length
+      });
+    } else if (!primaryImage) {
       pendingPrimaryImageField.value = '';
       if (pendingPrimaryImageNameField) {
         pendingPrimaryImageNameField.value = '';
       }
+      console.log('📷 [updateHiddenFields] Imagen principal limpiada');
     }
     
     // Actualizar campo de imágenes de carrusel
     const pendingCarouselImagesField = document.getElementById('pending_carousel_images') as HTMLInputElement;
-    if (pendingCarouselImagesField) {
+    if (!pendingCarouselImagesField) {
+      console.error('❌ [updateHiddenFields] No se encontró el campo pending_carousel_images');
+    } else {
       const carouselData = carouselImages
-        .filter(img => img.url.startsWith('data:'))
-        .map(img => ({
-          name: img.url.substring(5, img.url.indexOf(';')) || 'image.jpg',
-          data: img.url
-        }));
+        .filter(img => img.url && img.url.startsWith('data:'))
+        .map((img, index) => {
+          // Extraer el tipo MIME correctamente
+          const mimeMatch = img.url.match(/data:([^;]+);/);
+          const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+          
+          // Generar un nombre de archivo basado en el tipo MIME
+          let extension = 'jpg';
+          if (mimeType.includes('png')) extension = 'png';
+          else if (mimeType.includes('gif')) extension = 'gif';
+          else if (mimeType.includes('webp')) extension = 'webp';
+          
+          const fileName = `product-carousel-${Date.now()}-${index}.${extension}`;
+          
+          return {
+            name: fileName,
+            data: img.url
+          };
+        });
       
       pendingCarouselImagesField.value = JSON.stringify(carouselData);
-      console.log('📷 [ProductImageUploader] Campos hidden actualizados:', {
-        primaryImage: primaryImage ? 'Sí' : 'No',
-        carouselImages: carouselData.length
+      console.log('✅ [updateHiddenFields] Imágenes de carrusel guardadas:', {
+        count: carouselData.length,
+        data: carouselData.map(item => ({ name: item.name, dataLength: item.data.length }))
       });
     }
+    
+    console.log('📷 [updateHiddenFields] Campos hidden actualizados correctamente');
   }, [images, isCreating]);
 
   const handleFiles = async (files: FileList) => {
@@ -318,13 +363,44 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
         
         // Actualizar estado
         const updatedImages = [...images, ...newImages];
+        console.log('📷 [handleFiles] Actualizando estado con imágenes:', {
+          anteriores: images.length,
+          nuevas: newImages.length,
+          total: updatedImages.length
+        });
+        
         setImages(updatedImages);
         onImagesChange?.(updatedImages);
         
-        // Actualizar hidden fields
-        setTimeout(() => {
+        // Actualizar hidden fields inmediatamente y también con un pequeño delay para asegurar
+        // que el DOM se haya actualizado
+        requestAnimationFrame(() => {
           updateHiddenFields();
-        }, 100);
+          
+          // Doble verificación después de un pequeño delay
+          setTimeout(() => {
+            const primaryField = document.getElementById('pending_primary_image') as HTMLInputElement;
+            const carouselField = document.getElementById('pending_carousel_images') as HTMLInputElement;
+            
+            if (primaryField && primaryField.value === '' && updatedImages.some(img => img.isPrimary)) {
+              console.warn('⚠️ [handleFiles] Campo primary vacío después de actualizar, reintentando...');
+              updateHiddenFields();
+            }
+            
+            if (carouselField && carouselField.value === '[]' && updatedImages.some(img => !img.isPrimary)) {
+              console.warn('⚠️ [handleFiles] Campo carousel vacío después de actualizar, reintentando...');
+              updateHiddenFields();
+            }
+            
+            // Log final de verificación
+            console.log('📷 [handleFiles] Verificación final de campos hidden:', {
+              primaryValue: primaryField?.value ? `${primaryField.value.substring(0, 50)}...` : 'vacío',
+              primaryName: (document.getElementById('pending_primary_image_name') as HTMLInputElement)?.value || 'vacío',
+              carouselValue: carouselField?.value ? `${carouselField.value.substring(0, 50)}...` : 'vacío',
+              carouselLength: carouselField?.value ? JSON.parse(carouselField.value).length : 0
+            });
+          }, 200);
+        });
         
         console.log(`✅ ${newImages.length} imagen(es) procesada(s) en modo creación`);
       } else {
@@ -430,7 +506,12 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
       const updatedImages = images.filter(img => img.id !== imageId);
       setImages(updatedImages);
       onImagesChange?.(updatedImages);
-      updateHiddenFields();
+      
+      // Actualizar campos hidden después de eliminar
+      requestAnimationFrame(() => {
+        updateHiddenFields();
+      });
+      
       console.log('✅ Imagen eliminada del estado local (modo creación)');
       return;
     }
@@ -474,22 +555,31 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
     setImages(updatedImages);
     onImagesChange?.(updatedImages);
     
+    // Si estamos en modo creación, actualizar campos hidden
+    if (isCreating) {
+      requestAnimationFrame(() => {
+        updateHiddenFields();
+      });
+    }
+    
     // Emitir evento personalizado
     window.dispatchEvent(new CustomEvent('product-images-changed', { 
       detail: { images: updatedImages } 
     }));
     
-    // Actualizar en el servidor
-    try {
-      await fetch('/api/products/set-primary-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ imageId, productId })
-      });
-    } catch (error) {
-      console.error('Error estableciendo imagen principal:', error);
+    // Actualizar en el servidor (solo si no estamos en modo creación)
+    if (!isCreating) {
+      try {
+        await fetch('/api/products/set-primary-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ imageId, productId })
+        });
+      } catch (error) {
+        console.error('Error estableciendo imagen principal:', error);
+      }
     }
   };
 
@@ -505,10 +595,63 @@ export function ProductImageUploader({ productId, initialImages = [], onImagesCh
 
   // Actualizar hidden fields cuando cambien las imágenes (solo en modo creación)
   useEffect(() => {
-    if (isCreating) {
-      updateHiddenFields();
+    if (isCreating && images.length >= 0) {
+      // Usar requestAnimationFrame para asegurar que el DOM esté listo
+      const timeoutId = setTimeout(() => {
+        updateHiddenFields();
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [isCreating, updateHiddenFields]);
+  }, [isCreating, images, updateHiddenFields]);
+
+  // Listener para actualizar campos hidden antes de enviar el formulario
+  useEffect(() => {
+    if (!isCreating) return;
+    
+    const form = document.querySelector('form');
+    if (!form) return;
+    
+    const handleSubmit = (e: Event) => {
+      console.log('📷 [ProductImageUploader] Formulario enviándose, verificando campos hidden...');
+      
+      // Asegurar que los campos hidden estén actualizados antes de enviar
+      updateHiddenFields();
+      
+      // Verificar que los campos tengan datos
+      const primaryField = document.getElementById('pending_primary_image') as HTMLInputElement;
+      const carouselField = document.getElementById('pending_carousel_images') as HTMLInputElement;
+      
+      const primaryImage = images.find(img => img.isPrimary === true);
+      const carouselImages = images.filter(img => img.isPrimary === false && img.url.startsWith('data:'));
+      
+      if (primaryImage && (!primaryField || !primaryField.value || primaryField.value.trim() === '')) {
+        console.error('❌ [ProductImageUploader] Error: Imagen principal no está en el campo hidden');
+        e.preventDefault();
+        alert('Error: La imagen principal no se guardó correctamente. Por favor, inténtalo de nuevo.');
+        return;
+      }
+      
+      if (carouselImages.length > 0 && (!carouselField || !carouselField.value || carouselField.value.trim() === '' || carouselField.value === '[]')) {
+        console.error('❌ [ProductImageUploader] Error: Imágenes de carrusel no están en el campo hidden');
+        // No prevenir el envío aquí, solo advertir, ya que las imágenes de carrusel son opcionales
+        console.warn('⚠️ [ProductImageUploader] Advertencia: Las imágenes de carrusel pueden no haberse guardado correctamente');
+      }
+      
+      console.log('📷 [ProductImageUploader] Campos hidden verificados:', {
+        primary: primaryField?.value ? 'OK' : 'Vacío',
+        primaryValueLength: primaryField?.value?.length || 0,
+        carousel: carouselField?.value && carouselField.value !== '[]' ? 'OK' : 'Vacío',
+        carouselValueLength: carouselField?.value?.length || 0
+      });
+    };
+    
+    form.addEventListener('submit', handleSubmit);
+    
+    return () => {
+      form.removeEventListener('submit', handleSubmit);
+    };
+  }, [isCreating, images, updateHiddenFields]);
 
   return (
     <div className="space-y-4">

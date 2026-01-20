@@ -99,9 +99,9 @@ if (Astro.request.method === "POST") {
           filter_category_id: filterCategoryId,
           bind_code: size.bind_code || null,
           name: formData.get("name") as string,
-          name_en: formData.get("name_en") as string || null,
-          description: formData.get("description") as string || null,
-          description_en: formData.get("description_en") as string || null,
+          name_en: (formData.get("name_en") as string) || undefined,
+          description: (formData.get("description") as string) || undefined,
+          description_en: (formData.get("description_en") as string) || undefined,
           price: size.price || 0,
           currency: "MXN",
           price_usd: null,
@@ -138,9 +138,9 @@ if (Astro.request.method === "POST") {
         filter_category_id: filterCategoryId,
         bind_code: null,
         name: formData.get("name") as string,
-        name_en: formData.get("name_en") as string || null,
-        description: formData.get("description") as string || null,
-        description_en: formData.get("description_en") as string || null,
+        name_en: (formData.get("name_en") as string) || undefined,
+        description: (formData.get("description") as string) || undefined,
+        description_en: (formData.get("description_en") as string) || undefined,
         price: 0,
         currency: "MXN",
         price_usd: null,
@@ -175,34 +175,89 @@ if (Astro.request.method === "POST") {
         const pendingPrimaryImage = formData.get("pending_primary_image") as string;
         const pendingPrimaryImageName = formData.get("pending_primary_image_name") as string;
         
+        console.log('📷 Procesando imagen principal:', {
+          hasImage: !!pendingPrimaryImage,
+          hasName: !!pendingPrimaryImageName,
+          imageLength: pendingPrimaryImage?.length || 0,
+          imagePreview: pendingPrimaryImage?.substring(0, 50) || '',
+          fileName: pendingPrimaryImageName
+        });
+        
         if (pendingPrimaryImage && pendingPrimaryImageName) {
           // Convertir base64 a buffer y subir
-          const base64Data = pendingPrimaryImage.split(',')[1];
-          const buffer = Buffer.from(base64Data, 'base64');
-          
-          const { uploadProductImage } = await import('@/lib/cloudinary');
-          const imageUrl = await uploadProductImage(buffer, productId.toString(), pendingPrimaryImageName);
-          
-          // Agregar imagen principal al producto
-          const { addProductImage, setPrimaryProductImage } = await import('@/lib/database');
-          const imageId = await addProductImage({
-            product_id: productId,
-            image_url: imageUrl,
-            alt_text: pendingPrimaryImageName,
-            is_primary: true,
-            sort_order: 0,
-          });
-          
-          if (imageId) {
-            console.log(`✅ Imagen principal guardada en BD con ID: ${imageId}`);
-            await setPrimaryProductImage(productId, imageId);
+          // El formato puede ser "data:image/jpeg;base64,/9j/4AAQ..." o solo "/9j/4AAQ..."
+          let base64Data: string;
+          if (pendingPrimaryImage.includes(',')) {
+            base64Data = pendingPrimaryImage.split(',')[1];
+          } else if (pendingPrimaryImage.startsWith('data:')) {
+            // Si tiene "data:" pero no tiene coma, tomar todo después de base64,
+            const base64Index = pendingPrimaryImage.indexOf('base64,');
+            if (base64Index !== -1) {
+              base64Data = pendingPrimaryImage.substring(base64Index + 7);
+            } else {
+              base64Data = pendingPrimaryImage;
+            }
           } else {
-            console.error(`❌ Error: No se pudo guardar la imagen principal en la BD - imageId es null/undefined`);
+            base64Data = pendingPrimaryImage;
           }
+          
+          if (!base64Data || base64Data.trim().length === 0) {
+            console.error('❌ Error: Los datos base64 de la imagen principal están vacíos');
+          } else {
+            console.log('📷 Extrayendo datos base64:', {
+              originalLength: pendingPrimaryImage.length,
+              extractedLength: base64Data.length,
+              preview: base64Data.substring(0, 50)
+            });
+            
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            if (buffer.length === 0) {
+              console.error('❌ Error: El buffer de la imagen principal está vacío');
+            } else {
+              console.log('📷 Buffer creado correctamente:', {
+                bufferLength: buffer.length,
+                fileName: pendingPrimaryImageName
+              });
+              
+              const { uploadProductImage } = await import('@/lib/cloudinary');
+              const imageUrl = await uploadProductImage(buffer, productId.toString(), pendingPrimaryImageName);
+              
+              console.log('📷 Imagen subida a Cloudinary:', imageUrl);
+              
+              // Agregar imagen principal al producto
+              const { addProductImage, setPrimaryImage } = await import('@/lib/database');
+              const imageId = await addProductImage({
+                product_id: productId,
+                image_url: imageUrl,
+                alt_text: pendingPrimaryImageName,
+                is_primary: true,
+                sort_order: 0,
+              });
+              
+              if (imageId) {
+                console.log(`✅ Imagen principal guardada en BD con ID: ${imageId}`);
+                await setPrimaryImage(productId, imageId);
+              } else {
+                console.error(`❌ Error: No se pudo guardar la imagen principal en la BD - imageId es null/undefined`);
+              }
+            }
+          }
+        } else {
+          console.log('⚠️ No hay imagen principal para procesar:', {
+            hasImage: !!pendingPrimaryImage,
+            hasName: !!pendingPrimaryImageName
+          });
         }
 
         // Procesar imágenes de carrusel - SOLUCIÓN MÁS ROBUSTA
         let pendingCarouselImages = formData.get("pending_carousel_images") as string;
+        
+        console.log('📷 Procesando imágenes de carrusel:', {
+          hasData: !!pendingCarouselImages,
+          dataLength: pendingCarouselImages?.length || 0,
+          dataPreview: pendingCarouselImages?.substring(0, 100) || ''
+        });
         
         // Si está vacío, intentar buscar con diferentes nombres
         if (!pendingCarouselImages || pendingCarouselImages.trim().length === 0) {
@@ -225,14 +280,21 @@ if (Astro.request.method === "POST") {
               try {
                 carouselData = JSON.parse(pendingCarouselImages.trim()) as Array<{ name: string; data: string }>;
               } catch (parseErr2) {
+                console.error('❌ Error parseando JSON de carrusel:', parseErr2);
                 throw new Error(`Error parseando JSON de carrusel: ${parseErr2 instanceof Error ? parseErr2.message : 'Error desconocido'}`);
               }
             }
             
             // Validar que sea un array
             if (!Array.isArray(carouselData)) {
+              console.error('❌ Error: Los datos de carrusel no son un array válido:', typeof carouselData);
               throw new Error('Los datos de carrusel no son un array válido');
             }
+            
+            console.log('📷 Imágenes de carrusel parseadas:', {
+              count: carouselData.length,
+              items: carouselData.map(item => ({ name: item.name, hasData: !!item.data, dataLength: item.data?.length || 0 }))
+            });
             
             // Solo procesar si hay imágenes
             if (carouselData.length > 0) {
@@ -249,8 +311,15 @@ if (Astro.request.method === "POST") {
               for (let i = 0; i < carouselData.length && i < 4; i++) {
                 const { name, data } = carouselData[i];
                 
+                console.log(`📷 Procesando imagen de carrusel ${i + 1}:`, {
+                  name,
+                  hasData: !!data,
+                  dataLength: data?.length || 0
+                });
+                
                 // Validar que tenga datos
                 if (!data || !name) {
+                  console.warn(`⚠️ Imagen ${i + 1} de carrusel omitida: falta name o data`);
                   continue;
                 }
                 
@@ -258,19 +327,37 @@ if (Astro.request.method === "POST") {
                 let base64Data: string;
                 if (data.includes(',')) {
                   base64Data = data.split(',')[1];
+                } else if (data.startsWith('data:')) {
+                  // Si tiene "data:" pero no tiene coma, tomar todo después de base64,
+                  const base64Index = data.indexOf('base64,');
+                  if (base64Index !== -1) {
+                    base64Data = data.substring(base64Index + 7);
+                  } else {
+                    base64Data = data;
+                  }
                 } else {
                   base64Data = data;
                 }
                 
-                if (!base64Data) {
+                if (!base64Data || base64Data.trim().length === 0) {
+                  console.warn(`⚠️ Imagen ${i + 1} de carrusel omitida: datos base64 vacíos`);
                   continue;
                 }
                 
                 try {
                   const buffer = Buffer.from(base64Data, 'base64');
                   
+                  if (buffer.length === 0) {
+                    console.error(`❌ Error: Buffer de imagen ${i + 1} de carrusel está vacío`);
+                    continue;
+                  }
+                  
+                  console.log(`📷 Subiendo imagen ${i + 1} de carrusel a Cloudinary...`);
+                  
                   // Subir a Cloudinary
                   const imageUrl = await uploadProductImage(buffer, productId.toString(), name);
+                  
+                  console.log(`✅ Imagen ${i + 1} de carrusel subida:`, imageUrl);
                   
                   // Guardar en BD
                   const imageId = await addProductImage({
@@ -282,18 +369,26 @@ if (Astro.request.method === "POST") {
                   });
                   
                   if (!imageId) {
+                    console.error(`❌ Error: No se pudo guardar la imagen ${i + 1} en la BD`);
                     throw new Error(`No se pudo guardar la imagen ${i + 1} en la BD`);
                   }
+                  
+                  console.log(`✅ Imagen ${i + 1} de carrusel guardada en BD con ID: ${imageId}`);
                 } catch (imgErr) {
+                  console.error(`❌ Error procesando imagen ${i + 1} de carrusel:`, imgErr);
                   // Continuar con la siguiente imagen si esta falla
                   continue;
                 }
               }
+            } else {
+              console.log('📷 No hay imágenes de carrusel para procesar (array vacío)');
             }
           } catch (carouselErr) {
             // Log error pero no fallar la creación del producto
-            console.error("Error procesando imágenes de carrusel:", carouselErr);
+            console.error("❌ Error procesando imágenes de carrusel:", carouselErr);
           }
+        } else {
+          console.log('📷 No hay imágenes de carrusel para procesar (campo vacío o nulo)');
         }
       } catch (err) {
         console.error("Error procesando imágenes:", err);
