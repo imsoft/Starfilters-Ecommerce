@@ -35,8 +35,8 @@ export const ui = {
     'stats.projectsNumber': '+40',
     'stats.experience': 'de cuartos limpios construidos',
     'stats.experienceNumber': '+20,000 m²',
-    'stats.clients': '+1 millón de filtros vendidos',
-    'stats.clientsNumber': '',
+    'stats.clients': 'de filtros vendidos',
+    'stats.clientsNumber': '+1 millón',
 
     // Features
     'features.title': 'Tu aliado en control de partículas',
@@ -260,8 +260,8 @@ export const ui = {
     'stats.projectsNumber': '+40',
     'stats.experience': 'of cleanrooms built',
     'stats.experienceNumber': '+20,000 m²',
-    'stats.clients': '+1 million filters sold',
-    'stats.clientsNumber': '',
+    'stats.clients': 'filters sold',
+    'stats.clientsNumber': '+1 million',
 
     // Features
     'features.title': 'Your Partner in Particle Control',
