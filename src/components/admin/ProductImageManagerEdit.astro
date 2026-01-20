@@ -201,287 +201,184 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
 </div>
 
 <script define:vars={{ productId }}>
-  console.log('🖼️ [ProductImageManagerEdit] Script cargado, productId:', productId);
-  
-  // Función para eliminar imagen principal
-  async function deletePrimaryImage() {
-    console.log('🗑️ deletePrimaryImage llamada');
-    const productIdNum = parseInt(productId);
+  (function() {
+    console.log('🖼️ [ProductImageManagerEdit] Script cargado, productId:', productId);
     
-    if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
-      return;
-    }
-
-    try {
-      console.log('🗑️ Eliminando imagen principal, productId:', productIdNum);
+    // Función para eliminar imagen principal
+    async function deletePrimaryImage() {
+      console.log('🗑️ deletePrimaryImage llamada');
+      const productIdNum = parseInt(productId);
       
-      // Obtener todas las imágenes para encontrar la principal
-      const response = await fetch(`/api/products/${productIdNum}/images`);
-      const result = await response.json();
-      
-      if (result.success && result.images) {
-        const primaryImage = result.images.find((img: any) => img.isPrimary);
-        if (primaryImage) {
-          const deleteResponse = await fetch('/api/products/delete-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageId: primaryImage.id, productId: productIdNum }),
-          });
-
-          const deleteResult = await deleteResponse.json();
-          if (deleteResult.success) {
-            alert('Imagen eliminada correctamente');
-            window.location.reload();
-          } else {
-            alert('Error: ' + (deleteResult.message || 'Error desconocido'));
-          }
-        } else {
-          alert('No se encontró la imagen principal');
-        }
-      } else {
-        alert('Error al obtener las imágenes del producto');
+      if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
+        return;
       }
-    } catch (error) {
-      console.error('❌ Error:', error);
-      alert('Error al eliminar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
-    }
-  }
 
-  // Función para eliminar imagen de carrusel
-  async function deleteCarouselImage(imageId: number) {
-    console.log('🗑️ deleteCarouselImage llamada, imageId:', imageId);
-    const productIdNum = parseInt(productId);
-    
-    if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
-      return;
-    }
+      try {
+        console.log('🗑️ Eliminando imagen principal, productId:', productIdNum);
+        
+        // Obtener todas las imágenes para encontrar la principal
+        const response = await fetch('/api/products/' + productIdNum + '/images');
+        const result = await response.json();
+        
+        console.log('📡 Respuesta de API:', result);
+        
+        if (result.success && result.images) {
+          const primaryImage = result.images.find(function(img) { return img.isPrimary === true; });
+          console.log('🔍 Imagen principal encontrada:', primaryImage);
+          
+          if (primaryImage) {
+            const deleteResponse = await fetch('/api/products/delete-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ imageId: primaryImage.id, productId: productIdNum }),
+            });
 
-    try {
-      const response = await fetch('/api/products/delete-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageId, productId: productIdNum }),
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        alert('Imagen eliminada correctamente');
-        window.location.reload();
-      } else {
-        alert('Error: ' + (result.message || 'Error desconocido'));
-      }
-    } catch (error) {
-      console.error('❌ Error:', error);
-      alert('Error al eliminar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
-    }
-  }
-  
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('🖼️ [ProductImageManagerEdit] DOMContentLoaded ejecutado, inicializando...');
-    const productIdNum = parseInt(productId);
-    console.log('🖼️ [ProductImageManagerEdit] productIdNum:', productIdNum);
-
-    // ===== ELEMENTOS DEL DOM =====
-    const primaryImageInput = document.getElementById('primary-image-input');
-    const primaryImagePreview = document.getElementById('primary-image-preview');
-    const primaryImagePreviewImg = document.getElementById('primary-image-preview-img');
-    const removePrimaryImageBtn = document.getElementById('remove-primary-image');
-    const removeExistingPrimaryImageBtn = document.getElementById('remove-existing-primary-image');
-    const primaryImageUploadStatus = document.getElementById('primary-image-upload-status');
-    const existingPrimaryImage = document.getElementById('existing-primary-image');
-
-    const carouselImageInput = document.getElementById('carousel-image-input');
-    const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
-    const carouselCount = document.getElementById('carousel-count');
-
-    // Agregar event listeners para botones de eliminar carrusel
-    const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
-    console.log('🔍 Botones de eliminar carrusel encontrados:', deleteCarouselButtons.length);
-    deleteCarouselButtons.forEach((btn, index) => {
-      console.log(`🔍 Botón ${index + 1}:`, {
-        element: btn,
-        imageId: btn.getAttribute('data-image-id'),
-        classes: btn.className
-      });
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🖱️ Click detectado en botón eliminar carrusel');
-        const imageId = parseInt(this.getAttribute('data-image-id') || '0');
-        console.log('🖱️ Click en botón eliminar carrusel, imageId:', imageId);
-        if (imageId) {
-          deleteCarouselImage(imageId);
-        } else {
-          console.error('❌ No se pudo obtener imageId del botón');
-        }
-      });
-      
-      // También agregar mousedown para debugging
-      btn.addEventListener('mousedown', function(e) {
-        console.log('🖱️ MouseDown en botón eliminar carrusel');
-      });
-    });
-
-    // Agregar event listener para botón de eliminar imagen principal existente
-    if (removeExistingPrimaryImageBtn) {
-      console.log('✅ Botón de eliminar imagen principal encontrado:', removeExistingPrimaryImageBtn);
-      removeExistingPrimaryImageBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🖱️ Click en botón eliminar imagen principal');
-        deletePrimaryImage();
-      });
-      
-      // También agregar mousedown para debugging
-      removeExistingPrimaryImageBtn.addEventListener('mousedown', function(e) {
-        console.log('🖱️ MouseDown en botón eliminar imagen principal');
-      });
-    } else {
-      console.warn('⚠️ No se encontró el botón de eliminar imagen principal');
-    }
-
-    // Función para actualizar contador de carrusel
-    function updateCarouselCount() {
-      if (carouselCount) {
-        const carouselImages = document.querySelectorAll('#carousel-images-container [data-image-id]');
-        carouselCount.textContent = `${carouselImages.length}/4`;
-      }
-    }
-
-    // ===== IMAGEN PRINCIPAL =====
-    if (primaryImageInput) {
-      primaryImageInput.addEventListener('change', async (e) => {
-        const target = e.target;
-        const file = target && target.files ? target.files[0] : null;
-        if (!file) return;
-
-        console.log('🖼️ Procesando imagen principal:', file.name);
-
-        // Validar tamaño (10MB)
-        if (file.size > 10 * 1024 * 1024) {
-          if (primaryImageUploadStatus) {
-            primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
-            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-          }
-          return;
-        }
-
-        // Validar tipo
-        if (!file.type.startsWith('image/')) {
-          if (primaryImageUploadStatus) {
-            primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
-            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-          }
-          return;
-        }
-
-        if (primaryImageUploadStatus) {
-          primaryImageUploadStatus.textContent = '⏳ Subiendo imagen...';
-          primaryImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
-        }
-
-        try {
-          const formData = new FormData();
-          formData.append('image', file);
-          formData.append('productId', productIdNum.toString());
-
-          const response = await fetch('/api/products/upload-image', {
-            method: 'POST',
-            body: formData,
-          });
-
-          const result = await response.json();
-
-          if (result.success && result.url) {
-            // Ocultar imagen existente si hay una
-            if (existingPrimaryImage) {
-              existingPrimaryImage.classList.add('hidden');
-            }
+            const deleteResult = await deleteResponse.json();
+            console.log('📡 Resultado de eliminación:', deleteResult);
             
-            // Mostrar preview de nueva imagen
-            if (primaryImagePreviewImg) {
-              primaryImagePreviewImg.src = result.url;
-            }
-            if (primaryImagePreview) {
-              primaryImagePreview.classList.remove('hidden');
-            }
-            
-            if (primaryImageUploadStatus) {
-              primaryImageUploadStatus.textContent = '✅ Imagen subida y guardada correctamente';
-              primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-            }
-            
-            // Recargar después de un momento para mostrar la imagen como principal
-            setTimeout(() => {
+            if (deleteResult.success) {
+              alert('Imagen eliminada correctamente');
               window.location.reload();
-            }, 1000);
-          } else {
-            if (primaryImageUploadStatus) {
-              primaryImageUploadStatus.textContent = `❌ Error: ${result.message || 'Error desconocido'}`;
-              primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+            } else {
+              alert('Error: ' + (deleteResult.message || 'Error desconocido'));
             }
+          } else {
+            alert('No se encontró la imagen principal');
           }
-        } catch (error) {
-          console.error('Error subiendo imagen principal:', error);
-          if (primaryImageUploadStatus) {
-            primaryImageUploadStatus.textContent = '❌ Error al subir la imagen';
-            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-          }
+        } else {
+          alert('Error al obtener las imágenes del producto');
         }
-      });
+      } catch (error) {
+        console.error('❌ Error:', error);
+        alert('Error al eliminar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      }
     }
 
-    if (removePrimaryImageBtn) {
-      removePrimaryImageBtn.addEventListener('click', async () => {
-        if (primaryImagePreview) {
-          primaryImagePreview.classList.add('hidden');
+    // Función para eliminar imagen de carrusel
+    async function deleteCarouselImage(imageId) {
+      console.log('🗑️ deleteCarouselImage llamada, imageId:', imageId);
+      const productIdNum = parseInt(productId);
+      
+      if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
+        return;
+      }
+
+      try {
+        console.log('🗑️ Enviando petición de eliminación...');
+        const response = await fetch('/api/products/delete-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageId: imageId, productId: productIdNum }),
+        });
+
+        const result = await response.json();
+        console.log('📡 Resultado de eliminación:', result);
+        
+        if (result.success) {
+          alert('Imagen eliminada correctamente');
+          window.location.reload();
+        } else {
+          alert('Error: ' + (result.message || 'Error desconocido'));
         }
-        if (primaryImageInput) {
-          primaryImageInput.value = '';
-        }
-        if (primaryImageUploadStatus) {
-          primaryImageUploadStatus.textContent = '';
-        }
-      });
+      } catch (error) {
+        console.error('❌ Error:', error);
+        alert('Error al eliminar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      }
     }
-
-    // ===== IMÁGENES DE CARRUSEL =====
-    if (carouselImageInput) {
-      carouselImageInput.addEventListener('change', async (e) => {
-        const target = e.target;
-        const files = target && target.files ? Array.from(target.files) : [];
-        if (files.length === 0) return;
-
-        console.log('🖼️ Procesando imágenes de carrusel:', files.length);
-
-        // Contar imágenes existentes
-        const existingCarouselCount = document.querySelectorAll('#carousel-images-container [data-image-id]').length;
-        const availableSlots = 4 - existingCarouselCount;
-        const filesToAdd = files.slice(0, availableSlots);
-
-        if (files.length > availableSlots) {
-          if (carouselImageUploadStatus) {
-            carouselImageUploadStatus.textContent = `⚠️ Solo se agregarán ${availableSlots} imagen(es) (máximo 4)`;
-            carouselImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
+    
+    function initImageButtons() {
+      console.log('🖼️ [ProductImageManagerEdit] Inicializando botones...');
+      const productIdNum = parseInt(productId);
+      
+      // Agregar event listeners para botones de eliminar carrusel
+      const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
+      console.log('🔍 Botones de eliminar carrusel encontrados:', deleteCarouselButtons.length);
+      
+      deleteCarouselButtons.forEach(function(btn, index) {
+        const imageId = btn.getAttribute('data-image-id');
+        console.log('🔍 Botón ' + (index + 1) + ':', {
+          element: btn,
+          imageId: imageId,
+          classes: btn.className
+        });
+        
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🖱️ Click detectado en botón eliminar carrusel, imageId:', imageId);
+          const id = parseInt(imageId || '0');
+          if (id) {
+            deleteCarouselImage(id);
+          } else {
+            console.error('❌ No se pudo obtener imageId del botón');
           }
+        });
+      });
+
+      // Agregar event listener para botón de eliminar imagen principal existente
+      const removeExistingPrimaryImageBtn = document.getElementById('remove-existing-primary-image');
+      if (removeExistingPrimaryImageBtn) {
+        console.log('✅ Botón de eliminar imagen principal encontrado');
+        removeExistingPrimaryImageBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🖱️ Click en botón eliminar imagen principal');
+          deletePrimaryImage();
+        });
+      } else {
+        console.warn('⚠️ No se encontró el botón de eliminar imagen principal');
+      }
+
+      // ===== ELEMENTOS DEL DOM =====
+      const primaryImageInput = document.getElementById('primary-image-input');
+      const primaryImagePreview = document.getElementById('primary-image-preview');
+      const primaryImagePreviewImg = document.getElementById('primary-image-preview-img');
+      const removePrimaryImageBtn = document.getElementById('remove-primary-image');
+      const primaryImageUploadStatus = document.getElementById('primary-image-upload-status');
+      const existingPrimaryImage = document.getElementById('existing-primary-image');
+
+      const carouselImageInput = document.getElementById('carousel-image-input');
+      const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
+      const carouselCount = document.getElementById('carousel-count');
+
+      // Función para actualizar contador de carrusel
+      function updateCarouselCount() {
+        if (carouselCount) {
+          const carouselImages = document.querySelectorAll('#carousel-images-container [data-image-id]');
+          carouselCount.textContent = carouselImages.length + '/4';
         }
+      }
 
-        let successCount = 0;
-        let errorCount = 0;
+      // ===== IMAGEN PRINCIPAL =====
+      if (primaryImageInput) {
+        primaryImageInput.addEventListener('change', async function(e) {
+          const target = e.target;
+          const file = target && target.files ? target.files[0] : null;
+          if (!file) return;
 
-        for (const file of filesToAdd) {
+          console.log('🖼️ Procesando imagen principal:', file.name);
+
           // Validar tamaño (10MB)
           if (file.size > 10 * 1024 * 1024) {
-            console.warn(`⚠️ ${file.name} es muy grande, saltando...`);
-            errorCount++;
-            continue;
+            if (primaryImageUploadStatus) {
+              primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
+              primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+            }
+            return;
           }
 
           // Validar tipo
           if (!file.type.startsWith('image/')) {
-            console.warn(`⚠️ ${file.name} no es una imagen, saltando...`);
-            errorCount++;
-            continue;
+            if (primaryImageUploadStatus) {
+              primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
+              primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+            }
+            return;
+          }
+
+          if (primaryImageUploadStatus) {
+            primaryImageUploadStatus.textContent = '⏳ Subiendo imagen...';
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
           }
 
           try {
@@ -497,39 +394,154 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
             const result = await response.json();
 
             if (result.success && result.url) {
-              successCount++;
-              console.log(`✅ Imagen de carrusel subida: ${file.name}`);
+              // Ocultar imagen existente si hay una
+              if (existingPrimaryImage) {
+                existingPrimaryImage.classList.add('hidden');
+              }
+              
+              // Mostrar preview de nueva imagen
+              if (primaryImagePreviewImg) {
+                primaryImagePreviewImg.src = result.url;
+              }
+              if (primaryImagePreview) {
+                primaryImagePreview.classList.remove('hidden');
+              }
+              
+              if (primaryImageUploadStatus) {
+                primaryImageUploadStatus.textContent = '✅ Imagen subida y guardada correctamente';
+                primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+              }
+              
+              // Recargar después de un momento para mostrar la imagen como principal
+              setTimeout(function() {
+                window.location.reload();
+              }, 1000);
             } else {
-              errorCount++;
-              console.error(`❌ Error subiendo ${file.name}:`, result.message);
+              if (primaryImageUploadStatus) {
+                primaryImageUploadStatus.textContent = '❌ Error: ' + (result.message || 'Error desconocido');
+                primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+              }
             }
           } catch (error) {
-            console.error(`❌ Error procesando ${file.name}:`, error);
-            errorCount++;
+            console.error('Error subiendo imagen principal:', error);
+            if (primaryImageUploadStatus) {
+              primaryImageUploadStatus.textContent = '❌ Error al subir la imagen';
+              primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+            }
           }
-        }
+        });
+      }
 
-        if (carouselImageUploadStatus) {
-          if (successCount > 0) {
-            carouselImageUploadStatus.textContent = `✅ ${successCount} imagen(es) subida(s) correctamente`;
-            carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-            // Recargar después de un momento para mostrar las nuevas imágenes
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          } else {
-            carouselImageUploadStatus.textContent = `❌ Error al subir las imágenes`;
-            carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+      if (removePrimaryImageBtn) {
+        removePrimaryImageBtn.addEventListener('click', function() {
+          if (primaryImagePreview) {
+            primaryImagePreview.classList.add('hidden');
           }
-        }
+          if (primaryImageInput) {
+            primaryImageInput.value = '';
+          }
+          if (primaryImageUploadStatus) {
+            primaryImageUploadStatus.textContent = '';
+          }
+        });
+      }
 
-        // Limpiar input
-        if (carouselImageInput) {
-          carouselImageInput.value = '';
-        }
-      });
+      // ===== IMÁGENES DE CARRUSEL =====
+      if (carouselImageInput) {
+        carouselImageInput.addEventListener('change', async function(e) {
+          const target = e.target;
+          const files = target && target.files ? Array.from(target.files) : [];
+          if (files.length === 0) return;
+
+          console.log('🖼️ Procesando imágenes de carrusel:', files.length);
+
+          // Contar imágenes existentes
+          const existingCarouselCount = document.querySelectorAll('#carousel-images-container [data-image-id]').length;
+          const availableSlots = 4 - existingCarouselCount;
+          const filesToAdd = files.slice(0, availableSlots);
+
+          if (files.length > availableSlots) {
+            if (carouselImageUploadStatus) {
+              carouselImageUploadStatus.textContent = '⚠️ Solo se agregarán ' + availableSlots + ' imagen(es) (máximo 4)';
+              carouselImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
+            }
+          }
+
+          let successCount = 0;
+          let errorCount = 0;
+
+          for (let i = 0; i < filesToAdd.length; i++) {
+            const file = filesToAdd[i];
+            
+            // Validar tamaño (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+              console.warn('⚠️ ' + file.name + ' es muy grande, saltando...');
+              errorCount++;
+              continue;
+            }
+
+            // Validar tipo
+            if (!file.type.startsWith('image/')) {
+              console.warn('⚠️ ' + file.name + ' no es una imagen, saltando...');
+              errorCount++;
+              continue;
+            }
+
+            try {
+              const formData = new FormData();
+              formData.append('image', file);
+              formData.append('productId', productIdNum.toString());
+
+              const response = await fetch('/api/products/upload-image', {
+                method: 'POST',
+                body: formData,
+              });
+
+              const result = await response.json();
+
+              if (result.success && result.url) {
+                successCount++;
+                console.log('✅ Imagen de carrusel subida: ' + file.name);
+              } else {
+                errorCount++;
+                console.error('❌ Error subiendo ' + file.name + ':', result.message);
+              }
+            } catch (error) {
+              console.error('❌ Error procesando ' + file.name + ':', error);
+              errorCount++;
+            }
+          }
+
+          if (carouselImageUploadStatus) {
+            if (successCount > 0) {
+              carouselImageUploadStatus.textContent = '✅ ' + successCount + ' imagen(es) subida(s) correctamente';
+              carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+              // Recargar después de un momento para mostrar las nuevas imágenes
+              setTimeout(function() {
+                window.location.reload();
+              }, 1000);
+            } else {
+              carouselImageUploadStatus.textContent = '❌ Error al subir las imágenes';
+              carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+            }
+          }
+
+          // Limpiar input
+          if (carouselImageInput) {
+            carouselImageInput.value = '';
+          }
+        });
+      }
+
+      console.log('🖼️ [ProductImageManagerEdit] Inicializado correctamente');
     }
-
-    console.log('🖼️ [ProductImageManagerEdit] Inicializado correctamente');
-  });
+    
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initImageButtons);
+    } else {
+      // DOM ya está listo
+      initImageButtons();
+    }
+  })();
 </script>
