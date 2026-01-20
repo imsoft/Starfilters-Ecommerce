@@ -73,6 +73,7 @@ if (!userIsAdmin) {
             <button
               type="submit"
               id="import-btn"
+              disabled
               class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Importar Productos
@@ -160,8 +161,10 @@ if (!userIsAdmin) {
     if (fileInput.files && fileInput.files.length > 0) {
       fileName.textContent = `📄 ${fileInput.files[0].name}`;
       fileName.classList.remove('hidden');
+      importBtn.disabled = false;
     } else {
       fileName.classList.add('hidden');
+      importBtn.disabled = true;
     }
   }
 
