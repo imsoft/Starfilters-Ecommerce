@@ -48,7 +48,7 @@ export const ui = {
     'features.technology.title': 'Servicios de Validación',
     'features.technology.description': 'Ofrecemos servicios especializados de validación para garantizar el correcto funcionamiento y desempeño de los sistemas de filtración y control de partículas en cuartos limpios y áreas críticas basado en normativas aplicables.',
     'features.support.title': 'Accesorios para Cuartos Limpios',
-    'features.support.description': 'Todo para tu cuarto limpio. Unidades Manejadoras de Aire, Puertas y Ventanas especializadas, Air Showers, Gabinetes, listos para integrar tu proyecto.',
+    'features.support.description': 'Todo para tu cuarto limpio.  Unidades Manejadoras de Aire, Puertas y Ventanas especializadas, Air Showers, Gabinetes, listos para integrar tu proyecto, manómetros de presión diferencial, cortina rápida de lona, pass through',
 
     // Cleanrooms
     'cleanrooms.badge': 'StarFilters - Expertos en ambientes controlados',
