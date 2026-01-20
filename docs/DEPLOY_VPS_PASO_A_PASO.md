@@ -461,6 +461,9 @@ pnpm build
 
 # Reiniciar aplicación
 pm2 restart starfilters-app
+
+# Todo junto
+cd ~/starfilters-app && git pull origin main && pnpm install && pnpm build && pm2 restart starfilters-app
 ```
 
 ---

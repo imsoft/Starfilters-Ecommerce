@@ -4,7 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import { getCategoryBySlug, getCategoryVariants, getCategoryImages } from "@/lib/filter-category-service";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
-import { getVariantPriceInMXN } from "@/lib/currency-service";
+import { getVariantPriceInMXN, getExchangeRate } from "@/lib/currency-service";
 
 export const prerender = false;
 
@@ -28,6 +28,9 @@ const images = await getCategoryImages(category.id);
 // Filtrar solo variantes activas y con stock
 const activeVariants = variants.filter(v => v.is_active && v.stock > 0);
 
+// Obtener tasa de cambio actual
+const exchangeRate = await getExchangeRate();
+
 // Calcular precio mínimo y máximo en MXN (convertir si es necesario)
 const pricesInMXN = await Promise.all(
   activeVariants.map(async v => {
@@ -39,6 +42,19 @@ const pricesInMXN = await Promise.all(
 );
 const minPrice = pricesInMXN.length > 0 ? Math.min(...pricesInMXN) : 0;
 const maxPrice = pricesInMXN.length > 0 ? Math.max(...pricesInMXN) : 0;
+
+// Función para convertir precio USD a MXN
+const convertPriceToMXN = (priceUSD: number): number => {
+  return priceUSD * exchangeRate;
+};
+
+// Función para formatear precio USD
+const formatPriceUSD = (price: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(price);
+};
 
 // Función para formatear precio
 const formatPrice = (price: number): string => {
@@ -145,7 +161,8 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 <div
                   class="variant-option flex items-center justify-between p-4 border-2 border-border rounded-lg cursor-pointer hover:border-primary transition-colors"
                   data-variant-id={variant.id}
-                  data-price={variant.price}
+                  data-price={variant.currency === 'USD' && variant.price_usd ? convertPriceToMXN(variant.price_usd) : variant.price}
+                  data-original-price={variant.price}
                   data-currency={variant.currency || 'MXN'}
                   data-price-usd={variant.price_usd || ''}
                   data-stock={variant.stock}
@@ -161,8 +178,8 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   <div class="text-right">
                     {variant.currency === 'USD' && variant.price_usd ? (
                       <>
-                        <p class="text-sm text-muted-foreground line-through">${variant.price_usd.toFixed(2)} USD</p>
-                        <p class="text-lg font-bold text-foreground">{formatPrice(variant.price)}</p>
+                        <p class="variant-price-mxn text-lg font-bold text-foreground" data-price-usd={variant.price_usd}>{formatPrice(convertPriceToMXN(variant.price_usd))}</p>
+                        <p class="text-xs text-muted-foreground">{formatPriceUSD(variant.price_usd)} USD</p>
                       </>
                     ) : (
                       <p class="text-lg font-bold text-foreground">{formatPrice(variant.price)}</p>
@@ -390,9 +407,69 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     });
   });
 
+  // Obtener tasa de cambio actual y actualizar precios USD
+  async function updateVariantPricesWithExchangeRate() {
+    try {
+      const response = await fetch('/api/exchange-rate');
+      const data = await response.json();
+      
+      if (data.success && data.rate) {
+        // Actualizar precios en las variantes USD
+        const variantOptions = document.querySelectorAll('[data-currency="USD"]');
+        variantOptions.forEach((option) => {
+          const priceUsdElement = option.querySelector('.variant-price-mxn') as HTMLElement;
+          const priceUsd = option.getAttribute('data-price-usd');
+          
+          if (priceUsdElement && priceUsd) {
+            const priceUSD = parseFloat(priceUsd);
+            const priceMXN = priceUSD * data.rate;
+            priceUsdElement.textContent = formatPrice(priceMXN);
+            // Actualizar data-price con el precio convertido
+            option.setAttribute('data-price', priceMXN.toString());
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error actualizando precios con tasa de cambio:', error);
+    }
+  }
+
+  // Función para formatear precio
+  function formatPrice(price: number): string {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(price);
+  }
+
+  // Actualizar precios al cargar la página
+  document.addEventListener('DOMContentLoaded', () => {
+    updateVariantPricesWithExchangeRate();
+    // Actualizar cada hora
+    setInterval(updateVariantPricesWithExchangeRate, 60 * 60 * 1000);
+  });
+
   // Manejar agregar al carrito
   addToCartBtn?.addEventListener('click', async () => {
     if (!selectedVariantId || selectedStock === 0) return;
+    
+    // Obtener tasa de cambio actual para convertir precio USD si es necesario
+    let finalPrice = selectedPrice;
+    try {
+      const selectedOption = document.querySelector(`[data-variant-id="${selectedVariantId}"]`) as HTMLElement;
+      const currency = selectedOption?.getAttribute('data-currency') || 'MXN';
+      const priceUSD = selectedOption?.getAttribute('data-price-usd');
+      
+      if (currency === 'USD' && priceUSD) {
+        const rateResponse = await fetch('/api/exchange-rate');
+        const rateData = await rateResponse.json();
+        if (rateData.success && rateData.rate) {
+          finalPrice = parseFloat(priceUSD) * rateData.rate;
+        }
+      }
+    } catch (error) {
+      console.error('Error obteniendo tasa de cambio para carrito:', error);
+    }
     
     try {
       addToCartBtn.disabled = true;
@@ -406,7 +483,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         body: JSON.stringify({
           productId: selectedBindCode,
           quantity: 1,
-          price: selectedPrice
+          price: finalPrice
         }),
       });
       

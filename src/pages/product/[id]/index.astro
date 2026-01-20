@@ -6,6 +6,7 @@ import { getProductByUuid, getActiveProducts, getProductsByFilterCategory } from
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
+import { getExchangeRate, getVariantPriceInMXN } from "@/lib/currency-service";
 
 // Obtener UUID del producto de la URL
 const { id: uuid } = Astro.params;
@@ -56,11 +57,35 @@ const allImages = [
   '/images/products/placeholder-air-purification.svg'
 ];
 
+// Obtener tasa de cambio actual
+const exchangeRate = await getExchangeRate();
+
+// Función para convertir precio USD a MXN
+const convertPriceToMXN = (price: number, currency: string): number => {
+  if (currency === 'USD') {
+    return price * exchangeRate;
+  }
+  return price;
+};
+
+// Convertir precio del producto si está en USD
+const productPriceMXN = product.currency === 'USD' 
+  ? convertPriceToMXN(product.price_usd || product.price, 'USD')
+  : product.price;
+
 // Función para formatear precio
 const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN'
+  }).format(price);
+};
+
+// Función para formatear precio USD
+const formatPriceUSD = (price: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
   }).format(price);
 };
 
@@ -135,9 +160,24 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-24 sm:px-6 sm:py-32 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
           <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{product.name}</h2>
-          <p class="mt-4 text-3xl tracking-tight text-foreground">
-            {formatPrice(product.price)}
-          </p>
+          <div class="mt-4" data-product-uuid={product.uuid} data-currency={product.currency || 'MXN'} data-price-usd={product.price_usd || ''}>
+            {product.currency === 'USD' && product.price_usd ? (
+              <div>
+                <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
+                  {formatPrice(productPriceMXN)}
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  <span id="main-product-price-usd" data-price-usd={product.price_usd} class="hidden">{formatPriceUSD(product.price_usd)}</span>
+                  {formatPriceUSD(product.price_usd)} USD 
+                  <span id="exchange-rate-info" class="text-xs">(tasa del día: {exchangeRate.toFixed(2)})</span>
+                </p>
+              </div>
+            ) : (
+              <p class="text-3xl tracking-tight text-foreground">
+                {formatPrice(product.price)}
+              </p>
+            )}
+          </div>
 
           <!-- Valoraciones -->
           <div class="mt-4">
@@ -229,7 +269,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   type="button"
                   id="add-to-cart-btn"
                   class="flex flex-1 items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${mainImage}', '${product.category || ''}')`}
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${product.name}', ${product.currency === 'USD' && product.price_usd ? productPriceMXN : product.price}, '${mainImage}', '${product.category || ''}')`}
                 >
                   Agregar al Carrito
                 </button>
@@ -322,20 +362,25 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  {relatedVariants.map((variant) => (
-                    <tr class="hover:bg-gray-50 transition-colors">
+                  {relatedVariants.map((variant) => {
+                    const variantPriceMXN = variant.currency === 'USD' && variant.price_usd
+                      ? convertPriceToMXN(variant.price_usd, 'USD')
+                      : variant.price;
+                    
+                    return (
+                    <tr class="hover:bg-gray-50 transition-colors" data-product-uuid={variant.uuid} data-currency={variant.currency || 'MXN'} data-price-usd={variant.price_usd || ''}>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {variant.nominal_size || '-'}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {variant.real_size || '-'}
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-currency={variant.currency || 'MXN'}>
                         {variant.currency === 'USD' && variant.price_usd ? (
                           <div>
-                            <span class="text-xs text-gray-500 line-through">${variant.price_usd.toFixed(2)} USD</span>
+                            <span class="variant-price-mxn font-semibold text-lg">{formatPrice(variantPriceMXN)}</span>
                             <br />
-                            <span class="font-semibold text-lg">{formatPrice(variant.price)}</span>
+                            <span class="text-xs text-muted-foreground" data-price-usd={variant.price_usd}>{formatPriceUSD(variant.price_usd)} USD</span>
                           </div>
                         ) : (
                           <span class="font-semibold text-lg">{formatPrice(variant.price)}</span>
@@ -550,6 +595,56 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     }
   }
 
+  // Obtener tasa de cambio actual y actualizar precios USD
+  async function updatePricesWithExchangeRate() {
+    try {
+      const response = await fetch('/api/exchange-rate');
+      const data = await response.json();
+      
+      if (data.success && data.rate) {
+        // Actualizar precios en la página
+        const variantRows = document.querySelectorAll('[data-currency="USD"]');
+        variantRows.forEach((row) => {
+          const priceUsdElement = row.querySelector('[data-price-usd]');
+          const priceElement = row.querySelector('.variant-price-mxn');
+          
+          if (priceUsdElement && priceElement) {
+            const priceUSD = parseFloat(priceUsdElement.getAttribute('data-price-usd') || '0');
+            const priceMXN = priceUSD * data.rate;
+            priceElement.textContent = formatPrice(priceMXN);
+          }
+        });
+        
+        // Actualizar precio principal si está en USD
+        const mainPriceElement = document.getElementById('main-product-price');
+        const mainPriceUsdElement = document.getElementById('main-product-price-usd');
+        
+        if (mainPriceElement && mainPriceUsdElement) {
+          const priceUSD = parseFloat(mainPriceUsdElement.getAttribute('data-price-usd') || '0');
+          const priceMXN = priceUSD * data.rate;
+          mainPriceElement.textContent = formatPrice(priceMXN);
+        }
+      }
+    } catch (error) {
+      console.error('Error actualizando precios con tasa de cambio:', error);
+    }
+  }
+
+  // Función para formatear precio
+  function formatPrice(price: number): string {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(price);
+  }
+
+  // Actualizar precios al cargar la página
+  document.addEventListener('DOMContentLoaded', () => {
+    updatePricesWithExchangeRate();
+    // Actualizar cada hora
+    setInterval(updatePricesWithExchangeRate, 60 * 60 * 1000);
+  });
+
   // Funciones del carrito
   async function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): Promise<void> {
     const quantitySelect = document.getElementById('quantity') as HTMLSelectElement;
@@ -559,6 +654,26 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     const stockAvailable = await checkStock(uuid, quantity);
     if (!stockAvailable) {
       return;
+    }
+
+    // Obtener tasa de cambio actual para convertir precios USD si es necesario
+    let finalPrice = price;
+    try {
+      // Verificar si el producto está en USD (si el precio mostrado es diferente del original)
+      const productData = document.querySelector(`[data-product-uuid="${uuid}"]`) as HTMLElement;
+      const originalCurrency = productData?.getAttribute('data-currency') || 'MXN';
+      const priceUSD = productData?.getAttribute('data-price-usd');
+      
+      if (originalCurrency === 'USD' && priceUSD) {
+        // Obtener tasa de cambio actual
+        const rateResponse = await fetch('/api/exchange-rate');
+        const rateData = await rateResponse.json();
+        if (rateData.success && rateData.rate) {
+          finalPrice = parseFloat(priceUSD) * rateData.rate;
+        }
+      }
+    } catch (error) {
+      console.error('Error obteniendo tasa de cambio para carrito:', error);
     }
 
     // Obtener carrito actual
@@ -580,12 +695,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += quantity;
+      // Actualizar precio si cambió la tasa de cambio
+      cart.items[existingItemIndex].price = finalPrice;
     } else {
       cart.items.push({
         uuid,
         product_id,
         name,
-        price,
+        price: finalPrice,
         quantity,
         image_url,
         category

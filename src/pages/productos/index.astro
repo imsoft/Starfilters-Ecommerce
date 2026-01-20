@@ -6,6 +6,7 @@ import { getActiveProducts, getProductsByFilterCategory, getProductsByFilterCate
 import { getCategoryById } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getExchangeRate } from "@/lib/currency-service";
 
 export const prerender = false;
 
@@ -87,13 +88,21 @@ try {
       }
     }
     
+    // Convertir precio si está en USD
+    const displayPrice = product.currency === 'USD' && product.price_usd
+      ? convertPriceToMXN(product.price_usd, 'USD')
+      : (product.price || 0);
+
     return {
       id: product.id,
       uuid: product.uuid,
       name: product.name,
       description: product.description || '',
       category: product.category || 'Sin categoría',
-      price: product.price || 0,
+      price: displayPrice,
+      originalPrice: product.price || 0,
+      originalCurrency: product.currency || 'MXN',
+      priceUSD: product.price_usd || null,
       stock: product.stock || 0,
       imageUrl: imageUrl,
       nominal_size: product.nominal_size || undefined,
@@ -112,11 +121,30 @@ try {
   console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack available');
 }
 
+// Obtener tasa de cambio actual
+const exchangeRate = await getExchangeRate();
+
+// Función para convertir precio USD a MXN
+const convertPriceToMXN = (price: number, currency: string): number => {
+  if (currency === 'USD') {
+    return price * exchangeRate;
+  }
+  return price;
+};
+
 // Función para formatear precio
 const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN'
+  }).format(price);
+};
+
+// Función para formatear precio USD
+const formatPriceUSD = (price: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
   }).format(price);
 };
 
@@ -336,9 +364,12 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
         {products.map((product) => (
           <div 
             class="group product-card relative flex flex-col" 
+            data-product-uuid={product.uuid}
             data-category={product.category}
             data-price={product.price}
             data-stock={product.stock}
+            data-currency={product.originalCurrency || 'MXN'}
+            data-price-usd={product.priceUSD || ''}
           >
             <a href={`/product/${product.uuid}`} class="block flex-shrink-0">
               <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
@@ -374,9 +405,16 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
             
             {product.variantCount === 0 && (
               <div class="mt-2 flex items-center justify-between">
-                <p class="text-lg font-medium text-foreground">
-                  {formatPrice(product.price)}
-                </p>
+                <div>
+                  <p class="text-lg font-medium text-foreground">
+                    {formatPrice(product.price)}
+                  </p>
+                  {product.originalCurrency === 'USD' && product.priceUSD && (
+                    <p class="text-xs text-muted-foreground">
+                      {formatPriceUSD(product.priceUSD)} USD
+                    </p>
+                  )}
+                </div>
                 {product.stock > 0 ? (
                   <span class="text-xs text-green-600 font-medium">
                     En stock
@@ -551,7 +589,31 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
   }
 
   // Función para agregar al carrito desde la grid
-  function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): void {
+  async function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): Promise<void> {
+    // El precio ya viene convertido a MXN desde el servidor
+    // pero verificamos si hay un precio USD para actualizar con tasa del día
+    let finalPrice = price;
+    
+    try {
+      // Buscar el elemento del producto para obtener información de moneda
+      const productElement = document.querySelector(`[data-product-uuid="${uuid}"]`) as HTMLElement;
+      if (productElement) {
+        const originalCurrency = productElement.getAttribute('data-currency') || 'MXN';
+        const priceUSD = productElement.getAttribute('data-price-usd');
+        
+        if (originalCurrency === 'USD' && priceUSD) {
+          // Obtener tasa de cambio actual
+          const rateResponse = await fetch('/api/exchange-rate');
+          const rateData = await rateResponse.json();
+          if (rateData.success && rateData.rate) {
+            finalPrice = parseFloat(priceUSD) * rateData.rate;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error obteniendo tasa de cambio para carrito:', error);
+    }
+
     // Obtener carrito actual
     const cartData = localStorage.getItem('starfilters_cart');
     let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
@@ -561,12 +623,13 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += 1;
+      cart.items[existingItemIndex].price = finalPrice; // Actualizar precio con tasa del día
     } else {
       cart.items.push({
         uuid,
         product_id,
         name,
-        price,
+        price: finalPrice,
         quantity: 1,
         image_url,
         category
