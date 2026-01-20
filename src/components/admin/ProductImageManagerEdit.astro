@@ -282,23 +282,27 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
     console.log('🖼️ [ProductImageManagerEdit] productIdNum:', productIdNum);
 
     // ===== ELEMENTOS DEL DOM =====
-    const primaryImageInput = document.getElementById('primary-image-input') as HTMLInputElement | null;
-    const primaryImagePreview = document.getElementById('primary-image-preview') as HTMLDivElement | null;
-    const primaryImagePreviewImg = document.getElementById('primary-image-preview-img') as HTMLImageElement | null;
-    const removePrimaryImageBtn = document.getElementById('remove-primary-image') as HTMLButtonElement | null;
-    const removeExistingPrimaryImageBtn = document.getElementById('remove-existing-primary-image') as HTMLButtonElement | null;
-    const primaryImageUploadStatus = document.getElementById('primary-image-upload-status') as HTMLDivElement | null;
-    const existingPrimaryImage = document.getElementById('existing-primary-image') as HTMLDivElement | null;
+    const primaryImageInput = document.getElementById('primary-image-input');
+    const primaryImagePreview = document.getElementById('primary-image-preview');
+    const primaryImagePreviewImg = document.getElementById('primary-image-preview-img');
+    const removePrimaryImageBtn = document.getElementById('remove-primary-image');
+    const removeExistingPrimaryImageBtn = document.getElementById('remove-existing-primary-image');
+    const primaryImageUploadStatus = document.getElementById('primary-image-upload-status');
+    const existingPrimaryImage = document.getElementById('existing-primary-image');
 
-    const carouselImageInput = document.getElementById('carousel-image-input') as HTMLInputElement | null;
-    const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status') as HTMLDivElement | null;
-    const carouselCount = document.getElementById('carousel-count') as HTMLSpanElement | null;
+    const carouselImageInput = document.getElementById('carousel-image-input');
+    const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
+    const carouselCount = document.getElementById('carousel-count');
 
     // Agregar event listeners para botones de eliminar carrusel
     const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
+    console.log('🔍 Botones de eliminar carrusel encontrados:', deleteCarouselButtons.length);
     deleteCarouselButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const imageId = parseInt((btn as HTMLElement).getAttribute('data-image-id') || '0');
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const imageId = parseInt(this.getAttribute('data-image-id') || '0');
+        console.log('🖱️ Click en botón eliminar carrusel, imageId:', imageId);
         if (imageId) {
           deleteCarouselImage(imageId);
         }
@@ -307,9 +311,15 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
 
     // Agregar event listener para botón de eliminar imagen principal existente
     if (removeExistingPrimaryImageBtn) {
-      removeExistingPrimaryImageBtn.addEventListener('click', () => {
+      console.log('✅ Botón de eliminar imagen principal encontrado');
+      removeExistingPrimaryImageBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🖱️ Click en botón eliminar imagen principal');
         deletePrimaryImage();
       });
+    } else {
+      console.warn('⚠️ No se encontró el botón de eliminar imagen principal');
     }
 
     // Función para actualizar contador de carrusel
@@ -323,8 +333,8 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
     // ===== IMAGEN PRINCIPAL =====
     if (primaryImageInput) {
       primaryImageInput.addEventListener('change', async (e) => {
-        const target = e.target as HTMLInputElement;
-        const file = target?.files?.[0] || null;
+        const target = e.target;
+        const file = target && target.files ? target.files[0] : null;
         if (!file) return;
 
         console.log('🖼️ Procesando imagen principal:', file.name);
@@ -420,8 +430,8 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
     // ===== IMÁGENES DE CARRUSEL =====
     if (carouselImageInput) {
       carouselImageInput.addEventListener('change', async (e) => {
-        const target = e.target as HTMLInputElement;
-        const files = target?.files ? Array.from(target.files) : [];
+        const target = e.target;
+        const files = target && target.files ? Array.from(target.files) : [];
         if (files.length === 0) return;
 
         console.log('🖼️ Procesando imágenes de carrusel:', files.length);
