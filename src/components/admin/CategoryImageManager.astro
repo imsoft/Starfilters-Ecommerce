@@ -306,28 +306,25 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     // Agregar event listeners para botones de eliminar carrusel
     const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
     console.log('🔍 Botones de eliminar carrusel encontrados:', deleteCarouselButtons.length);
-    deleteCarouselButtons.forEach((btn, index) => {
-      console.log(`🔍 Botón ${index + 1}:`, {
+    
+    deleteCarouselButtons.forEach(function(btn, index) {
+      const imageId = btn.getAttribute('data-image-id');
+      console.log('🔍 Botón ' + (index + 1) + ':', {
         element: btn,
-        imageId: btn.getAttribute('data-image-id'),
+        imageId: imageId,
         classes: btn.className
       });
+      
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        console.log('🖱️ Click detectado en botón eliminar carrusel');
-        const imageId = parseInt(this.getAttribute('data-image-id') || '0');
-        console.log('🖱️ Click en botón eliminar carrusel, imageId:', imageId);
-        if (imageId) {
-          deleteCarouselImage(imageId);
+        console.log('🖱️ Click detectado en botón eliminar carrusel, imageId:', imageId);
+        const id = parseInt(imageId || '0');
+        if (id) {
+          deleteCarouselImage(id);
         } else {
           console.error('❌ No se pudo obtener imageId del botón');
         }
-      });
-      
-      // También agregar mousedown para debugging
-      btn.addEventListener('mousedown', function(e) {
-        console.log('🖱️ MouseDown en botón eliminar carrusel');
       });
     });
 
