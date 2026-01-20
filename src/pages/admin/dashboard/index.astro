@@ -125,7 +125,7 @@ const getProductStatus = (stock: number) => {
       </div>
 
       <!-- Estadísticas rápidas -->
-      <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+      <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-lg border border-border bg-background p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
@@ -164,20 +164,6 @@ const getProductStatus = (stock: number) => {
             <div class="ml-4">
               <p class="text-sm font-medium text-muted-foreground">Ventas del Mes</p>
               <p class="text-2xl font-semibold text-foreground">{formatCurrency(stats.monthlySales)}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-lg border border-border bg-background p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <svg class="h-8 w-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M16,4C18.2,4 20,5.8 20,8C20,10.2 18.2,12 16,12C13.8,12 12,10.2 12,8C12,5.8 13.8,4 16,4M16,14C20.4,14 24,15.8 24,18V20H8V18C8,15.8 11.6,14 16,14M8,4C10.2,4 12,5.8 12,8C12,10.2 10.2,12 8,12C5.8,12 4,10.2 4,8C4,5.8 5.8,4 8,4M8,14C12.4,14 16,15.8 16,18V20H0V18C0,15.8 3.6,14 8,14Z"/>
-              </svg>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">Clientes Activos</p>
-              <p class="text-2xl font-semibold text-foreground">{stats.totalUsers}</p>
             </div>
           </div>
         </div>
