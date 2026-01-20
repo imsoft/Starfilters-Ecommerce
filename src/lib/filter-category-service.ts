@@ -96,6 +96,23 @@ export const getActiveCategories = async (): Promise<FilterCategory[]> => {
 };
 
 /**
+ * Obtener ID de categoría por nombre
+ */
+export const getFilterCategoryIdByName = async (name: string): Promise<number | null> => {
+  try {
+    const categories = await query(
+      'SELECT id FROM filter_categories WHERE name = ? OR name_en = ? LIMIT 1',
+      [name, name]
+    ) as FilterCategory[];
+    
+    return categories.length > 0 ? categories[0].id : null;
+  } catch (error) {
+    console.error('❌ Error obteniendo categoría por nombre:', error);
+    return null;
+  }
+};
+
+/**
  * Obtener una categoría por ID
  */
 export const getCategoryById = async (id: number): Promise<FilterCategory | null> => {

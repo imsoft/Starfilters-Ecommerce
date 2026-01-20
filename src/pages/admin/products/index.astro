@@ -80,14 +80,23 @@ function formatCurrency(amount: number): string {
               Administra todos los productos de tu tienda
             </p>
           </div>
-          <a href="/admin/products/add">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <svg class="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
-              </svg>
-              Agregar Producto
-            </Button>
-          </a>
+          <div class="flex items-center gap-3">
+            <a href="/admin/products/import">
+              <Button variant="outline" className="border-border">
+                <svg class="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                </svg>
+              </Button>
+            </a>
+            <a href="/admin/products/add">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <svg class="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                </svg>
+                Agregar Producto
+              </Button>
+            </a>
+          </div>
         </div>
       </div>
 

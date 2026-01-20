@@ -1,0 +1,186 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { getAuthenticatedUser } from '@/lib/auth-utils';
+import { isUserAdmin } from '@/lib/database';
+
+export const prerender = false;
+
+const user = getAuthenticatedUser(Astro.cookies);
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const userIsAdmin = await isUserAdmin(user.id);
+
+if (!userIsAdmin) {
+  return Astro.redirect('/');
+}
+---
+
+<AdminLayout>
+  <div class="mx-auto max-w-4xl px-4 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-foreground">Importar Productos desde Excel</h1>
+      <p class="mt-2 text-muted-foreground">
+        Sube un archivo Excel (.xlsx) con tus productos para importarlos masivamente.
+      </p>
+    </div>
+
+    <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+      <form id="import-form" enctype="multipart/form-data">
+        <div class="space-y-6">
+          <div>
+            <label for="excel-file" class="block text-sm font-medium text-foreground mb-2">
+              Archivo Excel (.xlsx)
+            </label>
+            <input
+              type="file"
+              id="excel-file"
+              name="excel-file"
+              accept=".xlsx,.xls"
+              required
+              class="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+            />
+            <p class="mt-2 text-xs text-muted-foreground">
+              El archivo debe tener las columnas: nombre, descripción, precio, categoría, stock, status, etc.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <button
+              type="submit"
+              id="import-btn"
+              class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Importar Productos
+            </button>
+            <a
+              href="/templates/productos-template.xlsx"
+              download="productos-template.xlsx"
+              class="rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-xs hover:bg-muted"
+            >
+              Descargar Plantilla
+            </a>
+          </div>
+        </div>
+      </form>
+
+      <div id="import-status" class="mt-6 hidden">
+        <div class="rounded-md bg-muted p-4">
+          <div class="flex items-center gap-2">
+            <div id="status-icon" class="text-lg">⏳</div>
+            <div class="flex-1">
+              <p id="status-message" class="text-sm font-medium text-foreground">Procesando...</p>
+              <div id="status-details" class="mt-2 text-xs text-muted-foreground"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="import-results" class="mt-6 hidden">
+        <div class="rounded-md border border-border bg-card p-4">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Resultados de la Importación</h3>
+          <div id="results-content" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  const form = document.getElementById('import-form') as HTMLFormElement;
+  const fileInput = document.getElementById('excel-file') as HTMLInputElement;
+  const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
+  const statusDiv = document.getElementById('import-status') as HTMLDivElement;
+  const statusMessage = document.getElementById('status-message') as HTMLParagraphElement;
+  const statusDetails = document.getElementById('status-details') as HTMLDivElement;
+  const statusIcon = document.getElementById('status-icon') as HTMLDivElement;
+  const resultsDiv = document.getElementById('import-results') as HTMLDivElement;
+  const resultsContent = document.getElementById('results-content') as HTMLDivElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const file = fileInput.files?.[0];
+    if (!file) {
+      alert('Por favor selecciona un archivo Excel');
+      return;
+    }
+
+    // Validar extensión
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      alert('Por favor selecciona un archivo Excel (.xlsx o .xls)');
+      return;
+    }
+
+    // Mostrar estado de carga
+    importBtn.disabled = true;
+    importBtn.textContent = 'Importando...';
+    statusDiv.classList.remove('hidden');
+    statusMessage.textContent = 'Subiendo y procesando archivo...';
+    statusIcon.textContent = '⏳';
+    statusDetails.textContent = '';
+    resultsDiv.classList.add('hidden');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/products/import-excel', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        statusIcon.textContent = '✅';
+        statusMessage.textContent = 'Importación completada';
+        statusDetails.innerHTML = `
+          <p>✅ Productos importados exitosamente: ${result.successCount || 0}</p>
+          ${result.errorCount > 0 ? `<p>❌ Errores: ${result.errorCount}</p>` : ''}
+        `;
+
+        // Mostrar resultados detallados
+        if (result.results) {
+          resultsDiv.classList.remove('hidden');
+          let html = '';
+          
+          if (result.results.success && result.results.success.length > 0) {
+            html += '<div class="mb-4"><h4 class="font-semibold text-green-600 mb-2">✅ Productos Importados:</h4><ul class="list-disc list-inside space-y-1 text-sm">';
+            result.results.success.forEach((item: any) => {
+              html += `<li>${item.name || 'Sin nombre'} (ID: ${item.id})</li>`;
+            });
+            html += '</ul></div>';
+          }
+
+          if (result.results.errors && result.results.errors.length > 0) {
+            html += '<div><h4 class="font-semibold text-red-600 mb-2">❌ Errores:</h4><ul class="list-disc list-inside space-y-1 text-sm">';
+            result.results.errors.forEach((error: any) => {
+              html += `<li>Fila ${error.row}: ${error.message}</li>`;
+            });
+            html += '</ul></div>';
+          }
+
+          resultsContent.innerHTML = html;
+        }
+
+        // Limpiar formulario
+        form.reset();
+      } else {
+        statusIcon.textContent = '❌';
+        statusMessage.textContent = 'Error en la importación';
+        statusDetails.textContent = result.message || 'Error desconocido';
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      statusIcon.textContent = '❌';
+      statusMessage.textContent = 'Error al procesar el archivo';
+      statusDetails.textContent = error instanceof Error ? error.message : 'Error desconocido';
+    } finally {
+      importBtn.disabled = false;
+      importBtn.textContent = 'Importar Productos';
+    }
+  });
+</script>
