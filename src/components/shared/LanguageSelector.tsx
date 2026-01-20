@@ -28,6 +28,7 @@ export default function LanguageSelector() {
 
   const switchLanguage = (lang: string) => {
     const currentPath = window.location.pathname;
+    const searchParams = window.location.search; // Preserve query parameters
     let newPath: string = '';
 
     // Don't do anything if we're already in the target language
@@ -45,27 +46,44 @@ export default function LanguageSelector() {
       } else {
         // Map Spanish routes to English routes
         const routeTranslations: { [key: string]: string } = {
+          '/productos': '/en/products',
           '/cuartos-limpios': '/en/cleanrooms',
           '/servicios': '/en/services',
           '/filtros': '/en/filters',
           '/contacto': '/en/contact',
+          '/contact': '/en/contact',
           '/blog': '/en/blog',
           '/carrito': '/en/cart',
+          '/cart': '/en/cart',
           '/checkout': '/en/checkout',
           '/perfil': '/en/profile',
+          '/profile': '/en/profile',
           '/pedidos': '/en/orders',
+          '/orders': '/en/orders',
+          '/login': '/en/login',
+          '/signup': '/en/signup',
+          '/acerca-de': '/en/about',
           '/cambiar-contraseña': '/en/change-password',
+          '/change-password': '/en/change-password',
+          '/forgot-password': '/en/forgot-password',
+          '/reset-password': '/en/reset-password',
+          '/privacy': '/en/privacy',
+          '/terms': '/en/terms',
         };
 
         // Check for exact match first
         if (routeTranslations[currentPath]) {
           newPath = routeTranslations[currentPath];
         }
-        // Handle dynamic routes like /blog/[uuid] or /product/[id]
+        // Handle dynamic routes like /blog/[uuid] or /product/[id] or /orders/[id]
         else if (currentPath.startsWith('/blog/')) {
           newPath = currentPath.replace('/blog/', '/en/blog/');
         } else if (currentPath.startsWith('/product/')) {
           newPath = currentPath.replace('/product/', '/en/product/');
+        } else if (currentPath.startsWith('/pedidos/')) {
+          newPath = currentPath.replace('/pedidos/', '/en/orders/');
+        } else if (currentPath.startsWith('/orders/')) {
+          newPath = currentPath.replace('/orders/', '/en/orders/');
         } else {
           newPath = `/en${currentPath}`;
         }
@@ -80,6 +98,7 @@ export default function LanguageSelector() {
       else if (currentPath.startsWith('/en/')) {
         // Map English routes back to Spanish routes
         const reverseRouteTranslations: { [key: string]: string } = {
+          '/en/products': '/productos',
           '/en/cleanrooms': '/cuartos-limpios',
           '/en/services': '/servicios',
           '/en/filters': '/filtros',
@@ -89,18 +108,27 @@ export default function LanguageSelector() {
           '/en/profile': '/perfil',
           '/en/blog': '/blog',
           '/en/orders': '/pedidos',
+          '/en/login': '/login',
+          '/en/signup': '/signup',
+          '/en/about': '/acerca-de',
           '/en/change-password': '/cambiar-contraseña',
+          '/en/forgot-password': '/forgot-password',
+          '/en/reset-password': '/reset-password',
+          '/en/privacy': '/privacy',
+          '/en/terms': '/terms',
         };
 
         // Check for exact match first
         if (reverseRouteTranslations[currentPath]) {
           newPath = reverseRouteTranslations[currentPath];
         }
-        // Handle dynamic routes like /en/blog/[uuid] or /en/product/[id]
+        // Handle dynamic routes like /en/blog/[uuid] or /en/product/[id] or /en/orders/[id]
         else if (currentPath.startsWith('/en/blog/')) {
           newPath = currentPath.replace('/en/blog/', '/blog/');
         } else if (currentPath.startsWith('/en/product/')) {
           newPath = currentPath.replace('/en/product/', '/product/');
+        } else if (currentPath.startsWith('/en/orders/')) {
+          newPath = currentPath.replace('/en/orders/', '/pedidos/');
         } else {
           // Remove /en prefix for other routes
           newPath = currentPath.replace(/^\/en/, '') || '/';
@@ -118,7 +146,8 @@ export default function LanguageSelector() {
       return;
     }
     
-    window.location.href = newPath;
+    // Preserve query parameters
+    window.location.href = newPath + searchParams;
   };
 
   const languages = [
