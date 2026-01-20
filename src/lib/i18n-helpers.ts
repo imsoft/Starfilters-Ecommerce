@@ -53,3 +53,57 @@ export function getCategoryDescription(category: { description?: string | null; 
   }
   return category.description || undefined;
 }
+
+/**
+ * Obtiene el precio y moneda de un producto según el idioma
+ * Español → MXN (usa price)
+ * Inglés → USD (usa price_usd si existe, sino price convertido)
+ */
+export function getProductPriceAndCurrency(
+  product: { 
+    price: number; 
+    price_usd?: number | null; 
+    currency?: 'MXN' | 'USD' | null 
+  }, 
+  lang: string = 'es'
+): { price: number; currency: 'MXN' | 'USD' } {
+  if (lang === 'en') {
+    // En inglés, preferir USD
+    if (product.price_usd && product.price_usd > 0) {
+      return { price: product.price_usd, currency: 'USD' };
+    }
+    // Si el producto está marcado como USD pero no tiene price_usd, usar price
+    if (product.currency === 'USD') {
+      return { price: product.price, currency: 'USD' };
+    }
+    // Si no tiene precio USD, convertir MXN a USD (aproximado)
+    // Nota: Esto debería mejorarse con tasa de cambio real
+    return { price: product.price / 17, currency: 'USD' };
+  }
+  
+  // En español, usar MXN
+  // Si el producto está en USD, convertir a MXN
+  if (product.currency === 'USD' && product.price_usd) {
+    // Esto se manejará con la tasa de cambio en las páginas
+    return { price: product.price, currency: 'MXN' };
+  }
+  
+  return { price: product.price, currency: 'MXN' };
+}
+
+/**
+ * Formatea un precio según la moneda
+ */
+export function formatPriceByCurrency(price: number, currency: 'MXN' | 'USD'): string {
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
+  }
+  
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  }).format(price);
+}

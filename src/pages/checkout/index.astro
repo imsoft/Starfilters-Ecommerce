@@ -202,22 +202,25 @@ if (!user) {
   <script>
     import { getCart } from '@/lib/cart';
 
-    // Función para formatear precio
-    function formatPrice(price: number): string {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-      }).format(price);
+    // Función para formatear precio según moneda del carrito
+    function formatPrice(price: number, currency: string = 'MXN'): string {
+      return new Intl.NumberFormat(
+        currency === 'USD' ? 'en-US' : 'es-MX',
+        {
+          style: 'currency',
+          currency: currency
+        }
+      ).format(price);
     }
 
     // Función para cargar Stripe Elements directamente
-    async function loadStripeForm(container: HTMLElement, clientSecret: string, amount: number) {
+    async function loadStripeForm(container: HTMLElement, clientSecret: string, amount: number, currency: string = 'MXN') {
       try {
         // Cargar Stripe desde CDN
         const stripeScript = document.createElement('script');
         stripeScript.src = 'https://js.stripe.com/v3/';
         stripeScript.onload = () => {
-          initializeStripe(container, clientSecret, amount);
+          initializeStripe(container, clientSecret, amount, currency);
         };
         document.head.appendChild(stripeScript);
       } catch (error) {
@@ -227,7 +230,7 @@ if (!user) {
     }
 
     // Función para inicializar Stripe
-    function initializeStripe(container: HTMLElement, clientSecret: string, amount: number) {
+    function initializeStripe(container: HTMLElement, clientSecret: string, amount: number, currency: string = 'MXN') {
       try {
         console.log('💳 Inicializando Stripe Elements...');
         const stripe = (window as any).Stripe(import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -246,6 +249,10 @@ if (!user) {
 
         const paymentElement = elements.create('payment');
         
+        // Obtener moneda del carrito
+        const cart = getCart();
+        const cartCurrency = cart.currency || 'MXN';
+        
         container.innerHTML = `
           <div class="space-y-6">
             <div>
@@ -259,14 +266,14 @@ if (!user) {
             
             <div class="flex items-center justify-between text-sm">
               <span class="text-muted-foreground">Total a pagar:</span>
-              <span class="font-semibold text-foreground">${formatPrice(amount)}</span>
+              <span class="font-semibold text-foreground">${formatPrice(amount, cartCurrency)}</span>
             </div>
 
             <button 
               id="submit-payment" 
               class="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              Pagar ${formatPrice(amount)}
+              Pagar ${formatPrice(amount, cartCurrency)}
             </button>
 
             <div id="payment-message" class="hidden"></div>
@@ -367,7 +374,7 @@ if (!user) {
               </div>
             </div>
             <div class="flex flex-1 items-end justify-between pt-2">
-              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
+              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price, item.currency || cartCurrency)}</p>
               <div class="ml-4">
                 <span class="text-sm text-muted-foreground">Cantidad: ${item.quantity}</span>
               </div>
@@ -376,6 +383,9 @@ if (!user) {
         </li>
       `).join('');
 
+      // Obtener moneda del carrito
+      const cartCurrency = cart.currency || 'MXN';
+      
       // Calcular totales
       const subtotal = cart.total;
       const discountAmount = appliedDiscount?.amount || 0;
@@ -388,7 +398,7 @@ if (!user) {
       let summaryHTML = `
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">Subtotal</dt>
-          <dd class="text-sm font-medium text-foreground">${formatPrice(subtotal)}</dd>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(subtotal, cartCurrency)}</dd>
         </div>
       `;
 
@@ -396,7 +406,7 @@ if (!user) {
         summaryHTML += `
           <div class="flex items-center justify-between">
             <dt class="text-sm text-green-600">Descuento (${appliedDiscount.code})</dt>
-            <dd class="text-sm font-medium text-green-600">-${formatPrice(discountAmount)}</dd>
+            <dd class="text-sm font-medium text-green-600">-${formatPrice(discountAmount, cartCurrency)}</dd>
           </div>
         `;
       }
@@ -404,15 +414,15 @@ if (!user) {
       summaryHTML += `
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">Envío (4-10 días hábiles)</dt>
-          <dd class="text-sm font-medium text-foreground">${formatPrice(shipping)}</dd>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(shipping, cartCurrency)}</dd>
         </div>
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">Impuestos (IVA 16%)</dt>
-          <dd class="text-sm font-medium text-foreground">${formatPrice(tax)}</dd>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(tax, cartCurrency)}</dd>
         </div>
         <div class="flex items-center justify-between border-t border-border pt-6">
           <dt class="text-base font-medium text-foreground">Total</dt>
-          <dd class="text-base font-medium text-foreground">${formatPrice(total)}</dd>
+          <dd class="text-base font-medium text-foreground">${formatPrice(total, cartCurrency)}</dd>
         </div>
       `;
 
@@ -460,7 +470,7 @@ if (!user) {
             discountCodeId: data.discountCode.id,
             amount: data.discountAmount,
           };
-          messageDiv.textContent = `✓ ${data.message} - Ahorro: ${formatPrice(data.discountAmount)}`;
+          messageDiv.textContent = `✓ ${data.message} - Ahorro: ${formatPrice(data.discountAmount, cartCurrency)}`;
           messageDiv.className = 'mt-2 text-sm text-green-600';
           messageDiv.classList.remove('hidden');
           input.disabled = true;
@@ -584,7 +594,9 @@ if (!user) {
           console.log('✅ Payment Intent creado:', paymentData.paymentIntentId);
 
           // Cargar Stripe con el client_secret real
-          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total);
+          const cart = getCart();
+          const cartCurrency = cart.currency || 'MXN';
+          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, cartCurrency);
 
         } catch (error) {
           console.error('Error:', error);

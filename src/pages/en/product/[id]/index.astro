@@ -7,7 +7,7 @@ import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getLangFromUrl } from "@/i18n/utils";
-import { getProductName, getProductDescription, getProductCategory } from "@/lib/i18n-helpers";
+import { getProductName, getProductDescription, getProductCategory, getProductPriceAndCurrency, formatPriceByCurrency } from "@/lib/i18n-helpers";
 
 // Get product UUID from URL
 const { id: uuid } = Astro.params;
@@ -33,6 +33,12 @@ const productName = getProductName(product, lang);
 const productDesc = getProductDescription(product, lang);
 const productCat = getProductCategory(product, lang);
 
+// Get price and currency according to language
+const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCurrency(product, lang);
+
+// Final price (already in correct currency)
+const productPriceFinal = displayPrice;
+
 // Get related products
 const relatedProducts = await getProducts(4, 0);
 const filteredRelated = relatedProducts.filter(p => {
@@ -47,7 +53,15 @@ const relatedProductsWithImages = await Promise.all(
     const primaryImage = images.find(img => img.is_primary) || images[0];
     const pCat = getProductCategory(p, lang);
     const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(pCat);
-    return { ...p, imageUrl, name: getProductName(p, lang), category: pCat };
+    const { price: pPrice, currency: pCurrency } = getProductPriceAndCurrency(p, lang);
+    return { 
+      ...p, 
+      imageUrl, 
+      name: getProductName(p, lang), 
+      category: pCat,
+      price: pPrice,
+      currency: pCurrency
+    };
   })
 );
 
@@ -62,12 +76,9 @@ const allImages = productImages.length > 0
   ? productImages.map(img => img.image_url)
   : [mainImage, '/images/products/placeholder-hepa-filter.svg', '/images/products/placeholder-cleanroom.svg', '/images/products/placeholder-air-purification.svg'];
 
-// Function to format price
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(price);
+// Function to format price according to currency
+const formatPrice = (price: number, currency: 'MXN' | 'USD' = displayCurrency): string => {
+  return formatPriceByCurrency(price, currency);
 };
 
 // Generate SEO data
@@ -98,8 +109,8 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     ogImageAlt={productName}
     keywords={productKeywords}
     product={{
-      price: product.price,
-      currency: 'USD',
+      price: productPriceFinal,
+      currency: displayCurrency.toUpperCase(),
       availability: product.stock > 0 ? 'in stock' : 'out of stock',
       brand: 'StarFilters'
     }}
@@ -179,7 +190,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           <div class="mt-3">
             <h2 class="sr-only">Product information</h2>
             <p class="text-3xl tracking-tight text-foreground">
-              {formatPrice(product.price)}
+              {formatPrice(productPriceFinal, displayCurrency)}
             </p>
           </div>
 
@@ -280,7 +291,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   type="button"
                   id="add-to-cart-btn"
                   class="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden sm:w-full transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${product.price}, '${product.image_url || ''}', '${productCat || ''}')`}
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${productPriceFinal}, '${product.image_url || ''}', '${productCat || ''}', '${displayCurrency}')`}
                 >
                   Add to Cart
                 </button>
@@ -383,14 +394,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                     <p class="mt-1 text-sm text-muted-foreground">{relatedProduct.category}</p>
                   </div>
                   <p class="text-sm font-medium text-foreground ml-2 flex-shrink-0">
-                    {formatPrice(relatedProduct.price)}
+                    {formatPrice(relatedProduct.price, relatedProduct.currency || displayCurrency)}
                   </p>
                 </div>
                 <div class="mt-auto pt-3">
                   <button
                     type="button"
                     class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}')`}
+                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}', '${relatedProduct.currency || displayCurrency}')`}
                   >
                     Add to Cart
                   </button>
@@ -426,25 +437,37 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   }
 
   // Cart functions
-  function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): void {
+  function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = 'USD'): void {
     const quantitySelect = document.getElementById('quantity') as HTMLSelectElement;
     const quantity = parseInt(quantitySelect?.value || '1');
 
+    // Price already comes in the correct currency according to language (USD for English)
+    const finalPrice = price;
+    const finalCurrency = currency as 'MXN' | 'USD';
+
     // Get current cart
     const cartData = localStorage.getItem('starfilters_cart');
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: finalCurrency };
+
+    // Ensure cart has correct currency
+    if (!cart.currency) {
+      cart.currency = finalCurrency;
+    }
 
     // Check if product already exists
     const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
 
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += quantity;
+      cart.items[existingItemIndex].price = finalPrice; // Update price
+      cart.items[existingItemIndex].currency = finalCurrency; // Update currency
     } else {
       cart.items.push({
         uuid,
         product_id,
         name,
-        price,
+        price: finalPrice,
+        currency: finalCurrency,
         quantity,
         image_url,
         category

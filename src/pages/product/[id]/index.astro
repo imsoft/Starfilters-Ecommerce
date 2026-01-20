@@ -8,7 +8,7 @@ import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getExchangeRate, getVariantPriceInMXN } from "@/lib/currency-service";
 import { getLangFromUrl } from "@/i18n/utils";
-import { getProductName, getProductDescription, getProductCategory } from "@/lib/i18n-helpers";
+import { getProductName, getProductDescription, getProductCategory, getProductPriceAndCurrency, formatPriceByCurrency } from "@/lib/i18n-helpers";
 
 // Obtener UUID del producto de la URL
 const { id: uuid } = Astro.params;
@@ -46,6 +46,15 @@ const productName = getProductName(product, lang);
 const productDesc = getProductDescription(product, lang);
 const productCat = getProductCategory(product, lang);
 
+// Obtener precio y moneda según idioma
+const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCurrency(product, lang);
+
+// Si estamos en español y el producto está en USD, convertir a MXN
+let finalPrice = displayPrice;
+if (lang === 'es' && product.currency === 'USD' && product.price_usd) {
+  finalPrice = convertPriceToMXN(product.price_usd, 'USD');
+}
+
 // Obtener productos relacionados
 const allProducts = await getActiveProducts();
 const relatedProducts = allProducts
@@ -59,7 +68,15 @@ const relatedProducts = allProducts
 const relatedProductsWithImages = relatedProducts.map(p => {
   const pCat = getProductCategory(p, lang);
   const imageUrl = getProductPlaceholderImage(pCat);
-  return { ...p, imageUrl, name: getProductName(p, lang), category: pCat };
+  const { price: pPrice, currency: pCurrency } = getProductPriceAndCurrency(p, lang);
+  return { 
+    ...p, 
+    imageUrl, 
+    name: getProductName(p, lang), 
+    category: pCat,
+    price: pPrice,
+    currency: pCurrency
+  };
 });
 
 // Usar placeholder para imágenes (las imágenes se pueden agregar a Bind después)
@@ -82,25 +99,12 @@ const convertPriceToMXN = (price: number, currency: string): number => {
   return price;
 };
 
-// Convertir precio del producto si está en USD
-const productPriceMXN = product.currency === 'USD' 
-  ? convertPriceToMXN(product.price_usd || product.price, 'USD')
-  : product.price;
+// Precio final según idioma (ya calculado arriba)
+const productPriceFinal = finalPrice;
 
-// Función para formatear precio
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN'
-  }).format(price);
-};
-
-// Función para formatear precio USD
-const formatPriceUSD = (price: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(price);
+// Función para formatear precio según moneda
+const formatPrice = (price: number, currency: 'MXN' | 'USD' = displayCurrency): string => {
+  return formatPriceByCurrency(price, currency);
 };
 
 // Generar datos SEO
@@ -174,21 +178,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-24 sm:px-6 sm:py-32 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
           <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h2>
-          <div class="mt-4" data-product-uuid={product.uuid} data-currency={product.currency || 'MXN'} data-price-usd={product.price_usd || ''}>
-            {product.currency === 'USD' && product.price_usd ? (
-              <div>
-                <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
-                  {formatPrice(productPriceMXN)}
-                </p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                  <span id="main-product-price-usd" data-price-usd={product.price_usd} class="hidden">{formatPriceUSD(product.price_usd)}</span>
-                  {formatPriceUSD(product.price_usd)} USD 
-                  <span id="exchange-rate-info" class="text-xs">(tasa del día: {exchangeRate.toFixed(2)})</span>
-                </p>
-              </div>
-            ) : (
-              <p class="text-3xl tracking-tight text-foreground">
-                {formatPrice(product.price)}
+          <div class="mt-4" data-product-uuid={product.uuid} data-currency={displayCurrency} data-price-usd={product.price_usd || ''}>
+            <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
+              {formatPrice(productPriceFinal, displayCurrency)}
+            </p>
+            {lang === 'es' && product.currency === 'USD' && product.price_usd && (
+              <p class="mt-1 text-sm text-muted-foreground">
+                {formatPrice(product.price_usd, 'USD')} USD 
+                <span id="exchange-rate-info" class="text-xs">(tasa del día: {exchangeRate.toFixed(2)})</span>
               </p>
             )}
           </div>
@@ -283,7 +280,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   type="button"
                   id="add-to-cart-btn"
                   class="flex flex-1 items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${product.currency === 'USD' && product.price_usd ? productPriceMXN : product.price}, '${mainImage}', '${productCat || ''}')`}
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${productPriceFinal}, '${mainImage}', '${productCat || ''}', '${displayCurrency}')`}
                 >
                   Agregar al Carrito
                 </button>
@@ -377,27 +374,28 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                   {relatedVariants.map((variant) => {
-                    const variantPriceMXN = variant.currency === 'USD' && variant.price_usd
-                      ? convertPriceToMXN(variant.price_usd, 'USD')
-                      : variant.price;
+                    // Obtener precio y moneda según idioma para variantes
+                    const { price: variantDisplayPrice, currency: variantDisplayCurrency } = getProductPriceAndCurrency(variant, lang);
+                    let variantFinalPrice = variantDisplayPrice;
+                    if (lang === 'es' && variant.currency === 'USD' && variant.price_usd) {
+                      variantFinalPrice = convertPriceToMXN(variant.price_usd, 'USD');
+                    }
                     
                     return (
-                    <tr class="hover:bg-gray-50 transition-colors" data-product-uuid={variant.uuid} data-currency={variant.currency || 'MXN'} data-price-usd={variant.price_usd || ''}>
+                    <tr class="hover:bg-gray-50 transition-colors" data-product-uuid={variant.uuid} data-currency={variantDisplayCurrency} data-price-usd={variant.price_usd || ''} data-price={variantFinalPrice}>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {variant.nominal_size || '-'}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {variant.real_size || '-'}
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-currency={variant.currency || 'MXN'}>
-                        {variant.currency === 'USD' && variant.price_usd ? (
-                          <div>
-                            <span class="variant-price-mxn font-semibold text-lg">{formatPrice(variantPriceMXN)}</span>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-currency={variantDisplayCurrency}>
+                        <span class="variant-price font-semibold text-lg">{formatPrice(variantFinalPrice, variantDisplayCurrency)}</span>
+                        {lang === 'es' && variant.currency === 'USD' && variant.price_usd && (
+                          <>
                             <br />
-                            <span class="text-xs text-muted-foreground" data-price-usd={variant.price_usd}>{formatPriceUSD(variant.price_usd)} USD</span>
-                          </div>
-                        ) : (
-                          <span class="font-semibold text-lg">{formatPrice(variant.price)}</span>
+                            <span class="text-xs text-muted-foreground" data-price-usd={variant.price_usd}>{formatPrice(variant.price_usd, 'USD')} USD</span>
+                          </>
                         )}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -573,7 +571,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   <button
                     type="button"
                     class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}')`}
+                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}', '${relatedProduct.currency || displayCurrency}')`}
                   >
                     Agregar al Carrito
                   </button>
@@ -610,34 +608,36 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     }
   }
 
-  // Obtener tasa de cambio actual y actualizar precios USD
+  // Obtener tasa de cambio actual y actualizar precios USD (solo para español)
   async function updatePricesWithExchangeRate() {
     try {
       const response = await fetch('/api/exchange-rate');
       const data = await response.json();
       
       if (data.success && data.rate) {
-        // Actualizar precios en la página
+        // Actualizar precios de variantes en la página
         const variantRows = document.querySelectorAll('[data-currency="USD"]');
         variantRows.forEach((row) => {
           const priceUsdElement = row.querySelector('[data-price-usd]');
-          const priceElement = row.querySelector('.variant-price-mxn');
+          const priceElement = row.querySelector('.variant-price');
           
           if (priceUsdElement && priceElement) {
             const priceUSD = parseFloat(priceUsdElement.getAttribute('data-price-usd') || '0');
             const priceMXN = priceUSD * data.rate;
-            priceElement.textContent = formatPrice(priceMXN);
+            priceElement.textContent = formatPrice(priceMXN, 'MXN');
           }
         });
         
         // Actualizar precio principal si está en USD
         const mainPriceElement = document.getElementById('main-product-price');
-        const mainPriceUsdElement = document.getElementById('main-product-price-usd');
+        const mainPriceContainer = document.querySelector('[data-product-uuid="${product.uuid}"]');
         
-        if (mainPriceElement && mainPriceUsdElement) {
-          const priceUSD = parseFloat(mainPriceUsdElement.getAttribute('data-price-usd') || '0');
-          const priceMXN = priceUSD * data.rate;
-          mainPriceElement.textContent = formatPrice(priceMXN);
+        if (mainPriceElement && mainPriceContainer) {
+          const priceUSD = mainPriceContainer.getAttribute('data-price-usd');
+          if (priceUSD) {
+            const priceMXN = parseFloat(priceUSD) * data.rate;
+            mainPriceElement.textContent = formatPrice(priceMXN, 'MXN');
+          }
         }
       }
     } catch (error) {
@@ -645,23 +645,32 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     }
   }
 
-  // Función para formatear precio
-  function formatPrice(price: number): string {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(price);
+  // Función para formatear precio según moneda
+  const currentLang = window.location.pathname.startsWith('/en') ? 'en' : 'es';
+  const defaultCurrency = currentLang === 'en' ? 'USD' : 'MXN';
+  
+  function formatPrice(price: number, currency: string = defaultCurrency): string {
+    return new Intl.NumberFormat(
+      currency === 'USD' ? 'en-US' : 'es-MX',
+      {
+        style: 'currency',
+        currency: currency
+      }
+    ).format(price);
   }
 
-  // Actualizar precios al cargar la página
+  // Actualizar precios al cargar la página (solo si estamos en español y hay productos en USD)
   document.addEventListener('DOMContentLoaded', () => {
-    updatePricesWithExchangeRate();
-    // Actualizar cada hora
-    setInterval(updatePricesWithExchangeRate, 60 * 60 * 1000);
+    const currentLang = window.location.pathname.startsWith('/en') ? 'en' : 'es';
+    if (currentLang === 'es') {
+      updatePricesWithExchangeRate();
+      // Actualizar cada hora
+      setInterval(updatePricesWithExchangeRate, 60 * 60 * 1000);
+    }
   });
 
   // Funciones del carrito
-  async function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): Promise<void> {
+  async function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = 'MXN'): Promise<void> {
     const quantitySelect = document.getElementById('quantity') as HTMLSelectElement;
     const quantity = parseInt(quantitySelect?.value || '1');
 
@@ -671,29 +680,18 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       return;
     }
 
-    // Obtener tasa de cambio actual para convertir precios USD si es necesario
-    let finalPrice = price;
-    try {
-      // Verificar si el producto está en USD (si el precio mostrado es diferente del original)
-      const productData = document.querySelector(`[data-product-uuid="${uuid}"]`) as HTMLElement;
-      const originalCurrency = productData?.getAttribute('data-currency') || 'MXN';
-      const priceUSD = productData?.getAttribute('data-price-usd');
-      
-      if (originalCurrency === 'USD' && priceUSD) {
-        // Obtener tasa de cambio actual
-        const rateResponse = await fetch('/api/exchange-rate');
-        const rateData = await rateResponse.json();
-        if (rateData.success && rateData.rate) {
-          finalPrice = parseFloat(priceUSD) * rateData.rate;
-        }
-      }
-    } catch (error) {
-      console.error('Error obteniendo tasa de cambio para carrito:', error);
-    }
+    // El precio ya viene en la moneda correcta según el idioma
+    const finalPrice = price;
+    const finalCurrency = currency as 'MXN' | 'USD';
 
     // Obtener carrito actual
     const cartData = localStorage.getItem('starfilters_cart');
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: finalCurrency };
+
+    // Asegurar que el carrito tenga la moneda correcta
+    if (!cart.currency) {
+      cart.currency = finalCurrency;
+    }
 
     // Buscar si el producto ya existe
     const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
@@ -710,14 +708,15 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += quantity;
-      // Actualizar precio si cambió la tasa de cambio
-      cart.items[existingItemIndex].price = finalPrice;
+      cart.items[existingItemIndex].price = finalPrice; // Actualizar precio
+      cart.items[existingItemIndex].currency = finalCurrency; // Actualizar moneda
     } else {
       cart.items.push({
         uuid,
         product_id,
         name,
         price: finalPrice,
+        currency: finalCurrency,
         quantity,
         image_url,
         category

@@ -7,6 +7,7 @@ import { getCategoryById } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 import { getExchangeRate } from "@/lib/currency-service";
+import { getProductPriceAndCurrency, formatPriceByCurrency } from "@/lib/i18n-helpers";
 import { getLangFromUrl } from "@/i18n/utils";
 import { getProductName, getProductDescription, getProductCategory, getCategoryName, getCategoryDescription } from "@/lib/i18n-helpers";
 
@@ -93,10 +94,14 @@ try {
       }
     }
     
-    // Convertir precio si está en USD
-    const displayPrice = product.currency === 'USD' && product.price_usd
-      ? convertPriceToMXN(product.price_usd, 'USD')
-      : (product.price || 0);
+    // Obtener precio y moneda según idioma (español = MXN, inglés = USD)
+    const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCurrency(product, lang);
+    
+    // Si estamos en español y el producto está en USD, convertir a MXN
+    let finalPrice = displayPrice;
+    if (lang === 'es' && product.currency === 'USD' && product.price_usd) {
+      finalPrice = convertPriceToMXN(product.price_usd, 'USD');
+    }
 
     return {
       id: product.id,
@@ -104,7 +109,8 @@ try {
       name: getProductName(product, lang),
       description: getProductDescription(product, lang),
       category: getProductCategory(product, lang),
-      price: displayPrice,
+      price: finalPrice,
+      currency: displayCurrency,
       originalPrice: product.price || 0,
       originalCurrency: product.currency || 'MXN',
       priceUSD: product.price_usd || null,
@@ -137,20 +143,9 @@ const convertPriceToMXN = (price: number, currency: string): number => {
   return price;
 };
 
-// Función para formatear precio
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN'
-  }).format(price);
-};
-
-// Función para formatear precio USD
-const formatPriceUSD = (price: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(price);
+// Función para formatear precio según idioma
+const formatPrice = (price: number, currency: 'MXN' | 'USD' = 'MXN'): string => {
+  return formatPriceByCurrency(price, currency);
 };
 
 // Obtener categorías únicas (nombres de categorías)
@@ -373,7 +368,7 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
             data-category={product.category}
             data-price={product.price}
             data-stock={product.stock}
-            data-currency={product.originalCurrency || 'MXN'}
+            data-currency={product.currency || 'MXN'}
             data-price-usd={product.priceUSD || ''}
           >
             <a href={`/product/${product.uuid}`} class="block flex-shrink-0">
@@ -398,11 +393,11 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
                 </p>
                 {product.minPrice !== product.maxPrice ? (
                   <p class="text-sm font-medium text-foreground mt-1">
-                    {formatPrice(product.minPrice)} - {formatPrice(product.maxPrice)}
+                    {formatPrice(product.minPrice, product.currency || 'MXN')} - {formatPrice(product.maxPrice, product.currency || 'MXN')}
                   </p>
                 ) : (
                   <p class="text-lg font-medium text-foreground mt-1">
-                    {formatPrice(product.price)}
+                    {formatPrice(product.price, product.currency || 'MXN')}
                   </p>
                 )}
               </div>
@@ -412,13 +407,8 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
               <div class="mt-2 flex items-center justify-between">
                 <div>
                   <p class="text-lg font-medium text-foreground">
-                    {formatPrice(product.price)}
+                    {formatPrice(product.price, product.currency || 'MXN')}
                   </p>
-                  {product.originalCurrency === 'USD' && product.priceUSD && (
-                    <p class="text-xs text-muted-foreground">
-                      {formatPriceUSD(product.priceUSD)} USD
-                    </p>
-                  )}
                 </div>
                 {product.stock > 0 ? (
                   <span class="text-xs text-green-600 font-medium">
@@ -451,7 +441,7 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
                 <button
                   type="button"
                   class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl}', '${product.category || ''}')`}
+                  onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl}', '${product.category || ''}', '${product.currency || 'MXN'}')`}
                 >
                   Agregar al Carrito
                 </button>
@@ -594,47 +584,34 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
   }
 
   // Función para agregar al carrito desde la grid
-  async function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string): Promise<void> {
-    // El precio ya viene convertido a MXN desde el servidor
-    // pero verificamos si hay un precio USD para actualizar con tasa del día
-    let finalPrice = price;
-    
-    try {
-      // Buscar el elemento del producto para obtener información de moneda
-      const productElement = document.querySelector(`[data-product-uuid="${uuid}"]`) as HTMLElement;
-      if (productElement) {
-        const originalCurrency = productElement.getAttribute('data-currency') || 'MXN';
-        const priceUSD = productElement.getAttribute('data-price-usd');
-        
-        if (originalCurrency === 'USD' && priceUSD) {
-          // Obtener tasa de cambio actual
-          const rateResponse = await fetch('/api/exchange-rate');
-          const rateData = await rateResponse.json();
-          if (rateData.success && rateData.rate) {
-            finalPrice = parseFloat(priceUSD) * rateData.rate;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error obteniendo tasa de cambio para carrito:', error);
-    }
+  async function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = 'MXN'): Promise<void> {
+    // El precio ya viene en la moneda correcta según el idioma (MXN para español, USD para inglés)
+    const finalPrice = price;
+    const finalCurrency = currency as 'MXN' | 'USD';
 
     // Obtener carrito actual
     const cartData = localStorage.getItem('starfilters_cart');
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0 };
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: finalCurrency };
+
+    // Asegurar que el carrito tenga la moneda correcta
+    if (!cart.currency) {
+      cart.currency = finalCurrency;
+    }
 
     // Buscar si el producto ya existe
     const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
 
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += 1;
-      cart.items[existingItemIndex].price = finalPrice; // Actualizar precio con tasa del día
+      cart.items[existingItemIndex].price = finalPrice; // Actualizar precio
+      cart.items[existingItemIndex].currency = finalCurrency; // Actualizar moneda
     } else {
       cart.items.push({
         uuid,
         product_id,
         name,
         price: finalPrice,
+        currency: finalCurrency,
         quantity: 1,
         image_url,
         category

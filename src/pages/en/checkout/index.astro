@@ -202,22 +202,25 @@ if (!user) {
   <script>
     import { getCart } from '@/lib/cart';
 
-    // Function to format price
-    function formatPrice(price: number): string {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-      }).format(price);
+    // Function to format price according to cart currency
+    function formatPrice(price: number, currency: string = 'USD'): string {
+      return new Intl.NumberFormat(
+        currency === 'USD' ? 'en-US' : 'es-MX',
+        {
+          style: 'currency',
+          currency: currency
+        }
+      ).format(price);
     }
 
     // Function to load Stripe Elements directly
-    async function loadStripeForm(container: HTMLElement, clientSecret: string, amount: number) {
+    async function loadStripeForm(container: HTMLElement, clientSecret: string, amount: number, currency: string = 'USD') {
       try {
         // Load Stripe from CDN
         const stripeScript = document.createElement('script');
         stripeScript.src = 'https://js.stripe.com/v3/';
         stripeScript.onload = () => {
-          initializeStripe(container, clientSecret, amount);
+          initializeStripe(container, clientSecret, amount, currency);
         };
         document.head.appendChild(stripeScript);
       } catch (error) {
@@ -227,7 +230,7 @@ if (!user) {
     }
 
     // Function to initialize Stripe
-    function initializeStripe(container: HTMLElement, clientSecret: string, amount: number) {
+    function initializeStripe(container: HTMLElement, clientSecret: string, amount: number, currency: string = 'USD') {
       try {
         console.log('💳 Initializing Stripe Elements...');
         const stripe = (window as any).Stripe(import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -246,6 +249,10 @@ if (!user) {
 
         const paymentElement = elements.create('payment');
         
+        // Get cart currency
+        const cart = getCart();
+        const cartCurrency = cart.currency || 'USD';
+        
         container.innerHTML = `
           <div class="space-y-6">
             <div>
@@ -259,14 +266,14 @@ if (!user) {
             
             <div class="flex items-center justify-between text-sm">
               <span class="text-muted-foreground">Total to pay:</span>
-              <span class="font-semibold text-foreground">${formatPrice(amount)}</span>
+              <span class="font-semibold text-foreground">${formatPrice(amount, cartCurrency)}</span>
             </div>
 
             <button 
               id="submit-payment" 
               class="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              Pay ${formatPrice(amount)}
+              Pay ${formatPrice(amount, cartCurrency)}
             </button>
 
             <div id="payment-message" class="hidden"></div>
@@ -367,7 +374,7 @@ if (!user) {
               </div>
             </div>
             <div class="flex flex-1 items-end justify-between pt-2">
-              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
+              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price, item.currency || cartCurrency)}</p>
               <div class="ml-4">
                 <span class="text-sm text-muted-foreground">Quantity: ${item.quantity}</span>
               </div>
@@ -376,6 +383,9 @@ if (!user) {
         </li>
       `).join('');
 
+      // Get cart currency
+      const cartCurrency = cart.currency || 'USD';
+      
       // Calculate totals
       const subtotal = cart.total;
       const discountAmount = appliedDiscount?.amount || 0;
@@ -388,7 +398,7 @@ if (!user) {
       let summaryHTML = `
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">Subtotal</dt>
-          <dd class="text-sm font-medium text-foreground">${formatPrice(subtotal)}</dd>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(subtotal, cartCurrency)}</dd>
         </div>
       `;
 
@@ -396,7 +406,7 @@ if (!user) {
         summaryHTML += `
           <div class="flex items-center justify-between">
             <dt class="text-sm text-green-600">Discount (${appliedDiscount.code})</dt>
-            <dd class="text-sm font-medium text-green-600">-${formatPrice(discountAmount)}</dd>
+            <dd class="text-sm font-medium text-green-600">-${formatPrice(discountAmount, cartCurrency)}</dd>
           </div>
         `;
       }
@@ -404,15 +414,15 @@ if (!user) {
       summaryHTML += `
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">Shipping (4-10 business days)</dt>
-          <dd class="text-sm font-medium text-foreground">${formatPrice(shipping)}</dd>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(shipping, cartCurrency)}</dd>
         </div>
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">Tax (VAT 16%)</dt>
-          <dd class="text-sm font-medium text-foreground">${formatPrice(tax)}</dd>
+          <dd class="text-sm font-medium text-foreground">${formatPrice(tax, cartCurrency)}</dd>
         </div>
         <div class="flex items-center justify-between border-t border-border pt-6">
           <dt class="text-base font-medium text-foreground">Total</dt>
-          <dd class="text-base font-medium text-foreground">${formatPrice(total)}</dd>
+          <dd class="text-base font-medium text-foreground">${formatPrice(total, cartCurrency)}</dd>
         </div>
       `;
 
@@ -460,7 +470,7 @@ if (!user) {
             discountCodeId: data.discountCode.id,
             amount: data.discountAmount,
           };
-          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(data.discountAmount)}`;
+          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(data.discountAmount, cartCurrency)}`;
           messageDiv.className = 'mt-2 text-sm text-green-600';
           messageDiv.classList.remove('hidden');
           input.disabled = true;
@@ -584,7 +594,9 @@ if (!user) {
           console.log('✅ Payment Intent created:', paymentData.paymentIntentId);
 
           // Load Stripe with real client_secret
-          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total);
+          const cart = getCart();
+          const cartCurrency = cart.currency || 'USD';
+          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, cartCurrency);
 
         } catch (error) {
           console.error('Error:', error);

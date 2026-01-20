@@ -5,6 +5,7 @@ export interface CartItem {
   product_id: number;
   name: string;
   price: number;
+  currency?: 'MXN' | 'USD';
   quantity: number;
   image_url?: string;
   color?: string;
@@ -19,6 +20,7 @@ export interface Cart {
   items: CartItem[];
   total: number;
   itemCount: number;
+  currency?: 'MXN' | 'USD';
 }
 
 // Clave para localStorage

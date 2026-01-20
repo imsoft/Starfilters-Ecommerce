@@ -127,10 +127,14 @@ export const createCheckoutPaymentIntent = async (
       cart_items: cartItemsJSON,
     };
 
-    // Crear Payment Intent
+    // Obtener moneda del carrito (MXN para español, USD para inglés)
+    const cartCurrency = cart.currency || 'MXN';
+    const stripeCurrency = cartCurrency.toLowerCase() as 'mxn' | 'usd';
+
+    // Crear Payment Intent con la moneda del carrito
     const paymentIntent = await createPaymentIntent({
       amount: orderTotals.total,
-      currency: STRIPE_CONFIG.currency,
+      currency: stripeCurrency,
       metadata,
       customer_email: checkoutData.email,
       customer_name: `${checkoutData.firstName} ${checkoutData.lastName}`,

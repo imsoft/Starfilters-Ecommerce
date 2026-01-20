@@ -22,7 +22,7 @@ const recommendedProductsWithImages = await Promise.all(
 const formatPrice = (price: number): string => {
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
-    currency: "MXN",
+    currency: cart.currency || "USD",
   }).format(price);
 };
 ---
@@ -291,7 +291,7 @@ const formatPrice = (price: number): string => {
   function formatPrice(price: number): string {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
-      currency: "MXN",
+      currency: cart.currency || "USD",
     }).format(price);
   }
 
