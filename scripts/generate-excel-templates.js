@@ -158,14 +158,32 @@ const categoriasExample = [
   ],
 ];
 
+// Función helper para aplicar negrita a la primera fila (encabezados)
+function applyBoldHeaders(worksheet, headerCount) {
+  // Aplicar negrita a todas las celdas de la primera fila
+  for (let col = 0; col < headerCount; col++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+    if (!worksheet[cellAddress]) continue;
+    
+    // Crear o actualizar el estilo de la celda
+    worksheet[cellAddress].s = {
+      font: { bold: true },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      fill: { fgColor: { rgb: 'E2E8F0' } }, // Fondo gris claro para encabezados
+    };
+  }
+}
+
 // Crear workbook para productos
 const productosWB = XLSX.utils.book_new();
 const productosWS = XLSX.utils.aoa_to_sheet([productosHeaders, ...productosExample]);
+applyBoldHeaders(productosWS, productosHeaders.length);
 XLSX.utils.book_append_sheet(productosWB, productosWS, 'Productos');
 
 // Crear workbook para categorías
 const categoriasWB = XLSX.utils.book_new();
 const categoriasWS = XLSX.utils.aoa_to_sheet([categoriasHeaders, ...categoriasExample]);
+applyBoldHeaders(categoriasWS, categoriasHeaders.length);
 XLSX.utils.book_append_sheet(categoriasWB, categoriasWS, 'Categorías');
 
 // Escribir archivos
