@@ -287,17 +287,12 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 
     // Agregar event listener para botón de eliminar imagen principal existente
     if (removeExistingPrimaryImageBtn) {
-      console.log('✅ Botón de eliminar imagen principal encontrado:', removeExistingPrimaryImageBtn);
+      console.log('✅ Botón de eliminar imagen principal encontrado');
       removeExistingPrimaryImageBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         console.log('🖱️ Click en botón eliminar imagen principal');
         deletePrimaryImage();
-      });
-      
-      // También agregar mousedown para debugging
-      removeExistingPrimaryImageBtn.addEventListener('mousedown', function(e) {
-        console.log('🖱️ MouseDown en botón eliminar imagen principal');
       });
     } else {
       console.warn('⚠️ No se encontró el botón de eliminar imagen principal');
@@ -378,10 +373,27 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           }
           
           // Guardar la URL en la BD actualizando la categoría
-          await savePrimaryImageToDB(result.url);
-          
-          primaryImageUploadStatus.textContent = '✅ Imagen subida y guardada correctamente';
-          primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+          const saveResponse = await fetch('/api/filter-categories/' + categoryIdNum, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ main_image: result.url }),
+          });
+
+          const saveResult = await saveResponse.json();
+          console.log('📡 Resultado de guardar en BD:', saveResult);
+
+          if (saveResult.success) {
+            primaryImageUploadStatus.textContent = '✅ Imagen subida y guardada correctamente';
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
+            
+            // Recargar después de un momento para mostrar la imagen como principal
+            setTimeout(function() {
+              window.location.reload();
+            }, 1000);
+          } else {
+            primaryImageUploadStatus.textContent = '⚠️ Imagen subida pero error al guardar en BD: ' + (saveResult.message || 'Error desconocido');
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
+          }
         } else {
           primaryImageUploadStatus.textContent = `❌ Error: ${result.error || 'Error desconocido'}`;
           primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
@@ -395,14 +407,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
   }
 
   if (removePrimaryImageBtn) {
-    removePrimaryImageBtn.addEventListener('click', async () => {
-      if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
-        return;
-      }
-
-      // Eliminar de la BD
-      await savePrimaryImageToDB('');
-
+    removePrimaryImageBtn.addEventListener('click', function() {
       if (primaryImagePreview) {
         primaryImagePreview.classList.add('hidden');
       }
@@ -412,90 +417,12 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       if (primaryImageInput) {
         primaryImageInput.value = '';
       }
-
-      // Recargar para actualizar la vista
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    });
-  }
-
-  // Función para configurar el botón de eliminar imagen principal
-  function setupRemovePrimaryImageButton() {
-    const btn = document.getElementById('remove-existing-primary-image');
-    if (btn) {
-      console.log('✅ Botón remove-existing-primary-image encontrado, agregando listener');
-      
-      // Remover listeners anteriores si existen
-      const newBtn = btn.cloneNode(true);
-      btn.parentNode.replaceChild(newBtn, btn);
-      
-      newBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('🗑️ Botón eliminar imagen principal clickeado');
-        
-        if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
-          console.log('❌ Usuario canceló la eliminación');
-          return;
-        }
-
-        try {
-          console.log('🗑️ Eliminando imagen principal de la BD...');
-          const success = await savePrimaryImageToDB('');
-          
-          if (success) {
-            console.log('✅ Imagen principal eliminada correctamente');
-            alert('Imagen principal eliminada correctamente');
-            // Recargar para actualizar la vista
-            setTimeout(() => {
-              window.location.reload();
-            }, 500);
-          } else {
-            console.error('❌ Error al eliminar imagen principal - savePrimaryImageToDB retornó false');
-            alert('Error al eliminar la imagen principal');
-          }
-        } catch (error) {
-          console.error('❌ Error eliminando imagen principal:', error);
-          alert('Error al eliminar la imagen principal: ' + (error instanceof Error ? error.message : 'Error desconocido'));
-        }
-      });
-      
-      return true;
-    }
-    return false;
-  }
-
-  // Intentar configurar el botón inmediatamente
-  if (!setupRemovePrimaryImageButton()) {
-    console.warn('⚠️ Botón remove-existing-primary-image NO encontrado, intentando de nuevo...');
-    
-    // Intentar de nuevo después de un pequeño delay
-    setTimeout(() => {
-      if (!setupRemovePrimaryImageButton()) {
-        console.error('❌ Botón remove-existing-primary-image aún no encontrado después de 1 segundo');
-      }
-    }, 1000);
-    
-    // También usar MutationObserver para detectar cuando se agrega el botón
-    const observer = new MutationObserver(() => {
-      if (setupRemovePrimaryImageButton()) {
-        observer.disconnect();
-        console.log('✅ Botón encontrado mediante MutationObserver');
+      if (primaryImageUploadStatus) {
+        primaryImageUploadStatus.textContent = '';
       }
     });
-    
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-    
-    // Desconectar después de 5 segundos
-    setTimeout(() => {
-      observer.disconnect();
-    }, 5000);
   }
+
 
   // ===== IMÁGENES DE CARRUSEL =====
   const carouselImageInput = document.getElementById('carousel-image-input');
@@ -582,26 +509,6 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     });
   }
 
-  // Función para guardar imagen principal en la BD
-  async function savePrimaryImageToDB(imageUrl: string) {
-    try {
-      const response = await fetch(`/api/filter-categories/${categoryIdNum}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          main_image: imageUrl,
-        }),
-      });
-
-      const result = await response.json();
-      return result.success;
-    } catch (error) {
-      console.error('Error guardando imagen principal en BD:', error);
-      return false;
-    }
-  }
 
   // Función para guardar imagen de carrusel en la BD
   async function saveCarouselImageToDB(imageUrl: string) {
