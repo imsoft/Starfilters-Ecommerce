@@ -25,13 +25,13 @@ const t = useTranslations(lang);
           <div class="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl">
             <div class="hidden sm:mb-10 sm:flex">
               <div
-                class="hero-badge relative rounded-full px-3 py-1 text-sm/6 text-muted-foreground ring-1 ring-border hover:ring-border"
+                class="hero-badge relative rounded-full px-3 py-1 text-sm/6 text-muted-foreground border border-border bg-white/50 backdrop-blur-sm"
               >
                 {t('hero.badge')} <a
                   href={lang === 'en' ? '/en/about' : '/acerca-de'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="font-semibold whitespace-nowrap text-primary"
+                  class="font-semibold whitespace-nowrap text-primary hover:text-primary/80 transition-colors"
                   ><span aria-hidden="true" class="absolute inset-0"></span>{t('hero.badgeLink')}<span aria-hidden="true"> &rarr;</span></a
                 >
               </div>
