@@ -1,0 +1,84 @@
+---
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<div class="bg-gray-900 py-24 sm:py-32">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class="grid grid-cols-1 items-center gap-x-8 gap-y-16 lg:grid-cols-2">
+      <div class="mx-auto w-full max-w-xl lg:mx-0">
+        <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">
+          {t('certificationSection.title')}
+        </h2>
+        <p class="mt-6 text-lg/8 text-gray-300">
+          {t('certificationSection.description')}
+        </p>
+        <div class="mt-8 flex items-center gap-x-6">
+          <a 
+            href={lang === 'en' ? '/en/contact' : '/contacto'} 
+            class="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            {t('certificationSection.cta')}
+          </a>
+          <a 
+            href={lang === 'en' ? '/en/services' : '/servicios'} 
+            class="text-sm font-semibold text-white hover:text-gray-200"
+          >
+            {t('certificationSection.ctaSecondary')} <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+      </div>
+      <div class="mx-auto grid w-full max-w-xl grid-cols-2 items-center gap-y-12 sm:gap-y-14 lg:mx-0 lg:max-w-none lg:pl-8">
+        <!-- ISO 14644 -->
+        <div class="flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-white text-2xl font-bold mb-2">ISO</div>
+            <div class="text-gray-300 text-sm">14644</div>
+          </div>
+        </div>
+
+        <!-- GMP -->
+        <div class="flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-white text-2xl font-bold mb-2">GMP</div>
+            <div class="text-gray-300 text-sm">BPM</div>
+          </div>
+        </div>
+
+        <!-- NEBB -->
+        <div class="flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-white text-2xl font-bold mb-2">NEBB</div>
+            <div class="text-gray-300 text-sm">Certified</div>
+          </div>
+        </div>
+
+        <!-- ASHRAE -->
+        <div class="flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-white text-2xl font-bold mb-2">ASHRAE</div>
+            <div class="text-gray-300 text-sm">Standards</div>
+          </div>
+        </div>
+
+        <!-- ISO 9001 -->
+        <div class="flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-white text-2xl font-bold mb-2">ISO</div>
+            <div class="text-gray-300 text-sm">9001</div>
+          </div>
+        </div>
+
+        <!-- NOM -->
+        <div class="flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-white text-2xl font-bold mb-2">NOM</div>
+            <div class="text-gray-300 text-sm">Mexican Standards</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

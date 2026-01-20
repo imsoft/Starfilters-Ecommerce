@@ -95,6 +95,12 @@ export const ui = {
 
     // Logo Section
     'logoSection.title': 'Presencia en las industrias más exigentes',
+    
+    // Certification Section
+    'certificationSection.title': 'Star Filters cuenta con las certificaciones más exigentes de la industria',
+    'certificationSection.description': 'Nuestras soluciones están respaldadas por certificaciones internacionales que avalan su calidad, desempeño y confiabilidad. En Star Filters no solo cumplimos la normativa: superamos los estándares para garantizar máxima seguridad y eficiencia en los entornos más exigentes.',
+    'certificationSection.cta': 'Contáctanos',
+    'certificationSection.ctaSecondary': 'Nuestros servicios',
 
     // Footer
     // About
@@ -314,6 +320,12 @@ export const ui = {
 
     // Logo Section
     'logoSection.title': 'Presence in the most demanding industries',
+    
+    // Certification Section
+    'certificationSection.title': 'Star Filters has the most demanding certifications in the industry',
+    'certificationSection.description': 'Our solutions are backed by international certifications that validate their quality, performance, and reliability. At Star Filters, we don\'t just meet regulations: we exceed standards to ensure maximum safety and efficiency in the most demanding environments.',
+    'certificationSection.cta': 'Contact us',
+    'certificationSection.ctaSecondary': 'Our services',
 
     // About
     'about.badge': 'Our History',
