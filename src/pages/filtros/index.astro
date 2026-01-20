@@ -6,6 +6,7 @@ import { getActiveCategories } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 import { getLangFromUrl } from "@/i18n/utils";
+import { getCategoryName, getCategoryDescription } from "@/lib/i18n-helpers";
 
 export const prerender = false;
 
@@ -144,11 +145,11 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 />
               </div>
               <h3 class="mt-4 text-lg text-foreground font-semibold group-hover:text-primary transition-colors">
-                {category.name}
+                {getCategoryName(category, lang)}
               </h3>
-              {category.description && (
+              {getCategoryDescription(category, lang) && (
                 <p class="mt-2 text-sm text-muted-foreground line-clamp-3">
-                  {category.description}
+                  {getCategoryDescription(category, lang)}
                 </p>
               )}
               <div class="mt-auto pt-4">

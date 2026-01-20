@@ -7,6 +7,8 @@ import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getExchangeRate, getVariantPriceInMXN } from "@/lib/currency-service";
+import { getLangFromUrl } from "@/i18n/utils";
+import { getProductName, getProductDescription, getProductCategory } from "@/lib/i18n-helpers";
 
 // Obtener UUID del producto de la URL
 const { id: uuid } = Astro.params;
@@ -15,6 +17,9 @@ const { id: uuid } = Astro.params;
 if (!uuid || typeof uuid !== 'string') {
   return Astro.redirect('/filtros');
 }
+
+// Detectar idioma actual
+const lang = getLangFromUrl(Astro.url);
 
 // Obtener producto desde la base de datos local
 const product = await getProductByUuid(uuid);
@@ -36,20 +41,29 @@ if (product.filter_category_id) {
   }
 }
 
+// Obtener nombres traducidos
+const productName = getProductName(product, lang);
+const productDesc = getProductDescription(product, lang);
+const productCat = getProductCategory(product, lang);
+
 // Obtener productos relacionados
 const allProducts = await getActiveProducts();
 const relatedProducts = allProducts
-  .filter(p => p.uuid !== product.uuid && p.category === product.category)
+  .filter(p => {
+    const pCat = getProductCategory(p, lang);
+    return p.uuid !== product.uuid && pCat === productCat;
+  })
   .slice(0, 3);
 
 // Preparar productos relacionados con imágenes
-const relatedProductsWithImages = relatedProducts.map(product => {
-  const imageUrl = getProductPlaceholderImage(product.category);
-  return { ...product, imageUrl };
+const relatedProductsWithImages = relatedProducts.map(p => {
+  const pCat = getProductCategory(p, lang);
+  const imageUrl = getProductPlaceholderImage(pCat);
+  return { ...p, imageUrl, name: getProductName(p, lang), category: pCat };
 });
 
 // Usar placeholder para imágenes (las imágenes se pueden agregar a Bind después)
-const mainImage = getProductPlaceholderImage(product.category);
+const mainImage = getProductPlaceholderImage(productCat);
 const allImages = [
   mainImage,
   '/images/products/placeholder-hepa-filter.svg',
@@ -92,29 +106,29 @@ const formatPriceUSD = (price: number): string => {
 // Generar datos SEO
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const productKeywords = generateProductKeywords(product);
-const productDescription = extractTextFromHTML(product.description || '', 160);
+const productDescription = extractTextFromHTML(productDesc || '', 160);
 const productSchema = generateProductSchema(product, siteUrl);
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Inicio', url: siteUrl },
   { name: 'Productos', url: `${siteUrl}/filtros` },
-  { name: product.name, url: `${siteUrl}/product/${product.bind_id}` }
+  { name: productName, url: `${siteUrl}/product/${product.bind_id}` }
 ]);
 ---
 
 <WebsiteLayout
-  title={product.name}
-  seoTitle={`${product.name} - Comprar en StarFilters`}
+  title={productName}
+  seoTitle={`${productName} - Comprar en StarFilters`}
   description={productDescription}
   keywords={productKeywords}
   ogImage={mainImage}
 >
   <SEO
     slot="seo"
-    title={product.name}
+    title={productName}
     description={productDescription}
     ogType="product"
     ogImage={mainImage}
-    ogImageAlt={product.name}
+    ogImageAlt={productName}
     keywords={productKeywords}
     product={{
       price: product.price,
@@ -150,7 +164,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
             </svg>
           </li>
-          <li class="text-foreground font-medium">{product.name}</li>
+          <li class="text-foreground font-medium">{productName}</li>
         </ol>
       </nav>
     </div>
@@ -159,7 +173,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       <!-- Technical Specifications Section -->
       <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-24 sm:px-6 sm:py-32 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
-          <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{product.name}</h2>
+          <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h2>
           <div class="mt-4" data-product-uuid={product.uuid} data-currency={product.currency || 'MXN'} data-price-usd={product.price_usd || ''}>
             {product.currency === 'USD' && product.price_usd ? (
               <div>
@@ -206,13 +220,13 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
           <!-- Descripción -->
           <div class="mt-6 text-base text-muted-foreground">
-            <p>{product.description}</p>
+            <p>{productDesc}</p>
           </div>
 
           <dl class="mt-10 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
             <div class="border-t border-border pt-4">
               <dt class="font-medium text-foreground">Categoría</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">{product.category || 'No especificada'}</dd>
+              <dd class="mt-2 text-sm text-muted-foreground">{productCat || (lang === 'en' ? 'Not specified' : 'No especificada')}</dd>
             </div>
             {product.uuid && (
               <div class="border-t border-border pt-4">
@@ -269,7 +283,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   type="button"
                   id="add-to-cart-btn"
                   class="flex flex-1 items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${product.name}', ${product.currency === 'USD' && product.price_usd ? productPriceMXN : product.price}, '${mainImage}', '${product.category || ''}')`}
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${product.currency === 'USD' && product.price_usd ? productPriceMXN : product.price}, '${mainImage}', '${productCat || ''}')`}
                 >
                   Agregar al Carrito
                 </button>

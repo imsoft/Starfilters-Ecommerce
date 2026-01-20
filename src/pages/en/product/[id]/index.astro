@@ -6,6 +6,8 @@ import { getProductByUuid, getProducts, getProductImages } from "@/lib/database"
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
+import { getLangFromUrl } from "@/i18n/utils";
+import { getProductName, getProductDescription, getProductCategory } from "@/lib/i18n-helpers";
 
 // Get product UUID from URL
 const { id: uuid } = Astro.params;
@@ -15,6 +17,9 @@ if (!uuid || typeof uuid !== 'string') {
   return Astro.redirect('/en/filtros');
 }
 
+// Detect current language
+const lang = getLangFromUrl(Astro.url);
+
 // Get product from database by UUID
 const product = await getProductByUuid(uuid);
 
@@ -23,17 +28,26 @@ if (!product) {
   return Astro.redirect('/en/filtros');
 }
 
+// Get translated names
+const productName = getProductName(product, lang);
+const productDesc = getProductDescription(product, lang);
+const productCat = getProductCategory(product, lang);
+
 // Get related products
 const relatedProducts = await getProducts(4, 0);
-const filteredRelated = relatedProducts.filter(p => p.uuid !== product.uuid).slice(0, 3);
+const filteredRelated = relatedProducts.filter(p => {
+  const pCat = getProductCategory(p, lang);
+  return p.uuid !== product.uuid && pCat === productCat;
+}).slice(0, 3);
 
 // Get related products with images
 const relatedProductsWithImages = await Promise.all(
-  filteredRelated.map(async (product) => {
-    const images = await getProductImages(product.id);
+  filteredRelated.map(async (p) => {
+    const images = await getProductImages(p.id);
     const primaryImage = images.find(img => img.is_primary) || images[0];
-    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(product.category);
-    return { ...product, imageUrl };
+    const pCat = getProductCategory(p, lang);
+    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(pCat);
+    return { ...p, imageUrl, name: getProductName(p, lang), category: pCat };
   })
 );
 
@@ -43,7 +57,7 @@ const primaryImage = productImages.find(img => img.is_primary) || productImages[
 const galleryImages = productImages.filter(img => !img.is_primary);
 
 // If no images in product_images, use placeholder
-const mainImage = primaryImage?.image_url || getProductPlaceholderImage(product.category);
+const mainImage = primaryImage?.image_url || getProductPlaceholderImage(productCat);
 const allImages = productImages.length > 0 
   ? productImages.map(img => img.image_url)
   : [mainImage, '/images/products/placeholder-hepa-filter.svg', '/images/products/placeholder-cleanroom.svg', '/images/products/placeholder-air-purification.svg'];
@@ -59,29 +73,29 @@ const formatPrice = (price: number): string => {
 // Generate SEO data
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const productKeywords = generateProductKeywords(product);
-const productDescription = extractTextFromHTML(product.description || '', 160);
+const productDescription = extractTextFromHTML(productDesc || '', 160);
 const productSchema = generateProductSchema(product, siteUrl);
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: `${siteUrl}/en` },
   { name: 'Products', url: `${siteUrl}/en/filters` },
-  { name: product.name, url: `${siteUrl}/en/product/${product.uuid}` }
+  { name: productName, url: `${siteUrl}/en/product/${product.uuid}` }
 ]);
 ---
 
 <WebsiteLayout
-  title={product.name}
-  seoTitle={`${product.name} - Buy at StarFilters`}
+  title={productName}
+  seoTitle={`${productName} - Buy at StarFilters`}
   description={productDescription}
   keywords={productKeywords}
   ogImage={product.image_url}
 >
   <SEO
     slot="seo"
-    title={product.name}
+    title={productName}
     description={productDescription}
     ogType="product"
     ogImage={product.image_url}
-    ogImageAlt={product.name}
+    ogImageAlt={productName}
     keywords={productKeywords}
     product={{
       price: product.price,
@@ -117,7 +131,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
             </svg>
           </li>
-          <li class="text-foreground font-medium">{product.name}</li>
+          <li class="text-foreground font-medium">{productName}</li>
         </ol>
       </nav>
     </div>
@@ -138,7 +152,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 >
                   <span class="sr-only">View {index + 1}</span>
                   <span class="absolute inset-0 overflow-hidden rounded-md">
-                    <img src={image} alt={`View ${index + 1} of ${product.name}`} class="h-full w-full object-cover object-center" />
+                    <img src={image} alt={`View ${index + 1} of ${productName}`} class="h-full w-full object-cover object-center" />
                   </span>
                 </button>
               ))}
@@ -149,7 +163,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           <div class="aspect-h-1 aspect-w-1 w-full">
             <LazyImage
               src={mainImage}
-              alt={product.name}
+              alt={productName}
               class="h-full w-full object-cover object-center sm:rounded-lg"
               priority={true}
             />
@@ -159,7 +173,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         <!-- Product information -->
         <div class="mt-10 px-4 sm:mt-16 sm:px-0 lg:mt-0">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">
-            {product.name}
+            {productName}
           </h1>
 
           <div class="mt-3">
@@ -199,7 +213,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           <div class="mt-6">
             <h3 class="sr-only">Description</h3>
             <div class="space-y-6 text-base text-muted-foreground">
-              <p>{product.description}</p>
+              <p>{productDesc}</p>
             </div>
           </div>
 
@@ -266,7 +280,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   type="button"
                   id="add-to-cart-btn"
                   class="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-hidden sm:w-full transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.image_url || ''}', '${product.category || ''}')`}
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${product.price}, '${product.image_url || ''}', '${productCat || ''}')`}
                 >
                   Add to Cart
                 </button>
@@ -312,14 +326,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             <div class="mt-4 space-y-6">
               <div>
                 <h3 class="text-sm font-medium text-foreground">Category</h3>
-                <p class="mt-2 text-sm text-muted-foreground">{product.category}</p>
+                <p class="mt-2 text-sm text-muted-foreground">{productCat}</p>
               </div>
 
               {product.description && (
                 <div>
                   <h3 class="text-sm font-medium text-foreground">Description</h3>
                   <div class="mt-2 prose prose-sm text-muted-foreground">
-                    <p>{product.description}</p>
+                    <p>{productDesc}</p>
                   </div>
                 </div>
               )}

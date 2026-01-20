@@ -7,8 +7,13 @@ import { getCategoryById } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 import { getExchangeRate } from "@/lib/currency-service";
+import { getLangFromUrl } from "@/i18n/utils";
+import { getProductName, getProductDescription, getProductCategory, getCategoryName, getCategoryDescription } from "@/lib/i18n-helpers";
 
 export const prerender = false;
+
+// Detectar idioma actual
+const lang = getLangFromUrl(Astro.url);
 
 // Obtener parámetro de filter_category_id de la URL
 const filterCategoryIdParam = Astro.url.searchParams.get('filter_category_id');
@@ -22,8 +27,8 @@ if (filterCategoryId) {
     if (category) {
       categoryInfo = {
         id: category.id,
-        name: category.name,
-        description: category.description || undefined
+        name: getCategoryName(category, lang),
+        description: getCategoryDescription(category, lang)
       };
     }
   } catch (error) {
@@ -96,9 +101,9 @@ try {
     return {
       id: product.id,
       uuid: product.uuid,
-      name: product.name,
-      description: product.description || '',
-      category: product.category || 'Sin categoría',
+      name: getProductName(product, lang),
+      description: getProductDescription(product, lang),
+      category: getProductCategory(product, lang),
       price: displayPrice,
       originalPrice: product.price || 0,
       originalCurrency: product.currency || 'MXN',
