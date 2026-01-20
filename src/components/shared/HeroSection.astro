@@ -25,9 +25,9 @@ const t = useTranslations(lang);
           <div class="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl">
             <div class="hidden sm:mb-10 sm:flex">
               <div
-                class="hero-badge relative rounded-full px-3 py-1 text-sm/6 text-muted-foreground border border-border bg-white/50 backdrop-blur-sm"
+                class="hero-badge relative rounded-full px-3 py-1 text-sm/6 text-muted-foreground border border-border bg-white/50 backdrop-blur-sm whitespace-nowrap flex items-center gap-1"
               >
-                {t('hero.badge')} <a
+                <span>{t('hero.badge')}</span> <a
                   href={lang === 'en' ? '/en/about' : '/acerca-de'}
                   target="_blank"
                   rel="noopener noreferrer"
