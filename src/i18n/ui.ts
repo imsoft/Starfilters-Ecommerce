@@ -46,7 +46,7 @@ export const ui = {
     'features.installation.title': 'Filtros de Aire',
     'features.installation.description': 'Eficiencia en cada etapa. Sistemas de control de partículas y contaminantes en el aire desde prefiltros hasta filtros HEPA, para un aire limpio y procesos confiables.',
     'features.technology.title': 'Servicios de Validación',
-    'features.technology.description': 'Certificación que garantiza resultados. Pruebas y validaciones NEBB que aseguran el desempeño y cumplimiento normativo de cuartos limpios.',
+    'features.technology.description': 'Ofrecemos servicios especializados de validación para garantizar el correcto funcionamiento y desempeño de los sistemas de filtración y control de partículas en cuartos limpios y áreas críticas basado en normativas aplicables.',
     'features.support.title': 'Accesorios para Cuartos Limpios',
     'features.support.description': 'Todo para tu cuarto limpio. Unidades Manejadoras de Aire, Puertas y Ventanas especializadas, Air Showers, Gabinetes, listos para integrar tu proyecto.',
 
