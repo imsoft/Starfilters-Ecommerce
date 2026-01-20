@@ -9,6 +9,7 @@ import {
   getUserStats, 
   getConversionFunnel 
 } from "@/lib/database";
+import { getExchangeRate } from "@/lib/currency-service";
 
 // Obtener datos del dashboard con manejo de errores
 let stats = {
@@ -74,6 +75,29 @@ try {
   console.error('❌ Error obteniendo embudo de conversión:', error);
 }
 
+// Obtener tasa de cambio USD a MXN
+let exchangeRate = 17.0;
+let exchangeRateDate = '';
+try {
+  console.log('🔍 Obteniendo tasa de cambio USD->MXN...');
+  exchangeRate = await getExchangeRate();
+  console.log(`💱 Tasa de cambio obtenida: ${exchangeRate}`);
+  
+  // Obtener fecha de última actualización
+  try {
+    const rateResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    if (rateResponse.ok) {
+      const rateData = await rateResponse.json();
+      exchangeRateDate = rateData.date || new Date().toISOString().split('T')[0];
+    }
+  } catch (error) {
+    console.error('Error obteniendo fecha de tasa:', error);
+    exchangeRateDate = new Date().toISOString().split('T')[0];
+  }
+} catch (error) {
+  console.error('❌ Error obteniendo tasa de cambio:', error);
+}
+
 // Función para formatear moneda
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('es-MX', {
@@ -101,7 +125,7 @@ const getProductStatus = (stock: number) => {
       </div>
 
       <!-- Estadísticas rápidas -->
-      <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
         <div class="rounded-lg border border-border bg-background p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
@@ -154,6 +178,23 @@ const getProductStatus = (stock: number) => {
             <div class="ml-4">
               <p class="text-sm font-medium text-muted-foreground">Clientes Activos</p>
               <p class="text-2xl font-semibold text-foreground">{stats.totalUsers}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-border bg-background p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <svg class="h-8 w-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-muted-foreground">Tasa de Cambio USD</p>
+              <p class="text-2xl font-semibold text-foreground">${exchangeRate.toFixed(2)} MXN</p>
+              {exchangeRateDate && (
+                <p class="text-xs text-muted-foreground mt-1">Actualizado: {exchangeRateDate}</p>
+              )}
             </div>
           </div>
         </div>
