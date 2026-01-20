@@ -267,7 +267,7 @@ export const ui = {
     'features.technology.title': 'Validation Services',
     'features.technology.description': 'We offer specialized validation services to ensure the correct operation and performance of filtration and particle control systems in cleanrooms and critical areas based on applicable regulations.',
     'features.support.title': 'Cleanroom Accessories',
-    'features.support.description': 'Everything for your cleanroom. Air Handling Units, specialized doors and windows, air showers, cabinets, ready to integrate into your project.',
+    'features.support.description': 'Everything for your cleanroom. Air Handling Units, specialized Doors and Windows, Air Showers, Cabinets, ready to integrate into your project, differential pressure manometers, fast canvas curtain, pass through',
 
     // Cleanrooms
     'cleanrooms.badge': 'StarFilters - Controlled Environment Experts',
