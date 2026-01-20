@@ -4,6 +4,16 @@ import { createProduct } from '@/lib/product-service';
 import { generateUUID } from '@/lib/database';
 import { getFilterCategoryIdByName } from '@/lib/filter-category-service';
 
+// Función helper para normalizar listas separadas por comas
+// Maneja tanto "item1, item2" como "item1,item2" y los normaliza
+function normalizeCommaSeparatedList(value: string): string {
+  return value
+    .split(',')
+    .map(item => item.trim())
+    .filter(item => item.length > 0)
+    .join(', ');
+}
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const formData = await request.formData();
@@ -144,6 +154,9 @@ export const POST: APIRoute = async ({ request }) => {
             } else if (mappedField === 'currency') {
               const currencyValue = String(value).toUpperCase();
               productData[mappedField] = ['MXN', 'USD'].includes(currencyValue) ? currencyValue : 'MXN';
+            } else if (mappedField === 'tags' || mappedField === 'images_carousel') {
+              // Normalizar listas separadas por comas (tags e imágenes del carrusel)
+              productData[mappedField] = normalizeCommaSeparatedList(String(value));
             } else {
               productData[mappedField] = String(value).trim();
             }
