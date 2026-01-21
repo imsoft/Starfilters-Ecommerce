@@ -82,12 +82,17 @@ export function getProductPriceAndCurrency(
   }
   
   // En español, usar MXN
-  // Si el producto está en USD, convertir a MXN
-  if (product.currency === 'USD' && product.price_usd) {
-    // Esto se manejará con la tasa de cambio en las páginas
-    return { price: product.price, currency: 'MXN' };
+  // Si el producto está en USD, usar price_usd para la conversión (se convertirá en las páginas)
+  if (product.currency === 'USD') {
+    // Si tiene price_usd, usarlo (será convertido a MXN en las páginas)
+    if (product.price_usd && product.price_usd > 0) {
+      return { price: product.price_usd, currency: 'USD' };
+    }
+    // Si no tiene price_usd pero está marcado como USD, usar price
+    return { price: product.price, currency: 'USD' };
   }
   
+  // Producto en MXN
   return { price: product.price, currency: 'MXN' };
 }
 

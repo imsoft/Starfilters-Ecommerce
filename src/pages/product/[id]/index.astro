@@ -51,8 +51,11 @@ const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCur
 
 // Si estamos en español y el producto está en USD, convertir a MXN
 let finalPrice = displayPrice;
-if (lang === 'es' && product.currency === 'USD' && product.price_usd) {
-  finalPrice = convertPriceToMXN(product.price_usd, 'USD');
+let finalCurrency = displayCurrency;
+if (lang === 'es' && displayCurrency === 'USD') {
+  // Convertir USD a MXN usando la tasa de cambio
+  finalPrice = convertPriceToMXN(displayPrice, 'USD');
+  finalCurrency = 'MXN';
 }
 
 // Obtener productos relacionados
@@ -103,7 +106,7 @@ const convertPriceToMXN = (price: number, currency: string): number => {
 const productPriceFinal = finalPrice;
 
 // Función para formatear precio según moneda
-const formatPrice = (price: number, currency: 'MXN' | 'USD' = displayCurrency): string => {
+const formatPrice = (price: number, currency: 'MXN' | 'USD' = finalCurrency): string => {
   return formatPriceByCurrency(price, currency);
 };
 
@@ -178,9 +181,9 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-24 sm:px-6 sm:py-32 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
           <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h2>
-          <div class="mt-4" data-product-uuid={product.uuid} data-currency={displayCurrency} data-price-usd={product.price_usd || ''}>
+          <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''}>
             <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
-              {formatPrice(productPriceFinal, displayCurrency)}
+              {formatPrice(productPriceFinal, finalCurrency)}
             </p>
             {lang === 'es' && product.currency === 'USD' && product.price_usd && (
               <p class="mt-1 text-sm text-muted-foreground">
@@ -280,7 +283,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   type="button"
                   id="add-to-cart-btn"
                   class="flex flex-1 items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${productPriceFinal}, '${mainImage}', '${productCat || ''}', '${displayCurrency}')`}
+                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${productPriceFinal}, '${mainImage}', '${productCat || ''}', '${finalCurrency}')`}
                 >
                   Agregar al Carrito
                 </button>
@@ -377,20 +380,23 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                     // Obtener precio y moneda según idioma para variantes
                     const { price: variantDisplayPrice, currency: variantDisplayCurrency } = getProductPriceAndCurrency(variant, lang);
                     let variantFinalPrice = variantDisplayPrice;
-                    if (lang === 'es' && variant.currency === 'USD' && variant.price_usd) {
-                      variantFinalPrice = convertPriceToMXN(variant.price_usd, 'USD');
+                    let variantFinalCurrency = variantDisplayCurrency;
+                    if (lang === 'es' && variantDisplayCurrency === 'USD') {
+                      // Convertir USD a MXN usando la tasa de cambio
+                      variantFinalPrice = convertPriceToMXN(variantDisplayPrice, 'USD');
+                      variantFinalCurrency = 'MXN';
                     }
                     
                     return (
-                    <tr class="hover:bg-gray-50 transition-colors" data-product-uuid={variant.uuid} data-currency={variantDisplayCurrency} data-price-usd={variant.price_usd || ''} data-price={variantFinalPrice}>
+                    <tr class="hover:bg-gray-50 transition-colors" data-product-uuid={variant.uuid} data-currency={variantFinalCurrency} data-price-usd={variant.price_usd || ''} data-price={variantFinalPrice}>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {variant.nominal_size || '-'}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {variant.real_size || '-'}
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-currency={variantDisplayCurrency}>
-                        <span class="variant-price font-semibold text-lg">{formatPrice(variantFinalPrice, variantDisplayCurrency)}</span>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-currency={variantFinalCurrency}>
+                        <span class="variant-price font-semibold text-lg">{formatPrice(variantFinalPrice, variantFinalCurrency)}</span>
                         {lang === 'es' && variant.currency === 'USD' && variant.price_usd && (
                           <>
                             <br />

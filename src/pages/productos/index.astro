@@ -99,8 +99,11 @@ try {
     
     // Si estamos en español y el producto está en USD, convertir a MXN
     let finalPrice = displayPrice;
-    if (lang === 'es' && product.currency === 'USD' && product.price_usd) {
-      finalPrice = convertPriceToMXN(product.price_usd, 'USD');
+    let finalCurrency = displayCurrency;
+    if (lang === 'es' && displayCurrency === 'USD') {
+      // Convertir USD a MXN usando la tasa de cambio
+      finalPrice = convertPriceToMXN(displayPrice, 'USD');
+      finalCurrency = 'MXN';
     }
 
     return {
@@ -110,7 +113,7 @@ try {
       description: getProductDescription(product, lang),
       category: getProductCategory(product, lang),
       price: finalPrice,
-      currency: displayCurrency,
+      currency: finalCurrency,
       originalPrice: product.price || 0,
       originalCurrency: product.currency || 'MXN',
       priceUSD: product.price_usd || null,
