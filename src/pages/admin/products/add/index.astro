@@ -402,8 +402,8 @@ if (Astro.request.method === "POST") {
       const finalImages = await getProductImages(productId);
       console.log(`📷 Imágenes finales en BD antes de redirigir: ${finalImages.length}`);
       
-      // Redirigir a la página de edición después de crear
-      return Astro.redirect(`/admin/products/edit/${productId}`);
+      // Redirigir a la lista de productos después de crear
+      return Astro.redirect(`/admin/products`);
     }
   } catch (err) {
     console.error("Error creando producto:", err);

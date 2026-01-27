@@ -186,8 +186,8 @@ if (Astro.request.method === "POST") {
       }
 
       success = true;
-      // Redirigir a la página de edición después de crear
-      return Astro.redirect(`/admin/filter-categories/edit/${categoryId}`);
+      // Redirigir a la lista de categorías después de crear
+      return Astro.redirect(`/admin/filter-categories`);
     }
   } catch (err) {
     console.error("Error creando categoría:", err);
