@@ -129,7 +129,7 @@ export const ui = {
     'about.values.service.title': 'Servicio al Cliente',
     'about.values.service.description': 'Ofrecemos soporte técnico continuo y atención personalizada para garantizar la satisfacción total de nuestros clientes.',
 
-    'footer.tagline': 'Star Filters es el especialista en cuartos limpios, air showers, validación NEBB y filtros de aire.',
+    'footer.tagline': 'Líder en control de partículas y control de contaminación.',
     'footer.solutions': 'Soluciones',
     'footer.solutions.hepa': 'Filtros HEPA',
     'footer.solutions.cleanrooms': 'Cuartos Limpios',
@@ -354,7 +354,7 @@ export const ui = {
     'about.values.service.description': 'We offer continuous technical support and personalized attention to guarantee total customer satisfaction.',
 
     // Footer
-    'footer.tagline': 'Star Filters is the specialist in cleanrooms, air showers, NEBB validation and air filters.',
+    'footer.tagline': 'Leader in particle control and contamination control.',
     'footer.solutions': 'Solutions',
     'footer.solutions.hepa': 'HEPA Filters',
     'footer.solutions.cleanrooms': 'Cleanrooms',
