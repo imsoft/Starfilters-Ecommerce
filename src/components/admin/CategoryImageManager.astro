@@ -110,6 +110,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             id="primary-image-input"
             accept="image/*"
             class="hidden"
+            name=""
           />
         </label>
         <div id="primary-image-upload-status" class="mt-2 text-sm"></div>
@@ -188,6 +189,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             accept="image/*"
             multiple
             class="hidden"
+            name=""
           />
         </label>
         <div id="carousel-image-upload-status" class="mt-2 text-sm"></div>
@@ -324,10 +326,16 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     });
 
   if (primaryImageInput) {
+    console.log('✅ Input de imagen principal encontrado, agregando listener');
     primaryImageInput.addEventListener('change', async (e) => {
+      console.log('📤 Evento change en input de imagen principal');
       const target = e.target;
       const file = target && target.files ? target.files[0] : null;
-      if (!file) return;
+      console.log('📤 Archivo seleccionado:', file ? file.name : 'ninguno');
+      if (!file) {
+        console.log('⚠️ No se seleccionó archivo');
+        return;
+      }
 
       // Validar tamaño (10MB)
       if (file.size > 10 * 1024 * 1024) {
@@ -352,14 +360,26 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         formData.append('categoryId', categoryIdNum.toString());
         formData.append('imageType', 'primary');
 
+        console.log('📤 Subiendo imagen principal...');
         const response = await fetch('/api/filter-categories/upload-image', {
           method: 'POST',
           body: formData,
         });
 
-        const result = await response.json();
+        console.log('📡 Respuesta HTTP:', response.status, response.statusText);
+        
+        let result;
+        try {
+          const text = await response.text();
+          result = text ? JSON.parse(text) : { success: false, error: 'Respuesta vacía' };
+        } catch (parseError) {
+          console.error('❌ Error parseando respuesta:', parseError);
+          result = { success: false, error: 'Error al procesar la respuesta del servidor' };
+        }
 
-        if (result.success && result.url) {
+        console.log('📡 Resultado:', result);
+
+        if (response.ok && result.success && result.url) {
           // Ocultar imagen existente si hay una
           if (existingPrimaryImage) {
             existingPrimaryImage.classList.add('hidden');
@@ -395,7 +415,9 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             primaryImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
           }
         } else {
-          primaryImageUploadStatus.textContent = `❌ Error: ${result.error || 'Error desconocido'}`;
+          const errorMsg = result.error || result.message || 'Error desconocido';
+          console.error('❌ Error subiendo imagen principal:', errorMsg);
+          primaryImageUploadStatus.textContent = `❌ Error: ${errorMsg}`;
           primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
         }
       } catch (error) {
@@ -430,14 +452,25 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
   const maxCarouselImages = 4;
 
   if (carouselImageInput) {
+    console.log('✅ Input de carrusel encontrado, agregando listener');
     carouselImageInput.addEventListener('change', async (e) => {
+      console.log('📤 Evento change en input de carrusel');
       const target = e.target;
       const files = target && target.files ? Array.from(target.files) : [];
-      if (files.length === 0) return;
+      console.log('📤 Archivos seleccionados:', files.length);
+      if (files.length === 0) {
+        console.log('⚠️ No se seleccionaron archivos');
+        return;
+      }
 
       // Obtener número actual de imágenes de carrusel
-      const currentCarouselCount = document.querySelectorAll('[data-carousel-image]').length;
+      // Contar las imágenes en el contenedor de carrusel
+      const carouselContainer = document.getElementById('carousel-images-container');
+      const currentCarouselCount = carouselContainer ? carouselContainer.querySelectorAll('img').length : 0;
       const availableSlots = maxCarouselImages - currentCarouselCount;
+      
+      console.log('📊 Imágenes de carrusel actuales:', currentCarouselCount);
+      console.log('📊 Espacios disponibles:', availableSlots);
 
       if (files.length > availableSlots) {
         carouselImageUploadStatus.textContent = `❌ Solo puedes agregar ${availableSlots} imagen(es) más`;
@@ -470,18 +503,38 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           formData.append('categoryId', categoryIdNum.toString());
           formData.append('imageType', 'carousel');
 
+          console.log(`📤 Subiendo imagen ${file.name}...`);
           const response = await fetch('/api/filter-categories/upload-image', {
             method: 'POST',
             body: formData,
           });
 
-          const result = await response.json();
+          console.log(`📡 Respuesta HTTP para ${file.name}:`, response.status, response.statusText);
+          
+          let result;
+          try {
+            const text = await response.text();
+            result = text ? JSON.parse(text) : { success: false, error: 'Respuesta vacía' };
+          } catch (parseError) {
+            console.error('❌ Error parseando respuesta:', parseError);
+            result = { success: false, error: 'Error al procesar la respuesta del servidor' };
+          }
 
-          if (result.success && result.url) {
+          console.log(`📡 Resultado para ${file.name}:`, result);
+
+          if (response.ok && result.success && result.url) {
             // Guardar la imagen en la BD
-            await saveCarouselImageToDB(result.url);
-            successCount++;
+            const saved = await saveCarouselImageToDB(result.url);
+            if (saved) {
+              console.log(`✅ Imagen ${file.name} subida y guardada correctamente`);
+              successCount++;
+            } else {
+              console.error(`❌ Error guardando ${file.name} en BD`);
+              errorCount++;
+            }
           } else {
+            const errorMsg = result.error || result.message || 'Error desconocido';
+            console.error(`❌ Error subiendo ${file.name}:`, errorMsg);
             errorCount++;
           }
         } catch (error) {
@@ -533,15 +586,59 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     }
   }
 
+    // Prevenir que el formulario se envíe cuando se hace clic en botones de eliminar o inputs de archivo
+    const categoryForm = document.getElementById('category-form');
+    if (categoryForm) {
+      categoryForm.addEventListener('submit', function(e) {
+        // Si el evento fue disparado por un botón de eliminar, cancelar el envío
+        const activeElement = document.activeElement;
+        if (activeElement && activeElement.classList.contains('delete-carousel-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🚫 Prevenido envío de formulario por botón de eliminar');
+          return false;
+        }
+      });
+      
+      // Prevenir que los inputs de archivo y labels causen problemas
+      const fileInputs = categoryForm.querySelectorAll('input[type="file"]');
+      fileInputs.forEach(input => {
+        input.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+        input.addEventListener('change', function(e) {
+          e.stopPropagation();
+        });
+      });
+      
+      // Prevenir que los labels de archivo envíen el formulario
+      const fileLabels = categoryForm.querySelectorAll('label[for*="image-input"]');
+      fileLabels.forEach(label => {
+        label.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    }
+
     console.log('🖼️ [CategoryImageManager] Inicializado correctamente');
   }
   
   // Ejecutar cuando el DOM esté listo
+  function initializeComponent() {
+    console.log('🚀 Inicializando CategoryImageManager...');
+    try {
+      initImageButtons();
+      console.log('✅ CategoryImageManager inicializado correctamente');
+    } catch (error) {
+      console.error('❌ Error inicializando CategoryImageManager:', error);
+    }
+  }
+  
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initImageButtons);
+    document.addEventListener('DOMContentLoaded', initializeComponent);
   } else {
-    // DOM ya está listo
-    initImageButtons();
+    // DOM ya está listo, pero esperar un poco para asegurar que todo esté cargado
+    setTimeout(initializeComponent, 100);
   }
 </script>
 
