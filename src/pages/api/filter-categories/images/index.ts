@@ -4,7 +4,17 @@ import { addCategoryImage, getCategoryImages } from '@/lib/filter-category-servi
 /**
  * POST - Agregar una imagen de carrusel a una categoría
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  // Verificar autenticación de administrador
+  const { requireAdmin } = await import('@/lib/auth-utils');
+  const authResult = await requireAdmin(cookies);
+  if (authResult.redirect) {
+    return new Response(
+      JSON.stringify({ success: false, message: 'No autorizado' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const body = await request.json();
     const { categoryId, imageUrl, isPrimary = false } = body;

@@ -133,31 +133,32 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     </div>
 
     <!-- Galería de imágenes de carrusel existentes -->
-    {carouselImagesFiltered.length > 0 && (
-      <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4" id="carousel-images-container">
-        {carouselImagesFiltered.map((image) => (
-          <div class="relative group" data-image-id={image.id}>
-            <img
-              src={image.image_url}
-              alt={image.alt_text || categoryName}
-              class="h-32 w-full rounded-lg border border-gray-300 object-cover"
-            />
-            <button
-              type="button"
-              class="delete-carousel-btn absolute -top-2 -right-2 z-50 hidden rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 group-hover:block cursor-pointer pointer-events-auto"
-              data-image-id={image.id}
-              title="Eliminar imagen"
-            >
-              <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        ))}
-      </div>
-    )}
+    <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4" id="carousel-images-container" style={carouselImagesFiltered.length === 0 ? 'display: none;' : ''}>
+      {carouselImagesFiltered.map((image) => (
+        <div class="relative group" data-image-id={image.id} data-image-url={image.image_url}>
+          <img
+            src={image.image_url}
+            alt={image.alt_text || categoryName}
+            class="h-32 w-full rounded-lg border border-gray-300 object-cover"
+            onerror="console.error('❌ Error cargando imagen:', this.src);"
+          />
+          <button
+            type="button"
+            class="delete-carousel-btn absolute -top-2 -right-2 z-50 opacity-0 group-hover:opacity-100 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto transition-opacity shadow-lg"
+            data-image-id={image.id}
+            title="Eliminar imagen"
+            style="pointer-events: auto; min-width: 32px; min-height: 32px;"
+          >
+            <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      ))}
+    </div>
 
     <!-- Uploader de imágenes de carrusel -->
+    <div id="carousel-uploader-container">
     {carouselImagesFiltered.length < 4 && (
       <div>
         <label
@@ -201,6 +202,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         Has alcanzado el límite de 4 imágenes de carrusel.
       </p>
     )}
+    </div>
   </div>
 </div>
 
@@ -243,31 +245,89 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
   async function deleteCarouselImage(imageId) {
     console.log('🗑️ deleteCarouselImage llamada, imageId:', imageId);
     
+    if (!imageId || imageId === 0) {
+      console.error('❌ ID de imagen inválido:', imageId);
+      alert('Error: ID de imagen inválido');
+      return;
+    }
+    
     if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
+      console.log('❌ Usuario canceló la eliminación');
       return;
     }
 
     try {
       console.log('🗑️ Eliminando imagen de carrusel ID:', imageId);
-      const response = await fetch('/api/filter-categories/images/' + imageId, {
+      const url = '/api/filter-categories/images/' + imageId;
+      console.log('📡 URL de eliminación:', url);
+      
+      const response = await fetch(url, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       console.log('📡 Respuesta HTTP:', response.status, response.statusText);
-      const result = await response.json();
+      
+      let result;
+      try {
+        const text = await response.text();
+        console.log('📡 Respuesta texto:', text);
+        result = text ? JSON.parse(text) : { success: false, message: 'Respuesta vacía' };
+      } catch (parseError) {
+        console.error('❌ Error parseando respuesta:', parseError);
+        result = { success: false, message: 'Error al procesar la respuesta del servidor' };
+      }
+      
       console.log('📡 Resultado de eliminación:', result);
 
       if (response.ok && result.success) {
         console.log('✅ Imagen eliminada correctamente');
+        
+        // Remover la imagen del DOM inmediatamente
+        const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+        if (imageElement) {
+          imageElement.remove();
+          console.log('✅ Imagen removida del DOM');
+        }
+        
+        // Actualizar el contador y mostrar/ocultar uploader
+        const carouselContainer = document.getElementById('carousel-images-container');
+        if (carouselContainer) {
+          const remainingImages = carouselContainer.querySelectorAll('img').length;
+          console.log('📊 Imágenes restantes:', remainingImages);
+          
+          // Si no quedan imágenes, ocultar el contenedor
+          if (remainingImages === 0) {
+            carouselContainer.style.display = 'none';
+          }
+          
+          // Mostrar el uploader si hay espacio disponible
+          const uploaderContainer = document.getElementById('carousel-uploader-container');
+          if (uploaderContainer && remainingImages < 4) {
+            uploaderContainer.style.display = '';
+            const uploaderInput = document.getElementById('carousel-image-input');
+            if (uploaderInput && uploaderInput.parentElement) {
+              uploaderInput.parentElement.style.display = '';
+            }
+          }
+        }
+        
         alert('Imagen eliminada correctamente');
-        window.location.reload();
+        // Recargar después de un breve delay para asegurar que todo se actualice
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
-        console.error('❌ Error eliminando imagen:', result.message || 'Error desconocido');
-        alert('Error al eliminar la imagen: ' + (result.message || 'Error desconocido'));
+        const errorMsg = result.message || 'Error desconocido';
+        console.error('❌ Error eliminando imagen:', errorMsg);
+        alert('Error al eliminar la imagen: ' + errorMsg);
       }
     } catch (error) {
       console.error('❌ Error eliminando imagen:', error);
-      alert('Error al eliminar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+      alert('Error al eliminar la imagen: ' + errorMsg);
     }
   }
   
@@ -300,28 +360,53 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       console.warn('⚠️ No se encontró el botón de eliminar imagen principal');
     }
 
-    // Agregar event listeners para botones de eliminar carrusel
+    // Agregar event listeners para botones de eliminar carrusel usando event delegation
+    const carouselContainer = document.getElementById('carousel-images-container');
+    if (carouselContainer) {
+      console.log('✅ Contenedor de imágenes de carrusel encontrado, usando event delegation');
+      carouselContainer.addEventListener('click', function(e) {
+        const target = e.target.closest('.delete-carousel-btn');
+        if (target) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          const imageId = target.getAttribute('data-image-id');
+          console.log('🖱️ Click detectado en botón eliminar carrusel (delegation), imageId:', imageId);
+          const id = parseInt(imageId || '0');
+          if (id) {
+            deleteCarouselImage(id);
+          } else {
+            console.error('❌ No se pudo obtener imageId del botón');
+            alert('Error: No se pudo obtener el ID de la imagen');
+          }
+          return false;
+        }
+      });
+    } else {
+      console.warn('⚠️ No se encontró el contenedor de imágenes de carrusel');
+    }
+    
+    // También agregar listeners directos como respaldo
     const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
     console.log('🔍 Botones de eliminar carrusel encontrados:', deleteCarouselButtons.length);
     
-    deleteCarouselButtons.forEach(function(btn, index) {
+    deleteCarouselButtons.forEach(function(btn) {
       const imageId = btn.getAttribute('data-image-id');
-      console.log('🔍 Botón ' + (index + 1) + ':', {
-        element: btn,
-        imageId: imageId,
-        classes: btn.className
-      });
+      console.log('🔍 Configurando botón directo con imageId:', imageId);
       
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        console.log('🖱️ Click detectado en botón eliminar carrusel, imageId:', imageId);
+        e.stopImmediatePropagation();
+        console.log('🖱️ Click detectado en botón eliminar carrusel (directo), imageId:', imageId);
         const id = parseInt(imageId || '0');
         if (id) {
           deleteCarouselImage(id);
         } else {
           console.error('❌ No se pudo obtener imageId del botón');
+          alert('Error: No se pudo obtener el ID de la imagen');
         }
+        return false;
       });
     });
 
@@ -528,6 +613,9 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             if (saved) {
               console.log(`✅ Imagen ${file.name} subida y guardada correctamente`);
               successCount++;
+              
+              // Agregar la imagen al DOM inmediatamente
+              addImageToCarousel(result.url, file.name);
             } else {
               console.error(`❌ Error guardando ${file.name} en BD`);
               errorCount++;
@@ -546,13 +634,18 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       if (successCount > 0) {
         carouselImageUploadStatus.textContent = `✅ ${successCount} imagen(es) subida(s) correctamente${errorCount > 0 ? `, ${errorCount} fallaron` : ''}`;
         carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-        // Recargar la página para mostrar las nuevas imágenes
+        
+        // Mostrar mensaje de éxito
+        console.log(`✅ ${successCount} imagen(es) subida(s) exitosamente`);
+        
+        // Recargar la página para sincronizar con la BD y obtener los IDs reales
         setTimeout(() => {
           window.location.reload();
-        }, 1000);
+        }, 800);
       } else {
         carouselImageUploadStatus.textContent = `❌ Error al subir las imágenes${errorCount > 0 ? ` (${errorCount} error(es))` : ''}`;
         carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+        alert(`Error al subir las imágenes${errorCount > 0 ? ` (${errorCount} error(es))` : ''}`);
       }
 
       // Limpiar input
@@ -563,9 +656,55 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
   }
 
 
+  // Función para agregar imagen al carrusel en el DOM
+  function addImageToCarousel(imageUrl: string, imageName: string) {
+    const carouselContainer = document.getElementById('carousel-images-container');
+    if (!carouselContainer) {
+      console.warn('⚠️ No se encontró el contenedor de carrusel');
+      return;
+    }
+    
+    // Mostrar el contenedor si estaba oculto
+    carouselContainer.style.display = '';
+    
+    // Crear el elemento de imagen
+    const imageDiv = document.createElement('div');
+    imageDiv.className = 'relative group';
+    imageDiv.setAttribute('data-image-url', imageUrl);
+    imageDiv.innerHTML = `
+      <img
+        src="${imageUrl}"
+        alt="${imageName}"
+        class="h-32 w-full rounded-lg border border-gray-300 object-cover"
+      />
+      <button
+        type="button"
+        class="delete-carousel-btn absolute -top-2 -right-2 z-50 opacity-0 group-hover:opacity-100 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto transition-opacity shadow-lg"
+        data-image-id="temp-${Date.now()}"
+        title="Eliminar imagen"
+        style="pointer-events: auto; min-width: 32px; min-height: 32px;"
+      >
+        <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    `;
+    
+    carouselContainer.appendChild(imageDiv);
+    console.log('✅ Imagen agregada al DOM:', imageUrl);
+    
+    // Ocultar el uploader si se alcanza el límite
+    const currentCount = carouselContainer.querySelectorAll('img').length;
+    const uploaderContainer = document.getElementById('carousel-uploader-container');
+    if (currentCount >= 4 && uploaderContainer) {
+      uploaderContainer.style.display = 'none';
+    }
+  }
+
   // Función para guardar imagen de carrusel en la BD
   async function saveCarouselImageToDB(imageUrl: string) {
     try {
+      console.log('💾 Guardando imagen en BD, categoryId:', categoryIdNum, 'imageUrl:', imageUrl);
       const response = await fetch(`/api/filter-categories/images`, {
         method: 'POST',
         headers: {
@@ -578,10 +717,29 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         }),
       });
 
-      const result = await response.json();
-      return result.success;
+      console.log('📡 Respuesta HTTP guardar en BD:', response.status, response.statusText);
+      
+      let result;
+      try {
+        const text = await response.text();
+        result = text ? JSON.parse(text) : { success: false, message: 'Respuesta vacía' };
+      } catch (parseError) {
+        console.error('❌ Error parseando respuesta de guardado:', parseError);
+        result = { success: false, message: 'Error al procesar la respuesta del servidor' };
+      }
+
+      console.log('📡 Resultado de guardado en BD:', result);
+      
+      if (response.ok && result.success) {
+        console.log('✅ Imagen guardada en BD con ID:', result.imageId);
+        return true;
+      } else {
+        const errorMsg = result.message || 'Error desconocido';
+        console.error('❌ Error guardando en BD:', errorMsg);
+        return false;
+      }
     } catch (error) {
-      console.error('Error guardando imagen en BD:', error);
+      console.error('❌ Error guardando imagen en BD:', error);
       return false;
     }
   }
