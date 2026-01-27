@@ -1,4 +1,4 @@
--- Script SQL para crear las tablas de la base de datos StarFilters
+-- Script SQL para crear las tablas de la base de datos Star Filters
 -- Ejecuta este script en phpMyAdmin de Hostinger
 
 -- Crear base de datos (opcional, si no existe)
