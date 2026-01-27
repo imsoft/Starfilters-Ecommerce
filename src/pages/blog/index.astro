@@ -75,7 +75,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <div class="bg-background py-24 sm:py-32">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl text-center">
+      <div class="mx-auto max-w-4xl text-center">
         <h2
           class="text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl"
         >
@@ -132,30 +132,6 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                     <p class="mt-5 line-clamp-3 text-sm/6 text-muted-foreground">
                       {excerpt}
                     </p>
-                  </div>
-                  <div
-                    class="relative mt-8 flex items-center gap-x-4 justify-self-end"
-                  >
-                    {post.author_image ? (
-                      <img
-                        src={post.author_image}
-                        alt={post.author}
-                        class="size-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div class="size-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
-                        {post.author.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div class="text-sm/6">
-                      <p class="font-semibold text-foreground">
-                        <a href="#">
-                          <span class="absolute inset-0"></span>
-                          {post.author}
-                        </a>
-                      </p>
-                      <p class="text-muted-foreground">Autor</p>
-                    </div>
                   </div>
                 </div>
               </article>
