@@ -16,7 +16,7 @@ export interface SEOConfig {
  * @param maxLength - Longitud máxima (default: 60)
  */
 export function generateSEOTitle(title: string, maxLength = 60): string {
-  const suffix = ' | StarFilters';
+  const suffix = ' | Star Filters';
   const maxTitleLength = maxLength - suffix.length;
   
   if (title.length > maxTitleLength) {
@@ -113,7 +113,7 @@ export function generateBlogKeywords(post: {
   }
   
   // Keywords generales de blog
-  keywords.push('blog', 'artículo', 'información', 'StarFilters');
+  keywords.push('blog', 'artículo', 'información', 'Star Filters');
   
   return keywords;
 }
@@ -155,7 +155,7 @@ export function generateOrganizationSchema(siteUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "StarFilters",
+    "name": "Star Filters",
     "url": siteUrl,
     "logo": `${siteUrl}/logos/logo-starfilters.png`,
     "description": "Líder en diseño y construcción de cuartos limpios, filtros HEPA y sistemas de filtración industrial en Norteamérica. Más de 40 años de experiencia. Validación NEBB y calidad certificada.",
@@ -200,7 +200,7 @@ export function generateProductSchema(product: {
     "image": product.image_url || `${siteUrl}/logos/logo-starfilters.png`,
     "brand": {
       "@type": "Brand",
-      "name": "StarFilters"
+      "name": "Star Filters"
     },
     "offers": {
       "@type": "Offer",
@@ -242,11 +242,11 @@ export function generateArticleSchema(post: {
     "image": post.featured_image || `${siteUrl}/logos/logo-starfilters.png`,
     "author": {
       "@type": "Person",
-      "name": post.author || "StarFilters"
+      "name": post.author || "Star Filters"
     },
     "publisher": {
       "@type": "Organization",
-      "name": "StarFilters",
+      "name": "Star Filters",
       "logo": {
         "@type": "ImageObject",
         "url": `${siteUrl}/logos/logo-starfilters.png`

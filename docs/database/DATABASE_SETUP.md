@@ -1,4 +1,4 @@
-# Configuración de Base de Datos MySQL para StarFilters
+# Configuración de Base de Datos MySQL para Star Filters
 
 ## 📋 Pasos para configurar la base de datos en Hostinger
 

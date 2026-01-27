@@ -10,7 +10,7 @@
 4. **Configurar la conexión:**
 
 ```
-Nombre: StarFilters Local
+Nombre: Star Filters Local
 Host: localhost
 Puerto: 3306
 Usuario: root

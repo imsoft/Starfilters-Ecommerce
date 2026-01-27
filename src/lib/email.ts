@@ -56,7 +56,7 @@ export const sendEmail = async (emailData: EmailData): Promise<boolean> => {
 
     // Obtener configuración de remitente
     const resendFromEmail = process.env.RESEND_FROM_EMAIL || import.meta.env.RESEND_FROM_EMAIL || 'noreply@starfilters.com';
-    const resendFromName = process.env.RESEND_FROM_NAME || import.meta.env.RESEND_FROM_NAME || 'StarFilters';
+    const resendFromName = process.env.RESEND_FROM_NAME || import.meta.env.RESEND_FROM_NAME || 'Star Filters';
     const fromEmail = emailData.from || resendFromEmail;
     const from = `${resendFromName} <${fromEmail}>`;
 
@@ -95,7 +95,7 @@ export const createOrderConfirmationEmail = (
   items: Array<{ name: string; quantity: number; price: number }>,
   shippingAddress: string
 ): EmailData => {
-  const subject = `Confirmación de Pedido #${orderNumber} - StarFilters`;
+  const subject = `Confirmación de Pedido #${orderNumber} - Star Filters`;
   
   const itemsList = items.map(item => `
     <tr>
@@ -167,7 +167,7 @@ export const createOrderConfirmationEmail = (
           <p>Te notificaremos cuando tu pedido sea enviado.</p>
         </div>
         <div class="footer">
-          <p>© 2024 StarFilters. Todos los derechos reservados.</p>
+          <p>© 2024 Star Filters. Todos los derechos reservados.</p>
         </div>
       </div>
     </body>
@@ -194,7 +194,7 @@ export const createOrderConfirmationEmail = (
     
     Te notificaremos cuando tu pedido sea enviado.
     
-    © 2024 StarFilters
+    © 2024 Star Filters
   `;
   
   return {
@@ -207,7 +207,7 @@ export const createOrderConfirmationEmail = (
 
 // Template para email de reset de contraseña
 export const createPasswordResetEmail = (userFirstName: string, resetUrl: string): EmailData => {
-  const subject = 'Recuperar contraseña - StarFilters';
+  const subject = 'Recuperar contraseña - Star Filters';
   
   const html = `
     <!DOCTYPE html>
@@ -241,7 +241,7 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
         </div>
         <div class="content">
           <h2>Hola ${userFirstName},</h2>
-          <p>Recibimos una solicitud para cambiar tu contraseña en StarFilters.</p>
+          <p>Recibimos una solicitud para cambiar tu contraseña en Star Filters.</p>
           <p>Haz clic en el siguiente botón para crear una nueva contraseña:</p>
           
           <div style="text-align: center;">
@@ -263,7 +263,7 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
           </div>
         </div>
         <div class="footer">
-          <p>© 2024 StarFilters. Todos los derechos reservados.</p>
+          <p>© 2024 Star Filters. Todos los derechos reservados.</p>
         </div>
       </div>
     </body>
@@ -273,7 +273,7 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
   const text = `
     Hola ${userFirstName},
     
-    Recibimos una solicitud para cambiar tu contraseña en StarFilters.
+    Recibimos una solicitud para cambiar tu contraseña en Star Filters.
     
     Usa este enlace para crear una nueva contraseña:
     ${resetUrl}
@@ -282,7 +282,7 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
     
     Si no solicitaste este cambio, ignora este email.
     
-    © 2024 StarFilters
+    © 2024 Star Filters
   `;
   
   return {
@@ -303,7 +303,7 @@ export const createNewOrderNotificationEmail = (
   items: Array<{ name: string; quantity: number; price: number }>,
   shippingAddress: string
 ): EmailData => {
-  const subject = `Nueva Orden #${orderNumber} - StarFilters`;
+  const subject = `Nueva Orden #${orderNumber} - Star Filters`;
   
   const itemsList = items.map(item => `
     <tr>
@@ -393,7 +393,7 @@ export const createNewOrderNotificationEmail = (
           </div>
         </div>
         <div class="footer">
-          <p>© 2024 StarFilters. Todos los derechos reservados.</p>
+          <p>© 2024 Star Filters. Todos los derechos reservados.</p>
         </div>
       </div>
     </body>
@@ -421,7 +421,7 @@ export const createNewOrderNotificationEmail = (
     
     Ver orden en: ${siteUrl}/admin/orders
     
-    © 2024 StarFilters
+    © 2024 Star Filters
   `;
   
   return {
@@ -472,7 +472,7 @@ export const createOrderStatusUpdateEmail = (
     color: '#6366f1'
   };
 
-  const subject = `Actualización de Pedido #${orderNumber} - StarFilters`;
+  const subject = `Actualización de Pedido #${orderNumber} - Star Filters`;
   
   const itemsList = items.map(item => `
     <tr>
@@ -562,7 +562,7 @@ export const createOrderStatusUpdateEmail = (
           </div>
         </div>
         <div class="footer">
-          <p>© 2024 StarFilters. Todos los derechos reservados.</p>
+          <p>© 2024 Star Filters. Todos los derechos reservados.</p>
         </div>
       </div>
     </body>
@@ -589,7 +589,7 @@ export const createOrderStatusUpdateEmail = (
     
     Ver tus pedidos: ${siteUrl}/pedidos
     
-    © 2024 StarFilters
+    © 2024 Star Filters
   `;
   
   return {

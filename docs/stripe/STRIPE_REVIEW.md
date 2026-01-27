@@ -138,7 +138,7 @@ for (const item of items) {
 // Usar la función sendEmail existente
 const emailData = {
   to: paymentIntent.receipt_email,
-  subject: 'Confirmación de compra - StarFilters',
+  subject: 'Confirmación de compra - Star Filters',
   html: createOrderConfirmationTemplate(orderData)
 };
 await sendEmail(emailData);

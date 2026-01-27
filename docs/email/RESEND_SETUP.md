@@ -24,7 +24,7 @@ Agrega estas variables a tu archivo `.env`:
 # Configuración de Resend
 RESEND_API_KEY=re_tu_api_key_aqui
 RESEND_FROM_EMAIL=noreply@tu-dominio.com
-RESEND_FROM_NAME=StarFilters
+RESEND_FROM_NAME=Star Filters
 ```
 
 **⚠️ IMPORTANTE:**

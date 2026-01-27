@@ -51,11 +51,11 @@ export const ui = {
     'features.support.description': 'Todo para tu cuarto limpio.  Unidades Manejadoras de Aire, Puertas y Ventanas especializadas, Air Showers, Gabinetes, listos para integrar tu proyecto, manómetros de presión diferencial, cortina rápida de lona, pass through.',
 
     // Cleanrooms
-    'cleanrooms.badge': 'StarFilters - Expertos en ambientes controlados',
+    'cleanrooms.badge': 'Star Filters - Expertos en ambientes controlados',
     'cleanrooms.title': 'Cuartos Limpios de Clase Mundial para tu Industria',
     'cleanrooms.description': 'Diseñamos, fabricamos e instalamos cuartos limpios industriales con certificación ISO 14644. Soluciones integrales para industrias farmacéutica, electrónica, alimentaria y de investigación que requieren ambientes controlados de la más alta calidad.',
     'cleanrooms.experience.title': 'Nuestra Experiencia',
-    'cleanrooms.experience.p1': 'Con más de 15 años en el mercado mexicano, StarFilters se ha consolidado como líder en el diseño y construcción de cuartos limpios para industrias que demandan los más altos estándares de pureza. Nuestros cuartos limpios cumplen con clasificaciones desde ISO Clase 1 hasta ISO Clase 9, adaptándonos a las necesidades específicas de cada cliente.',
+    'cleanrooms.experience.p1': 'Con más de 15 años en el mercado mexicano, Star Filters se ha consolidado como líder en el diseño y construcción de cuartos limpios para industrias que demandan los más altos estándares de pureza. Nuestros cuartos limpios cumplen con clasificaciones desde ISO Clase 1 hasta ISO Clase 9, adaptándonos a las necesidades específicas de cada cliente.',
     'cleanrooms.experience.p2': 'Trabajamos con materiales de última generación, paneles modulares de alta densidad, sistemas de filtración HEPA/ULPA y controles ambientales avanzados. Cada proyecto incluye validación completa, documentación técnica y certificación conforme a normativas internacionales como FDA, GMP y EU GMP para garantizar el cumplimiento regulatorio de tu operación.',
     'cleanrooms.numbers.title': 'Nuestros Números',
     'cleanrooms.numbers.installations': 'Cuartos Limpios Instalados',
@@ -149,7 +149,7 @@ export const ui = {
     'footer.terms': 'Términos de servicio',
     'footer.privacy': 'Política de privacidad',
     'footer.license': 'Licencia',
-    'footer.copyright': '© 2026 StarFilters, Inc. Todos los derechos reservados.',
+    'footer.copyright': '© 2026 Star Filters, Inc. Todos los derechos reservados.',
 
     // Testimonials
     'testimonials.badge': 'Testimonios',
@@ -276,11 +276,11 @@ export const ui = {
     'features.support.description': 'Everything for your cleanroom. Air Handling Units, specialized Doors and Windows, Air Showers, Cabinets, ready to integrate into your project, differential pressure manometers, fast canvas curtain, pass through',
 
     // Cleanrooms
-    'cleanrooms.badge': 'StarFilters - Controlled Environment Experts',
+    'cleanrooms.badge': 'Star Filters - Controlled Environment Experts',
     'cleanrooms.title': 'World-Class Cleanrooms for Your Industry',
     'cleanrooms.description': 'We design, manufacture, and install ISO 14644 certified industrial cleanrooms. Comprehensive solutions for pharmaceutical, electronics, food, and research industries that require the highest quality controlled environments.',
     'cleanrooms.experience.title': 'Our Experience',
-    'cleanrooms.experience.p1': 'With over 15 years in the Mexican market, StarFilters has established itself as a leader in the design and construction of cleanrooms for industries demanding the highest purity standards. Our cleanrooms comply with classifications from ISO Class 1 to ISO Class 9, adapting to each client\'s specific needs.',
+    'cleanrooms.experience.p1': 'With over 15 years in the Mexican market, Star Filters has established itself as a leader in the design and construction of cleanrooms for industries demanding the highest purity standards. Our cleanrooms comply with classifications from ISO Class 1 to ISO Class 9, adapting to each client\'s specific needs.',
     'cleanrooms.experience.p2': 'We work with state-of-the-art materials, high-density modular panels, HEPA/ULPA filtration systems, and advanced environmental controls. Each project includes complete validation, technical documentation, and certification in accordance with international regulations such as FDA, GMP, and EU GMP to ensure regulatory compliance for your operation.',
     'cleanrooms.numbers.title': 'Our Numbers',
     'cleanrooms.numbers.installations': 'Cleanrooms Installed',
@@ -374,7 +374,7 @@ export const ui = {
     'footer.terms': 'Terms of service',
     'footer.privacy': 'Privacy policy',
     'footer.license': 'License',
-    'footer.copyright': '© 2026 StarFilters, Inc. All rights reserved.',
+    'footer.copyright': '© 2026 Star Filters, Inc. All rights reserved.',
 
     // Testimonials
     'testimonials.badge': 'Testimonials',

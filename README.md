@@ -1,6 +1,6 @@
-# StarFilters Ecommerce
+# Star Filters Ecommerce
 
-![StarFilters Logo](public/logos/logo-starfilters.png)
+![Star Filters Logo](public/logos/logo-starfilters.png)
 
 Una plataforma de comercio electrónico moderna y completa para Star Filters, líder en cuartos limpios y sistemas de filtración industrial en Norteamérica. Construida con Astro, React y TypeScript.
 

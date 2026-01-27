@@ -1,4 +1,4 @@
-# Sistema de Internacionalización (i18n) - StarFilters
+# Sistema de Internacionalización (i18n) - Star Filters
 
 ## Configuración Completada
 

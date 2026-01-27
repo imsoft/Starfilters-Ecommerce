@@ -49,14 +49,14 @@ const defaultOgImage = new URL('/logos/logo-starfilters.png', siteUrl).href;
 const ogImageUrl = ogImage || defaultOgImage;
 
 // Título completo con marca
-const fullTitle = `${title} | StarFilters`;
+const fullTitle = `${title} | Star Filters`;
 
 // Robots meta
 const robotsContent = `${noindex ? 'noindex' : 'index'}, ${nofollow ? 'nofollow' : 'follow'}`;
 
 // Keywords del sitio
 const siteKeywords = [
-  'StarFilters',
+  'Star Filters',
   'filtros industriales',
   'cuartos limpios',
   'filtros HEPA',
@@ -88,7 +88,7 @@ const siteKeywords = [
 <meta property="og:description" content={description} />
 <meta property="og:image" content={ogImageUrl} />
 {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
-<meta property="og:site_name" content="StarFilters" />
+<meta property="og:site_name" content="Star Filters" />
 <meta property="og:locale" content="es_MX" />
 <meta property="og:locale:alternate" content="en_US" />
 {alternateLanguages.length > 0 && alternateLanguages.map(alt => (
@@ -130,7 +130,7 @@ const siteKeywords = [
 )}
 
 <!-- Additional SEO tags -->
-<meta name="author" content="StarFilters" />
+<meta name="author" content="Star Filters" />
 <meta name="language" content="Spanish" />
 <meta name="revisit-after" content="7 days" />
 <meta name="rating" content="general" />
@@ -143,7 +143,7 @@ const siteKeywords = [
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="StarFilters" />
+<meta name="apple-mobile-web-app-title" content="Star Filters" />
 
 <!-- Schema.org JSON-LD -->
 <script type="application/ld+json" set:html={JSON.stringify({
@@ -158,7 +158,7 @@ const siteKeywords = [
     "dateModified": article.modifiedTime,
     "author": {
       "@type": "Person",
-      "name": article.author || "StarFilters"
+      "name": article.author || "Star Filters"
     }
   }),
   ...(product && {
@@ -172,7 +172,7 @@ const siteKeywords = [
     },
     "brand": {
       "@type": "Brand",
-      "name": product.brand || "StarFilters"
+      "name": product.brand || "Star Filters"
     }
   })
 })} />

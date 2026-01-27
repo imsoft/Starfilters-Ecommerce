@@ -1,4 +1,4 @@
-# robots.txt para StarFilters E-commerce
+# robots.txt para Star Filters E-commerce
 
 # Permitir todos los bots
 User-agent: *

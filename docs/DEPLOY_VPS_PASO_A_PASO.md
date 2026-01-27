@@ -1,4 +1,4 @@
-# 🚀 Guía Paso a Paso: Desplegar StarFilters Ecommerce en VPS
+# 🚀 Guía Paso a Paso: Desplegar Star Filters Ecommerce en VPS
 
 Esta guía te lleva paso a paso desde la configuración inicial del VPS hasta tener tu aplicación funcionando en producción.
 
@@ -441,7 +441,7 @@ TTL: 3600
 
 🌐 **https://tudominio.com** (o `http://TU_IP_VPS` si no tienes dominio aún)
 
-**Deberías ver la página principal de StarFilters.**
+**Deberías ver la página principal de Star Filters.**
 
 ---
 
@@ -561,7 +561,7 @@ node server.js
 
 ## 🎉 ¡LISTO!
 
-Tu aplicación StarFilters Ecommerce debería estar funcionando en:
+Tu aplicación Star Filters Ecommerce debería estar funcionando en:
 
 **🌐 https://tudominio.com**
 
