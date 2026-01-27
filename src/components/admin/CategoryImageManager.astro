@@ -491,14 +491,14 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       }
 
       if (successCount > 0) {
-        carouselImageUploadStatus.textContent = `✅ ${successCount} imagen(es) subida(s) correctamente`;
+        carouselImageUploadStatus.textContent = `✅ ${successCount} imagen(es) subida(s) correctamente${errorCount > 0 ? `, ${errorCount} fallaron` : ''}`;
         carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
         // Recargar la página para mostrar las nuevas imágenes
         setTimeout(() => {
           window.location.reload();
         }, 1000);
       } else {
-        carouselImageUploadStatus.textContent = `❌ Error al subir las imágenes`;
+        carouselImageUploadStatus.textContent = `❌ Error al subir las imágenes${errorCount > 0 ? ` (${errorCount} error(es))` : ''}`;
         carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
       }
 
