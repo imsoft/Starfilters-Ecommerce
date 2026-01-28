@@ -6,11 +6,18 @@ interface Props {
     nominal_size: string;
     real_size: string;
     price: number;
+    currency: 'MXN' | 'USD';
     bind_code: string;
   }>;
 }
 
 const { id, name, initialSizes = [] } = Astro.props;
+
+// Asegurar que todos los tamaños tengan currency (para datos antiguos)
+const normalizedSizes = initialSizes.map(size => ({
+  ...size,
+  currency: size.currency || 'MXN'
+}));
 ---
 
 <div class="space-y-4" data-sizes-table data-table-id={id} data-field-name={name}>
@@ -41,7 +48,10 @@ const { id, name, initialSizes = [] } = Astro.props;
             Medida Real
           </th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-            Precio (MXN)
+            Precio
+          </th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+            Moneda
           </th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
             Código Bind
@@ -52,8 +62,8 @@ const { id, name, initialSizes = [] } = Astro.props;
         </tr>
       </thead>
       <tbody data-sizes-tbody class="bg-white divide-y divide-gray-200">
-        {initialSizes.length > 0 ? (
-          initialSizes.map((size, index) => (
+        {normalizedSizes.length > 0 ? (
+          normalizedSizes.map((size, index) => (
             <tr data-row-index={index} class="hover:bg-gray-50">
               <td class="px-4 py-3 whitespace-nowrap">
                 <input
@@ -88,6 +98,15 @@ const { id, name, initialSizes = [] } = Astro.props;
                 </div>
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
+                <select
+                  data-field="currency"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="MXN" selected={size.currency === 'MXN'}>MXN</option>
+                  <option value="USD" selected={size.currency === 'USD'}>USD</option>
+                </select>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
                 <input
                   type="text"
                   data-field="bind_code"
@@ -111,7 +130,7 @@ const { id, name, initialSizes = [] } = Astro.props;
           ))
         ) : (
           <tr data-empty-row>
-            <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">
+            <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">
               No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.
             </td>
           </tr>
@@ -125,7 +144,7 @@ const { id, name, initialSizes = [] } = Astro.props;
     type="hidden"
     data-sizes-json
     name={name}
-    value={JSON.stringify(initialSizes)}
+    value={JSON.stringify(normalizedSizes)}
   />
 </div>
 
@@ -148,23 +167,25 @@ const { id, name, initialSizes = [] } = Astro.props;
       function updateJson() {
         var rows = tbody.querySelectorAll('tr[data-row-index]');
         var sizes = [];
-        
+
         rows.forEach(function(row) {
           var nominalInput = row.querySelector('[data-field="nominal_size"]');
           var realInput = row.querySelector('[data-field="real_size"]');
           var priceInput = row.querySelector('[data-field="price"]');
+          var currencySelect = row.querySelector('[data-field="currency"]');
           var bindCodeInput = row.querySelector('[data-field="bind_code"]');
-          
-          if (nominalInput && realInput && priceInput && bindCodeInput) {
+
+          if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
             sizes.push({
               nominal_size: nominalInput.value || '',
               real_size: realInput.value || '',
               price: parseFloat(priceInput.value) || 0,
+              currency: currencySelect.value || 'MXN',
               bind_code: bindCodeInput.value || ''
             });
           }
         });
-        
+
         jsonInput.value = JSON.stringify(sizes);
       }
 
@@ -172,7 +193,7 @@ const { id, name, initialSizes = [] } = Astro.props;
         if (tbody.querySelectorAll('tr[data-row-index]').length === 0) {
           var emptyRow = document.createElement('tr');
           emptyRow.setAttribute('data-empty-row', '');
-          emptyRow.innerHTML = '<td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.</td>';
+          emptyRow.innerHTML = '<td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.</td>';
           tbody.appendChild(emptyRow);
         }
       }
@@ -197,7 +218,7 @@ const { id, name, initialSizes = [] } = Astro.props;
         newRow.className = 'hover:bg-gray-50';
         newRow.setAttribute('data-row-index', newIndex.toString());
 
-        newRow.innerHTML = 
+        newRow.innerHTML =
           '<td class="px-4 py-3 whitespace-nowrap">' +
             '<input type="text" data-field="nominal_size" placeholder=\'Ej: 9.125" x 9.125" x 3"\' class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
           '</td>' +
@@ -209,6 +230,12 @@ const { id, name, initialSizes = [] } = Astro.props;
               '<span class="absolute left-2 top-2 text-gray-500 text-sm">$</span>' +
               '<input type="number" data-field="price" min="0" step="0.01" placeholder="0.00" class="w-full rounded-md border border-gray-300 pl-6 pr-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
             '</div>' +
+          '</td>' +
+          '<td class="px-4 py-3 whitespace-nowrap">' +
+            '<select data-field="currency" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">' +
+              '<option value="MXN" selected>MXN</option>' +
+              '<option value="USD">USD</option>' +
+            '</select>' +
           '</td>' +
           '<td class="px-4 py-3 whitespace-nowrap">' +
             '<input type="text" data-field="bind_code" placeholder="Ej: HGD1" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
@@ -232,10 +259,11 @@ const { id, name, initialSizes = [] } = Astro.props;
           });
         }
 
-        // Agregar listeners a los inputs para actualizar JSON
-        var inputs = newRow.querySelectorAll('input');
+        // Agregar listeners a los inputs y selects para actualizar JSON
+        var inputs = newRow.querySelectorAll('input, select');
         inputs.forEach(function(input) {
           input.addEventListener('input', updateJson);
+          input.addEventListener('change', updateJson);
         });
 
         updateJson();
@@ -264,10 +292,11 @@ const { id, name, initialSizes = [] } = Astro.props;
         });
       });
 
-      // Agregar listeners a los inputs existentes
-      var existingInputs = tbody.querySelectorAll('input');
+      // Agregar listeners a los inputs y selects existentes
+      var existingInputs = tbody.querySelectorAll('input, select');
       existingInputs.forEach(function(input) {
         input.addEventListener('input', updateJson);
+        input.addEventListener('change', updateJson);
       });
 
       // Inicializar JSON

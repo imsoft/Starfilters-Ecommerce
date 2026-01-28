@@ -1,6 +1,7 @@
-import { createPaymentIntent, formatPriceForStripe, STRIPE_CONFIG } from './stripe';
+import { createPaymentIntent } from './stripe';
 import { getCart } from './cart';
 import type { CartItem } from './cart';
+import { getExchangeRate } from './currency-service';
 
 // Interface para datos del checkout
 export interface CheckoutData {
@@ -49,19 +50,38 @@ export const calculateTax = (subtotal: number): number => {
   return subtotal * 0.16; // 16% IVA
 };
 
-// Calcular total del pedido
-export const calculateOrderTotal = (
+// Calcular total del pedido (convierte USD a MXN automáticamente)
+export const calculateOrderTotal = async (
   cartItems: CartItem[],
   shippingMethod: 'standard' | 'express',
   discountAmount: number = 0
-): {
+): Promise<{
   subtotal: number;
   discount: number;
   shipping: number;
   tax: number;
   total: number;
-} => {
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  exchangeRate?: number;
+}> => {
+  // Obtener tasa de cambio si hay productos en USD
+  const hasUSDItems = cartItems.some(item => item.currency === 'USD');
+  let exchangeRate: number | undefined;
+
+  if (hasUSDItems) {
+    exchangeRate = await getExchangeRate();
+    console.log(`💱 Tasa de cambio obtenida: ${exchangeRate} MXN por USD`);
+  }
+
+  // Calcular subtotal convirtiendo USD a MXN si es necesario
+  const subtotal = cartItems.reduce((sum, item) => {
+    let priceInMXN = item.price;
+    if (item.currency === 'USD' && exchangeRate) {
+      priceInMXN = item.price * exchangeRate;
+      console.log(`💱 Convertido: ${item.name} - $${item.price} USD = $${priceInMXN.toFixed(2)} MXN`);
+    }
+    return sum + (priceInMXN * item.quantity);
+  }, 0);
+
   const discount = discountAmount;
   const subtotalAfterDiscount = Math.max(0, subtotal - discount);
   const shipping = calculateShipping(shippingMethod).cost;
@@ -73,7 +93,8 @@ export const calculateOrderTotal = (
     discount,
     shipping,
     tax,
-    total
+    total,
+    exchangeRate
   };
 };
 
@@ -92,9 +113,9 @@ export const createCheckoutPaymentIntent = async (
       throw new Error('El carrito está vacío');
     }
 
-    // Calcular totales con descuento si existe
+    // Calcular totales con descuento si existe (convierte USD a MXN automáticamente)
     const discountAmount = discountData?.amount || 0;
-    const orderTotals = calculateOrderTotal(cart.items, shippingMethod, discountAmount);
+    const orderTotals = await calculateOrderTotal(cart.items, shippingMethod, discountAmount);
 
     // Serializar items del carrito para el metadata
     const cartItemsJSON = JSON.stringify(
@@ -109,29 +130,36 @@ export const createCheckoutPaymentIntent = async (
     );
 
     // Crear metadata para el Payment Intent
-    const metadata = {
+    const metadata: Record<string, string> = {
       customer_email: checkoutData.email,
       customer_name: `${checkoutData.firstName} ${checkoutData.lastName}`,
       shipping_address: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.state} ${checkoutData.postalCode}, ${checkoutData.country}`,
       shipping_method: shippingMethod,
       items_count: cart.items.length.toString(),
-      subtotal: orderTotals.subtotal.toString(),
-      shipping_cost: orderTotals.shipping.toString(),
-      tax_amount: orderTotals.tax.toString(),
-      ...(userId && { user_id: userId.toString() }),
-      ...(discountData && {
-        discount_code: discountData.code,
-        discount_code_id: discountData.discountCodeId.toString(),
-        discount_amount: discountData.amount.toString(),
-      }),
+      subtotal: orderTotals.subtotal.toFixed(2),
+      shipping_cost: orderTotals.shipping.toFixed(2),
+      tax_amount: orderTotals.tax.toFixed(2),
       cart_items: cartItemsJSON,
     };
 
-    // Obtener moneda del carrito (MXN para español, USD para inglés)
-    const cartCurrency = cart.currency || 'MXN';
-    const stripeCurrency = cartCurrency.toLowerCase() as 'mxn' | 'usd';
+    // Agregar campos opcionales
+    if (userId) {
+      metadata.user_id = userId.toString();
+    }
+    if (discountData) {
+      metadata.discount_code = discountData.code;
+      metadata.discount_code_id = discountData.discountCodeId.toString();
+      metadata.discount_amount = discountData.amount.toString();
+    }
+    if (orderTotals.exchangeRate) {
+      metadata.exchange_rate = orderTotals.exchangeRate.toFixed(4);
+      metadata.currency_note = 'Precios en USD fueron convertidos a MXN';
+    }
 
-    // Crear Payment Intent con la moneda del carrito
+    // Siempre cobrar en MXN (los precios USD ya fueron convertidos)
+    const stripeCurrency = 'mxn' as const;
+
+    // Crear Payment Intent en MXN
     const paymentIntent = await createPaymentIntent({
       amount: orderTotals.total,
       currency: stripeCurrency,
@@ -221,12 +249,12 @@ export const formatCartForCheckout = (cartItems: CartItem[]) => {
 };
 
 // Generar resumen del pedido
-export const generateOrderSummary = (
+export const generateOrderSummary = async (
   cartItems: CartItem[],
   shippingMethod: 'standard' | 'express' = 'standard',
   discountAmount: number = 0
 ) => {
-  const orderTotals = calculateOrderTotal(cartItems, shippingMethod, discountAmount);
+  const orderTotals = await calculateOrderTotal(cartItems, shippingMethod, discountAmount);
   const shippingData = calculateShipping(shippingMethod);
 
   return {
@@ -240,6 +268,7 @@ export const generateOrderSummary = (
     },
     tax: orderTotals.tax,
     total: orderTotals.total,
-    currency: STRIPE_CONFIG.currency,
+    currency: 'MXN', // Siempre MXN (USD se convierte)
+    exchangeRate: orderTotals.exchangeRate,
   };
 };

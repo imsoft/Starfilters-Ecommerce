@@ -95,36 +95,11 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           id="collection-heading"
           class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
         >
-          Categorías de Filtros de Aire
+          Filtros de aire
         </h1>
         <p class="mt-4 text-lg text-muted-foreground">
-          Selecciona una categoría para ver todos los productos disponibles.
+          En Star Filters fabricamos filtros de aire diseñados para cumplir con los estándares más exigentes de la industria farmacéutica, electrónica y de manufactura avanzada. Cada tipo de filtro ofrece un nivel de protección y eficiencia adaptado a tu proceso productivo:
         </p>
-      </div>
-
-      <!-- Búsqueda -->
-      <div class="mb-8">
-        <label for="search-categories" class="block text-sm font-medium text-foreground mb-2">
-          Buscar categorías
-        </label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-          </div>
-          <input
-            type="text"
-            id="search-categories"
-            placeholder="Buscar por nombre..."
-            class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      <!-- Contador de resultados -->
-      <div class="mb-6 text-sm text-muted-foreground">
-        Mostrando <span id="results-count" class="font-medium text-foreground">{filterCategories.length}</span> de {filterCategories.length} categorías
       </div>
 
       <!-- Grid de categorías -->
@@ -179,38 +154,3 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   </div>
 </WebsiteLayout>
 
-<script>
-  // Función de búsqueda
-  function applySearch(): void {
-    const searchInput = document.getElementById('search-categories') as HTMLInputElement;
-    const searchTerm = searchInput?.value.toLowerCase() || '';
-    const categoryCards = document.querySelectorAll('.category-card');
-    let visibleCount = 0;
-
-    categoryCards.forEach(card => {
-      const element = card as HTMLElement;
-      const categoryName = element.getAttribute('data-name') || '';
-
-      if (categoryName.includes(searchTerm)) {
-        element.style.display = '';
-        visibleCount++;
-      } else {
-        element.style.display = 'none';
-      }
-    });
-
-    // Actualizar contador
-    const resultsCount = document.getElementById('results-count');
-    if (resultsCount) {
-      resultsCount.textContent = visibleCount.toString();
-    }
-  }
-
-  // Event listener para búsqueda
-  document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('search-categories');
-    if (searchInput) {
-      searchInput.addEventListener('input', applySearch);
-    }
-  });
-</script>

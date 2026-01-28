@@ -54,19 +54,34 @@ if (Astro.request.method === "POST") {
       const filterCategoryIdStr = formData.get("filter_category_id") as string;
       const filterCategoryId = filterCategoryIdStr ? parseInt(filterCategoryIdStr) : null;
 
+      // Procesar tabla de tamaños
+      const sizesJson = formData.get("product_sizes") as string;
+      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
+      if (sizesJson) {
+        try {
+          sizes = JSON.parse(sizesJson);
+        } catch (error) {
+          console.error('Error parseando tamaños:', error);
+        }
+      }
+
+      // Usar el primer tamaño si existe, o mantener valores actuales
+      const firstSize = sizes.length > 0 ? sizes[0] : null;
+      const currency = firstSize?.currency || product.currency || 'MXN';
+
       // Actualizar el producto con todos los campos
       const updated = await updateProductService(productId, {
         filter_category_id: filterCategoryId,
-        bind_code: null,
+        bind_code: firstSize?.bind_code || product.bind_code || null,
         name: formData.get("name") as string,
         name_en: (formData.get("name_en") as string) || undefined,
         description: (formData.get("description") as string) || undefined,
         description_en: (formData.get("description_en") as string) || undefined,
-        price: 0,
-        currency: "MXN",
-        price_usd: null,
-        nominal_size: null,
-        real_size: null,
+        price: firstSize?.price ?? product.price ?? 0,
+        currency: currency as 'MXN' | 'USD',
+        price_usd: currency === 'USD' ? (firstSize?.price ?? product.price ?? 0) : null,
+        nominal_size: firstSize?.nominal_size || product.nominal_size || null,
+        real_size: firstSize?.real_size || product.real_size || null,
         category: category,
         stock: 0,
         status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
@@ -80,10 +95,10 @@ if (Astro.request.method === "POST") {
         max_temperature: null,
         typical_installation: formData.get("typical_installation") as string || null,
         typical_installation_en: formData.get("typical_installation_en") as string || null,
-        applications: formData.get("applications") as string || null,
-        applications_en: formData.get("applications_en") as string || null,
-        benefits: formData.get("benefits") as string || null,
-        benefits_en: formData.get("benefits_en") as string || null,
+        applications: processListField(formData.get("applications")),
+        applications_en: processListField(formData.get("applications_en")),
+        benefits: processListField(formData.get("benefits")),
+        benefits_en: processListField(formData.get("benefits_en")),
       });
 
       // Actualizar imagen principal si viene del componente
@@ -125,19 +140,51 @@ function processListField(field: string | FormDataEntryValue | null): string | n
 // Función helper para convertir texto a array para DynamicListInput
 function textToArray(text: string | null | undefined): string[] {
   if (!text) return [];
+
+  // Intentar parsear como JSON primero (por si viene de la base de datos como JSON string)
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      // Manejar doble serialización: si el primer elemento es un string JSON, parsearlo también
+      const result: string[] = [];
+      for (const item of parsed) {
+        if (typeof item === 'string') {
+          // Verificar si el item es un JSON string (array)
+          try {
+            const innerParsed = JSON.parse(item);
+            if (Array.isArray(innerParsed)) {
+              result.push(...innerParsed.filter((i: any) => typeof i === 'string' && i.trim()));
+            } else {
+              result.push(item.trim());
+            }
+          } catch {
+            // No es JSON, es un string normal
+            if (item.trim()) {
+              result.push(item.trim());
+            }
+          }
+        }
+      }
+      return result.filter(item => item);
+    }
+  } catch {
+    // No es JSON válido, continuar con split por líneas
+  }
+
   return text.split('\n').filter(item => item && item.trim());
 }
 
 // Preparar tamaños para la tabla
 // Incluir el producto actual si tiene datos de tamaño
-let productSizes: Array<{nominal_size: string; real_size: string; price: number; bind_code: string}> = [];
+let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
 
 // Primero agregar el producto actual si tiene tamaño
-if (product.nominal_size || product.real_size || product.bind_code) {
+if (product.nominal_size || product.real_size || product.bind_code || product.price) {
   productSizes.push({
     nominal_size: product.nominal_size || '',
     real_size: product.real_size || '',
     price: product.price || 0,
+    currency: (product.currency as 'MXN' | 'USD') || 'MXN',
     bind_code: product.bind_code || ''
   });
 }

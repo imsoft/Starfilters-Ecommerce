@@ -72,7 +72,7 @@ if (Astro.request.method === "POST") {
     
     // Procesar tabla de tamaños
     const sizesJson = formData.get("product_sizes") as string;
-    let sizes: Array<{nominal_size: string; real_size: string; price: number; bind_code: string}> = [];
+    let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
     if (sizesJson) {
       try {
         sizes = JSON.parse(sizesJson);
@@ -103,8 +103,8 @@ if (Astro.request.method === "POST") {
           description: (formData.get("description") as string) || undefined,
           description_en: (formData.get("description_en") as string) || undefined,
           price: size.price || 0,
-          currency: "MXN",
-          price_usd: null,
+          currency: size.currency || 'MXN',
+          price_usd: size.currency === 'USD' ? (size.price || 0) : null,
           nominal_size: size.nominal_size || null,
           real_size: size.real_size || null,
           category: category,
