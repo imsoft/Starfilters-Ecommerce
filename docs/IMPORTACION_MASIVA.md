@@ -119,9 +119,13 @@ El archivo incluye todas las columnas disponibles. **Solo necesitas llenar las q
 - **descripcion**: Descripción de la categoría (opcional)
 - **descripcion_en**: Descripción en inglés (opcional)
 - **imagen_principal**: URL de la imagen principal (opcional)
+  - Solo se permite una imagen principal por categoría
+  - Si subes una nueva imagen, reemplazará automáticamente a la anterior
 - **status**: Estado - `active`, `inactive` o `draft` (por defecto: `active`)
 
-**Nota:** El slug se genera automáticamente desde el nombre.
+**Nota:** 
+- El slug se genera automáticamente desde el nombre.
+- Las categorías solo tienen imagen principal (no hay carrusel de imágenes).
 
 ### Paso 4: Subir el Archivo
 
@@ -149,10 +153,10 @@ El archivo incluye todas las columnas disponibles. **Solo necesitas llenar las q
 
 ### Ejemplo de Archivo de Categorías
 
-| nombre | descripcion | status |
-|--------|-------------|--------|
-| Filtros HEPA | Filtros de alta eficiencia | active |
-| Filtros Pleat | Filtros pleatados | active |
+| nombre | nombre_en | descripcion | imagen_principal | status |
+|--------|-----------|-------------|------------------|--------|
+| Filtros HEPA | HEPA Filters | Filtros de alta eficiencia | https://ejemplo.com/hepa.jpg | active |
+| Filtros Pleat | Pleat Filters | Filtros pleatados | https://ejemplo.com/pleat.jpg | active |
 
 ### Nombres de Columnas
 
