@@ -8,15 +8,17 @@ interface Props {
     price: number;
     currency: 'MXN' | 'USD';
     bind_code: string;
+    sku: string;
   }>;
 }
 
 const { id, name, initialSizes = [] } = Astro.props;
 
-// Asegurar que todos los tamaños tengan currency (para datos antiguos)
+// Asegurar que todos los tamaños tengan currency y sku (para datos antiguos)
 const normalizedSizes = initialSizes.map(size => ({
   ...size,
-  currency: size.currency || 'MXN'
+  currency: size.currency || 'MXN',
+  sku: size.sku || ''
 }));
 ---
 
@@ -54,7 +56,10 @@ const normalizedSizes = initialSizes.map(size => ({
             Moneda
           </th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-            Código Bind
+            Código de producto
+          </th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+            SKU
           </th>
           <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
             Acción
@@ -115,6 +120,15 @@ const normalizedSizes = initialSizes.map(size => ({
                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <input
+                  type="text"
+                  data-field="sku"
+                  value={size.sku}
+                  placeholder="Ej: SF-001"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </td>
               <td class="px-4 py-3 whitespace-nowrap text-center">
                 <button
                   type="button"
@@ -130,7 +144,7 @@ const normalizedSizes = initialSizes.map(size => ({
           ))
         ) : (
           <tr data-empty-row>
-            <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">
+            <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">
               No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.
             </td>
           </tr>
@@ -174,14 +188,16 @@ const normalizedSizes = initialSizes.map(size => ({
           var priceInput = row.querySelector('[data-field="price"]');
           var currencySelect = row.querySelector('[data-field="currency"]');
           var bindCodeInput = row.querySelector('[data-field="bind_code"]');
+          var skuInput = row.querySelector('[data-field="sku"]');
 
-          if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
+          if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput && skuInput) {
             sizes.push({
               nominal_size: nominalInput.value || '',
               real_size: realInput.value || '',
               price: parseFloat(priceInput.value) || 0,
               currency: currencySelect.value || 'MXN',
-              bind_code: bindCodeInput.value || ''
+              bind_code: bindCodeInput.value || '',
+              sku: skuInput.value || ''
             });
           }
         });
@@ -193,7 +209,7 @@ const normalizedSizes = initialSizes.map(size => ({
         if (tbody.querySelectorAll('tr[data-row-index]').length === 0) {
           var emptyRow = document.createElement('tr');
           emptyRow.setAttribute('data-empty-row', '');
-          emptyRow.innerHTML = '<td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.</td>';
+          emptyRow.innerHTML = '<td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.</td>';
           tbody.appendChild(emptyRow);
         }
       }
@@ -239,6 +255,9 @@ const normalizedSizes = initialSizes.map(size => ({
           '</td>' +
           '<td class="px-4 py-3 whitespace-nowrap">' +
             '<input type="text" data-field="bind_code" placeholder="Ej: HGD1" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
+          '</td>' +
+          '<td class="px-4 py-3 whitespace-nowrap">' +
+            '<input type="text" data-field="sku" placeholder="Ej: SF-001" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
           '</td>' +
           '<td class="px-4 py-3 whitespace-nowrap text-center">' +
             '<button type="button" data-remove-row class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">' +

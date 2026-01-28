@@ -56,7 +56,7 @@ if (Astro.request.method === "POST") {
 
       // Procesar tabla de tamaños
       const sizesJson = formData.get("product_sizes") as string;
-      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
+      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; sku: string}> = [];
       if (sizesJson) {
         try {
           sizes = JSON.parse(sizesJson);
@@ -73,6 +73,7 @@ if (Astro.request.method === "POST") {
       const updated = await updateProductService(productId, {
         filter_category_id: filterCategoryId,
         bind_code: firstSize?.bind_code || product.bind_code || null,
+        sku: firstSize?.sku || product.sku || null,
         name: formData.get("name") as string,
         name_en: (formData.get("name_en") as string) || undefined,
         description: (formData.get("description") as string) || undefined,
@@ -176,7 +177,7 @@ function textToArray(text: string | null | undefined): string[] {
 
 // Preparar tamaños para la tabla
 // Incluir el producto actual si tiene datos de tamaño
-let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
+let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; sku: string}> = [];
 
 // Primero agregar el producto actual si tiene tamaño
 if (product.nominal_size || product.real_size || product.bind_code || product.price) {
@@ -185,7 +186,8 @@ if (product.nominal_size || product.real_size || product.bind_code || product.pr
     real_size: product.real_size || '',
     price: product.price || 0,
     currency: (product.currency as 'MXN' | 'USD') || 'MXN',
-    bind_code: product.bind_code || ''
+    bind_code: product.bind_code || '',
+    sku: product.sku || ''
   });
 }
 

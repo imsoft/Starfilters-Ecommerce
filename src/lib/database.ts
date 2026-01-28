@@ -20,6 +20,7 @@ export interface Product {
   filter_category_id?: number | null;
   bind_id?: string | null;
   bind_code?: string | null;
+  sku?: string | null;
   name: string;
   name_en?: string;
   description: string;

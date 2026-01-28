@@ -120,6 +120,51 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Productos', url: `${siteUrl}/filtros` },
   { name: productName, url: `${siteUrl}/product/${product.bind_id}` }
 ]);
+
+// Función helper para parsear campos que pueden ser JSON o texto
+function parseListField(field: string | null | undefined): string[] {
+  if (!field) return [];
+
+  // Intentar parsear como JSON
+  try {
+    let parsed = JSON.parse(field);
+
+    // Manejar doble serialización
+    if (Array.isArray(parsed)) {
+      const result: string[] = [];
+      for (const item of parsed) {
+        if (typeof item === 'string') {
+          try {
+            const innerParsed = JSON.parse(item);
+            if (Array.isArray(innerParsed)) {
+              result.push(...innerParsed.filter((i: any) => typeof i === 'string' && i.trim()));
+            } else {
+              result.push(item.trim());
+            }
+          } catch {
+            if (item.trim()) result.push(item.trim());
+          }
+        }
+      }
+      return result.filter(item => item);
+    }
+
+    // Si es string después de parsear
+    if (typeof parsed === 'string') {
+      return parsed.split('\n').filter(item => item && item.trim());
+    }
+  } catch {
+    // No es JSON, tratar como texto plano
+  }
+
+  return field.split('\n').filter(item => item && item.trim());
+}
+
+// Preparar datos técnicos
+const efficiencyList = parseListField(product.efficiency);
+const characteristicsList = parseListField(product.characteristics);
+const applicationsList = parseListField(product.applications);
+const benefitsList = parseListField(product.benefits);
 ---
 
 <WebsiteLayout
@@ -152,8 +197,8 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <div class="bg-background">
     <!-- Breadcrumb -->
-    <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-      <nav class="mb-8" aria-label="Breadcrumb">
+    <div class="mx-auto max-w-2xl px-4 pt-24 sm:px-6 lg:max-w-7xl lg:px-8">
+      <nav class="mb-4" aria-label="Breadcrumb">
         <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
           <li>
             <a href="/" class="hover:text-foreground transition-colors">Inicio</a>
@@ -178,7 +223,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
     <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
       <!-- Technical Specifications Section -->
-      <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-24 sm:px-6 sm:py-32 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
+      <div class="mx-auto grid max-w-2xl grid-cols-1 items-start gap-x-8 gap-y-16 px-4 py-8 sm:px-6 sm:py-12 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
           <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h2>
           <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''}>
@@ -198,39 +243,84 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             <p>{productDesc}</p>
           </div>
 
-          <dl class="mt-10 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
-            <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Categoría</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">{productCat || (lang === 'en' ? 'Not specified' : 'No especificada')}</dd>
-            </div>
-            {product.uuid && (
+          <dl class="mt-10 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 lg:gap-x-8">
+            {/* Eficiencia */}
+            {efficiencyList.length > 0 && (
               <div class="border-t border-border pt-4">
-                <dt class="font-medium text-foreground">SKU</dt>
-                <dd class="mt-2 text-sm text-muted-foreground">{product.uuid}</dd>
+                <dt class="font-medium text-foreground">Eficiencia</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">
+                  <ul class="list-disc list-inside space-y-1">
+                    {efficiencyList.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                  {product.efficiency_class && (
+                    <p class="mt-2"><span class="font-medium">EN1822 Clase:</span> {product.efficiency_class}</p>
+                  )}
+                </dd>
               </div>
             )}
-            {product.weight && (
+
+            {/* Características */}
+            {characteristicsList.length > 0 && (
               <div class="border-t border-border pt-4">
-                <dt class="font-medium text-foreground">Peso</dt>
-                <dd class="mt-2 text-sm text-muted-foreground">{product.weight}</dd>
+                <dt class="font-medium text-foreground">Características</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">
+                  <ul class="list-disc list-inside space-y-1">
+                    {characteristicsList.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                </dd>
               </div>
             )}
-            <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Disponibilidad</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">
-                {product.stock > 0 ? `En stock (${product.stock} disponibles)` : 'Agotado'}
-              </dd>
-            </div>
-            {product.tags && (
+
+            {/* Aplicaciones */}
+            {applicationsList.length > 0 && (
               <div class="border-t border-border pt-4">
-                <dt class="font-medium text-foreground">Etiquetas</dt>
-                <dd class="mt-2 text-sm text-muted-foreground">{product.tags}</dd>
+                <dt class="font-medium text-foreground">Aplicaciones</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">
+                  <ul class="list-disc list-inside space-y-1">
+                    {applicationsList.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                </dd>
               </div>
             )}
-            <div class="border-t border-border pt-4">
-              <dt class="font-medium text-foreground">Garantía</dt>
-              <dd class="mt-2 text-sm text-muted-foreground">1 año de garantía</dd>
-            </div>
+
+            {/* Beneficios */}
+            {benefitsList.length > 0 && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">Beneficios</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">
+                  <ul class="list-disc list-inside space-y-1">
+                    {benefitsList.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+
+            {/* Instalación típica */}
+            {product.typical_installation && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">Instalación Típica</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">{product.typical_installation}</dd>
+              </div>
+            )}
+
+            {/* Medidas */}
+            {(product.nominal_size || product.real_size) && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">Medidas</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">
+                  {product.nominal_size && <p><span class="font-medium">Nominal:</span> {product.nominal_size}</p>}
+                  {product.real_size && <p><span class="font-medium">Real:</span> {product.real_size}</p>}
+                </dd>
+              </div>
+            )}
           </dl>
 
           <!-- Formulario de compra -->
@@ -390,107 +480,6 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   })}
                 </tbody>
               </table>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <!-- Especificaciones Técnicas -->
-      {(product.efficiency || product.efficiency_class || product.characteristics || product.applications || product.benefits) && (
-        <section class="mt-24">
-          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold tracking-tight text-foreground mb-8">
-              Especificaciones Técnicas
-            </h2>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Eficiencia */}
-              {(product.efficiency || product.efficiency_class) && (
-                <div class="rounded-lg border border-gray-200 bg-white p-6">
-                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    Eficiencia
-                  </h3>
-                  {product.efficiency && (
-                    <ul class="list-disc list-inside space-y-2 text-gray-700 mb-2">
-                      {product.efficiency.split('\n').filter(line => line.trim()).map((line) => (
-                        <li>{line.trim()}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {product.efficiency_class && (
-                    <p class="text-sm text-gray-600">
-                      <span class="font-medium">Clase EN1822:</span> {product.efficiency_class}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Características */}
-              {product.characteristics && (
-                <div class="rounded-lg border border-gray-200 bg-white p-6">
-                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Características
-                  </h3>
-                  <ul class="list-disc list-inside space-y-2 text-gray-700">
-                    {product.characteristics.split('\n').filter(line => line.trim()).map((line) => (
-                      <li>{line.trim()}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Aplicaciones */}
-              {product.applications && (
-                <div class="rounded-lg border border-gray-200 bg-white p-6">
-                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <svg class="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Aplicaciones
-                  </h3>
-                  <ul class="list-disc list-inside space-y-2 text-gray-700">
-                    {product.applications.split('\n').filter(line => line.trim()).map((line) => (
-                      <li>{line.trim()}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Beneficios */}
-              {product.benefits && (
-                <div class="rounded-lg border border-gray-200 bg-white p-6">
-                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <svg class="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Beneficios
-                  </h3>
-                  <ul class="list-disc list-inside space-y-2 text-gray-700">
-                    {product.benefits.split('\n').filter(line => line.trim()).map((line) => (
-                      <li>{line.trim()}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Instalación Típica */}
-              {product.typical_installation && (
-                <div class="rounded-lg border border-gray-200 bg-white p-6">
-                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    Instalación Típica
-                  </h3>
-                  <p class="text-gray-700">{product.typical_installation}</p>
-                </div>
-              )}
             </div>
           </div>
         </section>
