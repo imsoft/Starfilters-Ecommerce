@@ -1,6 +1,7 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
+import { requireAdmin } from "@/lib/auth-utils";
 import { 
   getDashboardStats, 
   getRecentProducts, 
@@ -8,6 +9,12 @@ import {
   getTopProducts
 } from "@/lib/database";
 import { getExchangeRate } from "@/lib/currency-service";
+
+// Verificar que el usuario es administrador
+const { redirect } = await requireAdmin(Astro.cookies);
+if (redirect) {
+  return Astro.redirect(redirect);
+}
 
 // Obtener datos del dashboard con manejo de errores
 let stats = {
@@ -63,19 +70,34 @@ try {
   exchangeRate = await getExchangeRate();
   console.log(`💱 Tasa de cambio obtenida: ${exchangeRate}`);
   
-  // Obtener fecha de última actualización
+  // Obtener fecha de última actualización con timeout (opcional, no crítico)
+  // No bloquear la carga del dashboard si esto falla
   try {
-    const rateResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 segundos timeout
+    
+    const rateResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
     if (rateResponse.ok) {
       const rateData = await rateResponse.json();
       exchangeRateDate = rateData.date || new Date().toISOString().split('T')[0];
+    } else {
+      exchangeRateDate = new Date().toISOString().split('T')[0];
     }
   } catch (error) {
-    console.error('Error obteniendo fecha de tasa:', error);
+    // No crítico, solo usar fecha actual
+    console.error('Error obteniendo fecha de tasa (no crítico):', error);
     exchangeRateDate = new Date().toISOString().split('T')[0];
   }
 } catch (error) {
   console.error('❌ Error obteniendo tasa de cambio:', error);
+  // Usar valor por defecto si falla
+  exchangeRate = 17.0;
+  exchangeRateDate = new Date().toISOString().split('T')[0];
 }
 
 // Función para formatear moneda

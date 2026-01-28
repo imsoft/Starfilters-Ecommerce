@@ -16,7 +16,12 @@ const user = getAuthenticatedUser(Astro.cookies);
 let adminUser = null;
 
 if (user) {
-  adminUser = await getAdminUserByEmail(user.email);
+  try {
+    adminUser = await getAdminUserByEmail(user.email);
+  } catch (error) {
+    console.error('Error obteniendo admin user:', error);
+    // Continuar sin adminUser si hay error
+  }
 }
 
 // Función para obtener iniciales
@@ -52,7 +57,7 @@ const currentPath = Astro.url.pathname;
     <AdminSidebarWrapper 
       client:load
       currentPath={currentPath}
-      adminUser={adminUser}
+      adminUser={adminUser || null}
     >
       <!-- Top bar -->
       <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">

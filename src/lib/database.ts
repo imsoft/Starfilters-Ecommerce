@@ -797,12 +797,14 @@ export const getDashboardStats = async () => {
 
 export async function getRecentProducts(limit = 5): Promise<Product[]> {
   try {
-    // Obtener todos los productos y aplicar limit en JavaScript
-    const sql = 'SELECT * FROM products ORDER BY created_at DESC';
-    const allProducts = await query(sql, []) as Product[];
+    // Validar y sanitizar el límite
+    const safeLimit = Math.max(1, Math.min(100, parseInt(String(limit))));
     
-    // Aplicar limit en JavaScript
-    return allProducts.slice(0, limit);
+    // Usar LIMIT en SQL para mejor rendimiento
+    const sql = 'SELECT * FROM products ORDER BY created_at DESC LIMIT ?';
+    const products = await query(sql, [safeLimit]) as Product[];
+    
+    return products;
   } catch (error) {
     console.error('Error obteniendo productos recientes:', error);
     return [];

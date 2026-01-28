@@ -26,8 +26,15 @@ export async function getExchangeRate(forceRefresh = false): Promise<number> {
     let rate: number;
     
     try {
-      // En el servidor, usar la API externa directamente
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      // En el servidor, usar la API externa directamente con timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos timeout
+      
+      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error('Error al obtener tasa de cambio');

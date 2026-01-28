@@ -85,6 +85,7 @@ export function AppSidebar({ currentPath = '', adminUser }: AppSidebarProps) {
     },
   ]
 
+  // Manejar casos donde adminUser puede ser null o undefined
   const displayName = adminUser?.full_name || adminUser?.username || 'Admin User'
 
   return (
