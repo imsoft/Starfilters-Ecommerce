@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { updateCategory, deleteCategory } from '@/lib/filter-category-service';
+import { updateCategory, deleteCategory, deletePrimaryCategoryImages } from '@/lib/filter-category-service';
 import { requireAdmin } from '@/lib/auth-utils';
 
 /**
@@ -41,6 +41,12 @@ export const PATCH: APIRoute = async ({ params, request, cookies }) => {
     const { main_image } = body;
 
     if (main_image !== undefined) {
+      // Si se está estableciendo una nueva imagen principal, eliminar las anteriores
+      if (main_image && main_image.trim() !== '') {
+        console.log('🔄 Eliminando imágenes principales anteriores antes de establecer la nueva');
+        await deletePrimaryCategoryImages(id);
+      }
+      
       const success = await updateCategory(id, {
         main_image: main_image || null,
       });

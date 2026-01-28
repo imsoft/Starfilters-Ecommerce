@@ -315,6 +315,23 @@ export const deleteCategoryImage = async (id: number): Promise<boolean> => {
 };
 
 /**
+ * Eliminar todas las imágenes principales de una categoría
+ */
+export const deletePrimaryCategoryImages = async (categoryId: number): Promise<boolean> => {
+  try {
+    console.log('🗑️ Eliminando imágenes principales de categoría:', categoryId);
+
+    await query('DELETE FROM filter_category_images WHERE category_id = ? AND is_primary = 1', [categoryId]);
+
+    console.log('✅ Imágenes principales eliminadas');
+    return true;
+  } catch (error) {
+    console.error('❌ Error eliminando imágenes principales:', error);
+    return false;
+  }
+};
+
+/**
  * ===================================
  * VARIANTES
  * ===================================
@@ -483,6 +500,7 @@ export default {
   getCategoryImages,
   addCategoryImage,
   deleteCategoryImage,
+  deletePrimaryCategoryImages,
   // Variantes
   getCategoryVariants,
   getVariantByBindCode,
