@@ -443,11 +443,14 @@ export const createOrderStatusUpdateEmail = (
   total: number,
   trackingNumber?: string
 ): EmailData => {
+  // Color primary de la aplicación: oklch(0.623 0.214 259.815) ≈ #6B46C1
+  const primaryColor = '#6B46C1';
+  
   const statusMessages: Record<string, { title: string; message: string; color: string }> = {
     processing: {
       title: 'Tu pedido está siendo procesado',
       message: 'Tu pedido ha sido confirmado y está siendo preparado para el envío.',
-      color: '#6366f1'
+      color: primaryColor
     },
     shipped: {
       title: '¡Tu pedido ha sido enviado!',
@@ -469,7 +472,7 @@ export const createOrderStatusUpdateEmail = (
   const statusInfo = statusMessages[newStatus] || {
     title: 'Actualización de tu pedido',
     message: `El estado de tu pedido ha cambiado de "${oldStatus}" a "${newStatus}".`,
-    color: '#6366f1'
+    color: primaryColor
   };
 
   const subject = `Actualización de Pedido #${orderNumber} - Star Filters`;
@@ -487,6 +490,7 @@ export const createOrderStatusUpdateEmail = (
   `).join('');
   
   const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://tu-dominio.com';
+  const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
   const html = `
     <!DOCTYPE html>
@@ -495,9 +499,11 @@ export const createOrderStatusUpdateEmail = (
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: ${statusInfo.color}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background-color: ${statusInfo.color}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
         .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
         .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
@@ -505,20 +511,24 @@ export const createOrderStatusUpdateEmail = (
           display: inline-block; 
           padding: 8px 16px; 
           background-color: ${statusInfo.color}; 
-          color: white; 
+          color: white !important; 
           border-radius: 20px; 
           font-weight: bold;
           margin: 10px 0;
         }
         .button { 
           display: inline-block; 
-          background-color: #6366f1; 
-          color: white; 
+          background-color: ${primaryColor}; 
+          color: white !important; 
           padding: 12px 24px; 
           text-decoration: none; 
           border-radius: 6px; 
           font-weight: bold;
           margin: 20px 0;
+          text-align: center;
+        }
+        .button:hover {
+          background-color: #5B3AA8;
         }
         .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
       </style>
@@ -526,6 +536,7 @@ export const createOrderStatusUpdateEmail = (
     <body>
       <div class="container">
         <div class="header">
+          <img src="${logoUrl}" alt="Star Filters" class="header-logo" />
           <h1>${statusInfo.title}</h1>
         </div>
         <div class="content">
