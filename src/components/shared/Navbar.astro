@@ -5,7 +5,7 @@ import CartIcon from "../ui/CartIcon.astro";
 import LanguageSelector from "./LanguageSelector";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
-import { isUserAdmin } from '@/lib/database';
+import { isUserAdmin, getUserById } from '@/lib/database';
 
 // Obtener idioma actual
 const lang = getLangFromUrl(Astro.url);
@@ -16,6 +16,12 @@ const isHomePage = Astro.url.pathname === '/' || Astro.url.pathname === '/en';
 
 // Obtener usuario autenticado
 const user = getAuthenticatedUser(Astro.cookies);
+
+// Obtener datos completos del usuario para la foto de perfil
+let fullUser = null;
+if (user) {
+  fullUser = await getUserById(user.id);
+}
 
 // Verificar si es admin
 let userIsAdmin = false;
@@ -206,8 +212,18 @@ const navLinks = [...baseNavLinks];
                   <div class="space-y-2">
                     <div class="-mx-3 block rounded-lg px-3 py-2.5">
                       <div class="flex items-center gap-x-3">
-                        <div class="avatar-circle bg-primary text-primary-foreground text-sm font-medium">
-                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                        <div class="avatar-circle bg-primary text-primary-foreground text-sm font-medium overflow-hidden">
+                          {fullUser?.profile_image ? (
+                            <img 
+                              src={fullUser.profile_image} 
+                              alt={`${user.firstName} ${user.lastName}`}
+                              class="w-full h-full object-cover"
+                              onerror="this.style.display='none'; this.parentElement.querySelector('.avatar-initials').style.display='flex';"
+                            />
+                          ) : null}
+                          <div class={`avatar-initials w-full h-full flex items-center justify-center ${fullUser?.profile_image ? 'hidden' : ''}`}>
+                            {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                          </div>
                         </div>
                         <div>
                           <p class="text-base font-semibold text-foreground">{user.firstName} {user.lastName}</p>

@@ -1,12 +1,18 @@
 ---
 import type { AuthUser } from "@/lib/auth";
-import { isUserAdmin } from '@/lib/database';
+import { isUserAdmin, getUserById } from '@/lib/database';
 
 export interface Props {
   user: AuthUser;
 }
 
 const { user } = Astro.props;
+
+// Obtener datos completos del usuario para la foto de perfil
+let fullUser = null;
+if (user) {
+  fullUser = await getUserById(user.id);
+}
 
 // Verificar si el usuario es administrador
 let isAdmin = false;
@@ -30,8 +36,18 @@ const initials = getInitials(user.firstName, user.lastName);
     aria-expanded="false"
     aria-haspopup="true"
   >
-    <div class="avatar-circle bg-primary text-primary-foreground text-sm font-medium">
-      {initials}
+    <div class="avatar-circle bg-primary text-primary-foreground text-sm font-medium overflow-hidden">
+      {fullUser?.profile_image ? (
+        <img 
+          src={fullUser.profile_image} 
+          alt={`${user.firstName} ${user.lastName}`}
+          class="w-full h-full object-cover"
+          onerror="this.style.display='none'; this.parentElement.querySelector('.avatar-initials').style.display='flex';"
+        />
+      ) : null}
+      <div class={`avatar-initials w-full h-full flex items-center justify-center ${fullUser?.profile_image ? 'hidden' : ''}`}>
+        {initials}
+      </div>
     </div>
     <span class="hidden lg:flex items-center">
       <svg

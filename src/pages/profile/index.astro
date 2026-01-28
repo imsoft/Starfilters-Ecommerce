@@ -125,7 +125,7 @@ const formatDate = (date: Date) => {
       <div class="mb-12">
         <div class="flex items-center gap-4">
           <div class="relative group">
-            <div class="avatar-circle bg-primary text-primary-foreground text-lg font-bold overflow-hidden">
+            <div class="w-32 h-32 bg-primary text-primary-foreground text-4xl font-bold rounded-full overflow-hidden flex items-center justify-center">
               {fullUser.profile_image ? (
                 <img 
                   src={fullUser.profile_image} 
@@ -460,16 +460,17 @@ const formatDate = (date: Date) => {
         
         if (response.ok && result.success) {
           // Actualizar la imagen en la interfaz
-          if (profileAvatarImg) {
-            profileAvatarImg.src = result.image_url;
-            profileAvatarImg.style.display = 'block';
-            if (avatarFallback) {
-              (avatarFallback as HTMLElement).style.display = 'none';
-            }
-          } else {
-            // Si no existe la imagen, crear el elemento img
-            const avatarContainer = document.querySelector('.avatar-circle');
-            if (avatarContainer && avatarFallback) {
+          const avatarContainer = document.querySelector('.w-32.h-32.bg-primary');
+          if (avatarContainer) {
+            if (profileAvatarImg) {
+              // Si ya existe la imagen, actualizar su src
+              profileAvatarImg.src = result.image_url;
+              profileAvatarImg.style.display = 'block';
+              if (avatarFallback) {
+                (avatarFallback as HTMLElement).style.display = 'none';
+              }
+            } else {
+              // Si no existe la imagen, crear el elemento img
               const img = document.createElement('img');
               img.src = result.image_url;
               img.alt = 'Foto de perfil';
@@ -481,15 +482,18 @@ const formatDate = (date: Date) => {
                   (avatarFallback as HTMLElement).style.display = 'flex';
                 }
               };
-              avatarContainer.insertBefore(img, avatarFallback);
-              (avatarFallback as HTMLElement).style.display = 'none';
+              // Insertar la imagen al inicio del contenedor
+              avatarContainer.insertBefore(img, avatarContainer.firstChild);
+              if (avatarFallback) {
+                (avatarFallback as HTMLElement).style.display = 'none';
+              }
             }
           }
           
           // Mostrar mensaje de éxito
           showSuccessNotification('Foto de perfil actualizada exitosamente');
           
-          // Recargar la página después de un breve delay para mostrar la nueva imagen
+          // Recargar la página después de un breve delay para mostrar la nueva imagen y actualizar navbar
           setTimeout(() => {
             window.location.reload();
           }, 1000);
