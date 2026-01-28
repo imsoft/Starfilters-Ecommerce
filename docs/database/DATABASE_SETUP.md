@@ -7,7 +7,7 @@
 1. **Accede al panel de control de Hostinger**
 2. **Ve a "Bases de Datos MySQL"**
 3. **Crea una nueva base de datos:**
-   - Nombre: `starfilters_db` (o el que prefieras)
+   - Nombre: `starfilters_ecommerce_db` (o el que prefieras)
    - Usuario: Crea un usuario específico para la aplicación
    - Contraseña: Genera una contraseña segura
 

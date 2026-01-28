@@ -2,8 +2,8 @@
 -- Ejecuta este script en phpMyAdmin de Hostinger
 
 -- Crear base de datos (opcional, si no existe)
--- CREATE DATABASE IF NOT EXISTS starfilters_db;
--- USE starfilters_db;
+-- CREATE DATABASE IF NOT EXISTS starfilters_ecommerce_db;
+-- USE starfilters_ecommerce_db;
 
 -- Tabla de productos
 CREATE TABLE IF NOT EXISTS products (

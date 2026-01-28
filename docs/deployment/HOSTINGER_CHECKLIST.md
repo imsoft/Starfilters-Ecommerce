@@ -27,14 +27,14 @@
 ### 1.2 Exportar Base de Datos Local
 ```bash
 # En tu máquina local
-mysqldump -u tu_usuario -p starfilters_db > starfilters_db.sql
+mysqldump -u tu_usuario -p starfilters_ecommerce_db > starfilters_ecommerce_db.sql
 ```
 
 ### 1.3 Importar a Hostinger
 - [ ] Acceder a phpMyAdmin en Hostinger
 - [ ] Seleccionar la base de datos creada
 - [ ] Clic en "Importar"
-- [ ] Subir archivo `starfilters_db.sql`
+- [ ] Subir archivo `starfilters_ecommerce_db.sql`
 - [ ] Verificar que todas las tablas se crearon
 
 ---

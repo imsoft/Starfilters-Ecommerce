@@ -22,7 +22,7 @@ async function resetAdminPassword() {
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'starfilters_db'
+      database: process.env.DB_NAME || 'starfilters_ecommerce_db'
     });
 
     console.log('🔗 Conectando a la base de datos...');

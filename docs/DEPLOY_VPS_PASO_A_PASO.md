@@ -133,9 +133,9 @@ sudo mysql -u root -p
 
 **Dentro de MySQL, ejecuta (reemplaza las contraseñas):**
 ```sql
-CREATE DATABASE starfilters_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE starfilters_ecommerce_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'starfilters_user'@'localhost' IDENTIFIED BY 'TU_CONTRASEÑA_SEGURA';
-GRANT ALL PRIVILEGES ON starfilters_db.* TO 'starfilters_user'@'localhost';
+GRANT ALL PRIVILEGES ON starfilters_ecommerce_db.* TO 'starfilters_user'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -208,7 +208,7 @@ nano .env
 DB_HOST=localhost
 DB_USER=starfilters_user
 DB_PASSWORD=TU_CONTRASEÑA_MYSQL
-DB_NAME=starfilters_db
+DB_NAME=starfilters_ecommerce_db
 DB_PORT=3306
 
 # JWT (genera uno seguro)
@@ -258,18 +258,18 @@ openssl rand -base64 32
 
 **1. Exportar base de datos local:**
 ```bash
-mysqldump -u tu_usuario_local -p starfilters_db > starfilters_db.sql
+mysqldump -u tu_usuario_local -p starfilters_ecommerce_db > starfilters_ecommerce_db.sql
 ```
 
 **2. Subir al VPS usando SCP:**
 ```bash
-scp starfilters_db.sql starfilters@TU_IP_VPS:/home/starfilters/
+scp starfilters_ecommerce_db.sql starfilters@TU_IP_VPS:/home/starfilters/
 ```
 
 **3. Importar en el VPS:**
 ```bash
 cd ~
-mysql -u starfilters_user -p starfilters_db < starfilters_db.sql
+mysql -u starfilters_user -p starfilters_ecommerce_db < starfilters_ecommerce_db.sql
 ```
 
 ### Opción B: Crear desde cero
@@ -277,7 +277,7 @@ mysql -u starfilters_user -p starfilters_db < starfilters_db.sql
 **Si prefieres crear la base de datos desde cero:**
 ```bash
 cd ~/starfilters-app
-mysql -u starfilters_user -p starfilters_db < database/schema.sql
+mysql -u starfilters_user -p starfilters_ecommerce_db < database/schema.sql
 ```
 
 ---
@@ -519,7 +519,7 @@ pm2 start server.js --name starfilters-app
 cat ~/starfilters-app/.env | grep DB_
 
 # Probar conexión manualmente
-mysql -u starfilters_user -p starfilters_db -e "SELECT 1;"
+mysql -u starfilters_user -p starfilters_ecommerce_db -e "SELECT 1;"
 ```
 
 ### Nginx 502 Bad Gateway

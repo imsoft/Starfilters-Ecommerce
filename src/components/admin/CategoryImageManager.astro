@@ -231,13 +231,25 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         credentials: 'include',
       });
 
-      const result = await response.json();
-      console.log('📡 Respuesta del servidor:', result);
-      if (result.success) {
+      let result;
+      try {
+        const text = await response.text();
+        console.log('📡 Respuesta texto (eliminar principal):', text);
+        result = text ? JSON.parse(text) : { success: false, message: 'Respuesta vacía' };
+      } catch (parseError) {
+        console.error('❌ Error parseando respuesta (eliminar principal):', parseError);
+        result = { success: false, message: 'Error al procesar la respuesta del servidor' };
+      }
+      
+      console.log('📡 Resultado del servidor (eliminar principal):', result);
+      
+      if (response.ok && result.success) {
         alert('Imagen eliminada correctamente');
         window.location.reload();
       } else {
-        alert('Error: ' + (result.message || 'Error desconocido'));
+        const errorMsg = result.message || result.error || 'Error desconocido';
+        console.error('❌ Error eliminando imagen principal:', errorMsg, 'Status:', response.status);
+        alert('Error: ' + errorMsg + (response.status === 401 ? ' (No autorizado - verifica que estés logueado)' : ''));
       }
     } catch (error) {
       console.error('❌ Error:', error);
@@ -290,6 +302,12 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       
       console.log('📡 Resultado de eliminación:', result);
 
+      if (response.status === 401) {
+        alert('Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.');
+        console.error('❌ Error 401: No autorizado');
+        return;
+      }
+
       if (response.ok && result.success) {
         console.log('✅ Imagen eliminada correctamente');
         
@@ -328,8 +346,8 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           window.location.reload();
         }, 500);
       } else {
-        const errorMsg = result.message || 'Error desconocido';
-        console.error('❌ Error eliminando imagen:', errorMsg);
+        const errorMsg = result.message || result.error || 'Error desconocido';
+        console.error('❌ Error eliminando imagen:', errorMsg, 'Status:', response.status);
         alert('Error al eliminar la imagen: ' + errorMsg);
       }
     } catch (error) {
@@ -475,6 +493,13 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         }
 
         console.log('📡 Resultado:', result);
+
+        if (response.status === 401) {
+          primaryImageUploadStatus.textContent = '❌ Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.';
+          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+          alert('Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.');
+          return;
+        }
 
         if (response.ok && result.success && result.url) {
           // Ocultar imagen existente si hay una
@@ -645,7 +670,12 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             }
           } else {
             const errorMsg = result.error || result.message || 'Error desconocido';
-            console.error(`❌ Error subiendo ${file.name}:`, errorMsg);
+            console.error(`❌ Error subiendo ${file.name}:`, errorMsg, 'Status:', response.status);
+            if (response.status === 401) {
+              alert(`Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.`);
+              errorCount++;
+              break; // Salir del loop si hay error de autenticación
+            }
             errorCount++;
           }
         } catch (error) {

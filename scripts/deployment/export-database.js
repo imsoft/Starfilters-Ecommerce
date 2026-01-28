@@ -9,9 +9,9 @@ import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
 
 const DB_USER = process.env.DB_USER || 'root';
-const DB_NAME = process.env.DB_NAME || 'starfilters_db';
+const DB_NAME = process.env.DB_NAME || 'starfilters_ecommerce_db';
 const OUTPUT_DIR = './database/exports';
-const OUTPUT_FILE = `${OUTPUT_DIR}/starfilters_db_${new Date().toISOString().split('T')[0]}.sql`;
+const OUTPUT_FILE = `${OUTPUT_DIR}/starfilters_ecommerce_db_${new Date().toISOString().split('T')[0]}.sql`;
 
 console.log('📦 Exportando base de datos...\n');
 

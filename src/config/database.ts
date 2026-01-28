@@ -10,7 +10,7 @@ const dbConfig = {
   port: parseInt(process.env.DB_PORT || '3306'),
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'starfilters_db',
+  database: process.env.DB_NAME || 'starfilters_ecommerce_db',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

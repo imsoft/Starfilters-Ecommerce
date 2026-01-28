@@ -15,7 +15,7 @@ Host: localhost
 Puerto: 3306
 Usuario: root
 Contraseña: (dejar vacío)
-Base de datos: starfilters_db
+Base de datos: starfilters_ecommerce_db
 ```
 
 ### **2. Conectar a la Base de Datos**
@@ -138,7 +138,7 @@ SELECT
 
 #### **Tablas no existen:**
 ```bash
-mysql -u root starfilters_db < database/schema.sql
+mysql -u root starfilters_ecommerce_db < database/schema.sql
 ```
 
 #### **Usuario de prueba no funciona:**
