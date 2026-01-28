@@ -5,10 +5,8 @@ const whatsappNumber = await getWhatsAppNumber();
 const whatsappMessage = await getWhatsAppMessage();
 
 // Usar número por defecto si no hay uno configurado (formato: código de país + número sin espacios ni caracteres especiales)
-// Ejemplo: 521234567890 (52 es código de México, seguido del número)
-// Si no hay número configurado, el botón se mostrará pero con un número placeholder
-// El administrador debe configurar el número real en /admin/settings/whatsapp
-const defaultNumber = '521234567890'; // Número placeholder - debe configurarse desde el admin
+// El administrador puede configurar un número diferente en /admin/settings/whatsapp
+const defaultNumber = '523322569541'; // Número por defecto: +52 33 2256 9541
 const finalNumber = whatsappNumber && whatsappNumber.length > 0 ? whatsappNumber : defaultNumber;
 const finalMessage = whatsappMessage || 'Hola, me gustaría obtener más información sobre sus productos.';
 
