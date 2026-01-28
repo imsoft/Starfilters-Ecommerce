@@ -34,21 +34,21 @@ export function RichTextEditor({
         },
         bulletList: {
           HTMLAttributes: {
-            class: 'list-disc list-inside my-2',
+            class: 'list-disc list-outside my-2 ml-6',
           },
           keepMarks: true,
           keepAttributes: false,
         },
         orderedList: {
           HTMLAttributes: {
-            class: 'list-decimal list-inside my-2',
+            class: 'list-decimal list-outside my-2 ml-6',
           },
           keepMarks: true,
           keepAttributes: false,
         },
         listItem: {
           HTMLAttributes: {
-            class: 'my-0',
+            class: 'my-1 pl-1',
           },
         },
       }),
