@@ -18,11 +18,11 @@ const recommendedProductsWithImages = await Promise.all(
   })
 );
 
-// Function to format price
+// Function to format price (server: no access to cart/localStorage)
 const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat("es-MX", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: cart.currency || "USD",
+    currency: "USD",
   }).format(price);
 };
 ---
@@ -289,9 +289,9 @@ const formatPrice = (price: number): string => {
   }
 
   function formatPrice(price: number): string {
-    return new Intl.NumberFormat("es-MX", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: cart.currency || "USD",
+      currency: "USD",
     }).format(price);
   }
 

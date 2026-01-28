@@ -18,11 +18,11 @@ const recommendedProductsWithImages = await Promise.all(
   })
 );
 
-// Función para formatear precio
+// Función para formatear precio (servidor: no hay acceso a cart/localStorage)
 const formatPrice = (price: number): string => {
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
-    currency: cart.currency || "MXN",
+    currency: "MXN",
   }).format(price);
 };
 ---
@@ -291,7 +291,7 @@ const formatPrice = (price: number): string => {
   function formatPrice(price: number): string {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
-      currency: cart.currency || "MXN",
+      currency: "MXN",
     }).format(price);
   }
 
