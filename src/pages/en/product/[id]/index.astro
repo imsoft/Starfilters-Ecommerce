@@ -245,15 +245,18 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 <label for="quantity" class="text-sm font-medium text-foreground mr-4">
                   Quantity:
                 </label>
-                <select
+                <input
+                  type="number"
                   id="quantity"
                   name="quantity"
-                  class="rounded-md bg-background py-1.5 pr-8 pl-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                >
-                  {Array.from({ length: Math.min(product.stock, 10) }, (_, i) => i + 1).map(num => (
-                    <option value={num}>{num}</option>
-                  ))}
-                </select>
+                  min="1"
+                  max={product.stock || 999}
+                  value="1"
+                  class="w-24 rounded-md bg-background py-2 px-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+                <span id="stock-info" class="ml-3 text-sm text-muted-foreground">
+                  {product.stock > 0 ? `${product.stock} available` : 'Out of stock'}
+                </span>
               </div>
             </div>
 
@@ -389,10 +392,50 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     });
   }
 
+  // Validate quantity input
+  document.addEventListener('DOMContentLoaded', () => {
+    const quantityInput = document.getElementById('quantity') as HTMLInputElement;
+    if (quantityInput) {
+      quantityInput.addEventListener('input', () => {
+        const qty = parseInt(quantityInput.value) || 1;
+        const maxStock = parseInt(quantityInput.max) || 999;
+        if (qty < 1) quantityInput.value = '1';
+        if (qty > maxStock && maxStock > 0) {
+          quantityInput.value = String(maxStock);
+          showErrorNotification(`Only ${maxStock} units available`);
+        }
+      });
+    }
+  });
+
+  function showErrorNotification(message: string): void {
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-20 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
+    notification.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        <span>${message}</span>
+      </div>
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => notification.remove(), 300);
+    }, 4000);
+  }
+
   // Cart functions
   function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = 'USD'): void {
-    const quantitySelect = document.getElementById('quantity') as HTMLSelectElement;
-    const quantity = parseInt(quantitySelect?.value || '1');
+    const quantityInput = document.getElementById('quantity') as HTMLInputElement;
+    const quantity = parseInt(quantityInput?.value || '1');
+    
+    // Validate quantity
+    if (quantity < 1) {
+      showErrorNotification('Quantity must be at least 1');
+      return;
+    }
 
     // Price already comes in the correct currency according to language (USD for English)
     const finalPrice = price;
