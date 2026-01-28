@@ -290,6 +290,27 @@ export const updateOrderStatus = async (id: number, status: string): Promise<boo
   return result.affectedRows > 0;
 };
 
+export const deleteOrder = async (id: number): Promise<boolean> => {
+  try {
+    console.log('🗑️ Eliminando orden ID:', id);
+    
+    // Eliminar orden (los order_items se eliminan en cascada)
+    const sql = 'DELETE FROM orders WHERE id = ?';
+    const result = await query(sql, [id]) as any;
+    
+    if (result.affectedRows > 0) {
+      console.log('✅ Orden eliminada exitosamente');
+      return true;
+    } else {
+      console.log('⚠️ No se encontró la orden para eliminar');
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Error eliminando orden:', error);
+    return false;
+  }
+};
+
 // Función helper para mapear blog post desde la base de datos
 function mapBlogPostFromDB(row: any): BlogPost {
   // Priorizar featured_image_url (Cloudinary) sobre featured_image
