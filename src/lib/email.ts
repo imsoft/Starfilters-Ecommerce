@@ -317,7 +317,7 @@ export const createNewOrderNotificationEmail = (
     </tr>
   `).join('');
   
-  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://tu-dominio.com';
+  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   
   const html = `
     <!DOCTYPE html>
@@ -489,7 +489,7 @@ export const createOrderStatusUpdateEmail = (
     </tr>
   `).join('');
   
-  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://tu-dominio.com';
+  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
   const html = `

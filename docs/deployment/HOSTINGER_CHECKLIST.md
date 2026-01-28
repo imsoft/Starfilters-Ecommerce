@@ -120,7 +120,8 @@ SMTP_PASS=tu_contraseña_email
 FROM_EMAIL=noreply@tudominio.com
 
 # Aplicación
-PUBLIC_SITE_URL=https://tudominio.com
+PUBLIC_SITE_URL=https://starfilters.mx
+SITE_URL=https://starfilters.mx
 ```
 
 - [ ] Crear archivo .env
