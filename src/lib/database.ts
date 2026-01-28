@@ -447,6 +447,27 @@ export const getUserById = async (id: number): Promise<User | null> => {
   return result.length > 0 ? result[0] : null;
 };
 
+export const deleteUser = async (userId: number): Promise<boolean> => {
+  try {
+    console.log('🗑️ Eliminando usuario ID:', userId);
+    
+    // Eliminar usuario (las relaciones se eliminan en cascada)
+    const sql = 'DELETE FROM users WHERE id = ?';
+    const result = await query(sql, [userId]) as any;
+    
+    if (result.affectedRows > 0) {
+      console.log('✅ Usuario eliminado exitosamente');
+      return true;
+    } else {
+      console.log('⚠️ No se encontró el usuario para eliminar');
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Error eliminando usuario:', error);
+    return false;
+  }
+};
+
 export const getUserByUuid = async (uuid: string): Promise<User | null> => {
   const sql = 'SELECT * FROM users WHERE uuid = ?';
   const result = await query(sql, [uuid]) as User[];
