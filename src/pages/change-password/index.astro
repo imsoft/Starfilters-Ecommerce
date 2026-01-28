@@ -53,8 +53,8 @@ if (Astro.request.method === "POST") {
 
 <WebsiteLayout title={t('auth.changePassword.title')} seoTitle={`${t('auth.changePassword.title')} | Star Filters`}>
   <div class="bg-background py-24 sm:py-32">
-    <div class="mx-auto max-w-7xl px-6 lg:px-8">
-      <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+    <div class="mx-auto max-w-2xl px-6 lg:px-8">
+      <div class="mx-auto w-full max-w-sm">
         <h2 class="text-center text-2xl/9 font-bold tracking-tight text-foreground">
           {t('auth.changePassword.title')}
         </h2>
@@ -63,7 +63,7 @@ if (Astro.request.method === "POST") {
         </p>
       </div>
 
-      <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+      <div class="mt-10 mx-auto w-full max-w-sm">
       {error && (
         <div class="mb-4 rounded-md bg-red-50 p-4">
           <div class="text-sm text-red-700">{error}</div>
@@ -125,12 +125,6 @@ if (Astro.request.method === "POST") {
           </a>
         </div>
       </form>
-
-      <p class="mt-6 text-center text-sm/6 text-muted-foreground">
-        <a href="/" class="font-semibold text-primary hover:text-primary/90">
-          ← Volver al inicio
-        </a>
-      </p>
     </div>
     </div>
   </div>
