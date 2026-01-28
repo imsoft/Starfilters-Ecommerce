@@ -8,7 +8,7 @@
   <div class="rounded-lg border border-gray-200 bg-white p-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Imagen Principal</h3>
     <p class="text-sm text-gray-600 mb-4">
-      Esta imagen se mostrará como la imagen principal.
+      Esta imagen se mostrará como la imagen principal de la categoría.
     </p>
     
     <div class="space-y-4">
@@ -74,76 +74,15 @@
       </div>
     </div>
   </div>
-
-  <!-- Imágenes de Carrusel -->
-  <div class="rounded-lg border border-gray-200 bg-white p-6">
-    <div class="flex items-center justify-between mb-4">
-      <div>
-        <h3 class="text-lg font-semibold text-gray-900">Imágenes de Carrusel</h3>
-        <p class="text-sm text-gray-600 mt-1">
-          Puedes agregar hasta 4 imágenes adicionales para el carrusel.
-        </p>
-      </div>
-      <span class="text-sm text-gray-500" id="carousel-count">
-        0/4
-      </span>
-    </div>
-
-    <!-- Galería de imágenes de carrusel -->
-    <div id="carousel-images-preview" class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4 hidden">
-      <!-- Las imágenes se mostrarán aquí dinámicamente -->
-    </div>
-
-    <!-- Campo hidden para las imágenes de carrusel procesadas -->
-    <input type="hidden" id="pending_carousel_images" name="pending_carousel_images" value="" />
-
-    <!-- Uploader de imágenes de carrusel -->
-    <div>
-      <label
-        for="carousel-image-input"
-        class="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 hover:border-gray-400"
-      >
-        <div class="text-center">
-          <svg
-            class="mx-auto h-12 w-12 text-gray-400"
-            stroke="currentColor"
-            fill="none"
-            viewBox="0 0 48 48"
-          >
-            <path
-              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <p class="mt-2 text-sm text-gray-600">
-            <span class="font-semibold">Click para agregar</span> imágenes al carrusel
-          </p>
-          <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
-        </div>
-        <input
-          type="file"
-          id="carousel-image-input"
-          accept="image/*"
-          multiple
-          class="hidden"
-        />
-      </label>
-      <div id="carousel-image-upload-status" class="mt-2 text-sm"></div>
-    </div>
-  </div>
 </div>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     console.log('🖼️ CategoryImageManagerCreate: Inicializando...');
     
-    // Variables para almacenar las imágenes como base64 (ya procesadas)
+    // Variables para almacenar la imagen principal como base64
     let primaryImageBase64 = '';
     let primaryImageName = '';
-    const carouselImagesData = [];
-    const maxCarouselImages = 4;
 
     // ===== ELEMENTOS DEL DOM =====
     const primaryImageInput = document.getElementById('primary-image-input');
@@ -154,19 +93,7 @@
     const pendingPrimaryImageField = document.getElementById('pending_primary_image');
     const pendingPrimaryImageNameField = document.getElementById('pending_primary_image_name');
 
-    const carouselImageInput = document.getElementById('carousel-image-input');
-    const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
-    const carouselImagesPreview = document.getElementById('carousel-images-preview');
-    const carouselCount = document.getElementById('carousel-count');
-    const pendingCarouselImagesField = document.getElementById('pending_carousel_images');
-
     // ===== FUNCIONES HELPER =====
-    function updateCarouselCount() {
-      if (carouselCount) {
-        carouselCount.textContent = `${carouselImagesData.length}/${maxCarouselImages}`;
-      }
-    }
-
     function updateHiddenFields() {
       // Actualizar campos hidden con los datos procesados
       if (pendingPrimaryImageField) {
@@ -175,51 +102,21 @@
       if (pendingPrimaryImageNameField) {
         pendingPrimaryImageNameField.value = primaryImageName;
       }
-      if (pendingCarouselImagesField) {
-        const carouselJson = carouselImagesData.length > 0 
-          ? JSON.stringify(carouselImagesData) 
-          : '';
-        pendingCarouselImagesField.value = carouselJson;
-        console.log('🖼️ Campo pending_carousel_images actualizado:', {
-          length: carouselImagesData.length,
-          jsonLength: carouselJson.length,
-          preview: carouselJson.substring(0, 100) + '...'
-        });
-      }
       
-      console.log('🖼️ Campos hidden actualizados:', {
-        primaryImage: primaryImageBase64 ? 'Sí' : 'No',
-        primaryImageName: primaryImageName,
-        carouselImages: carouselImagesData.length,
-        carouselData: carouselImagesData.map(img => img.name)
+      console.log('🖼️ Campo pending_primary_image actualizado:', {
+        hasImage: !!primaryImageBase64,
+        imageName: primaryImageName
       });
     }
     
     // Asegurar que los campos se actualicen antes de enviar el formulario
     const form = document.querySelector('form');
     if (form) {
-      // Actualizar campos ANTES de enviar (sin preventDefault, solo asegurar valores)
+      // Actualizar campos ANTES de enviar
       form.addEventListener('submit', (e) => {
-        // Actualizar campos hidden siempre antes de enviar
         updateHiddenFields();
         
-        // Si hay imágenes de carrusel, asegurar que el campo tenga el valor
-        if (carouselImagesData.length > 0) {
-          if (pendingCarouselImagesField) {
-            const carouselJson = JSON.stringify(carouselImagesData);
-            pendingCarouselImagesField.value = carouselJson;
-            
-            // Verificar que se guardó
-            if (pendingCarouselImagesField.value !== carouselJson) {
-              // Si no se guardó, usar un pequeño delay y reintentar
-              setTimeout(() => {
-                pendingCarouselImagesField.value = carouselJson;
-              }, 10);
-            }
-          }
-        }
-        
-        // También asegurar imagen principal
+        // Asegurar imagen principal
         if (primaryImageBase64) {
           if (pendingPrimaryImageField) {
             pendingPrimaryImageField.value = primaryImageBase64;
@@ -234,58 +131,6 @@
       setInterval(() => {
         updateHiddenFields();
       }, 500);
-    }
-
-    function renderCarouselPreviews() {
-      if (!carouselImagesPreview) return;
-
-      if (carouselImagesData.length === 0) {
-        carouselImagesPreview.classList.add('hidden');
-        return;
-      }
-
-      carouselImagesPreview.classList.remove('hidden');
-      carouselImagesPreview.innerHTML = '';
-
-      carouselImagesData.forEach((imageData, index) => {
-        const div = document.createElement('div');
-        div.className = 'relative group';
-        div.innerHTML = `
-          <img
-            src="${imageData.data}"
-            alt="Carrusel ${index + 1}"
-            class="h-32 w-full rounded-lg border border-gray-300 object-cover"
-          />
-          <button
-            type="button"
-            data-carousel-index="${index}"
-            class="remove-carousel-btn absolute -top-2 -right-2 hidden rounded-full bg-red-500 p-1 text-white hover:bg-red-600 group-hover:block"
-            title="Eliminar imagen"
-          >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <span class="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded">${imageData.name}</span>
-        `;
-        carouselImagesPreview.appendChild(div);
-
-        // Agregar listener para eliminar
-        const removeBtn = div.querySelector('.remove-carousel-btn');
-        if (removeBtn) {
-          removeBtn.addEventListener('click', () => {
-            carouselImagesData.splice(index, 1);
-            renderCarouselPreviews();
-            updateCarouselCount();
-            updateHiddenFields();
-            
-            if (carouselImageUploadStatus) {
-              carouselImageUploadStatus.textContent = `✅ Imagen eliminada. ${carouselImagesData.length} imagen(es) en cola.`;
-              carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-            }
-          });
-        }
-      });
     }
 
     // ===== IMAGEN PRINCIPAL =====
@@ -370,73 +215,6 @@
 
         updateHiddenFields();
         console.log('🖼️ Imagen principal eliminada');
-      });
-    }
-
-    // ===== IMÁGENES DE CARRUSEL =====
-    if (carouselImageInput) {
-      carouselImageInput.addEventListener('change', async (e) => {
-        const target = e.target;
-        const files = target && target.files ? Array.from(target.files) : [];
-        if (files.length === 0) return;
-
-        console.log('🖼️ Procesando imágenes de carrusel:', files.length);
-
-        const availableSlots = maxCarouselImages - carouselImagesData.length;
-        const filesToAdd = files.slice(0, availableSlots);
-
-        if (files.length > availableSlots) {
-          if (carouselImageUploadStatus) {
-            carouselImageUploadStatus.textContent = `⚠️ Solo se agregarán ${availableSlots} imagen(es) (máximo 4)`;
-            carouselImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
-          }
-        }
-
-        let addedCount = 0;
-        for (const file of filesToAdd) {
-          // Validar tamaño (10MB)
-          if (file.size > 10 * 1024 * 1024) {
-            console.warn(`⚠️ ${file.name} es muy grande, saltando...`);
-            continue;
-          }
-
-          // Validar tipo
-          if (!file.type.startsWith('image/')) {
-            console.warn(`⚠️ ${file.name} no es una imagen, saltando...`);
-            continue;
-          }
-
-          try {
-            // Convertir a base64 inmediatamente
-            const base64 = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            });
-
-            carouselImagesData.push({
-              name: file.name,
-              data: base64
-            });
-            addedCount++;
-            console.log(`✅ Imagen de carrusel procesada: ${file.name}`);
-          } catch (err) {
-            console.error(`❌ Error procesando ${file.name}:`, err);
-          }
-        }
-
-        renderCarouselPreviews();
-        updateCarouselCount();
-        updateHiddenFields();
-
-        if (carouselImageUploadStatus && addedCount > 0) {
-          carouselImageUploadStatus.textContent = `✅ ${addedCount} imagen(es) lista(s) para subir. Total: ${carouselImagesData.length}`;
-          carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-        }
-
-        // Limpiar input
-        carouselImageInput.value = '';
       });
     }
 

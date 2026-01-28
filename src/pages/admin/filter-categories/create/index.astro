@@ -115,71 +115,7 @@ if (Astro.request.method === "POST") {
           console.log('📷 [Categoría] No hay imagen principal para procesar (campo vacío o null)');
         }
 
-        // Procesar imágenes de carrusel
-        const pendingCarouselImages = formData.get("pending_carousel_images") as string;
-        console.log('📷 [Categoría] Imágenes de carrusel recibidas:', pendingCarouselImages ? `Sí (${pendingCarouselImages.length} bytes)` : 'No');
-        console.log('📷 [Categoría] Contenido completo:', pendingCarouselImages?.substring(0, 200) || 'vacío');
-        
-        if (pendingCarouselImages && pendingCarouselImages.trim() !== '') {
-          try {
-          const carouselData = JSON.parse(pendingCarouselImages) as Array<{ name: string; data: string }>;
-            console.log(`📷 [Categoría] Número de imágenes de carrusel: ${carouselData.length}`);
-            
-            if (!Array.isArray(carouselData) || carouselData.length === 0) {
-              console.warn('⚠️ [Categoría] carouselData no es un array válido o está vacío');
-            } else {
-          const { uploadCategoryCarouselImage } = await import('@/lib/cloudinary');
-              const { addCategoryImage } = await import('@/lib/filter-category-service');
-          
-          for (let i = 0; i < carouselData.length && i < 4; i++) {
-            const { name, data } = carouselData[i];
-                console.log(`📷 [Categoría] Procesando imagen ${i + 1}/${carouselData.length}: ${name}`);
-                
-                if (!data || !data.includes(',')) {
-                  console.error(`❌ [Categoría] Imagen ${i + 1} no tiene datos base64 válidos`);
-                  continue;
-                }
-                
-                try {
-            const base64Data = data.split(',')[1];
-                  if (!base64Data) {
-                    console.error(`❌ [Categoría] No se pudo extraer base64 de imagen ${i + 1}`);
-                    continue;
-                  }
-                  
-            const buffer = Buffer.from(base64Data, 'base64');
-                  console.log(`📷 [Categoría] Buffer creado para imagen ${i + 1}: ${buffer.length} bytes`);
-            
-            const imageUrl = await uploadCategoryCarouselImage(buffer, categoryId, name);
-                  console.log(`📷 [Categoría] Imagen ${i + 1} subida a Cloudinary: ${imageUrl}`);
-            
-                  const imageId = await addCategoryImage({
-              category_id: categoryId,
-              image_url: imageUrl,
-              alt_text: `${name} - Carrusel ${i + 1}`,
-              is_primary: false,
-              sort_order: i + 1,
-            });
-                  
-                  if (imageId) {
-                    console.log(`✅ [Categoría] Imagen ${i + 1} guardada en BD con ID: ${imageId}`);
-                  } else {
-                    console.error(`❌ [Categoría] Error: addCategoryImage retornó null para imagen ${i + 1}`);
-                  }
-                } catch (imgErr) {
-                  console.error(`❌ [Categoría] Error procesando imagen ${i + 1}:`, imgErr);
-                  console.error(`❌ [Categoría] Stack trace:`, imgErr instanceof Error ? imgErr.stack : 'No stack trace');
-                }
-              }
-            }
-          } catch (carouselErr) {
-            console.error('❌ [Categoría] Error procesando carrusel:', carouselErr);
-            console.error('❌ [Categoría] Stack trace:', carouselErr instanceof Error ? carouselErr.stack : 'No stack trace');
-            console.error('❌ [Categoría] Tipo de error:', carouselErr instanceof Error ? carouselErr.constructor.name : typeof carouselErr);
-          }
-        } else {
-          console.log('📷 [Categoría] No hay imágenes de carrusel para procesar (campo vacío o null)');
-        }
+        // Las imágenes de carrusel ya no se procesan - solo se usa imagen principal
       } catch (err) {
         console.error("Error procesando imágenes:", err);
         // No fallar la creación si hay error con las imágenes
@@ -201,7 +137,7 @@ if (Astro.request.method === "POST") {
     <!-- Persistencia de formulario -->
     <FormPersistence 
       formId="category-create" 
-      excludeFields={["pending_primary_image", "pending_carousel_images"]}
+      excludeFields={["pending_primary_image"]}
     />
     
     <!-- Header -->
@@ -393,7 +329,7 @@ if (Astro.request.method === "POST") {
               Imágenes
             </h2>
             <p class="mt-1 text-sm text-gray-500">
-              Imagen principal y hasta 4 imágenes de carrusel
+              Imagen principal de la categoría
             </p>
           </div>
         </div>
