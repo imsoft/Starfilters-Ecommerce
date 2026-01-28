@@ -101,6 +101,7 @@ export interface User {
   password_hash: string;
   first_name: string;
   last_name: string;
+  profile_image?: string | null;
   phone?: string;
   address?: string;
   city?: string;
