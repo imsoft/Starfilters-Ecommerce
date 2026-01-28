@@ -5,6 +5,7 @@ import {
   Package, 
   FolderTree, 
   FileText, 
+  FileEdit,
   Users, 
   Tag,
   Home,
@@ -57,7 +58,7 @@ export function AppSidebar({ currentPath = '', adminUser }: AppSidebarProps) {
     {
       title: "Blog",
       url: "/admin/blog",
-      icon: FileText,
+      icon: FileEdit,
     },
     {
       title: "Usuarios",
@@ -92,7 +93,7 @@ export function AppSidebar({ currentPath = '', adminUser }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip="Dashboard">
-              <a href="/admin/dashboard">
+              <a href="/admin/dashboard" className="flex items-center gap-2">
                 <img
                   src="/logos/logo-starfilters.png"
                   alt="Starfilters Admin"
