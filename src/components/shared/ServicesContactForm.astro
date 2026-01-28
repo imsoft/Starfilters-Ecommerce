@@ -140,7 +140,17 @@ if (Astro.request.method === "POST") {
                 <dt class="text-sm font-semibold uppercase tracking-wide text-primary">
                   {lang === "en" ? "Locations" : "Ubicaciones"}
                 </dt>
-                <dd class="mt-2 text-lg text-foreground">{t('services.requestSection.locations')}</dd>
+                <dd class="mt-2 text-lg text-foreground">
+                  {lang === "en" ? (
+                    <>
+                      <a href="https://maps.app.goo.gl/yMUr5tvC8onTiN2t8" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">Guadalajara, Jal</a> / <a href="https://maps.app.goo.gl/wwws17RBGAgZSBXYA" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">Mexico City</a>
+                    </>
+                  ) : (
+                    <>
+                      <a href="https://maps.app.goo.gl/yMUr5tvC8onTiN2t8" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">Guadalajara, Jal</a> / <a href="https://maps.app.goo.gl/wwws17RBGAgZSBXYA" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">Ciudad de México</a>
+                    </>
+                  )}
+                </dd>
               </div>
               <div>
                 <dt class="text-sm font-semibold uppercase tracking-wide text-primary">
