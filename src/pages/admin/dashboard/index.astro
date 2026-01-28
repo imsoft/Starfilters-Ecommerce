@@ -5,9 +5,7 @@ import {
   getDashboardStats, 
   getRecentProducts, 
   getSalesStats, 
-  getTopProducts, 
-  getUserStats, 
-  getConversionFunnel 
+  getTopProducts
 } from "@/lib/database";
 import { getExchangeRate } from "@/lib/currency-service";
 
@@ -24,8 +22,6 @@ let stats = {
 let recentProducts: any[] = [];
 let salesStats: any = { today: 0, week: 0, month: 0, trend: 'stable' };
 let topProducts: any[] = [];
-let userStats: any = { total: 0, active: 0, newThisMonth: 0 };
-let conversionFunnel: any = { visitors: 0, cartAdds: 0, checkouts: 0, completed: 0 };
 
 try {
   console.log('🔍 Obteniendo estadísticas del dashboard...');
@@ -57,22 +53,6 @@ try {
   console.log('🏆 Productos más vendidos obtenidos:', topProducts);
 } catch (error) {
   console.error('❌ Error obteniendo productos más vendidos:', error);
-}
-
-try {
-  console.log('🔍 Obteniendo estadísticas de usuarios...');
-  userStats = await getUserStats();
-  console.log('👥 Estadísticas de usuarios obtenidas:', userStats);
-} catch (error) {
-  console.error('❌ Error obteniendo estadísticas de usuarios:', error);
-}
-
-try {
-  console.log('🔍 Obteniendo embudo de conversión...');
-  conversionFunnel = await getConversionFunnel();
-  console.log('🎯 Embudo de conversión obtenido:', conversionFunnel);
-} catch (error) {
-  console.error('❌ Error obteniendo embudo de conversión:', error);
 }
 
 // Obtener tasa de cambio USD a MXN
@@ -404,102 +384,6 @@ const getProductStatus = (stock: number) => {
           </div>
         </div>
 
-        <!-- Estadísticas de Usuarios -->
-        <div class="mb-8">
-          <h3 class="text-lg font-semibold text-foreground mb-4">Usuarios</h3>
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div class="rounded-lg border border-border bg-background p-6">
-              <p class="text-sm text-muted-foreground">Total Usuarios</p>
-              <p class="text-3xl font-bold text-foreground mt-2">{userStats.total}</p>
-            </div>
-            <div class="rounded-lg border border-border bg-background p-6">
-              <p class="text-sm text-muted-foreground">Usuarios Activos</p>
-              <p class="text-3xl font-bold text-foreground mt-2">{userStats.active}</p>
-            </div>
-            <div class="rounded-lg border border-border bg-background p-6">
-              <p class="text-sm text-muted-foreground">Nuevos Este Mes</p>
-              <p class="text-3xl font-bold text-foreground mt-2">{userStats.newThisMonth}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Embudo de Conversión -->
-        <div class="mb-8">
-          <h3 class="text-lg font-semibold text-foreground mb-4">Embudo de Conversión (Últimos 30 días)</h3>
-          <div class="rounded-lg border border-border bg-background p-6">
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span class="text-blue-600 font-bold">{conversionFunnel.visitors}</span>
-                  </div>
-                  <div>
-                    <p class="font-medium text-foreground">Visitantes</p>
-                    <p class="text-sm text-muted-foreground">Personas que visitaron el sitio</p>
-                  </div>
-                </div>
-                <span class="text-sm text-muted-foreground">100%</span>
-              </div>
-              <div class="flex justify-center">
-                <svg class="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                    <span class="text-green-600 font-bold">{conversionFunnel.cartAdds}</span>
-                  </div>
-                  <div>
-                    <p class="font-medium text-foreground">Agregados al Carrito</p>
-                    <p class="text-sm text-muted-foreground">Productos agregados al carrito</p>
-                  </div>
-                </div>
-                <span class="text-sm text-muted-foreground">
-                  {conversionFunnel.visitors > 0 ? Math.round((conversionFunnel.cartAdds / conversionFunnel.visitors) * 100) : 0}%
-                </span>
-              </div>
-              <div class="flex justify-center">
-                <svg class="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                    <span class="text-yellow-600 font-bold">{conversionFunnel.checkouts}</span>
-                  </div>
-                  <div>
-                    <p class="font-medium text-foreground">Iniciaron Checkout</p>
-                    <p class="text-sm text-muted-foreground">Llegaron al checkout</p>
-                  </div>
-                </div>
-                <span class="text-sm text-muted-foreground">
-                  {conversionFunnel.visitors > 0 ? Math.round((conversionFunnel.checkouts / conversionFunnel.visitors) * 100) : 0}%
-                </span>
-              </div>
-              <div class="flex justify-center">
-                <svg class="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                    <span class="text-purple-600 font-bold">{conversionFunnel.completed}</span>
-                  </div>
-                  <div>
-                    <p class="font-medium text-foreground">Compras Completadas</p>
-                    <p class="text-sm text-muted-foreground">Pedidos finalizados</p>
-                  </div>
-                </div>
-                <span class="text-sm font-semibold text-primary">
-                  {conversionFunnel.visitors > 0 ? Math.round((conversionFunnel.completed / conversionFunnel.visitors) * 100) : 0}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
