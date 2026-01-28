@@ -95,6 +95,13 @@ export const createOrderConfirmationEmail = (
   items: Array<{ name: string; quantity: number; price: number }>,
   shippingAddress: string
 ): EmailData => {
+  // Paleta de colores de la aplicación
+  const color50 = '#EFF6FF';
+  const color100 = '#DBEAFE';
+  const color500 = '#2B7FFF';
+  const color600 = '#155DFC';
+  const color700 = '#1447E6';
+  
   const subject = `Confirmación de Pedido #${orderNumber} - Star Filters`;
   
   const itemsList = items.map(item => `
@@ -109,6 +116,9 @@ export const createOrderConfirmationEmail = (
     </tr>
   `).join('');
   
+  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
+  
   const html = `
     <!DOCTYPE html>
     <html>
@@ -116,20 +126,37 @@ export const createOrderConfirmationEmail = (
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #6366f1; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
+        .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
         .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
         .total { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; }
-        .shipping { background: #e0e7ff; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .shipping { background: ${color100}; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .button { 
+          display: inline-block; 
+          background-color: ${color600}; 
+          color: white !important; 
+          padding: 12px 24px; 
+          text-decoration: none; 
+          border-radius: 6px; 
+          font-weight: bold;
+          margin: 20px 0;
+          text-align: center;
+        }
+        .button:hover {
+          background-color: ${color700};
+        }
         .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
+          <img src="${logoUrl}" alt="Star Filters" class="header-logo" />
           <h1>¡Gracias por tu compra!</h1>
         </div>
         <div class="content">
@@ -165,6 +192,10 @@ export const createOrderConfirmationEmail = (
           </div>
           
           <p>Te notificaremos cuando tu pedido sea enviado.</p>
+          
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${siteUrl}/pedidos" class="button">Ver Mis Pedidos</a>
+          </div>
         </div>
         <div class="footer">
           <p>© 2024 Star Filters. Todos los derechos reservados.</p>
@@ -207,7 +238,15 @@ export const createOrderConfirmationEmail = (
 
 // Template para email de reset de contraseña
 export const createPasswordResetEmail = (userFirstName: string, resetUrl: string): EmailData => {
+  // Paleta de colores de la aplicación
+  const color50 = '#EFF6FF';
+  const color100 = '#DBEAFE';
+  const color600 = '#155DFC';
+  const color700 = '#1447E6';
+  
   const subject = 'Recuperar contraseña - Star Filters';
+  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
   const html = `
     <!DOCTYPE html>
@@ -216,19 +255,25 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #6366f1; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
+        .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
         .button { 
           display: inline-block; 
-          background-color: #6366f1; 
-          color: white; 
+          background-color: ${color600}; 
+          color: white !important; 
           padding: 12px 24px; 
           text-decoration: none; 
           border-radius: 6px; 
           font-weight: bold;
           margin: 20px 0;
+          text-align: center;
+        }
+        .button:hover {
+          background-color: ${color700};
         }
         .warning { color: #ef4444; font-size: 14px; margin-top: 20px; }
         .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
@@ -237,6 +282,7 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
     <body>
       <div class="container">
         <div class="header">
+          <img src="${logoUrl}" alt="Star Filters" class="header-logo" />
           <h1>Recuperar Contraseña</h1>
         </div>
         <div class="content">
@@ -303,6 +349,12 @@ export const createNewOrderNotificationEmail = (
   items: Array<{ name: string; quantity: number; price: number }>,
   shippingAddress: string
 ): EmailData => {
+  // Paleta de colores de la aplicación
+  const color50 = '#EFF6FF';
+  const color100 = '#DBEAFE';
+  const color600 = '#155DFC';
+  const color700 = '#1447E6';
+  
   const subject = `Nueva Orden #${orderNumber} - Star Filters`;
   
   const itemsList = items.map(item => `
@@ -318,6 +370,7 @@ export const createNewOrderNotificationEmail = (
   `).join('');
   
   const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
   const html = `
     <!DOCTYPE html>
@@ -326,24 +379,30 @@ export const createNewOrderNotificationEmail = (
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .header { background-color: #10b981; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
+        .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
         .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
         .total { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; }
-        .shipping { background: #e0e7ff; padding: 15px; border-radius: 6px; margin: 20px 0; }
-        .customer-info { background: #fef3c7; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .shipping { background: ${color100}; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .customer-info { background: ${color100}; padding: 15px; border-radius: 6px; margin: 20px 0; }
         .button { 
           display: inline-block; 
-          background-color: #6366f1; 
-          color: white; 
+          background-color: ${color600}; 
+          color: white !important; 
           padding: 12px 24px; 
           text-decoration: none; 
           border-radius: 6px; 
           font-weight: bold;
           margin: 20px 0;
+          text-align: center;
+        }
+        .button:hover {
+          background-color: ${color700};
         }
         .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
       </style>
@@ -351,6 +410,7 @@ export const createNewOrderNotificationEmail = (
     <body>
       <div class="container">
         <div class="header">
+          <img src="${logoUrl}" alt="Star Filters" class="header-logo" />
           <h1>🛒 Nueva Orden Recibida</h1>
         </div>
         <div class="content">
@@ -443,8 +503,16 @@ export const createOrderStatusUpdateEmail = (
   total: number,
   trackingNumber?: string
 ): EmailData => {
-  // Color primary de la aplicación: oklch(0.623 0.214 259.815) ≈ #6B46C1
-  const primaryColor = '#6B46C1';
+  // Paleta de colores de la aplicación
+  const color50 = '#EFF6FF';
+  const color100 = '#DBEAFE';
+  const color500 = '#2B7FFF';
+  const color600 = '#155DFC';
+  const color700 = '#1447E6';
+  const color800 = '#193CB8';
+  
+  // Color primary para botones y elementos principales
+  const primaryColor = color600;
   
   const statusMessages: Record<string, { title: string; message: string; color: string }> = {
     processing: {
@@ -528,7 +596,7 @@ export const createOrderStatusUpdateEmail = (
           text-align: center;
         }
         .button:hover {
-          background-color: #5B3AA8;
+          background-color: ${color700};
         }
         .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
       </style>
