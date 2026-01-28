@@ -123,9 +123,44 @@ const formatDate = (date: Date) => {
       <!-- Header -->
       <div class="mb-12">
         <div class="flex items-center gap-4">
-          <div class="avatar-circle bg-primary text-primary-foreground text-lg font-bold">
-            {fullUser.first_name.charAt(0)}{fullUser.last_name.charAt(0)}
+          <div class="relative group">
+            <div class="w-32 h-32 bg-primary text-primary-foreground text-4xl font-bold rounded-full overflow-hidden flex items-center justify-center">
+              {fullUser.profile_image ? (
+                <img 
+                  src={fullUser.profile_image} 
+                  alt="Profile photo" 
+                  class="w-full h-full object-cover"
+                  id="profile-avatar-img"
+                  onerror="this.style.display='none'; this.parentElement.querySelector('.avatar-fallback').style.display='flex';"
+                />
+              ) : null}
+              <div class={`avatar-fallback w-full h-full flex items-center justify-center ${fullUser.profile_image ? 'hidden' : ''}`}>
+                {fullUser.first_name.charAt(0)}{fullUser.last_name.charAt(0)}
+              </div>
+            </div>
+            
+            <!-- Button to change photo -->
+            <button
+              type="button"
+              id="change-photo-btn"
+              class="absolute bottom-0 right-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/90 shadow-md"
+              title="Change profile photo"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+            </button>
           </div>
+          
+          <!-- Hidden input for uploading image -->
+          <input
+            type="file"
+            id="profile-image-input"
+            accept="image/*"
+            class="hidden"
+          />
+          
           <div>
             <h1 class="text-3xl font-bold text-foreground">
               {fullUser.first_name} {fullUser.last_name}
@@ -367,3 +402,140 @@ const formatDate = (date: Date) => {
     </div>
   </div>
 </WebsiteLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const changePhotoBtn = document.getElementById('change-photo-btn');
+    const profileImageInput = document.getElementById('profile-image-input');
+    const profileAvatarImg = document.getElementById('profile-avatar-img');
+    const avatarFallback = document.querySelector('.avatar-fallback');
+    
+    if (!changePhotoBtn || !profileImageInput) return;
+    
+    // Handle click on change photo button
+    changePhotoBtn.addEventListener('click', () => {
+      profileImageInput.click();
+    });
+    
+    // Handle image selection
+    profileImageInput.addEventListener('change', async (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+      
+      // Validate size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('The image must be less than 5MB.');
+        return;
+      }
+      
+      try {
+        // Show loading indicator
+        const originalContent = changePhotoBtn.innerHTML;
+        changePhotoBtn.innerHTML = `
+          <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        `;
+        changePhotoBtn.disabled = true;
+        
+        // Create FormData to send the image
+        const formData = new FormData();
+        formData.append('profile_image', file);
+        
+        // Upload image
+        const response = await fetch('/api/users/update-profile-image', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          // Update image in the interface
+          const avatarContainer = document.querySelector('.w-32.h-32.bg-primary');
+          if (avatarContainer) {
+            if (profileAvatarImg) {
+              // If image already exists, update its src
+              profileAvatarImg.src = result.image_url;
+              profileAvatarImg.style.display = 'block';
+              if (avatarFallback) {
+                (avatarFallback as HTMLElement).style.display = 'none';
+              }
+            } else {
+              // If image doesn't exist, create the img element
+              const img = document.createElement('img');
+              img.src = result.image_url;
+              img.alt = 'Profile photo';
+              img.className = 'w-full h-full object-cover';
+              img.id = 'profile-avatar-img';
+              img.onerror = function() {
+                this.style.display = 'none';
+                if (avatarFallback) {
+                  (avatarFallback as HTMLElement).style.display = 'flex';
+                }
+              };
+              // Insert image at the beginning of the container
+              avatarContainer.insertBefore(img, avatarContainer.firstChild);
+              if (avatarFallback) {
+                (avatarFallback as HTMLElement).style.display = 'none';
+              }
+            }
+          }
+          
+          // Show success message
+          showSuccessNotification('Profile photo updated successfully');
+          
+          // Reload page after a brief delay to show the new image and update navbar
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          throw new Error(result.message || 'Error updating photo');
+        }
+        
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        showErrorNotification('Error updating profile photo: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      } finally {
+        // Restore button
+        changePhotoBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        `;
+        changePhotoBtn.disabled = false;
+        // Clear input
+        (profileImageInput as HTMLInputElement).value = '';
+      }
+    });
+    
+    // Helper functions to show notifications
+    function showSuccessNotification(message: string) {
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md shadow-lg z-50';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+    
+    function showErrorNotification(message: string) {
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md shadow-lg z-50';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
+    }
+  });
+</script>
