@@ -527,6 +527,7 @@ Esta documentación describe la estructura completa de la base de datos del sist
 | `password_hash` | `varchar(255)` | NO | | `NULL` | Hash de la contraseña (bcrypt) |
 | `first_name` | `varchar(100)` | NO | | `NULL` | Nombre |
 | `last_name` | `varchar(100)` | NO | | `NULL` | Apellido |
+| `profile_image` | `varchar(500)` | YES | | `NULL` | URL de la imagen de perfil (Cloudinary) |
 | `phone` | `varchar(20)` | YES | | `NULL` | Teléfono |
 | `address` | `text` | YES | | `NULL` | Dirección |
 | `city` | `varchar(100)` | YES | | `NULL` | Ciudad |
@@ -555,6 +556,7 @@ Esta documentación describe la estructura completa de la base de datos del sist
 **Notas:**
 - `email` debe ser único
 - `password_hash` usa bcrypt
+- `profile_image` almacena la URL de la imagen de perfil en Cloudinary (ruta: `starfilters-ecommerce/users/profile/{user_id}`)
 - `verification_token` se usa para verificar el email al registrarse
 - `reset_token` y `reset_token_expires` se usan para resetear contraseñas
 

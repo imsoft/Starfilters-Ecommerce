@@ -22,8 +22,8 @@
    ```env
    DB_HOST=localhost
    DB_PORT=3306
-   DB_NAME=tu_nombre_de_base_de_datos
-   DB_USER=tu_usuario_de_base_de_datos
+   DB_NAME=starfilters_ecommerce_db
+   DB_USER=starfilters_user
    DB_PASSWORD=tu_contraseña_de_base_de_datos
    ```
 
@@ -35,7 +35,24 @@
 4. **Copia y pega el contenido del archivo `database/schema.sql`**
 5. **Ejecuta el script**
 
-### 4. Probar la Conexión
+### 4. Ejecutar Migraciones Adicionales
+
+**Si necesitas agregar campos adicionales (como `profile_image` para usuarios):**
+
+1. **En phpMyAdmin, ve a la pestaña "SQL"**
+2. **Ejecuta las migraciones necesarias:**
+   ```sql
+   -- Agregar campo profile_image a la tabla users
+   ALTER TABLE users 
+   ADD COLUMN profile_image VARCHAR(500) NULL AFTER last_name;
+   ```
+   
+   O ejecuta el archivo completo:
+   ```bash
+   mysql -u starfilters_user -p starfilters_ecommerce_db < database/add_profile_image_to_users.sql
+   ```
+
+### 5. Probar la Conexión
 
 ```bash
 node scripts/test-db-connection.js

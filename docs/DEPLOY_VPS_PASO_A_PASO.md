@@ -280,6 +280,19 @@ cd ~/starfilters-app
 mysql -u starfilters_user -p starfilters_ecommerce_db < database/schema.sql
 ```
 
+### Ejecutar migraciones adicionales
+
+**Si la base de datos ya existía o necesitas agregar campos adicionales, ejecuta las migraciones:**
+
+```bash
+cd ~/starfilters-app
+
+# Agregar campo profile_image a la tabla users (para fotos de perfil de usuarios)
+mysql -u starfilters_user -p starfilters_ecommerce_db < database/add_profile_image_to_users.sql
+```
+
+**Nota:** Si ya ejecutaste `schema.sql` desde cero, estas migraciones pueden no ser necesarias, pero ejecutarlas no causará problemas si los campos ya existen.
+
 ---
 
 ## PASO 14: HACER BUILD DEL PROYECTO
