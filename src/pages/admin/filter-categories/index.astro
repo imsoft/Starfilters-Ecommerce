@@ -185,6 +185,9 @@ const categoriesWithVariants = await Promise.all(
               <thead class="bg-muted/50">
                 <tr>
                   <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Imagen
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Categoría
                   </th>
                   <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -195,46 +198,47 @@ const categoriesWithVariants = await Promise.all(
               <tbody class="divide-y divide-border bg-background">
                 {categoriesWithVariants.map((category) => (
                   <tr class="hover:bg-muted/50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      {category.main_image ? (
+                        <img
+                          src={category.main_image}
+                          alt={category.name}
+                          class="h-20 w-20 rounded-lg object-cover border border-gray-200"
+                          onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'%3E%3Crect fill=\'%23f3f4f6\' width=\'80\' height=\'80\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-family=\'sans-serif\' font-size=\'12\'%3ESin imagen%3C/text%3E%3C/svg%3E';"
+                        />
+                      ) : (
+                        <div class="flex h-20 w-20 items-center justify-center rounded-lg bg-muted border border-gray-200">
+                          <svg
+                            class="h-8 w-8 text-muted-foreground"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </td>
                     <td class="px-6 py-4">
-                      <div class="flex items-start gap-4">
-                        {category.main_image ? (
-                          <img
-                            src={category.main_image}
-                            alt={category.name}
-                            class="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-muted">
-                            <svg
-                              class="h-8 w-8 text-muted-foreground"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-base font-semibold text-foreground mb-1">
+                          {category.name}
+                        </div>
+                        {category.description && (
+                          <div class="text-sm text-muted-foreground line-clamp-2">
+                            {category.description}
                           </div>
                         )}
-                        <div class="flex-1 min-w-0">
-                          <div class="text-base font-semibold text-foreground mb-1">
-                            {category.name}
+                        {category.name_en && !category.description && (
+                          <div class="text-sm text-muted-foreground">
+                            {category.name_en}
                           </div>
-                          {category.description && (
-                            <div class="text-sm text-muted-foreground line-clamp-2">
-                              {category.description}
-                            </div>
-                          )}
-                          {category.name_en && !category.description && (
-                            <div class="text-sm text-muted-foreground">
-                              {category.name_en}
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </td>
                     <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">

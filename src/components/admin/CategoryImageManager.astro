@@ -144,7 +144,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           />
           <button
             type="button"
-            class="delete-carousel-btn absolute -top-2 -right-2 z-50 opacity-0 group-hover:opacity-100 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto transition-opacity shadow-lg"
+            class="delete-carousel-btn absolute -top-2 -right-2 z-50 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto shadow-lg opacity-90 hover:opacity-100"
             data-image-id={image.id}
             title="Eliminar imagen"
             style="pointer-events: auto; min-width: 32px; min-height: 32px;"
@@ -209,6 +209,8 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 <script is:inline define:vars={{ categoryId }}>
   console.log('🖼️ [CategoryImageManager] Script iniciado, categoryId:', categoryId);
   
+  let isImageOperationInProgress = false;
+  
   // Función para eliminar imagen principal
   async function deletePrimaryImage() {
     console.log('🗑️ deletePrimaryImage llamada');
@@ -219,12 +221,14 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       return;
     }
 
+    isImageOperationInProgress = true;
     try {
       console.log('🗑️ Eliminando imagen principal, categoryId:', categoryIdNum);
       const response = await fetch(`/api/filter-categories/${categoryIdNum}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ main_image: '' }),
+        credentials: 'include',
       });
 
       const result = await response.json();
@@ -238,6 +242,8 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     } catch (error) {
       console.error('❌ Error:', error);
       alert('Error al eliminar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+    } finally {
+      isImageOperationInProgress = false;
     }
   }
 
@@ -256,6 +262,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       return;
     }
 
+    isImageOperationInProgress = true;
     try {
       console.log('🗑️ Eliminando imagen de carrusel ID:', imageId);
       const url = '/api/filter-categories/images/' + imageId;
@@ -266,6 +273,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       console.log('📡 Respuesta HTTP:', response.status, response.statusText);
@@ -328,6 +336,8 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       console.error('❌ Error eliminando imagen:', error);
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
       alert('Error al eliminar la imagen: ' + errorMsg);
+    } finally {
+      isImageOperationInProgress = false;
     }
   }
   
@@ -438,6 +448,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 
       primaryImageUploadStatus.textContent = '⏳ Subiendo imagen...';
       primaryImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
+      isImageOperationInProgress = true;
 
       try {
         const formData = new FormData();
@@ -449,6 +460,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         const response = await fetch('/api/filter-categories/upload-image', {
           method: 'POST',
           body: formData,
+          credentials: 'include',
         });
 
         console.log('📡 Respuesta HTTP:', response.status, response.statusText);
@@ -482,9 +494,16 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ main_image: result.url }),
+            credentials: 'include',
           });
 
-          const saveResult = await saveResponse.json();
+          let saveResult;
+          try {
+            const saveText = await saveResponse.text();
+            saveResult = saveText ? JSON.parse(saveText) : { success: false, message: 'Respuesta vacía' };
+          } catch (e) {
+            saveResult = { success: false, message: 'Error al procesar respuesta' };
+          }
           console.log('📡 Resultado de guardar en BD:', saveResult);
 
           if (saveResult.success) {
@@ -509,6 +528,8 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         console.error('Error subiendo imagen principal:', error);
         primaryImageUploadStatus.textContent = '❌ Error al subir la imagen';
         primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+      } finally {
+        isImageOperationInProgress = false;
       }
     });
   }
@@ -565,6 +586,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
 
       carouselImageUploadStatus.textContent = `⏳ Subiendo ${files.length} imagen(es)...`;
       carouselImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
+      isImageOperationInProgress = true;
 
       let successCount = 0;
       let errorCount = 0;
@@ -592,6 +614,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           const response = await fetch('/api/filter-categories/upload-image', {
             method: 'POST',
             body: formData,
+            credentials: 'include',
           });
 
           console.log(`📡 Respuesta HTTP para ${file.name}:`, response.status, response.statusText);
@@ -648,6 +671,8 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         alert(`Error al subir las imágenes${errorCount > 0 ? ` (${errorCount} error(es))` : ''}`);
       }
 
+      isImageOperationInProgress = false;
+
       // Limpiar input
       if (carouselImageInput) {
         carouselImageInput.value = '';
@@ -679,7 +704,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       />
       <button
         type="button"
-        class="delete-carousel-btn absolute -top-2 -right-2 z-50 opacity-0 group-hover:opacity-100 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto transition-opacity shadow-lg"
+        class="delete-carousel-btn absolute -top-2 -right-2 z-50 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto shadow-lg opacity-90 hover:opacity-100"
         data-image-id="temp-${Date.now()}"
         title="Eliminar imagen"
         style="pointer-events: auto; min-width: 32px; min-height: 32px;"
@@ -715,6 +740,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           imageUrl: imageUrl,
           isPrimary: false,
         }),
+        credentials: 'include',
       });
 
       console.log('📡 Respuesta HTTP guardar en BD:', response.status, response.statusText);
@@ -744,13 +770,18 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
     }
   }
 
-    // Prevenir que el formulario se envíe cuando se hace clic en botones de eliminar o inputs de archivo
+    // Prevenir que el formulario se envíe durante upload/delete o al usar botones/inputs de imagen
     const categoryForm = document.getElementById('category-form');
     if (categoryForm) {
       categoryForm.addEventListener('submit', function(e) {
-        // Si el evento fue disparado por un botón de eliminar, cancelar el envío
+        if (isImageOperationInProgress) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🚫 Prevenido envío: operación de imagen en curso');
+          return false;
+        }
         const activeElement = document.activeElement;
-        if (activeElement && activeElement.classList.contains('delete-carousel-btn')) {
+        if (activeElement && (activeElement.classList.contains('delete-carousel-btn') || activeElement.id === 'remove-existing-primary-image' || activeElement.id === 'remove-primary-image')) {
           e.preventDefault();
           e.stopPropagation();
           console.log('🚫 Prevenido envío de formulario por botón de eliminar');
