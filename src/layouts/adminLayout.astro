@@ -2,6 +2,8 @@
 import "../styles/global.css";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { getAdminUserByEmail } from "@/lib/database";
+import { AdminSidebarWrapper } from "@/components/admin/AdminSidebarWrapper";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export interface Props {
   title: string;
@@ -47,402 +49,88 @@ const currentPath = Astro.url.pathname;
     <title>{title} - Admin Panel</title>
   </head>
   <body class="h-full bg-background text-foreground">
-    <div class="min-h-full">
-      <!-- Sidebar -->
-      <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border bg-background px-6 pb-4">
-          <!-- Logo -->
-          <div class="flex h-16 shrink-0 items-center">
-            <a href="/admin/dashboard" class="flex items-center space-x-2">
-              <img
-                src="/logos/logo-starfilters.png"
-                alt="Starfilters Admin"
-                class="h-14 w-auto"
-              />
-              <span class="text-xl font-bold text-foreground">Admin</span>
-            </a>
-          </div>
-
-          <!-- Navigation -->
-          <nav class="flex flex-1 flex-col">
-            <ul role="list" class="flex flex-1 flex-col gap-y-7">
-              <li>
-                <ul role="list" class="-mx-2 space-y-1">
-                  <li>
-                    <a
-                      href="/admin/dashboard"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/dashboard')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-                      </svg>
-                      Dashboard
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/admin/products"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/products')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                      </svg>
-                      Productos
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/admin/filter-categories"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/filter-categories')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-                      </svg>
-                      Categorías Filtros
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/admin/orders"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/orders')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                      </svg>
-                      Órdenes
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/admin/blog"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/blog')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
-                      </svg>
-                      Blog
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/admin/users"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/users')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                      </svg>
-                      Usuarios
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/admin/discount-codes"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/discount-codes')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                      </svg>
-                      Códigos Descuento
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              
-              <!-- Separador -->
-              <li class="mt-auto">
-                <div class="border-t border-border pt-4">
-                  <ul role="list" class="-mx-2 space-y-1">
-                    <li>
-                      <a
-                        href="/"
-                        class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      >
-                        <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        Ver Sitio Web
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="/logout"
-                        class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      >
-                        <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                        </svg>
-                        Cerrar Sesión
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </div>
-
-      <!-- Mobile menu -->
-      <div class="lg:hidden">
-        <div class="fixed inset-0 z-50" id="mobile-menu">
-          <div class="fixed inset-0 bg-background/80 backdrop-blur-sm" aria-hidden="true"></div>
-          <div class="fixed inset-y-0 left-0 z-50 w-full overflow-y-auto bg-background px-6 pb-6 sm:max-w-sm sm:ring-1 sm:ring-border">
-            <div class="flex h-16 items-center justify-between">
-              <a href="/admin/dashboard" class="flex items-center space-x-2">
-                <img
-                  src="/logos/logo-starfilters.png"
-                  alt="Starfilters Admin"
-                  class="h-14 w-auto"
-                />
-                <span class="text-xl font-bold text-foreground">Admin</span>
-              </a>
+    <AdminSidebarWrapper 
+      client:load
+      currentPath={currentPath}
+      adminUser={adminUser}
+    >
+      <!-- Top bar -->
+      <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+        <SidebarTrigger client:load />
+        
+        <div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+          <div class="flex flex-1"></div>
+          <div class="flex items-center gap-x-4 lg:gap-x-6">
+            <!-- Perfil -->
+            <div class="relative">
               <button
                 type="button"
-                class="-m-2.5 rounded-md p-2.5 text-muted-foreground"
-                data-action="close"
-                data-target="mobile-menu"
+                class="-m-1.5 flex items-center p-1.5"
+                id="user-menu-button"
+                aria-expanded="false"
+                aria-haspopup="true"
               >
-                <span class="sr-only">Cerrar menú</span>
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            <div class="mt-6 flow-root">
-              <div class="-my-6 divide-y divide-border">
-                <div class="space-y-2 py-6">
-                  <a
-                    href="/admin/dashboard"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/dashboard')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Dashboard
-                  </a>
-                  <a
-                    href="/admin/products"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/products')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Productos
-                  </a>
-                  <a
-                    href="/admin/filter-categories"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/filter-categories')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Categorías Filtros
-                  </a>
-                  <a
-                    href="/admin/orders"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/orders')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Órdenes
-                  </a>
-                  <a
-                    href="/admin/blog"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/blog')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Blog
-                  </a>
-                  <a
-                    href="/admin/users"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/users')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Usuarios
-                  </a>
-                  <a
-                    href="/admin/discount-codes"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/discount-codes')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Códigos Descuento
-                  </a>
-                </div>
-                <div class="py-6">
-                  <a
-                    href="/"
-                    class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground hover:bg-muted"
-                  >
-                    Ver Sitio Web
-                  </a>
-                  <a
-                    href="/logout"
-                    class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground hover:bg-muted"
-                  >
-                    Cerrar Sesión
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main content -->
-      <div class="lg:pl-72">
-        <!-- Top bar -->
-        <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            class="-m-2.5 p-2.5 text-muted-foreground lg:hidden"
-            data-action="show-modal"
-            data-target="mobile-menu"
-          >
-            <span class="sr-only">Abrir menú lateral</span>
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
-            </svg>
-          </button>
-
-          <!-- Separador -->
-          <div class="h-6 w-px bg-border lg:hidden" aria-hidden="true"></div>
-
-          <div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div class="flex flex-1"></div>
-            <div class="flex items-center gap-x-4 lg:gap-x-6">
-              <!-- Perfil -->
-              <div class="relative">
-                <button
-                  type="button"
-                  class="-m-1.5 flex items-center p-1.5"
-                  id="user-menu-button"
-                  aria-expanded="false"
-                  aria-haspopup="true"
-                >
-                  <span class="sr-only">Abrir menú de usuario</span>
-                  {adminUser?.profile_image ? (
-                    <img
-                      class="h-8 w-8 rounded-full bg-muted object-cover"
-                      src={adminUser.profile_image}
-                      alt={displayName}
-                    />
-                  ) : (
-                    <div class="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-                      {initials}
-                    </div>
-                  )}
-                  <span class="hidden lg:flex lg:items-center">
-                    <span class="ml-4 text-sm font-semibold leading-6 text-foreground" aria-hidden="true">
-                      {displayName}
-                    </span>
-                    <svg class="ml-2 h-5 w-5 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"></path>
-                    </svg>
+                <span class="sr-only">Abrir menú de usuario</span>
+                {adminUser?.profile_image ? (
+                  <img
+                    class="h-8 w-8 rounded-full bg-muted object-cover"
+                    src={adminUser.profile_image}
+                    alt={displayName}
+                  />
+                ) : (
+                  <div class="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                    {initials}
+                  </div>
+                )}
+                <span class="hidden lg:flex lg:items-center">
+                  <span class="ml-4 text-sm font-semibold leading-6 text-foreground" aria-hidden="true">
+                    {displayName}
                   </span>
-                </button>
+                  <svg class="ml-2 h-5 w-5 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"></path>
+                  </svg>
+                </span>
+              </button>
 
-                <!-- Menú desplegable del perfil -->
-                <div
-                  class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-background py-2 shadow-lg ring-1 ring-border focus:outline-none hidden"
-                  id="user-menu"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="user-menu-button"
+              <!-- Menú desplegable del perfil -->
+              <div
+                class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-background py-2 shadow-lg ring-1 ring-border focus:outline-none hidden"
+                id="user-menu"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="user-menu-button"
+                tabindex="-1"
+              >
+                <a
+                  href="/admin/profile"
+                  class="block px-3 py-1 text-sm leading-6 text-foreground hover:bg-muted"
+                  role="menuitem"
                   tabindex="-1"
                 >
-                  <a
-                    href="/admin/profile"
-                    class="block px-3 py-1 text-sm leading-6 text-foreground hover:bg-muted"
-                    role="menuitem"
-                    tabindex="-1"
-                  >
-                    Mi Perfil
-                  </a>
-                  <a
-                    href="/logout"
-                    class="block px-3 py-1 text-sm leading-6 text-foreground hover:bg-muted"
-                    role="menuitem"
-                    tabindex="-1"
-                  >
-                    Cerrar Sesión
-                  </a>
-                </div>
+                  Mi Perfil
+                </a>
+                <a
+                  href="/logout"
+                  class="block px-3 py-1 text-sm leading-6 text-foreground hover:bg-muted"
+                  role="menuitem"
+                  tabindex="-1"
+                >
+                  Cerrar Sesión
+                </a>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Page content -->
-        <main class="py-10">
-          <slot />
-        </main>
       </div>
-    </div>
+
+      <!-- Page content -->
+      <main class="py-10">
+        <slot />
+      </main>
+    </AdminSidebarWrapper>
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        // Menú móvil
-        const mobileMenu = document.getElementById("mobile-menu");
-        const openBtn = document.querySelector('[data-action="show-modal"]');
-        const closeBtn = document.querySelector('[data-action="close"]');
-
-        openBtn?.addEventListener("click", () => {
-          mobileMenu?.classList.remove("hidden");
-        });
-
-        closeBtn?.addEventListener("click", () => {
-          mobileMenu?.classList.add("hidden");
-        });
-
-        // Cerrar menú móvil al hacer clic fuera
-        mobileMenu?.addEventListener("click", (e) => {
-          if (e.target === mobileMenu) {
-            mobileMenu.classList.add("hidden");
-          }
-        });
-
         // Menú desplegable del perfil
         const userMenuButton = document.getElementById("user-menu-button");
         const userMenu = document.getElementById("user-menu");
