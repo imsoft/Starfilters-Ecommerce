@@ -90,6 +90,7 @@ export const ui = {
     'services.requestSection.fields.city': 'Ciudad',
     'services.requestSection.fields.email': 'Correo electrónico',
     'services.requestSection.fields.phone': 'Teléfono',
+    'services.requestSection.fields.company': 'Nombre de empresa',
     'services.requestSection.fields.message': 'Mensaje',
     'services.requestSection.submitButton': 'Enviar mensaje',
 
@@ -311,10 +312,11 @@ export const ui = {
     'services.requestSection.email': 'starinfo@starfilters.mx',
     'services.requestSection.formTitle': 'Contact Form',
     'services.requestSection.formDescription': 'Complete the fields and we will get in touch with you shortly.',
-    'services.requestSection.fields.name': 'First Name',
-    'services.requestSection.fields.city': 'Last Name',
+    'services.requestSection.fields.name': 'Name',
+    'services.requestSection.fields.city': 'City',
     'services.requestSection.fields.email': 'Email',
-    'services.requestSection.fields.phone': 'Phone Number',
+    'services.requestSection.fields.phone': 'Phone',
+    'services.requestSection.fields.company': 'Company Name',
     'services.requestSection.fields.message': 'Message',
     'services.requestSection.submitButton': 'Send message',
 
