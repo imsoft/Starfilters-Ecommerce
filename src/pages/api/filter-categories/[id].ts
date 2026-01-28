@@ -45,13 +45,19 @@ export const PATCH: APIRoute = async ({ params, request, cookies }) => {
       if (main_image && main_image.trim() !== '') {
         console.log('🔄 Eliminando imágenes principales anteriores antes de establecer la nueva');
         await deletePrimaryCategoryImages(id);
+      } else if (main_image === '' || main_image === null) {
+        // Si se está eliminando la imagen principal, también eliminar de filter_category_images
+        console.log('🔄 Eliminando imágenes principales de filter_category_images');
+        await deletePrimaryCategoryImages(id);
       }
       
+      console.log('📝 Actualizando main_image en filter_categories:', main_image || null);
       const success = await updateCategory(id, {
         main_image: main_image || null,
       });
 
       if (!success) {
+        console.error('❌ Error: updateCategory retornó false');
         return new Response(
           JSON.stringify({
             success: false,
@@ -63,6 +69,8 @@ export const PATCH: APIRoute = async ({ params, request, cookies }) => {
           }
         );
       }
+      
+      console.log('✅ Categoría actualizada exitosamente');
     }
 
     return new Response(

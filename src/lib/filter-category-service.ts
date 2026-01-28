@@ -197,29 +197,64 @@ export const createCategory = async (categoryData: Partial<FilterCategory>): Pro
  */
 export const updateCategory = async (id: number, categoryData: Partial<FilterCategory>): Promise<boolean> => {
   try {
-    console.log('📝 Actualizando categoría ID:', id);
+    console.log('📝 Actualizando categoría ID:', id, 'Datos:', categoryData);
 
-    await query(
-      `UPDATE filter_categories SET
-        name = ?, name_en = ?, slug = ?, description = ?, description_en = ?,
-        main_image = ?, status = ?
-      WHERE id = ?`,
-      [
-        categoryData.name,
-        categoryData.name_en || null,
-        categoryData.slug,
-        categoryData.description || null,
-        categoryData.description_en || null,
-        categoryData.main_image || null,
-        categoryData.status,
-        id,
-      ]
-    );
+    // Construir dinámicamente la consulta SQL solo con los campos proporcionados
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (categoryData.name !== undefined) {
+      updates.push('name = ?');
+      values.push(categoryData.name);
+    }
+    if (categoryData.name_en !== undefined) {
+      updates.push('name_en = ?');
+      values.push(categoryData.name_en || null);
+    }
+    if (categoryData.slug !== undefined) {
+      updates.push('slug = ?');
+      values.push(categoryData.slug);
+    }
+    if (categoryData.description !== undefined) {
+      updates.push('description = ?');
+      values.push(categoryData.description || null);
+    }
+    if (categoryData.description_en !== undefined) {
+      updates.push('description_en = ?');
+      values.push(categoryData.description_en || null);
+    }
+    if (categoryData.main_image !== undefined) {
+      updates.push('main_image = ?');
+      values.push(categoryData.main_image || null);
+    }
+    if (categoryData.status !== undefined) {
+      updates.push('status = ?');
+      values.push(categoryData.status);
+    }
+
+    // Si no hay campos para actualizar, retornar true (no hay nada que hacer)
+    if (updates.length === 0) {
+      console.log('⚠️ No hay campos para actualizar');
+      return true;
+    }
+
+    // Agregar el ID al final para el WHERE
+    values.push(id);
+
+    const queryStr = `UPDATE filter_categories SET ${updates.join(', ')} WHERE id = ?`;
+    console.log('📝 Query SQL:', queryStr);
+    console.log('📝 Valores:', values);
+
+    await query(queryStr, values);
 
     console.log('✅ Categoría actualizada');
     return true;
   } catch (error) {
     console.error('❌ Error actualizando categoría:', error);
+    if (error instanceof Error) {
+      console.error('❌ Mensaje de error:', error.message);
+      console.error('❌ Stack:', error.stack);
+    }
     return false;
   }
 };
