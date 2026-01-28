@@ -1,5 +1,5 @@
 ---
-import AuthLayout from "@/layouts/authLayout.astro";
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import PasswordInput from "@/components/ui/PasswordInput.astro";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { updateUserPassword } from "@/lib/database";
@@ -51,23 +51,19 @@ if (Astro.request.method === "POST") {
 }
 ---
 
-<AuthLayout title={t('auth.changePassword.title')}>
-  <div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-      <img
-        src="/logos/logo-starfilters.png"
-        alt="Star Filters"
-        class="mx-auto h-10 w-auto"
-      />
-      <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-foreground">
-        {t('auth.changePassword.title')}
-      </h2>
-      <p class="mt-2 text-center text-sm text-muted-foreground">
-        Actualiza tu contraseña para mantener tu cuenta segura
-      </p>
-    </div>
+<WebsiteLayout title={t('auth.changePassword.title')} seoTitle={`${t('auth.changePassword.title')} | Star Filters`}>
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+        <h2 class="text-center text-2xl/9 font-bold tracking-tight text-foreground">
+          {t('auth.changePassword.title')}
+        </h2>
+        <p class="mt-2 text-center text-sm text-muted-foreground">
+          Actualiza tu contraseña para mantener tu cuenta segura
+        </p>
+      </div>
 
-    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+      <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
       {error && (
         <div class="mb-4 rounded-md bg-red-50 p-4">
           <div class="text-sm text-red-700">{error}</div>
@@ -136,5 +132,6 @@ if (Astro.request.method === "POST") {
         </a>
       </p>
     </div>
+    </div>
   </div>
-</AuthLayout>
+</WebsiteLayout>
