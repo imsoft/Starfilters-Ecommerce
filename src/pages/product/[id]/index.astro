@@ -5,6 +5,7 @@ import LazyImage from "@/components/shared/LazyImage.astro";
 import { getProductByUuid, getActiveProducts, getProductsByFilterCategory } from "@/lib/product-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
+import { getProductImages } from "@/lib/database";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getExchangeRate, getVariantPriceInMXN } from "@/lib/currency-service";
 import { getLangFromUrl } from "@/i18n/utils";
@@ -82,14 +83,28 @@ const relatedProductsWithImages = relatedProducts.map(p => {
   };
 });
 
-// Usar placeholder para imágenes (las imágenes se pueden agregar a Bind después)
-const mainImage = getProductPlaceholderImage(productCat);
-const allImages = [
-  mainImage,
-  '/images/products/placeholder-hepa-filter.svg',
-  '/images/products/placeholder-cleanroom.svg',
-  '/images/products/placeholder-air-purification.svg'
-];
+// Obtener imágenes del producto desde la base de datos
+const productImages = await getProductImages(product.id);
+const primaryImage = productImages.find(img => img.is_primary)?.image_url || 
+                     productImages[0]?.image_url || 
+                     product.image_url ||
+                     getProductPlaceholderImage(productCat);
+const mainImage = primaryImage;
+
+// Construir array de imágenes (usar reales si existen, sino placeholders)
+const allImages = productImages.length > 0 
+  ? productImages.slice(0, 4).map(img => img.image_url)
+  : [
+      primaryImage,
+      getProductPlaceholderImage(productCat),
+      getProductPlaceholderImage(productCat),
+      getProductPlaceholderImage(productCat)
+    ];
+
+// Asegurar que siempre tengamos 4 imágenes para la galería
+while (allImages.length < 4) {
+  allImages.push(getProductPlaceholderImage(productCat));
+}
 
 // Obtener tasa de cambio actual
 const exchangeRate = await getExchangeRate();
@@ -324,31 +339,83 @@ const benefitsList = parseListField(product.benefits);
           </dl>
 
           <!-- Formulario de compra -->
-          <form class="mt-10">
-            <!-- Cantidad -->
-            <div class="flex items-center gap-4">
-              <label for="quantity" class="text-sm font-medium text-foreground">
+          <form class="mt-10 space-y-6">
+            <!-- Selector de Tamaño (Variantes) -->
+            {relatedVariants.length > 0 && (
+              <div>
+                <label for="size-select" class="block text-sm font-medium text-foreground mb-2">
+                  Tamaño:
+                </label>
+                <select
+                  id="size-select"
+                  name="size"
+                  class="w-full rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                >
+                  <option 
+                    value={product.uuid} 
+                    data-price={productPriceFinal} 
+                    data-currency={finalCurrency}
+                    data-stock={product.stock}
+                    data-name={productName}
+                    data-image={mainImage}
+                    data-id={product.id}
+                    selected
+                  >
+                    {product.nominal_size || product.real_size || productName} - {formatPrice(productPriceFinal, finalCurrency)} {product.stock > 0 ? `(${product.stock} disponibles)` : '(Agotado)'}
+                  </option>
+                  {relatedVariants.map((variant) => {
+                    const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang);
+                    let variantFinalPrice = variantPrice;
+                    let variantFinalCurrency = variantCurrency;
+                    if (lang === 'es' && variantCurrency === 'USD') {
+                      variantFinalPrice = convertPriceToMXN(variantPrice, 'USD');
+                      variantFinalCurrency = 'MXN';
+                    }
+                    const variantName = getProductName(variant, lang);
+                    return (
+                      <option 
+                        value={variant.uuid}
+                        data-price={variantFinalPrice}
+                        data-currency={variantFinalCurrency}
+                        data-stock={variant.stock}
+                        data-name={variantName}
+                        data-image={variant.image_url || mainImage}
+                        data-id={variant.id}
+                      >
+                        {variant.nominal_size || variant.real_size || variantName} - {formatPrice(variantFinalPrice, variantFinalCurrency)} {variant.stock > 0 ? `(${variant.stock} disponibles)` : '(Agotado)'}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+
+            <!-- Cantidad (Input numérico) -->
+            <div>
+              <label for="quantity" class="block text-sm font-medium text-foreground mb-2">
                 Cantidad:
               </label>
-              <select
+              <input
+                type="number"
                 id="quantity"
                 name="quantity"
-                class="rounded-md bg-background py-2 pr-8 pl-3 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-              >
-                {Array.from({ length: Math.min(product.stock, 10) }, (_, i) => i + 1).map(num => (
-                  <option value={num}>{num}</option>
-                ))}
-              </select>
+                min="1"
+                max={product.stock || 999}
+                value="1"
+                class="w-32 rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              />
+              <span id="stock-info" class="ml-3 text-sm text-muted-foreground">
+                {product.stock > 0 ? `${product.stock} disponibles` : 'Agotado'}
+              </span>
             </div>
 
             <!-- Botones de acción -->
-            <div class="mt-8 flex gap-4">
+            <div class="flex gap-4">
               {product.stock > 0 ? (
                 <button
                   type="button"
                   id="add-to-cart-btn"
                   class="flex flex-1 items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-                  onclick={`addToCartFromProduct('${product.uuid}', ${product.id}, '${productName}', ${productPriceFinal}, '${mainImage}', '${productCat || ''}', '${finalCurrency}')`}
                 >
                   Agregar al Carrito
                 </button>
@@ -356,12 +423,12 @@ const benefitsList = parseListField(product.benefits);
                 <button
                   type="button"
                   disabled
+                  id="add-to-cart-btn-disabled"
                   class="flex flex-1 items-center justify-center rounded-md bg-gray-300 px-8 py-3 text-base font-medium text-gray-500 cursor-not-allowed"
                 >
                   No Disponible
                 </button>
               )}
-
             </div>
           </form>
         </div>
@@ -536,6 +603,184 @@ const benefitsList = parseListField(product.benefits);
 </WebsiteLayout>
 
 <script>
+  // Estado actual del producto seleccionado
+  let currentProduct = {
+    uuid: '',
+    id: 0,
+    name: '',
+    price: 0,
+    currency: 'MXN',
+    stock: 0,
+    image: '',
+    category: ''
+  };
+
+  // Inicializar con los datos del producto actual
+  document.addEventListener('DOMContentLoaded', () => {
+    const sizeSelect = document.getElementById('size-select') as HTMLSelectElement;
+    const quantityInput = document.getElementById('quantity') as HTMLInputElement;
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    const stockInfo = document.getElementById('stock-info');
+
+    // Inicializar producto actual
+    if (sizeSelect) {
+      updateCurrentProduct(sizeSelect);
+      
+      // Escuchar cambios en el select de tamaño
+      sizeSelect.addEventListener('change', () => {
+        updateCurrentProduct(sizeSelect);
+        // Resetear cantidad a 1
+        if (quantityInput) {
+          quantityInput.value = '1';
+          quantityInput.max = String(currentProduct.stock);
+        }
+        // Actualizar info de stock
+        if (stockInfo) {
+          stockInfo.textContent = currentProduct.stock > 0 
+            ? `${currentProduct.stock} disponibles` 
+            : 'Agotado';
+        }
+        // Actualizar precio mostrado
+        updateDisplayedPrice();
+        // Actualizar estado del botón
+        updateAddToCartButton();
+      });
+    } else {
+      // Si no hay select de tamaño, usar datos del producto principal
+      const productContainer = document.querySelector('[data-product-uuid]') as HTMLElement;
+      if (productContainer) {
+        currentProduct.uuid = productContainer.getAttribute('data-product-uuid') || '';
+        currentProduct.currency = productContainer.getAttribute('data-currency') || 'MXN';
+      }
+    }
+
+    // Escuchar cambios en la cantidad
+    if (quantityInput) {
+      quantityInput.addEventListener('input', () => {
+        const qty = parseInt(quantityInput.value) || 1;
+        if (qty < 1) quantityInput.value = '1';
+        if (qty > currentProduct.stock && currentProduct.stock > 0) {
+          quantityInput.value = String(currentProduct.stock);
+          showErrorNotification(`Solo hay ${currentProduct.stock} unidades disponibles`);
+        }
+      });
+    }
+
+    // Agregar evento al botón de agregar al carrito
+    if (addToCartBtn) {
+      addToCartBtn.addEventListener('click', handleAddToCart);
+    }
+
+    // Actualizar precios si estamos en español y hay USD
+    const currentLang = window.location.pathname.startsWith('/en') ? 'en' : 'es';
+    if (currentLang === 'es') {
+      updatePricesWithExchangeRate();
+      setInterval(updatePricesWithExchangeRate, 60 * 60 * 1000);
+    }
+  });
+
+  function updateCurrentProduct(sizeSelect: HTMLSelectElement) {
+    const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+    currentProduct = {
+      uuid: selectedOption.value,
+      id: parseInt(selectedOption.getAttribute('data-id') || '0'),
+      name: selectedOption.getAttribute('data-name') || '',
+      price: parseFloat(selectedOption.getAttribute('data-price') || '0'),
+      currency: selectedOption.getAttribute('data-currency') || 'MXN',
+      stock: parseInt(selectedOption.getAttribute('data-stock') || '0'),
+      image: selectedOption.getAttribute('data-image') || '',
+      category: ''
+    };
+  }
+
+  function updateDisplayedPrice() {
+    const priceElement = document.getElementById('main-product-price');
+    if (priceElement) {
+      priceElement.textContent = formatPrice(currentProduct.price, currentProduct.currency);
+    }
+  }
+
+  function updateAddToCartButton() {
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    const disabledBtn = document.getElementById('add-to-cart-btn-disabled');
+    
+    if (currentProduct.stock > 0) {
+      if (addToCartBtn) addToCartBtn.style.display = 'flex';
+      if (disabledBtn) disabledBtn.style.display = 'none';
+    } else {
+      if (addToCartBtn) addToCartBtn.style.display = 'none';
+      if (disabledBtn) disabledBtn.style.display = 'flex';
+    }
+  }
+
+  async function handleAddToCart() {
+    const quantityInput = document.getElementById('quantity') as HTMLInputElement;
+    const quantity = parseInt(quantityInput?.value || '1');
+
+    if (quantity < 1) {
+      showErrorNotification('La cantidad debe ser al menos 1');
+      return;
+    }
+
+    if (quantity > currentProduct.stock) {
+      showErrorNotification(`Solo hay ${currentProduct.stock} unidades disponibles`);
+      return;
+    }
+
+    // Verificar stock en tiempo real
+    const stockAvailable = await checkStock(currentProduct.uuid, quantity);
+    if (!stockAvailable) {
+      return;
+    }
+
+    // Obtener carrito actual
+    const cartData = localStorage.getItem('starfilters_cart');
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: currentProduct.currency };
+
+    // Buscar si el producto ya existe
+    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === currentProduct.uuid);
+
+    // Calcular la cantidad total
+    const currentCartQuantity = existingItemIndex >= 0 ? cart.items[existingItemIndex].quantity : 0;
+    const newTotalQuantity = currentCartQuantity + quantity;
+
+    // Verificar stock para la cantidad total
+    if (newTotalQuantity > currentProduct.stock) {
+      showErrorNotification(`Ya tienes ${currentCartQuantity} en el carrito. Solo hay ${currentProduct.stock} disponibles.`);
+      return;
+    }
+
+    if (existingItemIndex >= 0) {
+      cart.items[existingItemIndex].quantity += quantity;
+      cart.items[existingItemIndex].price = currentProduct.price;
+      cart.items[existingItemIndex].currency = currentProduct.currency;
+    } else {
+      cart.items.push({
+        uuid: currentProduct.uuid,
+        product_id: currentProduct.id,
+        name: currentProduct.name,
+        price: currentProduct.price,
+        currency: currentProduct.currency,
+        quantity,
+        image_url: currentProduct.image,
+        category: currentProduct.category
+      });
+    }
+
+    // Recalcular totales
+    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
+
+    // Guardar en localStorage
+    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
+
+    // Mostrar notificación
+    showNotification(`${currentProduct.name} agregado al carrito (${quantity})`);
+
+    // Disparar evento para actualizar navbar
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
+  }
+
   // Función para verificar stock en tiempo real
   async function checkStock(uuid: string, quantity: number): Promise<boolean> {
     try {
@@ -554,18 +799,17 @@ const benefitsList = parseListField(product.benefits);
       return true;
     } catch (error) {
       console.error('Error verificando stock:', error);
-      return true; // Continuar si hay error en la verificación
+      return true;
     }
   }
 
-  // Obtener tasa de cambio actual y actualizar precios USD (solo para español)
+  // Obtener tasa de cambio actual y actualizar precios USD
   async function updatePricesWithExchangeRate() {
     try {
       const response = await fetch('/api/exchange-rate');
       const data = await response.json();
       
       if (data.success && data.rate) {
-        // Actualizar precios de variantes en la página
         const variantRows = document.querySelectorAll('[data-currency="USD"]');
         variantRows.forEach((row) => {
           const priceUsdElement = row.querySelector('[data-price-usd]');
@@ -577,18 +821,6 @@ const benefitsList = parseListField(product.benefits);
             priceElement.textContent = formatPrice(priceMXN, 'MXN');
           }
         });
-        
-        // Actualizar precio principal si está en USD
-        const mainPriceElement = document.getElementById('main-product-price');
-        const mainPriceContainer = document.querySelector('[data-product-uuid="${product.uuid}"]');
-        
-        if (mainPriceElement && mainPriceContainer) {
-          const priceUSD = mainPriceContainer.getAttribute('data-price-usd');
-          if (priceUSD) {
-            const priceMXN = parseFloat(priceUSD) * data.rate;
-            mainPriceElement.textContent = formatPrice(priceMXN, 'MXN');
-          }
-        }
       }
     } catch (error) {
       console.error('Error actualizando precios con tasa de cambio:', error);
@@ -609,86 +841,7 @@ const benefitsList = parseListField(product.benefits);
     ).format(price);
   }
 
-  // Actualizar precios al cargar la página (solo si estamos en español y hay productos en USD)
-  document.addEventListener('DOMContentLoaded', () => {
-    const currentLang = window.location.pathname.startsWith('/en') ? 'en' : 'es';
-    if (currentLang === 'es') {
-      updatePricesWithExchangeRate();
-      // Actualizar cada hora
-      setInterval(updatePricesWithExchangeRate, 60 * 60 * 1000);
-    }
-  });
-
-  // Funciones del carrito
-  async function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = 'MXN'): Promise<void> {
-    const quantitySelect = document.getElementById('quantity') as HTMLSelectElement;
-    const quantity = parseInt(quantitySelect?.value || '1');
-
-    // Verificar stock en tiempo real
-    const stockAvailable = await checkStock(uuid, quantity);
-    if (!stockAvailable) {
-      return;
-    }
-
-    // El precio ya viene en la moneda correcta según el idioma
-    const finalPrice = price;
-    const finalCurrency = currency as 'MXN' | 'USD';
-
-    // Obtener carrito actual
-    const cartData = localStorage.getItem('starfilters_cart');
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: finalCurrency };
-
-    // Asegurar que el carrito tenga la moneda correcta
-    if (!cart.currency) {
-      cart.currency = finalCurrency;
-    }
-
-    // Buscar si el producto ya existe
-    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
-
-    // Calcular la cantidad total que tendría en el carrito
-    const currentCartQuantity = existingItemIndex >= 0 ? cart.items[existingItemIndex].quantity : 0;
-    const newTotalQuantity = currentCartQuantity + quantity;
-
-    // Verificar stock para la cantidad total
-    const totalStockAvailable = await checkStock(uuid, newTotalQuantity);
-    if (!totalStockAvailable) {
-      return;
-    }
-
-    if (existingItemIndex >= 0) {
-      cart.items[existingItemIndex].quantity += quantity;
-      cart.items[existingItemIndex].price = finalPrice; // Actualizar precio
-      cart.items[existingItemIndex].currency = finalCurrency; // Actualizar moneda
-    } else {
-      cart.items.push({
-        uuid,
-        product_id,
-        name,
-        price: finalPrice,
-        currency: finalCurrency,
-        quantity,
-        image_url,
-        category
-      });
-    }
-
-    // Recalcular totales
-    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
-    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
-
-    // Guardar en localStorage
-    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
-
-    // Mostrar notificación
-    showNotification(`${name} agregado al carrito (${quantity})`);
-
-    // Disparar evento para actualizar navbar si tiene contador
-    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
-  }
-
   function showNotification(message: string): void {
-    // Crear notificación temporal
     const notification = document.createElement('div');
     notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
     notification.innerHTML = `
@@ -701,7 +854,6 @@ const benefitsList = parseListField(product.benefits);
     `;
     document.body.appendChild(notification);
 
-    // Remover después de 3 segundos
     setTimeout(() => {
       notification.style.opacity = '0';
       setTimeout(() => notification.remove(), 300);
@@ -709,7 +861,6 @@ const benefitsList = parseListField(product.benefits);
   }
 
   function showErrorNotification(message: string): void {
-    // Crear notificación de error
     const notification = document.createElement('div');
     notification.className = 'fixed top-20 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
     notification.innerHTML = `
@@ -722,13 +873,44 @@ const benefitsList = parseListField(product.benefits);
     `;
     document.body.appendChild(notification);
 
-    // Remover después de 4 segundos
     setTimeout(() => {
       notification.style.opacity = '0';
       setTimeout(() => notification.remove(), 300);
     }, 4000);
   }
 
-  // Hacer funciones globales
+  // Funciones globales para productos relacionados
+  async function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = 'MXN'): Promise<void> {
+    const stockAvailable = await checkStock(uuid, 1);
+    if (!stockAvailable) return;
+
+    const cartData = localStorage.getItem('starfilters_cart');
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: currency };
+
+    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
+
+    if (existingItemIndex >= 0) {
+      cart.items[existingItemIndex].quantity += 1;
+    } else {
+      cart.items.push({
+        uuid,
+        product_id,
+        name,
+        price,
+        currency,
+        quantity: 1,
+        image_url,
+        category
+      });
+    }
+
+    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
+
+    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
+    showNotification(`${name} agregado al carrito`);
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
+  }
+
   (window as any).addToCartFromProduct = addToCartFromProduct;
 </script>
