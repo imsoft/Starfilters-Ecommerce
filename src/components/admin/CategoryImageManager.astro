@@ -1,6 +1,4 @@
 ---
-import { getCategoryImages } from '@/lib/filter-category-service';
-
 interface Props {
   categoryId: number;
   categoryName: string;
@@ -8,15 +6,6 @@ interface Props {
 }
 
 const { categoryId, categoryName, mainImageUrl } = Astro.props;
-
-// Obtener todas las imágenes de la categoría
-const allImages = await getCategoryImages(categoryId);
-console.log('🖼️ [CategoryImageManager] Imágenes obtenidas de BD:', allImages.length);
-console.log('🖼️ [CategoryImageManager] mainImageUrl recibido:', mainImageUrl);
-
-// Filtrar imágenes de carrusel (no principales)
-const carouselImagesFiltered = allImages.filter(img => !img.is_primary);
-console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', carouselImagesFiltered.length);
 ---
 
 <div class="space-y-8">
@@ -117,93 +106,6 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       </div>
     </div>
   </div>
-
-  <!-- Imágenes de Carrusel -->
-  <div class="rounded-lg border border-gray-200 bg-white p-6">
-    <div class="flex items-center justify-between mb-4">
-      <div>
-        <h3 class="text-lg font-semibold text-gray-900">Imágenes de Carrusel</h3>
-        <p class="text-sm text-gray-600 mt-1">
-          Puedes agregar hasta 4 imágenes adicionales para el carrusel.
-        </p>
-      </div>
-      <span class="text-sm text-gray-500">
-        {carouselImagesFiltered.length}/4
-      </span>
-    </div>
-
-    <!-- Galería de imágenes de carrusel existentes -->
-    <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4" id="carousel-images-container" style={carouselImagesFiltered.length === 0 ? 'display: none;' : ''}>
-      {carouselImagesFiltered.map((image) => (
-        <div class="relative group" data-image-id={image.id} data-image-url={image.image_url}>
-          <img
-            src={image.image_url}
-            alt={image.alt_text || categoryName}
-            class="h-32 w-full rounded-lg border border-gray-300 object-cover"
-            onerror="console.error('❌ Error cargando imagen:', this.src);"
-          />
-          <button
-            type="button"
-            class="delete-carousel-btn absolute -top-2 -right-2 z-50 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto shadow-lg opacity-90 hover:opacity-100"
-            data-image-id={image.id}
-            title="Eliminar imagen"
-            style="pointer-events: auto; min-width: 32px; min-height: 32px;"
-          >
-            <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      ))}
-    </div>
-
-    <!-- Uploader de imágenes de carrusel -->
-    <div id="carousel-uploader-container">
-    {carouselImagesFiltered.length < 4 && (
-      <div>
-        <label
-          for="carousel-image-input"
-          class="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 hover:border-gray-400"
-        >
-          <div class="text-center">
-            <svg
-              class="mx-auto h-12 w-12 text-gray-400"
-              stroke="currentColor"
-              fill="none"
-              viewBox="0 0 48 48"
-            >
-              <path
-                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <p class="mt-2 text-sm text-gray-600">
-              <span class="font-semibold">Click para subir</span> o arrastra y suelta
-            </p>
-            <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
-          </div>
-          <input
-            type="file"
-            id="carousel-image-input"
-            accept="image/*"
-            multiple
-            class="hidden"
-            name=""
-          />
-        </label>
-        <div id="carousel-image-upload-status" class="mt-2 text-sm"></div>
-      </div>
-    )}
-
-    {carouselImagesFiltered.length >= 4 && (
-      <p class="text-sm text-gray-500 text-center py-4">
-        Has alcanzado el límite de 4 imágenes de carrusel.
-      </p>
-    )}
-    </div>
-  </div>
 </div>
 
 <script is:inline define:vars={{ categoryId }}>
@@ -215,7 +117,6 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
   async function deletePrimaryImage() {
     console.log('🗑️ deletePrimaryImage llamada');
     const categoryIdNum = parseInt(String(categoryId));
-    console.log('🗑️ categoryIdNum:', categoryIdNum);
     
     if (!confirm('¿Estás seguro de que quieres eliminar la imagen principal?')) {
       return;
@@ -237,19 +138,24 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         console.log('📡 Respuesta texto (eliminar principal):', text);
         result = text ? JSON.parse(text) : { success: false, message: 'Respuesta vacía' };
       } catch (parseError) {
-        console.error('❌ Error parseando respuesta (eliminar principal):', parseError);
+        console.error('❌ Error parseando respuesta:', parseError);
         result = { success: false, message: 'Error al procesar la respuesta del servidor' };
       }
       
-      console.log('📡 Resultado del servidor (eliminar principal):', result);
+      console.log('📡 Resultado del servidor:', result);
+      
+      if (response.status === 401) {
+        alert('Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.');
+        return;
+      }
       
       if (response.ok && result.success) {
         alert('Imagen eliminada correctamente');
         window.location.reload();
       } else {
         const errorMsg = result.message || result.error || 'Error desconocido';
-        console.error('❌ Error eliminando imagen principal:', errorMsg, 'Status:', response.status);
-        alert('Error: ' + errorMsg + (response.status === 401 ? ' (No autorizado - verifica que estés logueado)' : ''));
+        console.error('❌ Error eliminando imagen principal:', errorMsg);
+        alert('Error: ' + errorMsg);
       }
     } catch (error) {
       console.error('❌ Error:', error);
@@ -258,118 +164,16 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
       isImageOperationInProgress = false;
     }
   }
-
-  // Función para eliminar imagen de carrusel
-  async function deleteCarouselImage(imageId) {
-    console.log('🗑️ deleteCarouselImage llamada, imageId:', imageId);
-    
-    if (!imageId || imageId === 0) {
-      console.error('❌ ID de imagen inválido:', imageId);
-      alert('Error: ID de imagen inválido');
-      return;
-    }
-    
-    if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
-      console.log('❌ Usuario canceló la eliminación');
-      return;
-    }
-
-    isImageOperationInProgress = true;
-    try {
-      console.log('🗑️ Eliminando imagen de carrusel ID:', imageId);
-      const url = '/api/filter-categories/images/' + imageId;
-      console.log('📡 URL de eliminación:', url);
-      
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      console.log('📡 Respuesta HTTP:', response.status, response.statusText);
-      
-      let result;
-      try {
-        const text = await response.text();
-        console.log('📡 Respuesta texto:', text);
-        result = text ? JSON.parse(text) : { success: false, message: 'Respuesta vacía' };
-      } catch (parseError) {
-        console.error('❌ Error parseando respuesta:', parseError);
-        result = { success: false, message: 'Error al procesar la respuesta del servidor' };
-      }
-      
-      console.log('📡 Resultado de eliminación:', result);
-
-      if (response.status === 401) {
-        alert('Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.');
-        console.error('❌ Error 401: No autorizado');
-        return;
-      }
-
-      if (response.ok && result.success) {
-        console.log('✅ Imagen eliminada correctamente');
-        
-        // Remover la imagen del DOM inmediatamente
-        const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
-        if (imageElement) {
-          imageElement.remove();
-          console.log('✅ Imagen removida del DOM');
-        }
-        
-        // Actualizar el contador y mostrar/ocultar uploader
-        const carouselContainer = document.getElementById('carousel-images-container');
-        if (carouselContainer) {
-          const remainingImages = carouselContainer.querySelectorAll('img').length;
-          console.log('📊 Imágenes restantes:', remainingImages);
-          
-          // Si no quedan imágenes, ocultar el contenedor
-          if (remainingImages === 0) {
-            carouselContainer.style.display = 'none';
-          }
-          
-          // Mostrar el uploader si hay espacio disponible
-          const uploaderContainer = document.getElementById('carousel-uploader-container');
-          if (uploaderContainer && remainingImages < 4) {
-            uploaderContainer.style.display = '';
-            const uploaderInput = document.getElementById('carousel-image-input');
-            if (uploaderInput && uploaderInput.parentElement) {
-              uploaderInput.parentElement.style.display = '';
-            }
-          }
-        }
-        
-        alert('Imagen eliminada correctamente');
-        // Recargar después de un breve delay para asegurar que todo se actualice
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      } else {
-        const errorMsg = result.message || result.error || 'Error desconocido';
-        console.error('❌ Error eliminando imagen:', errorMsg, 'Status:', response.status);
-        alert('Error al eliminar la imagen: ' + errorMsg);
-      }
-    } catch (error) {
-      console.error('❌ Error eliminando imagen:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
-      alert('Error al eliminar la imagen: ' + errorMsg);
-    } finally {
-      isImageOperationInProgress = false;
-    }
-  }
   
   function initImageButtons() {
     console.log('🖼️ [CategoryImageManager] Inicializando botones...');
     const categoryIdNum = parseInt(String(categoryId));
-    console.log('🖼️ [CategoryImageManager] categoryIdNum:', categoryIdNum);
 
-  // ===== IMAGEN PRINCIPAL =====
-  const primaryImageInput = document.getElementById('primary-image-input');
-  const primaryImagePreview = document.getElementById('primary-image-preview');
-  const primaryImagePreviewImg = document.getElementById('primary-image-preview-img');
-  const primaryImageUrlNew = document.getElementById('primary-image-url-new');
-  const primaryImageUrlExisting = document.getElementById('primary-image-url-existing');
+    // ===== IMAGEN PRINCIPAL =====
+    const primaryImageInput = document.getElementById('primary-image-input');
+    const primaryImagePreview = document.getElementById('primary-image-preview');
+    const primaryImagePreviewImg = document.getElementById('primary-image-preview-img');
+    const primaryImageUrlNew = document.getElementById('primary-image-url-new');
     const existingPrimaryImage = document.getElementById('existing-primary-image');
     const removePrimaryImageBtn = document.getElementById('remove-primary-image');
     const removeExistingPrimaryImageBtn = document.getElementById('remove-existing-primary-image');
@@ -384,265 +188,52 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
         console.log('🖱️ Click en botón eliminar imagen principal');
         deletePrimaryImage();
       });
-    } else {
-      console.warn('⚠️ No se encontró el botón de eliminar imagen principal');
     }
 
-    // Agregar event listeners para botones de eliminar carrusel usando event delegation
-    const carouselContainer = document.getElementById('carousel-images-container');
-    if (carouselContainer) {
-      console.log('✅ Contenedor de imágenes de carrusel encontrado, usando event delegation');
-      carouselContainer.addEventListener('click', function(e) {
-        const target = e.target.closest('.delete-carousel-btn');
-        if (target) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          const imageId = target.getAttribute('data-image-id');
-          console.log('🖱️ Click detectado en botón eliminar carrusel (delegation), imageId:', imageId);
-          const id = parseInt(imageId || '0');
-          if (id) {
-            deleteCarouselImage(id);
-          } else {
-            console.error('❌ No se pudo obtener imageId del botón');
-            alert('Error: No se pudo obtener el ID de la imagen');
-          }
-          return false;
-        }
-      });
-    } else {
-      console.warn('⚠️ No se encontró el contenedor de imágenes de carrusel');
-    }
-    
-    // También agregar listeners directos como respaldo
-    const deleteCarouselButtons = document.querySelectorAll('.delete-carousel-btn');
-    console.log('🔍 Botones de eliminar carrusel encontrados:', deleteCarouselButtons.length);
-    
-    deleteCarouselButtons.forEach(function(btn) {
-      const imageId = btn.getAttribute('data-image-id');
-      console.log('🔍 Configurando botón directo con imageId:', imageId);
-      
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        console.log('🖱️ Click detectado en botón eliminar carrusel (directo), imageId:', imageId);
-        const id = parseInt(imageId || '0');
-        if (id) {
-          deleteCarouselImage(id);
-        } else {
-          console.error('❌ No se pudo obtener imageId del botón');
-          alert('Error: No se pudo obtener el ID de la imagen');
-        }
-        return false;
-      });
-    });
-
-  if (primaryImageInput) {
-    console.log('✅ Input de imagen principal encontrado, agregando listener');
-    primaryImageInput.addEventListener('change', async (e) => {
-      console.log('📤 Evento change en input de imagen principal');
-      const target = e.target;
-      const file = target && target.files ? target.files[0] : null;
-      console.log('📤 Archivo seleccionado:', file ? file.name : 'ninguno');
-      if (!file) {
-        console.log('⚠️ No se seleccionó archivo');
-        return;
-      }
-
-      // Validar tamaño (10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
-        primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-        return;
-      }
-
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
-        primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-        return;
-      }
-
-      primaryImageUploadStatus.textContent = '⏳ Subiendo imagen...';
-      primaryImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
-      isImageOperationInProgress = true;
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('categoryId', categoryIdNum.toString());
-        formData.append('imageType', 'primary');
-
-        console.log('📤 Subiendo imagen principal...');
-        const response = await fetch('/api/filter-categories/upload-image', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-        });
-
-        console.log('📡 Respuesta HTTP:', response.status, response.statusText);
-        
-        let result;
-        try {
-          const text = await response.text();
-          result = text ? JSON.parse(text) : { success: false, error: 'Respuesta vacía' };
-        } catch (parseError) {
-          console.error('❌ Error parseando respuesta:', parseError);
-          result = { success: false, error: 'Error al procesar la respuesta del servidor' };
-        }
-
-        console.log('📡 Resultado:', result);
-
-        if (response.status === 401) {
-          primaryImageUploadStatus.textContent = '❌ Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.';
-          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-          alert('Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.');
+    if (primaryImageInput) {
+      console.log('✅ Input de imagen principal encontrado, agregando listener');
+      primaryImageInput.addEventListener('change', async (e) => {
+        console.log('📤 Evento change en input de imagen principal');
+        const target = e.target;
+        const file = target && target.files ? target.files[0] : null;
+        console.log('📤 Archivo seleccionado:', file ? file.name : 'ninguno');
+        if (!file) {
+          console.log('⚠️ No se seleccionó archivo');
           return;
         }
 
-        if (response.ok && result.success && result.url) {
-          // Ocultar imagen existente si hay una
-          if (existingPrimaryImage) {
-            existingPrimaryImage.classList.add('hidden');
-          }
-          
-          // Mostrar preview de nueva imagen
-          primaryImagePreviewImg.src = result.url;
-          primaryImagePreview.classList.remove('hidden');
-          if (primaryImageUrlNew) {
-            primaryImageUrlNew.value = result.url;
-          }
-          
-          // Guardar la URL en la BD actualizando la categoría
-          const saveResponse = await fetch('/api/filter-categories/' + categoryIdNum, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ main_image: result.url }),
-            credentials: 'include',
-          });
-
-          let saveResult;
-          try {
-            const saveText = await saveResponse.text();
-            saveResult = saveText ? JSON.parse(saveText) : { success: false, message: 'Respuesta vacía' };
-          } catch (e) {
-            saveResult = { success: false, message: 'Error al procesar respuesta' };
-          }
-          console.log('📡 Resultado de guardar en BD:', saveResult);
-
-          if (saveResult.success) {
-            primaryImageUploadStatus.textContent = '✅ Imagen subida y guardada correctamente';
-            primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-            
-            // Recargar después de un momento para mostrar la imagen como principal
-            setTimeout(function() {
-              window.location.reload();
-            }, 1000);
-          } else {
-            primaryImageUploadStatus.textContent = '⚠️ Imagen subida pero error al guardar en BD: ' + (saveResult.message || 'Error desconocido');
-            primaryImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
-          }
-        } else {
-          const errorMsg = result.error || result.message || 'Error desconocido';
-          console.error('❌ Error subiendo imagen principal:', errorMsg);
-          primaryImageUploadStatus.textContent = `❌ Error: ${errorMsg}`;
-          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-        }
-      } catch (error) {
-        console.error('Error subiendo imagen principal:', error);
-        primaryImageUploadStatus.textContent = '❌ Error al subir la imagen';
-        primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-      } finally {
-        isImageOperationInProgress = false;
-      }
-    });
-  }
-
-  if (removePrimaryImageBtn) {
-    removePrimaryImageBtn.addEventListener('click', function() {
-      if (primaryImagePreview) {
-        primaryImagePreview.classList.add('hidden');
-      }
-      if (primaryImageUrlNew) {
-        primaryImageUrlNew.value = '';
-      }
-      if (primaryImageInput) {
-        primaryImageInput.value = '';
-      }
-      if (primaryImageUploadStatus) {
-        primaryImageUploadStatus.textContent = '';
-      }
-    });
-  }
-
-
-  // ===== IMÁGENES DE CARRUSEL =====
-  const carouselImageInput = document.getElementById('carousel-image-input');
-  const carouselImageUploadStatus = document.getElementById('carousel-image-upload-status');
-  const maxCarouselImages = 4;
-
-  if (carouselImageInput) {
-    console.log('✅ Input de carrusel encontrado, agregando listener');
-    carouselImageInput.addEventListener('change', async (e) => {
-      console.log('📤 Evento change en input de carrusel');
-      const target = e.target;
-      const files = target && target.files ? Array.from(target.files) : [];
-      console.log('📤 Archivos seleccionados:', files.length);
-      if (files.length === 0) {
-        console.log('⚠️ No se seleccionaron archivos');
-        return;
-      }
-
-      // Obtener número actual de imágenes de carrusel
-      // Contar las imágenes en el contenedor de carrusel
-      const carouselContainer = document.getElementById('carousel-images-container');
-      const currentCarouselCount = carouselContainer ? carouselContainer.querySelectorAll('img').length : 0;
-      const availableSlots = maxCarouselImages - currentCarouselCount;
-      
-      console.log('📊 Imágenes de carrusel actuales:', currentCarouselCount);
-      console.log('📊 Espacios disponibles:', availableSlots);
-
-      if (files.length > availableSlots) {
-        carouselImageUploadStatus.textContent = `❌ Solo puedes agregar ${availableSlots} imagen(es) más`;
-        carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-        return;
-      }
-
-      carouselImageUploadStatus.textContent = `⏳ Subiendo ${files.length} imagen(es)...`;
-      carouselImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
-      isImageOperationInProgress = true;
-
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const file of files) {
         // Validar tamaño (10MB)
         if (file.size > 10 * 1024 * 1024) {
-          errorCount++;
-          continue;
+          primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
+          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+          return;
         }
 
         // Validar tipo
         if (!file.type.startsWith('image/')) {
-          errorCount++;
-          continue;
+          primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
+          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+          return;
         }
+
+        primaryImageUploadStatus.textContent = '⏳ Subiendo imagen...';
+        primaryImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
+        isImageOperationInProgress = true;
 
         try {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('categoryId', categoryIdNum.toString());
-          formData.append('imageType', 'carousel');
+          formData.append('imageType', 'primary');
 
-          console.log(`📤 Subiendo imagen ${file.name}...`);
+          console.log('📤 Subiendo imagen principal...');
           const response = await fetch('/api/filter-categories/upload-image', {
             method: 'POST',
             body: formData,
             credentials: 'include',
           });
 
-          console.log(`📡 Respuesta HTTP para ${file.name}:`, response.status, response.statusText);
+          console.log('📡 Respuesta HTTP:', response.status, response.statusText);
           
           let result;
           try {
@@ -653,154 +244,91 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
             result = { success: false, error: 'Error al procesar la respuesta del servidor' };
           }
 
-          console.log(`📡 Resultado para ${file.name}:`, result);
+          console.log('📡 Resultado:', result);
+
+          if (response.status === 401) {
+            primaryImageUploadStatus.textContent = '❌ Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.';
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+            alert('Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.');
+            return;
+          }
 
           if (response.ok && result.success && result.url) {
-            // Guardar la imagen en la BD
-            const saved = await saveCarouselImageToDB(result.url);
-            if (saved) {
-              console.log(`✅ Imagen ${file.name} subida y guardada correctamente`);
-              successCount++;
+            // Ocultar imagen existente si hay una
+            if (existingPrimaryImage) {
+              existingPrimaryImage.classList.add('hidden');
+            }
+            
+            // Mostrar preview de nueva imagen
+            primaryImagePreviewImg.src = result.url;
+            primaryImagePreview.classList.remove('hidden');
+            if (primaryImageUrlNew) {
+              primaryImageUrlNew.value = result.url;
+            }
+            
+            // Guardar la URL en la BD actualizando la categoría
+            const saveResponse = await fetch('/api/filter-categories/' + categoryIdNum, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ main_image: result.url }),
+              credentials: 'include',
+            });
+
+            let saveResult;
+            try {
+              const saveText = await saveResponse.text();
+              saveResult = saveText ? JSON.parse(saveText) : { success: false, message: 'Respuesta vacía' };
+            } catch (e) {
+              saveResult = { success: false, message: 'Error al procesar respuesta' };
+            }
+            console.log('📡 Resultado de guardar en BD:', saveResult);
+
+            if (saveResult.success) {
+              primaryImageUploadStatus.textContent = '✅ Imagen subida y guardada correctamente';
+              primaryImageUploadStatus.className = 'mt-2 text-sm text-green-600';
               
-              // Agregar la imagen al DOM inmediatamente
-              addImageToCarousel(result.url, file.name);
+              // Recargar después de un momento para mostrar la imagen como principal
+              setTimeout(function() {
+                window.location.reload();
+              }, 1000);
             } else {
-              console.error(`❌ Error guardando ${file.name} en BD`);
-              errorCount++;
+              primaryImageUploadStatus.textContent = '⚠️ Imagen subida pero error al guardar en BD: ' + (saveResult.message || 'Error desconocido');
+              primaryImageUploadStatus.className = 'mt-2 text-sm text-yellow-600';
             }
           } else {
             const errorMsg = result.error || result.message || 'Error desconocido';
-            console.error(`❌ Error subiendo ${file.name}:`, errorMsg, 'Status:', response.status);
-            if (response.status === 401) {
-              alert(`Error: No autorizado. Por favor, recarga la página e inicia sesión nuevamente.`);
-              errorCount++;
-              break; // Salir del loop si hay error de autenticación
-            }
-            errorCount++;
+            console.error('❌ Error subiendo imagen principal:', errorMsg);
+            primaryImageUploadStatus.textContent = `❌ Error: ${errorMsg}`;
+            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
           }
         } catch (error) {
-          console.error('Error subiendo imagen de carrusel:', error);
-          errorCount++;
+          console.error('Error subiendo imagen principal:', error);
+          primaryImageUploadStatus.textContent = '❌ Error al subir la imagen';
+          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+        } finally {
+          isImageOperationInProgress = false;
         }
-      }
-
-      if (successCount > 0) {
-        carouselImageUploadStatus.textContent = `✅ ${successCount} imagen(es) subida(s) correctamente${errorCount > 0 ? `, ${errorCount} fallaron` : ''}`;
-        carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
-        
-        // Mostrar mensaje de éxito
-        console.log(`✅ ${successCount} imagen(es) subida(s) exitosamente`);
-        
-        // Recargar la página para sincronizar con la BD y obtener los IDs reales
-        setTimeout(() => {
-          window.location.reload();
-        }, 800);
-      } else {
-        carouselImageUploadStatus.textContent = `❌ Error al subir las imágenes${errorCount > 0 ? ` (${errorCount} error(es))` : ''}`;
-        carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-        alert(`Error al subir las imágenes${errorCount > 0 ? ` (${errorCount} error(es))` : ''}`);
-      }
-
-      isImageOperationInProgress = false;
-
-      // Limpiar input
-      if (carouselImageInput) {
-        carouselImageInput.value = '';
-      }
-    });
-  }
-
-
-  // Función para agregar imagen al carrusel en el DOM
-  function addImageToCarousel(imageUrl: string, imageName: string) {
-    const carouselContainer = document.getElementById('carousel-images-container');
-    if (!carouselContainer) {
-      console.warn('⚠️ No se encontró el contenedor de carrusel');
-      return;
-    }
-    
-    // Mostrar el contenedor si estaba oculto
-    carouselContainer.style.display = '';
-    
-    // Crear el elemento de imagen
-    const imageDiv = document.createElement('div');
-    imageDiv.className = 'relative group';
-    imageDiv.setAttribute('data-image-url', imageUrl);
-    imageDiv.innerHTML = `
-      <img
-        src="${imageUrl}"
-        alt="${imageName}"
-        class="h-32 w-full rounded-lg border border-gray-300 object-cover"
-      />
-      <button
-        type="button"
-        class="delete-carousel-btn absolute -top-2 -right-2 z-50 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 cursor-pointer pointer-events-auto shadow-lg opacity-90 hover:opacity-100"
-        data-image-id="temp-${Date.now()}"
-        title="Eliminar imagen"
-        style="pointer-events: auto; min-width: 32px; min-height: 32px;"
-      >
-        <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    `;
-    
-    carouselContainer.appendChild(imageDiv);
-    console.log('✅ Imagen agregada al DOM:', imageUrl);
-    
-    // Ocultar el uploader si se alcanza el límite
-    const currentCount = carouselContainer.querySelectorAll('img').length;
-    const uploaderContainer = document.getElementById('carousel-uploader-container');
-    if (currentCount >= 4 && uploaderContainer) {
-      uploaderContainer.style.display = 'none';
-    }
-  }
-
-  // Función para guardar imagen de carrusel en la BD
-  async function saveCarouselImageToDB(imageUrl: string) {
-    try {
-      console.log('💾 Guardando imagen en BD, categoryId:', categoryIdNum, 'imageUrl:', imageUrl);
-      const response = await fetch(`/api/filter-categories/images`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          categoryId: categoryIdNum,
-          imageUrl: imageUrl,
-          isPrimary: false,
-        }),
-        credentials: 'include',
       });
-
-      console.log('📡 Respuesta HTTP guardar en BD:', response.status, response.statusText);
-      
-      let result;
-      try {
-        const text = await response.text();
-        result = text ? JSON.parse(text) : { success: false, message: 'Respuesta vacía' };
-      } catch (parseError) {
-        console.error('❌ Error parseando respuesta de guardado:', parseError);
-        result = { success: false, message: 'Error al procesar la respuesta del servidor' };
-      }
-
-      console.log('📡 Resultado de guardado en BD:', result);
-      
-      if (response.ok && result.success) {
-        console.log('✅ Imagen guardada en BD con ID:', result.imageId);
-        return true;
-      } else {
-        const errorMsg = result.message || 'Error desconocido';
-        console.error('❌ Error guardando en BD:', errorMsg);
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ Error guardando imagen en BD:', error);
-      return false;
     }
-  }
 
-    // Prevenir que el formulario se envíe durante upload/delete o al usar botones/inputs de imagen
+    if (removePrimaryImageBtn) {
+      removePrimaryImageBtn.addEventListener('click', function() {
+        if (primaryImagePreview) {
+          primaryImagePreview.classList.add('hidden');
+        }
+        if (primaryImageUrlNew) {
+          primaryImageUrlNew.value = '';
+        }
+        if (primaryImageInput) {
+          primaryImageInput.value = '';
+        }
+        if (primaryImageUploadStatus) {
+          primaryImageUploadStatus.textContent = '';
+        }
+      });
+    }
+
+    // Prevenir que el formulario se envíe durante upload/delete
     const categoryForm = document.getElementById('category-form');
     if (categoryForm) {
       categoryForm.addEventListener('submit', function(e) {
@@ -811,7 +339,7 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
           return false;
         }
         const activeElement = document.activeElement;
-        if (activeElement && (activeElement.classList.contains('delete-carousel-btn') || activeElement.id === 'remove-existing-primary-image' || activeElement.id === 'remove-primary-image')) {
+        if (activeElement && (activeElement.id === 'remove-existing-primary-image' || activeElement.id === 'remove-primary-image')) {
           e.preventDefault();
           e.stopPropagation();
           console.log('🚫 Prevenido envío de formulario por botón de eliminar');
@@ -856,8 +384,6 @@ console.log('🖼️ [CategoryImageManager] Imágenes de carrusel filtradas:', c
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeComponent);
   } else {
-    // DOM ya está listo, pero esperar un poco para asegurar que todo esté cargado
     setTimeout(initializeComponent, 100);
   }
 </script>
-
