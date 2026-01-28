@@ -1,6 +1,6 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
-import { getAllCategories, getCategoryVariants } from "@/lib/filter-category-service";
+import { getAllCategories, getCategoryVariants, getCategoryImages } from "@/lib/filter-category-service";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
 
@@ -21,13 +21,25 @@ if (!userIsAdmin) {
 // Obtener todas las categorías
 const categories = await getAllCategories();
 
-// Obtener número de variantes para cada categoría
+// Obtener número de variantes e imágenes principales para cada categoría
 const categoriesWithVariants = await Promise.all(
   categories.map(async (category) => {
     const variants = await getCategoryVariants(category.id);
+    
+    // Si no hay main_image en category, buscar en filter_category_images
+    let mainImageUrl = category.main_image;
+    if (!mainImageUrl) {
+      const images = await getCategoryImages(category.id);
+      const primaryImage = images.find(img => img.is_primary);
+      if (primaryImage) {
+        mainImageUrl = primaryImage.image_url;
+      }
+    }
+    
     return {
       ...category,
       variantCount: variants.length,
+      main_image: mainImageUrl || category.main_image,
     };
   })
 );
@@ -199,15 +211,19 @@ const categoriesWithVariants = await Promise.all(
                 {categoriesWithVariants.map((category) => (
                   <tr class="hover:bg-muted/50">
                     <td class="px-6 py-4 whitespace-nowrap">
-                      {category.main_image ? (
-                        <img
-                          src={category.main_image}
-                          alt={category.name}
-                          class="h-20 w-20 rounded-lg object-cover border border-gray-200"
-                          onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'%3E%3Crect fill=\'%23f3f4f6\' width=\'80\' height=\'80\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-family=\'sans-serif\' font-size=\'12\'%3ESin imagen%3C/text%3E%3C/svg%3E';"
-                        />
-                      ) : (
-                        <div class="flex h-20 w-20 items-center justify-center rounded-lg bg-muted border border-gray-200">
+                      <div class="relative h-20 w-20">
+                        {category.main_image && category.main_image.trim() !== '' ? (
+                          <img
+                            src={category.main_image}
+                            alt={category.name}
+                            class="h-20 w-20 rounded-lg object-cover border border-gray-200"
+                            loading="lazy"
+                            onerror={`this.onerror=null; this.style.display='none'; this.parentElement.querySelector('.image-placeholder').style.display='flex';`}
+                          />
+                        ) : null}
+                        <div 
+                          class={`image-placeholder flex h-20 w-20 items-center justify-center rounded-lg bg-muted border border-gray-200 ${category.main_image && category.main_image.trim() !== '' ? 'hidden absolute inset-0' : ''}`}
+                        >
                           <svg
                             class="h-8 w-8 text-muted-foreground"
                             fill="none"
@@ -222,7 +238,7 @@ const categoriesWithVariants = await Promise.all(
                             />
                           </svg>
                         </div>
-                      )}
+                      </div>
                     </td>
                     <td class="px-6 py-4">
                       <div class="flex-1 min-w-0">
