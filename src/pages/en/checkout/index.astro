@@ -472,6 +472,7 @@ if (!user) {
           body: JSON.stringify({
             code: code,
             subtotal: cart.total,
+            cartItems: cart.items, // Send cart items to validate allowed products
           }),
         });
 

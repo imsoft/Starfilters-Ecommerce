@@ -2,7 +2,8 @@
 import AdminLayout from '@/layouts/adminLayout.astro';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
-import { getDiscountCodeById, updateDiscountCode } from '@/lib/discount-codes';
+import { getDiscountCodeById, updateDiscountCode, getDiscountCodeProducts } from '@/lib/discount-codes';
+import { getActiveProducts } from '@/lib/product-service';
 
 export const prerender = false;
 
@@ -27,11 +28,18 @@ if (!discountCode) {
   return Astro.redirect('/admin/discount-codes');
 }
 
+// Obtener productos activos y productos asociados al código
+const products = await getActiveProducts();
+const associatedProductIds = await getDiscountCodeProducts(discountId);
+
 let errorMessage = '';
 let successMessage = '';
 
 if (Astro.request.method === 'POST') {
   const data = await Astro.request.formData();
+
+  // Obtener IDs de productos seleccionados
+  const productIds = data.getAll('product_ids').map(id => parseInt(id.toString())).filter(id => !isNaN(id));
 
   const formData = {
     code: data.get('code')?.toString() || '',
@@ -44,6 +52,7 @@ if (Astro.request.method === 'POST') {
     start_date: data.get('start_date')?.toString() || '',
     end_date: data.get('end_date')?.toString() || '',
     is_active: data.get('is_active') === 'on',
+    product_ids: productIds,
   };
 
   // Validaciones
@@ -73,6 +82,7 @@ if (Astro.request.method === 'POST') {
         start_date: formData.start_date || undefined,
         end_date: formData.end_date || undefined,
         is_active: formData.is_active,
+        product_ids: formData.product_ids.length > 0 ? formData.product_ids : [],
       });
 
       successMessage = 'Código actualizado exitosamente';
@@ -309,6 +319,35 @@ function formatDateForInput(date: Date | null): string {
           />
           <p class="mt-1 text-sm text-gray-500">
             Opcional: Deja en blanco para que no expire
+          </p>
+        </div>
+
+        <!-- Productos específicos -->
+        <div class="sm:col-span-6">
+          <label for="product_ids" class="block text-sm font-medium text-gray-900">
+            Productos específicos (opcional)
+          </label>
+          <p class="mt-1 text-sm text-gray-500 mb-2">
+            Selecciona los productos a los que se puede aplicar este código. Si no seleccionas ninguno, el código será válido para todos los productos.
+          </p>
+          <select
+            name="product_ids"
+            id="product_ids"
+            multiple
+            size={Math.min(products.length, 10)}
+            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
+          >
+            {products.map((product) => (
+              <option
+                value={product.id}
+                selected={associatedProductIds.includes(product.id)}
+              >
+                {product.name} {product.name_en ? `(${product.name_en})` : ''}
+              </option>
+            ))}
+          </select>
+          <p class="mt-1 text-sm text-gray-500">
+            Mantén presionada la tecla Ctrl (Windows/Linux) o Cmd (Mac) para seleccionar múltiples productos
           </p>
         </div>
 

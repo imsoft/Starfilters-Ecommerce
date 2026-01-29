@@ -3,7 +3,7 @@ import { validateDiscountCode } from '@/lib/discount-codes';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { code, subtotal } = await request.json();
+    const { code, subtotal, cartItems } = await request.json();
 
     if (!code || typeof code !== 'string') {
       return new Response(
@@ -31,7 +31,15 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const validation = await validateDiscountCode(code, subtotal);
+    // Preparar items del carrito para validación de productos permitidos
+    const itemsForValidation = cartItems && Array.isArray(cartItems) 
+      ? cartItems.map((item: any) => ({
+          product_id: item.product_id,
+          uuid: item.uuid
+        }))
+      : undefined;
+
+    const validation = await validateDiscountCode(code, subtotal, itemsForValidation);
 
     return new Response(
       JSON.stringify({

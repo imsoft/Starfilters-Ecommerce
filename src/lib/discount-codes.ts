@@ -30,7 +30,8 @@ export interface DiscountCodeValidation {
  */
 export async function validateDiscountCode(
   code: string,
-  subtotal: number
+  subtotal: number,
+  cartItems?: Array<{ product_id: number; uuid: string }> // Items del carrito para validar productos permitidos
 ): Promise<DiscountCodeValidation> {
   try {
     // Buscar el código de descuento
@@ -84,6 +85,21 @@ export async function validateDiscountCode(
         valid: false,
         message: `Este código requiere una compra mínima de $${discountCode.min_purchase_amount.toFixed(2)} MXN`,
       };
+    }
+
+    // Validar productos permitidos (si el código tiene productos específicos)
+    const allowedProductIds = await getDiscountCodeProducts(discountCode.id);
+    if (allowedProductIds.length > 0 && cartItems) {
+      // Verificar que todos los productos del carrito estén en la lista permitida
+      const cartProductIds = cartItems.map(item => item.product_id);
+      const allProductsAllowed = cartProductIds.every(id => allowedProductIds.includes(id));
+      
+      if (!allProductsAllowed) {
+        return {
+          valid: false,
+          message: 'Este código de descuento solo es válido para productos específicos',
+        };
+      }
     }
 
     // Calcular el descuento
@@ -178,6 +194,7 @@ export async function createDiscountCode(data: {
   start_date?: string;
   end_date?: string;
   is_active?: boolean;
+  product_ids?: number[]; // IDs de productos específicos (opcional)
 }): Promise<number> {
   try {
     const result = await query(
@@ -198,10 +215,65 @@ export async function createDiscountCode(data: {
         data.is_active !== undefined ? data.is_active : true,
       ]
     );
-    return (result as any).insertId;
+    
+    const discountCodeId = (result as any).insertId;
+    
+    // Si hay productos específicos, asociarlos al código de descuento
+    if (data.product_ids && data.product_ids.length > 0) {
+      await associateProductsToDiscountCode(discountCodeId, data.product_ids);
+    }
+    
+    return discountCodeId;
   } catch (error) {
     console.error('Error creating discount code:', error);
     throw error;
+  }
+}
+
+/**
+ * Asocia productos específicos a un código de descuento
+ */
+export async function associateProductsToDiscountCode(
+  discountCodeId: number,
+  productIds: number[]
+): Promise<void> {
+  try {
+    // Eliminar asociaciones existentes
+    await query(
+      `DELETE FROM discount_code_products WHERE discount_code_id = ?`,
+      [discountCodeId]
+    );
+    
+    // Crear nuevas asociaciones
+    if (productIds.length > 0) {
+      const values = productIds.map(() => '(?, ?)').join(', ');
+      const params = productIds.flatMap(id => [discountCodeId, id]);
+      
+      await query(
+        `INSERT INTO discount_code_products (discount_code_id, product_id) VALUES ${values}`,
+        params
+      );
+    }
+  } catch (error) {
+    console.error('Error associating products to discount code:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene los IDs de productos asociados a un código de descuento
+ */
+export async function getDiscountCodeProducts(discountCodeId: number): Promise<number[]> {
+  try {
+    const results = await query(
+      `SELECT product_id FROM discount_code_products WHERE discount_code_id = ?`,
+      [discountCodeId]
+    ) as { product_id: number }[];
+    
+    return results.map(r => r.product_id);
+  } catch (error) {
+    console.error('Error fetching discount code products:', error);
+    return [];
   }
 }
 
@@ -210,7 +282,9 @@ export async function createDiscountCode(data: {
  */
 export async function updateDiscountCode(
   id: number,
-  data: Partial<Omit<DiscountCode, 'id' | 'usage_count' | 'created_at' | 'updated_at'>>
+  data: Partial<Omit<DiscountCode, 'id' | 'usage_count' | 'created_at' | 'updated_at'>> & {
+    product_ids?: number[];
+  }
 ): Promise<void> {
   try {
     const updates: string[] = [];
@@ -257,13 +331,18 @@ export async function updateDiscountCode(
       values.push(data.is_active);
     }
 
-    if (updates.length === 0) return;
+    if (updates.length > 0) {
+      values.push(id);
+      await query(
+        `UPDATE discount_codes SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
 
-    values.push(id);
-    await query(
-      `UPDATE discount_codes SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
+    // Actualizar productos asociados si se proporcionan
+    if (data.product_ids !== undefined) {
+      await associateProductsToDiscountCode(id, data.product_ids);
+    }
   } catch (error) {
     console.error('Error updating discount code:', error);
     throw error;

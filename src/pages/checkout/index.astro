@@ -472,6 +472,7 @@ if (!user) {
           body: JSON.stringify({
             code: code,
             subtotal: cart.total,
+            cartItems: cart.items, // Enviar items del carrito para validar productos permitidos
           }),
         });
 
