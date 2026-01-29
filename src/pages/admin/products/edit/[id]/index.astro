@@ -57,10 +57,18 @@ if (Astro.request.method === "POST") {
 
       // Procesar tabla de tamaños
       const sizesJson = formData.get("product_sizes") as string;
-      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; sku: string}> = [];
+      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
       if (sizesJson) {
         try {
-          sizes = JSON.parse(sizesJson);
+          const parsed = JSON.parse(sizesJson);
+          // Asegurar que sea un array y filtrar filas vacías o inválidas
+          if (Array.isArray(parsed)) {
+            sizes = parsed.filter((size: any) => {
+              // Incluir todas las filas que tengan al menos algún dato
+              return size && (size.nominal_size || size.real_size || size.bind_code || size.price);
+            });
+          }
+          console.log(`📦 Tamaños recibidos del formulario: ${sizes.length}`);
         } catch (error) {
           console.error('Error parseando tamaños:', error);
         }
@@ -74,7 +82,7 @@ if (Astro.request.method === "POST") {
       const updated = await updateProductService(productId, {
         filter_category_id: filterCategoryId,
         bind_code: firstSize?.bind_code || product.bind_code || null,
-        sku: firstSize?.sku || product.sku || null,
+        sku: product.sku || null, // Mantener SKU del producto si existe
         name: formData.get("name") as string,
         name_en: (formData.get("name_en") as string) || undefined,
         description: (formData.get("description") as string) || undefined,
@@ -129,14 +137,18 @@ if (Astro.request.method === "POST") {
           
           // Procesar cada tamaño del formulario
           const processedBindCodes = new Set<string>();
+          let savedCount = 0;
+          let skippedCount = 0;
           
           for (const size of sizes) {
             // Solo procesar si tiene bind_code (requerido para variantes)
             if (!size.bind_code || !size.bind_code.trim()) {
+              console.log('⚠️ Filtrando tamaño sin bind_code:', size);
+              skippedCount++;
               continue;
             }
             
-            processedBindCodes.add(size.bind_code);
+            processedBindCodes.add(size.bind_code.trim());
             
             // Calcular price_usd si es necesario
             let priceUsd: number | null = null;
@@ -159,13 +171,24 @@ if (Astro.request.method === "POST") {
               is_active: true
             };
             
-            // Si existe una variante con este bind_code, actualizarla
-            const existingVariant = existingVariantsMap.get(size.bind_code);
-            if (existingVariant) {
-              await updateCategoryVariant(existingVariant.id, variantData);
-            } else {
-              // Si no existe, crearla
-              await addCategoryVariant(variantData);
+            try {
+              // Si existe una variante con este bind_code, actualizarla
+              const existingVariant = existingVariantsMap.get(size.bind_code.trim());
+              if (existingVariant) {
+                await updateCategoryVariant(existingVariant.id, variantData);
+                console.log(`✅ Variante actualizada: ${size.bind_code}`);
+              } else {
+                // Si no existe, crearla
+                const newId = await addCategoryVariant(variantData);
+                if (newId) {
+                  console.log(`✅ Variante creada: ${size.bind_code} (ID: ${newId})`);
+                } else {
+                  console.error(`❌ Error creando variante: ${size.bind_code}`);
+                }
+              }
+              savedCount++;
+            } catch (error) {
+              console.error(`❌ Error procesando variante ${size.bind_code}:`, error);
             }
           }
           
@@ -180,7 +203,7 @@ if (Astro.request.method === "POST") {
             }
           }
           
-          console.log(`✅ ${sizes.length} variantes sincronizadas para categoría ${filterCategoryId}`);
+          console.log(`✅ ${savedCount} variantes guardadas, ${skippedCount} omitidas (sin bind_code), de ${sizes.length} totales para categoría ${filterCategoryId}`);
         } catch (variantError) {
           console.error('Error sincronizando variantes de categoría:', variantError);
           // No fallar el guardado del producto si hay error en variantes
@@ -255,7 +278,7 @@ function textToArray(text: string | null | undefined): string[] {
 
 // Preparar tamaños para la tabla
 // Cargar variantes de categoría si existe filter_category_id
-let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; sku: string}> = [];
+let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
 
 if (product.filter_category_id) {
   try {
@@ -271,8 +294,7 @@ if (product.filter_category_id) {
         real_size: v.real_size || '',
         price: v.price || 0,
         currency: (v.currency as 'MXN' | 'USD') || 'MXN',
-        bind_code: v.bind_code || '',
-        sku: '' // Las variantes de categoría no tienen SKU
+        bind_code: v.bind_code || ''
       }));
     } else {
       // Si no hay variantes de categoría, usar el producto actual como fallback
@@ -282,8 +304,7 @@ if (product.filter_category_id) {
           real_size: product.real_size || '',
           price: product.price || 0,
           currency: (product.currency as 'MXN' | 'USD') || 'MXN',
-          bind_code: product.bind_code || '',
-          sku: product.sku || ''
+          bind_code: product.bind_code || ''
         });
       }
     }
@@ -296,8 +317,7 @@ if (product.filter_category_id) {
         real_size: product.real_size || '',
         price: product.price || 0,
         currency: (product.currency as 'MXN' | 'USD') || 'MXN',
-        bind_code: product.bind_code || '',
-        sku: product.sku || ''
+        bind_code: product.bind_code || ''
       });
     }
   }
@@ -309,8 +329,7 @@ if (product.filter_category_id) {
       real_size: product.real_size || '',
       price: product.price || 0,
       currency: (product.currency as 'MXN' | 'USD') || 'MXN',
-      bind_code: product.bind_code || '',
-      sku: product.sku || ''
+      bind_code: product.bind_code || ''
     });
   }
 }
