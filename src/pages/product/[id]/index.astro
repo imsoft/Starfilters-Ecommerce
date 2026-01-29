@@ -91,20 +91,10 @@ const primaryImage = productImages.find(img => img.is_primary)?.image_url ||
                      getProductPlaceholderImage(productCat);
 const mainImage = primaryImage;
 
-// Construir array de imágenes (usar reales si existen, sino placeholders)
-const allImages = productImages.length > 0 
-  ? productImages.slice(0, 4).map(img => img.image_url)
-  : [
-      primaryImage,
-      getProductPlaceholderImage(productCat),
-      getProductPlaceholderImage(productCat),
-      getProductPlaceholderImage(productCat)
-    ];
-
-// Asegurar que siempre tengamos 4 imágenes para la galería
-while (allImages.length < 4) {
-  allImages.push(getProductPlaceholderImage(productCat));
-}
+// Solo las imágenes reales del producto; si no hay ninguna, al menos la principal
+const allImages = productImages.length > 0
+  ? productImages.map(img => img.image_url)
+  : [mainImage];
 
 // Obtener tasa de cambio actual
 const exchangeRate = await getExchangeRate();
@@ -432,27 +422,15 @@ const benefitsList = parseListField(product.benefits);
             </div>
           </form>
         </div>
-        <div class="grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 lg:gap-8">
-          <img
-            alt="Vista detallada del producto 1"
-            src={allImages[0]}
-            class="rounded-lg bg-muted"
-          />
-          <img
-            alt="Vista detallada del producto 2"
-            src={allImages[1]}
-            class="rounded-lg bg-muted"
-          />
-          <img
-            alt="Vista detallada del producto 3"
-            src={allImages[2]}
-            class="rounded-lg bg-muted"
-          />
-          <img
-            alt="Vista detallada del producto 4"
-            src={allImages[3]}
-            class="rounded-lg bg-muted"
-          />
+        <div class="grid grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+          {allImages.map((src, i) => (
+            <img
+              key={i}
+              alt={`${productName} - imagen ${i + 1}`}
+              src={src}
+              class="rounded-lg bg-muted w-full object-cover"
+            />
+          ))}
         </div>
       </div>
 

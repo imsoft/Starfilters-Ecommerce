@@ -5,6 +5,7 @@ import LazyImage from "@/components/shared/LazyImage.astro";
 import { getActiveProducts, getProductsByFilterCategory, getProductsByFilterCategory as getVariantsByCategory } from "@/lib/product-service";
 import { getCategoryById } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
+import { getProductImages } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 import { getExchangeRate } from "@/lib/currency-service";
 import { getProductPriceAndCurrency, formatPriceByCurrency } from "@/lib/i18n-helpers";
@@ -82,7 +83,9 @@ try {
 
   // Prepare products with images and count variants
   products = await Promise.all(allProducts.map(async (product) => {
-    const imageUrl = getProductPlaceholderImage(product.category || 'productos');
+    const imgs = await getProductImages(product.id);
+    const primary = imgs.find((i) => i.is_primary) ?? imgs[0];
+    const imageUrl = primary?.image_url ?? product.image_url ?? getProductPlaceholderImage(product.category || 'productos');
     
     // Count related variants if it has filter_category_id
     let variantCount = 0;

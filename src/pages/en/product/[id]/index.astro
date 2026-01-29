@@ -68,13 +68,12 @@ const relatedProductsWithImages = await Promise.all(
 // Get product images
 const productImages = await getProductImages(product.id);
 const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
-const galleryImages = productImages.filter(img => !img.is_primary);
 
-// If no images in product_images, use placeholder
-const mainImage = primaryImage?.image_url || getProductPlaceholderImage(productCat);
-const allImages = productImages.length > 0 
+// Only real product images; if none, at least the main one
+const mainImage = primaryImage?.image_url || product.image_url || getProductPlaceholderImage(productCat);
+const allImages = productImages.length > 0
   ? productImages.map(img => img.image_url)
-  : [mainImage, '/images/products/placeholder-hepa-filter.svg', '/images/products/placeholder-cleanroom.svg', '/images/products/placeholder-air-purification.svg'];
+  : [mainImage];
 
 // Function to format price according to currency
 const formatPrice = (price: number, currency: 'MXN' | 'USD' = displayCurrency): string => {
@@ -154,7 +153,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           <!-- Image selector -->
           <div class="mx-auto mt-6 hidden w-full max-w-2xl sm:block lg:max-w-none">
             <div class="grid grid-cols-4 gap-6" id="image-thumbnails">
-              {productImages.map((image, index) => (
+              {allImages.map((src, index) => (
                 <button
                   type="button"
                   class={`relative flex cursor-pointer items-center justify-center rounded-md bg-background text-sm font-medium uppercase text-foreground hover:bg-muted focus:outline-none ${index === 0 ? 'ring-2 ring-primary' : ''}`}
@@ -163,7 +162,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 >
                   <span class="sr-only">View {index + 1}</span>
                   <span class="absolute inset-0 overflow-hidden rounded-md">
-                    <img src={image} alt={`View ${index + 1} of ${productName}`} class="h-full w-full object-cover object-center" />
+                    <img src={src} alt={`View ${index + 1} of ${productName}`} class="h-full w-full object-cover object-center" />
                   </span>
                 </button>
               ))}
