@@ -547,43 +547,26 @@ const benefitsList = parseListField(product.benefits);
                 <label for="quantity" class="block text-sm font-medium text-foreground mb-2">
                   Cantidad:
                 </label>
-                <div class="flex items-center gap-3">
-                  <input
-                    type="number"
-                    id="quantity"
-                    name="quantity"
-                    min="1"
-                    max={product.stock || 999}
-                    value="1"
-                    class="w-32 rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-                  />
-                  <span id="stock-info" class="text-sm text-muted-foreground">
-                    {product.stock > 0 ? `${product.stock} disponibles` : 'Agotado'}
-                  </span>
-                </div>
+                <input
+                  type="number"
+                  id="quantity"
+                  name="quantity"
+                  min="1"
+                  value="1"
+                  class="w-32 rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
               </div>
             </div>
 
             <!-- Botones de acción -->
             <div class="flex gap-4">
-              {product.stock > 0 ? (
-                <button
-                  type="button"
-                  id="add-to-cart-btn"
-                  class="flex flex-1 items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-                >
-                  Agregar al Carrito
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  id="add-to-cart-btn-disabled"
-                  class="flex flex-1 items-center justify-center rounded-md bg-gray-300 px-8 py-3 text-base font-medium text-gray-500 cursor-not-allowed"
-                >
-                  No Disponible
-                </button>
-              )}
+              <button
+                type="button"
+                id="add-to-cart-btn"
+                class="flex flex-1 items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
+              >
+                Agregar al Carrito
+              </button>
             </div>
           </form>
         </div>
@@ -622,9 +605,6 @@ const benefitsList = parseListField(product.benefits);
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                       Código Bind
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                      Stock
-                    </th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                       Acción
                     </th>
@@ -662,28 +642,13 @@ const benefitsList = parseListField(product.benefits);
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {variant.bind_code || '-'}
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        {variant.stock > 0 ? (
-                          <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                            En stock ({variant.stock})
-                          </span>
-                        ) : (
-                          <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-                            Agotado
-                          </span>
-                        )}
-                      </td>
                       <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        {variant.stock > 0 ? (
-                          <a
-                            href={`/product/${variant.uuid}`}
-                            class="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
-                          >
-                            Ver Detalles
-                          </a>
-                        ) : (
-                          <span class="text-gray-400">No disponible</span>
-                        )}
+                        <a
+                          href={`/product/${variant.uuid}`}
+                          class="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+                        >
+                          Ver Detalles
+                        </a>
                       </td>
                     </tr>
                     );
@@ -763,35 +728,23 @@ const benefitsList = parseListField(product.benefits);
     const sizeSelect = document.getElementById('size-select') as HTMLSelectElement;
     const quantityInput = document.getElementById('quantity') as HTMLInputElement;
     const addToCartBtn = document.getElementById('add-to-cart-btn');
-    const stockInfo = document.getElementById('stock-info');
 
     // Inicializar producto actual
     if (sizeSelect) {
       updateCurrentProduct(sizeSelect).then(() => {
-        // Actualizar UI después de obtener stock
-        updateStockDisplay();
+        // Actualizar UI después de obtener datos
         updateQuantityInput();
         updateDisplayedPrice();
-        updateAddToCartButton();
       });
       
       // Escuchar cambios en el select de tamaño
       sizeSelect.addEventListener('change', async () => {
-        // Mostrar estado de carga
-        if (stockInfo) {
-          stockInfo.textContent = 'Cargando...';
-        }
-        
         await updateCurrentProduct(sizeSelect);
         
         // Resetear cantidad a 1
         updateQuantityInput();
-        // Actualizar info de stock
-        updateStockDisplay();
         // Actualizar precio mostrado
         updateDisplayedPrice();
-        // Actualizar estado del botón
-        updateAddToCartButton();
       });
     } else {
       // Si no hay select de tamaño, usar datos del producto principal
@@ -807,10 +760,6 @@ const benefitsList = parseListField(product.benefits);
       quantityInput.addEventListener('input', () => {
         const qty = parseInt(quantityInput.value) || 1;
         if (qty < 1) quantityInput.value = '1';
-        if (qty > currentProduct.stock && currentProduct.stock > 0) {
-          quantityInput.value = String(currentProduct.stock);
-          showErrorNotification(`Solo hay ${currentProduct.stock} unidades disponibles`);
-        }
       });
     }
 
@@ -858,24 +807,10 @@ const benefitsList = parseListField(product.benefits);
     };
   }
 
-  function updateStockDisplay() {
-    const stockInfo = document.getElementById('stock-info');
-    if (stockInfo) {
-      stockInfo.textContent = currentProduct.stock > 0 
-        ? `${currentProduct.stock} disponibles` 
-        : 'Agotado';
-      stockInfo.className = currentProduct.stock > 0 
-        ? 'text-sm text-green-600 font-medium' 
-        : 'text-sm text-red-600 font-medium';
-    }
-  }
-
   function updateQuantityInput() {
     const quantityInput = document.getElementById('quantity') as HTMLInputElement;
     if (quantityInput) {
       quantityInput.value = '1';
-      quantityInput.max = String(currentProduct.stock || 999);
-      quantityInput.disabled = currentProduct.stock === 0;
     }
   }
 
@@ -886,18 +821,6 @@ const benefitsList = parseListField(product.benefits);
     }
   }
 
-  function updateAddToCartButton() {
-    const addToCartBtn = document.getElementById('add-to-cart-btn');
-    const disabledBtn = document.getElementById('add-to-cart-btn-disabled');
-    
-    if (currentProduct.stock > 0) {
-      if (addToCartBtn) addToCartBtn.style.display = 'flex';
-      if (disabledBtn) disabledBtn.style.display = 'none';
-    } else {
-      if (addToCartBtn) addToCartBtn.style.display = 'none';
-      if (disabledBtn) disabledBtn.style.display = 'flex';
-    }
-  }
 
   async function handleAddToCart() {
     const quantityInput = document.getElementById('quantity') as HTMLInputElement;
@@ -908,33 +831,12 @@ const benefitsList = parseListField(product.benefits);
       return;
     }
 
-    if (quantity > currentProduct.stock) {
-      showErrorNotification(`Solo hay ${currentProduct.stock} unidades disponibles`);
-      return;
-    }
-
-    // Verificar stock en tiempo real
-    const stockAvailable = await checkStock(currentProduct.uuid, quantity);
-    if (!stockAvailable) {
-      return;
-    }
-
     // Obtener carrito actual
     const cartData = localStorage.getItem('starfilters_cart');
     let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: currentProduct.currency };
 
     // Buscar si el producto ya existe
     const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === currentProduct.uuid);
-
-    // Calcular la cantidad total
-    const currentCartQuantity = existingItemIndex >= 0 ? cart.items[existingItemIndex].quantity : 0;
-    const newTotalQuantity = currentCartQuantity + quantity;
-
-    // Verificar stock para la cantidad total
-    if (newTotalQuantity > currentProduct.stock) {
-      showErrorNotification(`Ya tienes ${currentCartQuantity} en el carrito. Solo hay ${currentProduct.stock} disponibles.`);
-      return;
-    }
 
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += quantity;
