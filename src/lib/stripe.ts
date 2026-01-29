@@ -25,8 +25,23 @@ export interface CreatePaymentIntentResponse {
 // Crear Payment Intent
 export const createPaymentIntent = async (data: PaymentIntentData): Promise<CreatePaymentIntentResponse> => {
   try {
+    // Validar que tenemos la clave de Stripe
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error('❌ STRIPE_SECRET_KEY no está configurada');
+      throw new Error('Configuración de Stripe incompleta');
+    }
+
+    // Validar que el monto sea válido
+    if (!data.amount || data.amount <= 0) {
+      console.error('❌ Monto inválido:', data.amount);
+      throw new Error('El monto del pago debe ser mayor a 0');
+    }
+
+    const amountInCents = Math.round(data.amount * 100);
+    console.log(`💳 Creando Payment Intent: ${amountInCents} centavos en ${data.currency || 'mxn'}`);
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(data.amount * 100), // Stripe usa centavos
+      amount: amountInCents,
       currency: data.currency || 'mxn',
       metadata: data.metadata || {},
       automatic_payment_methods: {
@@ -35,13 +50,25 @@ export const createPaymentIntent = async (data: PaymentIntentData): Promise<Crea
       ...(data.customer_email && { receipt_email: data.customer_email }),
     });
 
+    console.log(`✅ Payment Intent creado: ${paymentIntent.id}`);
+
     return {
       client_secret: paymentIntent.client_secret!,
       payment_intent_id: paymentIntent.id,
     };
   } catch (error) {
-    console.error('Error creating payment intent:', error);
-    throw new Error('Error al crear el intento de pago');
+    console.error('❌ Error creating payment intent:', error);
+    
+    // Si es un error de Stripe, incluir más detalles
+    if (error && typeof error === 'object' && 'type' in error) {
+      const stripeError = error as any;
+      console.error('Stripe error type:', stripeError.type);
+      console.error('Stripe error message:', stripeError.message);
+      console.error('Stripe error code:', stripeError.code);
+      throw new Error(`Error de Stripe: ${stripeError.message || 'Error desconocido'}`);
+    }
+    
+    throw error instanceof Error ? error : new Error('Error al crear el intento de pago');
   }
 };
 
