@@ -229,16 +229,62 @@ if (!user) {
     // Función para cargar Stripe Elements directamente
     async function loadStripeForm(container: HTMLElement, clientSecret: string, amount: number, currency: string = 'MXN') {
       try {
-        // Cargar Stripe desde CDN
-        const stripeScript = document.createElement('script');
-        stripeScript.src = 'https://js.stripe.com/v3/';
-        stripeScript.onload = () => {
+        console.log('📦 Cargando Stripe...');
+        
+        // Verificar si Stripe ya está cargado
+        if ((window as any).Stripe) {
+          console.log('✅ Stripe ya está cargado');
           initializeStripe(container, clientSecret, amount, currency);
-        };
-        document.head.appendChild(stripeScript);
+          return;
+        }
+
+        // Verificar que tenemos la clave pública
+        const publishableKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
+        if (!publishableKey) {
+          throw new Error('PUBLIC_STRIPE_PUBLISHABLE_KEY no está configurada');
+        }
+        console.log('🔑 Clave pública de Stripe encontrada');
+
+        // Cargar Stripe desde CDN
+        return new Promise<void>((resolve, reject) => {
+          // Verificar si el script ya existe
+          const existingScript = document.querySelector('script[src="https://js.stripe.com/v3/"]');
+          if (existingScript) {
+            console.log('✅ Script de Stripe ya existe');
+            initializeStripe(container, clientSecret, amount, currency);
+            resolve();
+            return;
+          }
+
+          const stripeScript = document.createElement('script');
+          stripeScript.src = 'https://js.stripe.com/v3/';
+          stripeScript.onload = () => {
+            console.log('✅ Script de Stripe cargado exitosamente');
+            try {
+              initializeStripe(container, clientSecret, amount, currency);
+              resolve();
+            } catch (error) {
+              console.error('❌ Error inicializando Stripe después de cargar:', error);
+              reject(error);
+            }
+          };
+          stripeScript.onerror = () => {
+            console.error('❌ Error cargando script de Stripe');
+            reject(new Error('No se pudo cargar el script de Stripe'));
+          };
+          document.head.appendChild(stripeScript);
+        });
       } catch (error) {
-        console.error('Error cargando Stripe:', error);
-        container.innerHTML = '<p class="text-red-600">Error al cargar Stripe. Por favor intenta de nuevo.</p>';
+        console.error('❌ Error cargando Stripe:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        container.innerHTML = `
+          <div class="p-4 bg-red-50 border border-red-200 rounded-md">
+            <p class="text-red-800 font-medium">Error al cargar Stripe</p>
+            <p class="text-red-600 text-sm mt-1">${errorMessage}</p>
+            <p class="text-red-600 text-xs mt-2">Por favor verifica que PUBLIC_STRIPE_PUBLISHABLE_KEY esté configurada correctamente.</p>
+          </div>
+        `;
+        throw error;
       }
     }
 
@@ -246,7 +292,24 @@ if (!user) {
     function initializeStripe(container: HTMLElement, clientSecret: string, amount: number, currency: string = 'MXN') {
       try {
         console.log('💳 Inicializando Stripe Elements...');
-        const stripe = (window as any).Stripe(import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY);
+        console.log('🔑 Client Secret recibido:', clientSecret ? 'Sí (oculto por seguridad)' : 'No');
+        
+        const publishableKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
+        if (!publishableKey) {
+          throw new Error('PUBLIC_STRIPE_PUBLISHABLE_KEY no está configurada');
+        }
+        
+        if (!clientSecret) {
+          throw new Error('Client secret no recibido del servidor');
+        }
+
+        const stripe = (window as any).Stripe(publishableKey);
+        
+        if (!stripe) {
+          throw new Error('No se pudo inicializar Stripe. Verifica que el script se haya cargado correctamente.');
+        }
+        
+        console.log('✅ Stripe inicializado correctamente');
         
         const elements = stripe.elements({
           clientSecret: clientSecret,
@@ -294,17 +357,27 @@ if (!user) {
         `;
 
         const paymentElementDiv = document.getElementById('payment-element');
-        if (paymentElementDiv) {
-          paymentElement.mount(paymentElementDiv);
+        if (!paymentElementDiv) {
+          throw new Error('No se encontró el contenedor para el elemento de pago');
         }
+
+        console.log('📦 Montando Payment Element...');
+        paymentElement.mount(paymentElementDiv);
+        console.log('✅ Payment Element montado exitosamente');
 
         const submitButton = document.getElementById('submit-payment');
         const messageDiv = document.getElementById('payment-message');
 
-        if (submitButton) {
-          submitButton.addEventListener('click', async () => {
-            (submitButton as HTMLButtonElement).disabled = true;
-            
+        if (!submitButton) {
+          throw new Error('No se encontró el botón de envío');
+        }
+
+        submitButton.addEventListener('click', async () => {
+          console.log('🔄 Procesando pago...');
+          (submitButton as HTMLButtonElement).disabled = true;
+          (submitButton as HTMLButtonElement).textContent = 'Procesando...';
+          
+          try {
             const { error } = await stripe.confirmPayment({
               elements,
               confirmParams: {
@@ -313,25 +386,47 @@ if (!user) {
             });
 
             if (error) {
+              console.error('❌ Error en el pago:', error);
               if (messageDiv) {
                 messageDiv.textContent = error.message || 'Ocurrió un error inesperado.';
-                messageDiv.className = 'text-red-600 text-sm mt-2';
+                messageDiv.className = 'text-red-600 text-sm mt-2 p-2 bg-red-50 rounded';
                 messageDiv.classList.remove('hidden');
               }
               (submitButton as HTMLButtonElement).disabled = false;
+              (submitButton as HTMLButtonElement).textContent = `Pagar ${formatPrice(amount, currency)}`;
             } else {
+              console.log('✅ Pago procesado exitosamente');
               if (messageDiv) {
                 messageDiv.textContent = '¡Pago exitoso! Redirigiendo...';
-                messageDiv.className = 'text-green-600 text-sm mt-2';
+                messageDiv.className = 'text-green-600 text-sm mt-2 p-2 bg-green-50 rounded';
                 messageDiv.classList.remove('hidden');
               }
             }
-          });
-        }
+          } catch (error) {
+            console.error('❌ Error procesando pago:', error);
+            if (messageDiv) {
+              messageDiv.textContent = error instanceof Error ? error.message : 'Error al procesar el pago';
+              messageDiv.className = 'text-red-600 text-sm mt-2 p-2 bg-red-50 rounded';
+              messageDiv.classList.remove('hidden');
+            }
+            (submitButton as HTMLButtonElement).disabled = false;
+            (submitButton as HTMLButtonElement).textContent = `Pagar ${formatPrice(amount, currency)}`;
+          }
+        });
+
+        console.log('✅ Stripe Elements inicializado completamente');
 
       } catch (error) {
-        console.error('Error inicializando Stripe:', error);
-        container.innerHTML = '<p class="text-red-600">Error al inicializar Stripe. Por favor intenta de nuevo.</p>';
+        console.error('❌ Error inicializando Stripe:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        container.innerHTML = `
+          <div class="p-4 bg-red-50 border border-red-200 rounded-md">
+            <p class="text-red-800 font-medium">Error al inicializar Stripe</p>
+            <p class="text-red-600 text-sm mt-1">${errorMessage}</p>
+            <p class="text-red-600 text-xs mt-2">Por favor verifica la consola del navegador para más detalles.</p>
+          </div>
+        `;
+        throw error;
       }
     }
 
@@ -610,11 +705,20 @@ if (!user) {
 
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Error al crear el pago');
+            console.error('❌ Error del servidor:', errorData);
+            throw new Error(errorData.error || errorData.details?.[0] || 'Error al crear el pago');
           }
 
           const paymentData = await response.json();
-          console.log('✅ Payment Intent creado:', paymentData.paymentIntentId);
+          console.log('✅ Payment Intent creado:', {
+            paymentIntentId: paymentData.payment_intent_id,
+            orderTotal: paymentData.order_total,
+            hasClientSecret: !!paymentData.client_secret
+          });
+
+          if (!paymentData.client_secret) {
+            throw new Error('No se recibió client_secret del servidor');
+          }
 
           // Cargar Stripe con el client_secret real
           const cartForCurrency = getCartFromStorage();
@@ -622,8 +726,15 @@ if (!user) {
           await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, cartCurrency);
 
         } catch (error) {
-          console.error('Error:', error);
-          paymentFormContainer.innerHTML = '<p class="text-red-600">Error al inicializar el pago. Por favor intenta de nuevo.</p>';
+          console.error('❌ Error completo:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          paymentFormContainer.innerHTML = `
+            <div class="p-4 bg-red-50 border border-red-200 rounded-md">
+              <p class="text-red-800 font-medium">Error al inicializar el pago</p>
+              <p class="text-red-600 text-sm mt-1">${errorMessage}</p>
+              <p class="text-red-600 text-xs mt-2">Por favor verifica la consola del navegador (F12) para más detalles.</p>
+            </div>
+          `;
         }
       };
 
