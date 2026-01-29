@@ -179,14 +179,33 @@ export const createCheckoutPaymentIntent = async (
       customer_name: `${checkoutData.firstName} ${checkoutData.lastName}`,
     });
 
+    if (!paymentIntent.client_secret) {
+      throw new Error('Stripe no devolvió client_secret en el Payment Intent');
+    }
+
     return {
       client_secret: paymentIntent.client_secret,
       payment_intent_id: paymentIntent.payment_intent_id,
       order_total: orderTotals.total,
     };
   } catch (error) {
-    console.error('Error creating checkout payment intent:', error);
-    throw new Error('Error al crear el intento de pago');
+    console.error('❌ Error creating checkout payment intent:', error);
+    
+    // Si es un error de Stripe, incluir más detalles
+    if (error && typeof error === 'object' && 'type' in error) {
+      const stripeError = error as any;
+      console.error('Stripe error type:', stripeError.type);
+      console.error('Stripe error message:', stripeError.message);
+      console.error('Stripe error code:', stripeError.code);
+      throw new Error(`Error de Stripe: ${stripeError.message || 'Error desconocido'}`);
+    }
+    
+    // Re-lanzar el error original si es una instancia de Error
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    throw new Error(error instanceof Error ? error.message : 'Error al crear el intento de pago');
   }
 };
 

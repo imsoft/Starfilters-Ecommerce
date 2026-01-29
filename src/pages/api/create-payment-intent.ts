@@ -231,17 +231,46 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       hasDiscount: !!discountData
     });
     
-    const result = await createCheckoutPaymentIntent(
-      checkoutData,
-      body.shippingMethod || 'standard',
-      user.id,
-      discountData,
-      cartItems // Pasar items del carrito
-    );
-    
-    console.log('✅ Payment Intent creado exitosamente:', {
+    let result;
+    try {
+      result = await createCheckoutPaymentIntent(
+        checkoutData,
+        body.shippingMethod || 'standard',
+        user.id,
+        discountData,
+        cartItems // Pasar items del carrito
+      );
+      
+      console.log('✅ Payment Intent creado exitosamente:', {
+        payment_intent_id: result.payment_intent_id,
+        order_total: result.order_total,
+        hasClientSecret: !!result.client_secret
+      });
+    } catch (paymentError) {
+      console.error('❌ Error en createCheckoutPaymentIntent:', paymentError);
+      if (paymentError instanceof Error) {
+        console.error('Error message:', paymentError.message);
+        console.error('Error stack:', paymentError.stack);
+      }
+      // Re-lanzar el error para que sea capturado por el catch general
+      throw paymentError;
+    }
+
+    if (!result) {
+      throw new Error('No se recibió respuesta de createCheckoutPaymentIntent');
+    }
+
+    if (!result.client_secret) {
+      throw new Error('No se recibió client_secret del Payment Intent');
+    }
+
+    return new Response(JSON.stringify({
+      client_secret: result.client_secret,
       payment_intent_id: result.payment_intent_id,
-      order_total: result.order_total
+      order_total: result.order_total,
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
     return new Response(JSON.stringify({
@@ -260,17 +289,39 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (error instanceof Error) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
+      console.error('Error name:', error.name);
     } else {
       console.error('Error object:', JSON.stringify(error, null, 2));
     }
     
-    // Retornar mensaje de error más descriptivo en desarrollo
+    // Retornar mensaje de error más descriptivo
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     const isDevelopment = import.meta.env.DEV;
     
+    // Determinar el tipo de error para dar un mensaje más específico
+    let userFriendlyMessage = 'Error interno del servidor';
+    if (error instanceof Error) {
+      if (error.message.includes('Stripe')) {
+        userFriendlyMessage = 'Error al procesar el pago con Stripe. Verifica tu configuración.';
+      } else if (error.message.includes('stock') || error.message.includes('Stock')) {
+        userFriendlyMessage = error.message;
+      } else if (error.message.includes('carrito') || error.message.includes('vacío')) {
+        userFriendlyMessage = error.message;
+      } else if (error.message.includes('No autorizado')) {
+        userFriendlyMessage = 'Debes iniciar sesión para realizar una compra';
+      }
+    }
+    
     return new Response(JSON.stringify({ 
-      error: 'Error interno del servidor',
-      ...(isDevelopment && { details: errorMessage, stack: error instanceof Error ? error.stack : undefined })
+      error: userFriendlyMessage,
+      ...(isDevelopment && { 
+        details: errorMessage, 
+        stack: error instanceof Error ? error.stack : undefined,
+        fullError: error instanceof Error ? {
+          name: error.name,
+          message: error.message
+        } : error
+      })
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
