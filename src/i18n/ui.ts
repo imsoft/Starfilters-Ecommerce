@@ -40,7 +40,7 @@ export const ui = {
 
     // Features
     'features.title': 'Tu aliado en control de partículas',
-    'features.subtitle': 'Protegemos tus procesos de manufactura a la exposición a partículas y contaminantes.',
+    'features.subtitle': 'Protegemos tus procesos de manufactura de la exposición a partículas y contaminantes.',
     'features.certifications.title': 'Cuartos Limpios',
     'features.certifications.description': 'Somos expertos en diseño y construcción de cuartos limpios. Creamos ambientes controlados en cuanto a partículas, temperatura, humedad relativa y presión.',
     'features.installation.title': 'Filtros de Aire',
