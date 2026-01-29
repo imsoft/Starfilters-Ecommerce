@@ -20,7 +20,56 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   try {
-    // Buscar en todos los productos de Bind
+    // Detectar si el código es un UUID (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(code.trim());
+    
+    let product: any = null;
+    let inventory = 0;
+    
+    // Si es un UUID, intentar buscar directamente por ID
+    if (isUUID) {
+      console.log('🔍 Buscando producto por UUID:', code);
+      try {
+        const productDetails = await getBindProductById(code.trim());
+        if (productDetails.success && productDetails.data) {
+          const bindData = productDetails.data as any;
+          product = bindData;
+          // El endpoint /api/Products/{id} devuelve CurrentInventory según la documentación
+          inventory = bindData.CurrentInventory || bindData.currentInventory || bindData.Inventory || 0;
+          
+          // Extraer información relevante
+          const customFields = bindData.customFields || {};
+          const nominalSize = customFields.nominalSize || customFields.nominal_size || customFields.medida_nominal || '';
+          const realSize = customFields.realSize || customFields.real_size || customFields.medida_real || '';
+          const price = bindData.Price || bindData.price || bindData.Cost || bindData.cost || 0;
+          
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: {
+                code: bindData.Code || bindData.code || bindData.SKU || bindData.sku || code,
+                nominalSize,
+                realSize,
+                price,
+                inventory: inventory || 0,
+                title: bindData.Title || bindData.title || '',
+                description: bindData.Description || bindData.description || '',
+                customFields: customFields,
+              },
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
+      } catch (error) {
+        console.warn('No se encontró producto por UUID, intentando búsqueda por código:', error);
+        // Continuar con la búsqueda por código si falla
+      }
+    }
+    
+    // Buscar en todos los productos de Bind por código o SKU
     const result = await getBindProducts({ page: 1, pageSize: 1000 });
 
     if (!result.success || !result.data) {
@@ -36,9 +85,11 @@ export const GET: APIRoute = async ({ url }) => {
       );
     }
 
-    // Buscar el producto por código
-    const product = result.data.find(
-      (p) => p.code?.toUpperCase() === code.toUpperCase() || p.sku?.toUpperCase() === code.toUpperCase()
+    // Buscar el producto por código o SKU
+    product = result.data.find(
+      (p) => p.code?.toUpperCase() === code.toUpperCase() || 
+             p.sku?.toUpperCase() === code.toUpperCase() ||
+             p.id?.toUpperCase() === code.toUpperCase()
     );
 
     if (!product) {
@@ -64,7 +115,7 @@ export const GET: APIRoute = async ({ url }) => {
     const price = product.price || 0;
     
     // Obtener inventario: primero intentar desde el producto encontrado, luego desde detalles completos
-    let inventory = product.inventory || product.Inventory || 0;
+    inventory = product.inventory || product.Inventory || 0;
     
     // Si el producto tiene un ID y no tenemos inventario, obtener detalles completos
     if (product.id && (!inventory || inventory === 0)) {
