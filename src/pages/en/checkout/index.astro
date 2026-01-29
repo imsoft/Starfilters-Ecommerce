@@ -201,6 +201,19 @@ if (!user) {
   
   <script>
     import { getCart } from '@/lib/cart';
+    
+    // Function to get cart from localStorage (client-side)
+    function getCartFromStorage() {
+      try {
+        const cartData = localStorage.getItem('starfilters_cart');
+        if (cartData) {
+          return JSON.parse(cartData);
+        }
+      } catch (error) {
+        console.error('Error reading cart:', error);
+      }
+      return { items: [], total: 0, itemCount: 0 };
+    }
 
     // Function to format price according to cart currency
     function formatPrice(price: number, currency: string = 'USD'): string {
@@ -250,7 +263,7 @@ if (!user) {
         const paymentElement = elements.create('payment');
         
         // Get cart currency
-        const cart = getCart();
+        const cart = getCartFromStorage();
         const cartCurrency = cart.currency || 'USD';
         
         container.innerHTML = `
@@ -332,7 +345,7 @@ if (!user) {
     // Function to render order summary
     function renderOrderSummary() {
       console.log('🔍 Starting renderOrderSummary...');
-      const cart = getCart();
+      const cart = getCartFromStorage();
       console.log('🛒 Cart obtained:', cart);
 
       // If cart is empty, redirect to cart page
@@ -452,7 +465,7 @@ if (!user) {
       button.textContent = 'Applying...';
 
       try {
-        const cart = getCart();
+        const cart = getCartFromStorage();
         const response = await fetch('/api/validate-discount-code', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -568,6 +581,14 @@ if (!user) {
 
           console.log('💳 Creating Payment Intent with Stripe...');
 
+          // Get current cart
+          const cart = getCartFromStorage();
+          
+          if (cart.items.length === 0) {
+            paymentFormContainer.innerHTML = '<p class="text-red-600">Your cart is empty. Please add products before continuing.</p>';
+            return;
+          }
+
           // Call API to create real Payment Intent
           const response = await fetch('/api/create-payment-intent', {
             method: 'POST',
@@ -576,6 +597,7 @@ if (!user) {
             },
             body: JSON.stringify({
               ...checkoutData,
+              items: cart.items, // Send cart items
               shippingMethod: 'standard', // Can be 'standard' or 'express'
               discountCode: appliedDiscount ? {
                 code: appliedDiscount.code,
@@ -594,8 +616,8 @@ if (!user) {
           console.log('✅ Payment Intent created:', paymentData.paymentIntentId);
 
           // Load Stripe with real client_secret
-          const cart = getCart();
-          const cartCurrency = cart.currency || 'USD';
+          const cartForCurrency = getCartFromStorage();
+          const cartCurrency = cartForCurrency.currency || 'USD';
           await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, cartCurrency);
 
         } catch (error) {

@@ -103,29 +103,40 @@ export const createCheckoutPaymentIntent = async (
   checkoutData: CheckoutData,
   shippingMethod: 'standard' | 'express' = 'standard',
   userId?: number,
-  discountData?: DiscountData
+  discountData?: DiscountData,
+  cartItems?: CartItem[] // Items del carrito pasados como parámetro
 ): Promise<{ client_secret: string; payment_intent_id: string; order_total: number }> => {
   try {
-    // Obtener carrito actual
-    const cart = getCart();
+    // Obtener items del carrito: primero del parámetro, luego de getCart() como fallback
+    let items: CartItem[] = [];
+    
+    if (cartItems && cartItems.length > 0) {
+      items = cartItems;
+    } else {
+      // Fallback: intentar obtener del localStorage (solo funciona en cliente)
+      const cart = getCart();
+      items = cart.items;
+    }
 
-    if (cart.items.length === 0) {
+    if (items.length === 0) {
       throw new Error('El carrito está vacío');
     }
 
     // Calcular totales con descuento si existe (convierte USD a MXN automáticamente)
     const discountAmount = discountData?.amount || 0;
-    const orderTotals = await calculateOrderTotal(cart.items, shippingMethod, discountAmount);
+    const orderTotals = await calculateOrderTotal(items, shippingMethod, discountAmount);
 
     // Serializar items del carrito para el metadata
     const cartItemsJSON = JSON.stringify(
-      cart.items.map(item => ({
+      items.map(item => ({
         product_id: item.product_id,
         uuid: item.uuid,
         name: item.name,
         quantity: item.quantity,
         price: item.price,
-        image_url: item.image_url
+        currency: item.currency,
+        image_url: item.image_url,
+        size: item.size
       }))
     );
 
@@ -135,7 +146,7 @@ export const createCheckoutPaymentIntent = async (
       customer_name: `${checkoutData.firstName} ${checkoutData.lastName}`,
       shipping_address: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.state} ${checkoutData.postalCode}, ${checkoutData.country}`,
       shipping_method: shippingMethod,
-      items_count: cart.items.length.toString(),
+      items_count: items.length.toString(),
       subtotal: orderTotals.subtotal.toFixed(2),
       shipping_cost: orderTotals.shipping.toFixed(2),
       tax_amount: orderTotals.tax.toFixed(2),

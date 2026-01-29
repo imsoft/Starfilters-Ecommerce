@@ -43,14 +43,35 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
+    // Obtener carrito del body (enviado desde el cliente)
+    const cartItems = body.items || [];
+    
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      return new Response(JSON.stringify({ 
+        error: 'El carrito está vacío' 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     // Validar stock antes de crear el Payment Intent
-    const cart = getCart();
-    for (const item of cart.items) {
+    for (const item of cartItems) {
+      if (!item.uuid) {
+        return new Response(JSON.stringify({ 
+          error: 'Datos inválidos',
+          details: ['Item del carrito sin UUID']
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
       const product = await getProductByUuid(item.uuid);
       if (!product) {
         return new Response(JSON.stringify({ 
           error: 'Producto no encontrado',
-          details: [`El producto ${item.name} no existe`]
+          details: [`El producto ${item.name || item.uuid} no existe`]
         }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
@@ -60,7 +81,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       if (product.stock < item.quantity) {
         return new Response(JSON.stringify({ 
           error: 'Stock insuficiente',
-          details: [`No hay suficiente stock para ${item.name}. Disponible: ${product.stock}, Solicitado: ${item.quantity}`]
+          details: [`No hay suficiente stock para ${item.name || product.name}. Disponible: ${product.stock}, Solicitado: ${item.quantity}`]
         }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
@@ -80,7 +101,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       checkoutData,
       body.shippingMethod || 'standard',
       user.id,
-      discountData
+      discountData,
+      cartItems // Pasar items del carrito
     );
 
     return new Response(JSON.stringify({
