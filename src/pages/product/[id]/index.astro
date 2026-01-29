@@ -420,7 +420,7 @@ const benefitsList = parseListField(product.benefits);
       <div class="mx-auto grid max-w-2xl grid-cols-1 items-start gap-x-8 gap-y-16 px-4 py-8 sm:px-6 sm:py-12 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
           <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h2>
-          <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''}>
+          <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''} data-nominal-size={product.nominal_size || ''} data-real-size={product.real_size || ''}>
             <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
               {formatPrice(productPriceFinal, finalCurrency)}
             </p>
@@ -720,7 +720,10 @@ const benefitsList = parseListField(product.benefits);
     currency: 'MXN',
     stock: 0,
     image: '',
-    category: ''
+    category: '',
+    nominal_size: '',
+    real_size: '',
+    size_label: ''
   };
 
   // Inicializar con los datos del producto actual
@@ -752,6 +755,14 @@ const benefitsList = parseListField(product.benefits);
       if (productContainer) {
         currentProduct.uuid = productContainer.getAttribute('data-product-uuid') || '';
         currentProduct.currency = productContainer.getAttribute('data-currency') || 'MXN';
+        // Intentar obtener tamaño del producto si está disponible
+        const nominalSize = productContainer.getAttribute('data-nominal-size') || '';
+        const realSize = productContainer.getAttribute('data-real-size') || '';
+        if (nominalSize || realSize) {
+          currentProduct.nominal_size = nominalSize;
+          currentProduct.real_size = realSize;
+          currentProduct.size_label = `${nominalSize || '—'} / ${realSize || '—'}`;
+        }
       }
     }
 
@@ -781,6 +792,12 @@ const benefitsList = parseListField(product.benefits);
     const bindCode = selectedOption.getAttribute('data-bind-code') || '';
     let stock = parseInt(selectedOption.getAttribute('data-stock') || '0');
     
+    // Extraer tamaño del texto de la opción (formato: "nominal / real")
+    const sizeLabel = selectedOption.textContent || '';
+    const sizeParts = sizeLabel.split(' / ');
+    const nominalSize = sizeParts[0]?.trim() || '';
+    const realSize = sizeParts[1]?.trim() || '';
+    
     // Si hay un bind_code, obtener stock desde Bind ERP
     if (bindCode && bindCode.trim()) {
       try {
@@ -803,7 +820,10 @@ const benefitsList = parseListField(product.benefits);
       currency: selectedOption.getAttribute('data-currency') || 'MXN',
       stock: stock,
       image: selectedOption.getAttribute('data-image') || '',
-      category: ''
+      category: '',
+      nominal_size: nominalSize,
+      real_size: realSize,
+      size_label: sizeLabel
     };
   }
 
@@ -842,6 +862,10 @@ const benefitsList = parseListField(product.benefits);
       cart.items[existingItemIndex].quantity += quantity;
       cart.items[existingItemIndex].price = currentProduct.price;
       cart.items[existingItemIndex].currency = currentProduct.currency;
+      // Actualizar tamaño si cambió
+      if (currentProduct.size_label) {
+        cart.items[existingItemIndex].size = currentProduct.size_label;
+      }
     } else {
       cart.items.push({
         uuid: currentProduct.uuid,
@@ -851,7 +875,8 @@ const benefitsList = parseListField(product.benefits);
         currency: currentProduct.currency,
         quantity,
         image_url: currentProduct.image,
-        category: currentProduct.category
+        category: currentProduct.category,
+        size: currentProduct.size_label || undefined
       });
     }
 
