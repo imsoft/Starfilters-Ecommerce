@@ -4,10 +4,11 @@ import {
   getProductById,
   updateProduct as updateProductService,
 } from "@/lib/product-service";
-import { getActiveCategories } from "@/lib/filter-category-service";
+import { getActiveCategories, getCategoryVariants, addCategoryVariant, updateCategoryVariant, deleteCategoryVariant, type FilterCategoryVariant } from "@/lib/filter-category-service";
 import { getProductImages } from "@/lib/database";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
+import { getExchangeRate } from "@/lib/currency-service";
 import ProductImageManagerEdit from "@/components/admin/ProductImageManagerEdit.astro";
 import DynamicListInput from "@/components/admin/DynamicListInput.astro";
 import ProductSizesTable from "@/components/admin/ProductSizesTable.astro";
@@ -109,6 +110,83 @@ if (Astro.request.method === "POST") {
         // El componente CategoryImageManager se encargará de esto
       }
 
+      // Sincronizar variantes de categoría si hay filter_category_id y tamaños
+      if (updated && filterCategoryId && sizes.length > 0) {
+        try {
+          // Obtener tasa de cambio para calcular price_usd
+          const exchangeRate = await getExchangeRate();
+          
+          // Obtener variantes existentes de la categoría
+          const existingVariants = await getCategoryVariants(filterCategoryId);
+          
+          // Crear un mapa de variantes existentes por bind_code
+          const existingVariantsMap = new Map<string, FilterCategoryVariant>();
+          existingVariants.forEach(v => {
+            if (v.bind_code) {
+              existingVariantsMap.set(v.bind_code, v);
+            }
+          });
+          
+          // Procesar cada tamaño del formulario
+          const processedBindCodes = new Set<string>();
+          
+          for (const size of sizes) {
+            // Solo procesar si tiene bind_code (requerido para variantes)
+            if (!size.bind_code || !size.bind_code.trim()) {
+              continue;
+            }
+            
+            processedBindCodes.add(size.bind_code);
+            
+            // Calcular price_usd si es necesario
+            let priceUsd: number | null = null;
+            if (size.currency === 'USD') {
+              priceUsd = size.price;
+            } else if (size.currency === 'MXN') {
+              // Convertir MXN a USD usando tasa de cambio
+              priceUsd = size.price / exchangeRate;
+            }
+            
+            const variantData = {
+              category_id: filterCategoryId,
+              bind_code: size.bind_code.trim(),
+              nominal_size: size.nominal_size?.trim() || '',
+              real_size: size.real_size?.trim() || '',
+              price: size.price || 0,
+              currency: size.currency || 'MXN',
+              price_usd: priceUsd,
+              stock: 0, // Stock se maneja a nivel de producto
+              is_active: true
+            };
+            
+            // Si existe una variante con este bind_code, actualizarla
+            const existingVariant = existingVariantsMap.get(size.bind_code);
+            if (existingVariant) {
+              await updateCategoryVariant(existingVariant.id, variantData);
+            } else {
+              // Si no existe, crearla
+              await addCategoryVariant(variantData);
+            }
+          }
+          
+          // Eliminar variantes que ya no están en el formulario (marcar como inactivas en lugar de eliminar)
+          for (const existingVariant of existingVariants) {
+            if (existingVariant.bind_code && !processedBindCodes.has(existingVariant.bind_code)) {
+              // Marcar como inactiva en lugar de eliminar
+              await updateCategoryVariant(existingVariant.id, {
+                ...existingVariant,
+                is_active: false
+              });
+            }
+          }
+          
+          console.log(`✅ ${sizes.length} variantes sincronizadas para categoría ${filterCategoryId}`);
+        } catch (variantError) {
+          console.error('Error sincronizando variantes de categoría:', variantError);
+          // No fallar el guardado del producto si hay error en variantes
+        }
+      }
+
       if (updated) {
         return Astro.redirect("/admin/products");
       } else {
@@ -176,19 +254,65 @@ function textToArray(text: string | null | undefined): string[] {
 }
 
 // Preparar tamaños para la tabla
-// Incluir el producto actual si tiene datos de tamaño
+// Cargar variantes de categoría si existe filter_category_id
 let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; sku: string}> = [];
 
-// Primero agregar el producto actual si tiene tamaño
-if (product.nominal_size || product.real_size || product.bind_code || product.price) {
-  productSizes.push({
-    nominal_size: product.nominal_size || '',
-    real_size: product.real_size || '',
-    price: product.price || 0,
-    currency: (product.currency as 'MXN' | 'USD') || 'MXN',
-    bind_code: product.bind_code || '',
-    sku: product.sku || ''
-  });
+if (product.filter_category_id) {
+  try {
+    // Cargar variantes de la categoría
+    const categoryVariants = await getCategoryVariants(product.filter_category_id);
+    // Solo incluir variantes activas
+    const activeVariants = categoryVariants.filter(v => v.is_active);
+    
+    if (activeVariants.length > 0) {
+      // Usar las variantes de categoría
+      productSizes = activeVariants.map(v => ({
+        nominal_size: v.nominal_size || '',
+        real_size: v.real_size || '',
+        price: v.price || 0,
+        currency: (v.currency as 'MXN' | 'USD') || 'MXN',
+        bind_code: v.bind_code || '',
+        sku: '' // Las variantes de categoría no tienen SKU
+      }));
+    } else {
+      // Si no hay variantes de categoría, usar el producto actual como fallback
+      if (product.nominal_size || product.real_size || product.bind_code || product.price) {
+        productSizes.push({
+          nominal_size: product.nominal_size || '',
+          real_size: product.real_size || '',
+          price: product.price || 0,
+          currency: (product.currency as 'MXN' | 'USD') || 'MXN',
+          bind_code: product.bind_code || '',
+          sku: product.sku || ''
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error cargando variantes de categoría:', error);
+    // Fallback al producto actual
+    if (product.nominal_size || product.real_size || product.bind_code || product.price) {
+      productSizes.push({
+        nominal_size: product.nominal_size || '',
+        real_size: product.real_size || '',
+        price: product.price || 0,
+        currency: (product.currency as 'MXN' | 'USD') || 'MXN',
+        bind_code: product.bind_code || '',
+        sku: product.sku || ''
+      });
+    }
+  }
+} else {
+  // Si no hay filter_category_id, usar solo el producto actual
+  if (product.nominal_size || product.real_size || product.bind_code || product.price) {
+    productSizes.push({
+      nominal_size: product.nominal_size || '',
+      real_size: product.real_size || '',
+      price: product.price || 0,
+      currency: (product.currency as 'MXN' | 'USD') || 'MXN',
+      bind_code: product.bind_code || '',
+      sku: product.sku || ''
+    });
+  }
 }
 
 
