@@ -165,6 +165,13 @@ function parseListField(field: string | null | undefined): string[] {
   return field.split('\n').filter(item => item && item.trim());
 }
 
+// Formato "tamaño nominal / tamaño real" para opciones del select
+function sizeOptionLabel(nominal: string | null | undefined, real: string | null | undefined): string {
+  const n = nominal?.trim() || '—';
+  const r = real?.trim() || '—';
+  return `${n} / ${r}`;
+}
+
 // Preparar datos técnicos
 const efficiencyList = parseListField(product.efficiency);
 const characteristicsList = parseListField(product.characteristics);
@@ -330,8 +337,8 @@ const benefitsList = parseListField(product.benefits);
 
           <!-- Formulario de compra -->
           <form class="mt-10 space-y-6">
-            <!-- Selector de Tamaño (Variantes) -->
-            {relatedVariants.length > 0 && (
+            <!-- Selector de Tamaño (nominal / real) -->
+            {((product.nominal_size || product.real_size) || relatedVariants.length > 0) && (
               <div>
                 <label for="size-select" class="block text-sm font-medium text-foreground mb-2">
                   Tamaño:
@@ -351,7 +358,7 @@ const benefitsList = parseListField(product.benefits);
                     data-id={product.id}
                     selected
                   >
-                    {product.nominal_size || product.real_size || productName} - {formatPrice(productPriceFinal, finalCurrency)} {product.stock > 0 ? `(${product.stock} disponibles)` : '(Agotado)'}
+                    {sizeOptionLabel(product.nominal_size, product.real_size)}
                   </option>
                   {relatedVariants.map((variant) => {
                     const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang);
@@ -372,7 +379,7 @@ const benefitsList = parseListField(product.benefits);
                         data-image={variant.image_url || mainImage}
                         data-id={variant.id}
                       >
-                        {variant.nominal_size || variant.real_size || variantName} - {formatPrice(variantFinalPrice, variantFinalCurrency)} {variant.stock > 0 ? `(${variant.stock} disponibles)` : '(Agotado)'}
+                        {sizeOptionLabel(variant.nominal_size, variant.real_size)}
                       </option>
                     );
                   })}
