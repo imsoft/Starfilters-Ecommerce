@@ -46,9 +46,9 @@ export const ui = {
     'features.installation.title': 'Filtros de Aire',
     'features.installation.description': 'Eficiencia en cada etapa. Sistemas de control de partículas y contaminantes en el aire desde prefiltros hasta filtros HEPA, para un aire limpio y procesos confiables.',
     'features.technology.title': 'Servicios de Validación',
-    'features.technology.description': 'Ofrecemos servicios especializados de validación para garantizar el correcto funcionamiento y desempeño de los sistemas de filtración y control de partículas en cuartos limpios y áreas críticas basado en normativas aplicables.',
-    'features.support.title': 'Accesorios para Cuartos Limpios',
-    'features.support.description': 'Todo para tu cuarto limpio.  Unidades Manejadoras de Aire, Puertas y Ventanas especializadas, Air Showers, Gabinetes, listos para integrar tu proyecto, manómetros de presión diferencial, cortina rápida de lona, pass through.',
+    'features.technology.description': 'Pruebas de funcionamiento y desempeño de los sistemas de filtración y control de partículas en cuartos limpios y áreas críticas basado en normativas aplicables.',
+    'features.support.title': 'Accesorios',
+    'features.support.description': 'Unidades Manejadoras de Aire, Puertas y Ventanas especializadas, Air Showers, Gabinetes, manómetros de presión diferencial, cortina rápida, pass through.',
 
     // Cleanrooms
     'cleanrooms.badge': 'Star Filters - Expertos en ambientes controlados',
@@ -272,9 +272,9 @@ export const ui = {
     'features.installation.title': 'Air Filters',
     'features.installation.description': 'Efficiency at every stage. Particle and air contaminant control systems from pre-filters to HEPA filters, for clean air and reliable processes.',
     'features.technology.title': 'Validation Services',
-    'features.technology.description': 'We offer specialized validation services to ensure the correct operation and performance of filtration and particle control systems in cleanrooms and critical areas based on applicable regulations.',
-    'features.support.title': 'Cleanroom Accessories',
-    'features.support.description': 'Everything for your cleanroom. Air Handling Units, specialized Doors and Windows, Air Showers, Cabinets, ready to integrate into your project, differential pressure manometers, fast canvas curtain, pass through',
+    'features.technology.description': 'Performance and operation testing of filtration and particle control systems in cleanrooms and critical areas based on applicable regulations.',
+    'features.support.title': 'Accessories',
+    'features.support.description': 'Air Handling Units, specialized Doors and Windows, Air Showers, Cabinets, differential pressure manometers, fast curtain, pass through.',
 
     // Cleanrooms
     'cleanrooms.badge': 'Star Filters - Controlled Environment Experts',
