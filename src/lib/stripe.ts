@@ -37,6 +37,14 @@ export const createPaymentIntent = async (data: PaymentIntentData): Promise<Crea
       throw new Error('El monto del pago debe ser mayor a 0');
     }
 
+    // Stripe tiene un mínimo de $0.50 USD o equivalente en otras monedas
+    // Para MXN, el mínimo es aproximadamente $10 MXN (50 centavos USD * ~20 MXN/USD)
+    const minAmount = data.currency === 'usd' ? 0.50 : 10.00;
+    if (data.amount < minAmount) {
+      console.error(`❌ Monto menor al mínimo: ${data.amount} (mínimo: ${minAmount})`);
+      throw new Error(`El monto mínimo de compra es ${minAmount} ${data.currency?.toUpperCase() || 'MXN'}`);
+    }
+
     const amountInCents = Math.round(data.amount * 100);
     console.log(`💳 Creando Payment Intent: ${amountInCents} centavos en ${data.currency || 'mxn'}`);
 

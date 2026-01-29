@@ -361,10 +361,6 @@ if (!user) {
           throw new Error('No se encontró el contenedor para el elemento de pago');
         }
 
-        console.log('📦 Montando Payment Element...');
-        paymentElement.mount(paymentElementDiv);
-        console.log('✅ Payment Element montado exitosamente');
-
         const submitButton = document.getElementById('submit-payment');
         const messageDiv = document.getElementById('payment-message');
 
@@ -372,10 +368,62 @@ if (!user) {
           throw new Error('No se encontró el botón de envío');
         }
 
+        // Deshabilitar el botón hasta que el Payment Element esté listo
+        (submitButton as HTMLButtonElement).disabled = true;
+        (submitButton as HTMLButtonElement).textContent = 'Cargando formulario de pago...';
+
+        console.log('📦 Montando Payment Element...');
+        
+        // Variable para rastrear si el elemento está montado
+        let isElementMounted = false;
+        
+        paymentElement.mount(paymentElementDiv);
+        
+        // Esperar a que el Payment Element esté completamente listo
+        paymentElement.on('ready', () => {
+          console.log('✅ Payment Element listo y montado');
+          isElementMounted = true;
+          (submitButton as HTMLButtonElement).disabled = false;
+          (submitButton as HTMLButtonElement).textContent = `Pagar ${formatPrice(amount, currency)}`;
+        });
+
+        // Manejar errores del Payment Element
+        paymentElement.on('change', (event: any) => {
+          if (event.error) {
+            console.error('❌ Error en Payment Element:', event.error);
+            if (messageDiv) {
+              messageDiv.textContent = event.error.message || 'Error en el formulario de pago';
+              messageDiv.className = 'text-red-600 text-sm mt-2 p-2 bg-red-50 rounded';
+              messageDiv.classList.remove('hidden');
+            }
+          } else {
+            // Limpiar mensaje de error si se corrige
+            if (messageDiv) {
+              messageDiv.classList.add('hidden');
+            }
+          }
+        });
+
         submitButton.addEventListener('click', async () => {
+          // Verificar que el elemento esté montado antes de confirmar
+          if (!isElementMounted) {
+            console.warn('⚠️ Payment Element aún no está listo');
+            if (messageDiv) {
+              messageDiv.textContent = 'Por favor espera a que el formulario de pago termine de cargar';
+              messageDiv.className = 'text-yellow-600 text-sm mt-2 p-2 bg-yellow-50 rounded';
+              messageDiv.classList.remove('hidden');
+            }
+            return;
+          }
+
           console.log('🔄 Procesando pago...');
           (submitButton as HTMLButtonElement).disabled = true;
           (submitButton as HTMLButtonElement).textContent = 'Procesando...';
+          
+          // Limpiar mensajes anteriores
+          if (messageDiv) {
+            messageDiv.classList.add('hidden');
+          }
           
           try {
             const { error } = await stripe.confirmPayment({
