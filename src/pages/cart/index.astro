@@ -440,33 +440,18 @@ const formatPrice = (price: number): string => {
   }
 
   function removeFromCart(uuid: string): void {
-    console.log('🔴 removeFromCart llamado con uuid:', uuid);
-    console.log('🔍 Verificando si el modal existe en el DOM...');
-    const modal = document.getElementById("confirm-dialog");
-    console.log('Modal encontrado:', !!modal);
-    if (modal) {
-      console.log('Modal HTML:', modal.outerHTML.substring(0, 200));
-    }
+    const cart = getCart();
+    cart.items = cart.items.filter((item) => item.uuid !== uuid);
+    cart.total = calculateTotal(cart.items);
+    cart.itemCount = calculateItemCount(cart.items);
+    saveCart(cart);
+    renderCart();
     
-    try {
-      showCustomModal(
-        "confirm-dialog",
-        "Eliminar producto",
-        "¿Estás seguro de que quieres eliminar este producto del carrito?",
-        () => {
-          const cart = getCart();
-          cart.items = cart.items.filter((item) => item.uuid !== uuid);
-          cart.total = calculateTotal(cart.items);
-          cart.itemCount = calculateItemCount(cart.items);
-          saveCart(cart);
-          renderCart();
-        },
-        "Eliminar",
-        "Cancelar"
-      );
-    } catch (error) {
-      console.error('❌ Error al mostrar modal:', error);
-    }
+    // Mostrar notificación de que se eliminó
+    showNotification('Producto eliminado del carrito');
+    
+    // Disparar evento para actualizar navbar
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
   }
 
   function updateQuantity(uuid: string, quantity: number): void {

@@ -440,33 +440,18 @@ const formatPrice = (price: number): string => {
   }
 
   function removeFromCart(uuid: string): void {
-    console.log('🔴 removeFromCart called with uuid:', uuid);
-    console.log('🔍 Checking if modal exists in DOM...');
-    const modal = document.getElementById("confirm-dialog");
-    console.log('Modal found:', !!modal);
-    if (modal) {
-      console.log('Modal HTML:', modal.outerHTML.substring(0, 200));
-    }
+    const cart = getCart();
+    cart.items = cart.items.filter((item) => item.uuid !== uuid);
+    cart.total = calculateTotal(cart.items);
+    cart.itemCount = calculateItemCount(cart.items);
+    saveCart(cart);
+    renderCart();
     
-    try {
-      showCustomModal(
-        "confirm-dialog",
-        "Remove product",
-        "Are you sure you want to remove this product from your cart?",
-        () => {
-          const cart = getCart();
-          cart.items = cart.items.filter((item) => item.uuid !== uuid);
-          cart.total = calculateTotal(cart.items);
-          cart.itemCount = calculateItemCount(cart.items);
-          saveCart(cart);
-          renderCart();
-        },
-        "Remove",
-        "Cancel"
-      );
-    } catch (error) {
-      console.error('❌ Error showing modal:', error);
-    }
+    // Show notification that item was removed
+    showNotification('Product removed from cart');
+    
+    // Dispatch event to update navbar
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
   }
 
   function updateQuantity(uuid: string, quantity: number): void {
