@@ -6,6 +6,8 @@ import { getProductByUuid, getActiveProducts, getProductsByFilterCategory } from
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { getProductImages } from "@/lib/database";
+import { getCategoryVariants } from "@/lib/filter-category-service";
+import type { FilterCategoryVariant } from "@/lib/filter-category-service";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getExchangeRate, getVariantPriceInMXN } from "@/lib/currency-service";
 import { getLangFromUrl } from "@/i18n/utils";
@@ -30,7 +32,19 @@ if (!product) {
   return Astro.redirect('/filtros');
 }
 
-// Obtener variantes relacionadas (otros productos con el mismo filter_category_id)
+// Obtener variantes de categoría (tamaños) desde filter_category_variants
+let categoryVariants: FilterCategoryVariant[] = [];
+if (product.filter_category_id) {
+  try {
+    categoryVariants = await getCategoryVariants(product.filter_category_id);
+    // Solo mostrar variantes activas
+    categoryVariants = categoryVariants.filter(v => v.is_active);
+  } catch (error) {
+    console.error('Error obteniendo variantes de categoría:', error);
+  }
+}
+
+// Obtener variantes relacionadas (otros productos con el mismo filter_category_id) para productos relacionados
 let relatedVariants: Product[] = [];
 if (product.filter_category_id) {
   try {
@@ -322,88 +336,117 @@ const benefitsList = parseListField(product.benefits);
                 <dd class="mt-2 text-sm text-muted-foreground">{product.typical_installation}</dd>
               </div>
             )}
-
-            {/* Medidas */}
-            {(product.nominal_size || product.real_size) && (
-              <div class="border-t border-border pt-4">
-                <dt class="font-medium text-foreground">Medidas</dt>
-                <dd class="mt-2 text-sm text-muted-foreground">
-                  {product.nominal_size && <p><span class="font-medium">Nominal:</span> {product.nominal_size}</p>}
-                  {product.real_size && <p><span class="font-medium">Real:</span> {product.real_size}</p>}
-                </dd>
-              </div>
-            )}
           </dl>
 
           <!-- Formulario de compra -->
           <form class="mt-10 space-y-6">
-            <!-- Selector de Tamaño (nominal / real) -->
-            {((product.nominal_size || product.real_size) || relatedVariants.length > 0) && (
-              <div>
-                <label for="size-select" class="block text-sm font-medium text-foreground mb-2">
-                  Tamaño:
-                </label>
-                <select
-                  id="size-select"
-                  name="size"
-                  class="w-full rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-                >
-                  <option 
-                    value={product.uuid} 
-                    data-price={productPriceFinal} 
-                    data-currency={finalCurrency}
-                    data-stock={product.stock}
-                    data-name={productName}
-                    data-image={mainImage}
-                    data-id={product.id}
-                    selected
+            <!-- Tamaño y Cantidad en la misma fila -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Selector de Tamaño (nominal / real) -->
+              {(categoryVariants.length > 0 || (product.nominal_size || product.real_size) || relatedVariants.length > 0) && (
+                <div>
+                  <label for="size-select" class="block text-sm font-medium text-foreground mb-2">
+                    Tamaño:
+                  </label>
+                  <select
+                    id="size-select"
+                    name="size"
+                    class="w-full rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                   >
-                    {sizeOptionLabel(product.nominal_size, product.real_size)}
-                  </option>
-                  {relatedVariants.map((variant) => {
-                    const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang);
-                    let variantFinalPrice = variantPrice;
-                    let variantFinalCurrency = variantCurrency;
-                    if (lang === 'es' && variantCurrency === 'USD') {
-                      variantFinalPrice = convertPriceToMXN(variantPrice, 'USD');
-                      variantFinalCurrency = 'MXN';
-                    }
-                    const variantName = getProductName(variant, lang);
-                    return (
-                      <option 
-                        value={variant.uuid}
-                        data-price={variantFinalPrice}
-                        data-currency={variantFinalCurrency}
-                        data-stock={variant.stock}
-                        data-name={variantName}
-                        data-image={variant.image_url || mainImage}
-                        data-id={variant.id}
-                      >
-                        {sizeOptionLabel(variant.nominal_size, variant.real_size)}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            )}
+                    {/* Opción del producto actual */}
+                    <option 
+                      value={product.uuid} 
+                      data-price={productPriceFinal} 
+                      data-currency={finalCurrency}
+                      data-stock={product.stock}
+                      data-name={productName}
+                      data-image={mainImage}
+                      data-id={product.id}
+                      selected
+                    >
+                      {sizeOptionLabel(product.nominal_size, product.real_size)}
+                    </option>
+                    {/* Variantes de categoría (desde filter_category_variants) */}
+                    {categoryVariants.map((variant) => {
+                      // Buscar si hay un producto asociado a esta variante por bind_code
+                      const variantProduct = relatedVariants.find(p => p.bind_code === variant.bind_code);
+                      let variantPrice = variant.price;
+                      let variantCurrency = variant.currency || 'MXN';
+                      
+                      // Si estamos en español y la variante está en USD, convertir a MXN
+                      if (lang === 'es' && variantCurrency === 'USD') {
+                        variantPrice = convertPriceToMXN(variant.price, 'USD');
+                        variantCurrency = 'MXN';
+                      } else if (lang === 'es' && variant.price_usd) {
+                        // Si hay precio USD, usar ese convertido
+                        variantPrice = convertPriceToMXN(variant.price_usd, 'USD');
+                        variantCurrency = 'MXN';
+                      }
+                      
+                      return (
+                        <option 
+                          value={variantProduct?.uuid || `variant-${variant.id}`}
+                          data-price={variantPrice}
+                          data-currency={variantCurrency}
+                          data-stock={variant.stock}
+                          data-name={variantProduct ? getProductName(variantProduct, lang) : productName}
+                          data-image={variantProduct?.image_url || mainImage}
+                          data-id={variantProduct?.id || product.id}
+                          data-variant-id={variant.id}
+                          data-bind-code={variant.bind_code}
+                        >
+                          {sizeOptionLabel(variant.nominal_size, variant.real_size)}
+                        </option>
+                      );
+                    })}
+                    {/* Variantes de productos relacionados (fallback si no hay categoryVariants) */}
+                    {categoryVariants.length === 0 && relatedVariants.map((variant) => {
+                      const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang);
+                      let variantFinalPrice = variantPrice;
+                      let variantFinalCurrency = variantCurrency;
+                      if (lang === 'es' && variantCurrency === 'USD') {
+                        variantFinalPrice = convertPriceToMXN(variantPrice, 'USD');
+                        variantFinalCurrency = 'MXN';
+                      }
+                      const variantName = getProductName(variant, lang);
+                      return (
+                        <option 
+                          value={variant.uuid}
+                          data-price={variantFinalPrice}
+                          data-currency={variantFinalCurrency}
+                          data-stock={variant.stock}
+                          data-name={variantName}
+                          data-image={variant.image_url || mainImage}
+                          data-id={variant.id}
+                        >
+                          {sizeOptionLabel(variant.nominal_size, variant.real_size)}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
 
-            <!-- Cantidad (Input numérico) -->
-            <div>
-              <label for="quantity" class="block text-sm font-medium text-foreground mb-2">
-                Cantidad:
-              </label>
-              <input
-                type="number"
-                id="quantity"
-                name="quantity"
-                min="1"
-                max={product.stock || 999}
-                value="1"
-                class="w-32 rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-              />
-              <span id="stock-info" class="ml-3 text-sm text-muted-foreground">
-                {product.stock > 0 ? `${product.stock} disponibles` : 'Agotado'}
-              </span>
+              <!-- Cantidad (Input numérico) -->
+              <div>
+                <label for="quantity" class="block text-sm font-medium text-foreground mb-2">
+                  Cantidad:
+                </label>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    min="1"
+                    max={product.stock || 999}
+                    value="1"
+                    class="w-32 rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                  />
+                  <span id="stock-info" class="text-sm text-muted-foreground">
+                    {product.stock > 0 ? `${product.stock} disponibles` : 'Agotado'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <!-- Botones de acción -->
