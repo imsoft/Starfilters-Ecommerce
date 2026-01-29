@@ -186,6 +186,174 @@ function sizeOptionLabel(nominal: string | null | undefined, real: string | null
   return `${n} / ${r}`;
 }
 
+// Preparar opciones del select de tamaños sin duplicados
+interface SizeOption {
+  value: string;
+  label: string;
+  price: number;
+  currency: string;
+  stock: number;
+  name: string;
+  image: string;
+  id: number;
+  variantId?: number;
+  bindCode?: string;
+  isCurrentProduct: boolean;
+}
+
+const sizeOptions: SizeOption[] = [];
+const addedSizes = new Set<string>();
+
+// Si hay variantes de categoría, usarlas como fuente principal
+if (categoryVariants.length > 0) {
+  // Primero, crear clave única para el producto actual
+  const currentProductSizeKey = product.bind_code?.trim() || 
+                                `${(product.nominal_size || '').trim()}_${(product.real_size || '').trim()}`;
+  let currentProductAdded = false;
+  
+  for (const variant of categoryVariants) {
+    // Crear clave única basada en bind_code o en nominal/real (normalizado)
+    const variantSizeKey = (variant.bind_code?.trim() || '').toLowerCase() || 
+                          `${(variant.nominal_size || '').trim().toLowerCase()}_${(variant.real_size || '').trim().toLowerCase()}`;
+    
+    // Normalizar también la clave del producto actual para comparación
+    const normalizedCurrentKey = currentProductSizeKey.toLowerCase();
+    const normalizedVariantKey = variantSizeKey.toLowerCase();
+    
+    // Verificar si esta variante es el producto actual
+    const isCurrentProduct = (product.bind_code && variant.bind_code && 
+                             product.bind_code.trim().toLowerCase() === variant.bind_code.trim().toLowerCase()) ||
+                            (!product.bind_code && !variant.bind_code &&
+                             normalizedCurrentKey === normalizedVariantKey);
+    
+    // Si es el producto actual y aún no lo hemos agregado, agregarlo primero
+    if (isCurrentProduct && !currentProductAdded) {
+      sizeOptions.unshift({
+        value: product.uuid,
+        label: sizeOptionLabel(product.nominal_size, product.real_size),
+        price: productPriceFinal,
+        currency: finalCurrency,
+        stock: product.stock,
+        name: productName,
+        image: mainImage,
+        id: product.id,
+        isCurrentProduct: true
+      });
+      addedSizes.add(normalizedVariantKey);
+      currentProductAdded = true;
+      continue; // No agregar esta variante de nuevo
+    }
+    
+    // Evitar duplicados (incluyendo si ya agregamos el producto actual)
+    if (addedSizes.has(normalizedVariantKey)) {
+      continue;
+    }
+    
+    // Buscar si hay un producto asociado a esta variante por bind_code
+    const variantProduct = relatedVariants.find(p => 
+      p.bind_code && variant.bind_code && 
+      p.bind_code.trim().toLowerCase() === variant.bind_code.trim().toLowerCase()
+    );
+    
+    let variantPrice = variant.price;
+    let variantCurrency = variant.currency || 'MXN';
+    
+    // Si estamos en español y la variante está en USD, convertir a MXN
+    if (lang === 'es' && variantCurrency === 'USD') {
+      variantPrice = convertPriceToMXN(variant.price, 'USD');
+      variantCurrency = 'MXN';
+    } else if (lang === 'es' && variant.price_usd) {
+      // Si hay precio USD, usar ese convertido
+      variantPrice = convertPriceToMXN(variant.price_usd, 'USD');
+      variantCurrency = 'MXN';
+    }
+    
+    sizeOptions.push({
+      value: variantProduct?.uuid || `variant-${variant.id}`,
+      label: sizeOptionLabel(variant.nominal_size, variant.real_size),
+      price: variantPrice,
+      currency: variantCurrency,
+      stock: variant.stock,
+      name: variantProduct ? getProductName(variantProduct, lang) : productName,
+      image: variantProduct?.image_url || mainImage,
+      id: variantProduct?.id || product.id,
+      variantId: variant.id,
+      bindCode: variant.bind_code,
+      isCurrentProduct: false
+    });
+    
+    addedSizes.add(normalizedVariantKey);
+  }
+  
+  // Si el producto actual no estaba en las variantes, agregarlo al principio
+  if (!currentProductAdded && (product.nominal_size || product.real_size)) {
+    sizeOptions.unshift({
+      value: product.uuid,
+      label: sizeOptionLabel(product.nominal_size, product.real_size),
+      price: productPriceFinal,
+      currency: finalCurrency,
+      stock: product.stock,
+      name: productName,
+      image: mainImage,
+      id: product.id,
+      isCurrentProduct: true
+    });
+    addedSizes.add(normalizedCurrentKey);
+  }
+} else {
+  // Fallback: usar producto actual y productos relacionados
+  // Agregar producto actual primero
+  const currentSizeKey = product.bind_code || 
+                        `${product.nominal_size || ''}_${product.real_size || ''}`;
+  if (currentSizeKey && !addedSizes.has(currentSizeKey)) {
+    sizeOptions.push({
+      value: product.uuid,
+      label: sizeOptionLabel(product.nominal_size, product.real_size),
+      price: productPriceFinal,
+      currency: finalCurrency,
+      stock: product.stock,
+      name: productName,
+      image: mainImage,
+      id: product.id,
+      isCurrentProduct: true
+    });
+    addedSizes.add(currentSizeKey);
+  }
+  
+  // Agregar productos relacionados
+  for (const variant of relatedVariants) {
+    const sizeKey = variant.bind_code || 
+                   `${variant.nominal_size || ''}_${variant.real_size || ''}`;
+    
+    if (addedSizes.has(sizeKey)) {
+      continue;
+    }
+    
+    const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang);
+    let variantFinalPrice = variantPrice;
+    let variantFinalCurrency = variantCurrency;
+    if (lang === 'es' && variantCurrency === 'USD') {
+      variantFinalPrice = convertPriceToMXN(variantPrice, 'USD');
+      variantFinalCurrency = 'MXN';
+    }
+    const variantName = getProductName(variant, lang);
+    
+    sizeOptions.push({
+      value: variant.uuid,
+      label: sizeOptionLabel(variant.nominal_size, variant.real_size),
+      price: variantFinalPrice,
+      currency: variantFinalCurrency,
+      stock: variant.stock,
+      name: variantName,
+      image: variant.image_url || mainImage,
+      id: variant.id,
+      isCurrentProduct: false
+    });
+    
+    addedSizes.add(sizeKey);
+  }
+}
+
 // Preparar datos técnicos
 const efficiencyList = parseListField(product.efficiency);
 const characteristicsList = parseListField(product.characteristics);
@@ -343,7 +511,7 @@ const benefitsList = parseListField(product.benefits);
             <!-- Tamaño y Cantidad en la misma fila -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- Selector de Tamaño (nominal / real) -->
-              {(categoryVariants.length > 0 || (product.nominal_size || product.real_size) || relatedVariants.length > 0) && (
+              {sizeOptions.length > 0 && (
                 <div>
                   <label for="size-select" class="block text-sm font-medium text-foreground mb-2">
                     Tamaño:
@@ -353,76 +521,23 @@ const benefitsList = parseListField(product.benefits);
                     name="size"
                     class="w-full rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                   >
-                    {/* Opción del producto actual */}
-                    <option 
-                      value={product.uuid} 
-                      data-price={productPriceFinal} 
-                      data-currency={finalCurrency}
-                      data-stock={product.stock}
-                      data-name={productName}
-                      data-image={mainImage}
-                      data-id={product.id}
-                      selected
-                    >
-                      {sizeOptionLabel(product.nominal_size, product.real_size)}
-                    </option>
-                    {/* Variantes de categoría (desde filter_category_variants) */}
-                    {categoryVariants.map((variant) => {
-                      // Buscar si hay un producto asociado a esta variante por bind_code
-                      const variantProduct = relatedVariants.find(p => p.bind_code === variant.bind_code);
-                      let variantPrice = variant.price;
-                      let variantCurrency = variant.currency || 'MXN';
-                      
-                      // Si estamos en español y la variante está en USD, convertir a MXN
-                      if (lang === 'es' && variantCurrency === 'USD') {
-                        variantPrice = convertPriceToMXN(variant.price, 'USD');
-                        variantCurrency = 'MXN';
-                      } else if (lang === 'es' && variant.price_usd) {
-                        // Si hay precio USD, usar ese convertido
-                        variantPrice = convertPriceToMXN(variant.price_usd, 'USD');
-                        variantCurrency = 'MXN';
-                      }
-                      
-                      return (
-                        <option 
-                          value={variantProduct?.uuid || `variant-${variant.id}`}
-                          data-price={variantPrice}
-                          data-currency={variantCurrency}
-                          data-stock={variant.stock}
-                          data-name={variantProduct ? getProductName(variantProduct, lang) : productName}
-                          data-image={variantProduct?.image_url || mainImage}
-                          data-id={variantProduct?.id || product.id}
-                          data-variant-id={variant.id}
-                          data-bind-code={variant.bind_code}
-                        >
-                          {sizeOptionLabel(variant.nominal_size, variant.real_size)}
-                        </option>
-                      );
-                    })}
-                    {/* Variantes de productos relacionados (fallback si no hay categoryVariants) */}
-                    {categoryVariants.length === 0 && relatedVariants.map((variant) => {
-                      const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang);
-                      let variantFinalPrice = variantPrice;
-                      let variantFinalCurrency = variantCurrency;
-                      if (lang === 'es' && variantCurrency === 'USD') {
-                        variantFinalPrice = convertPriceToMXN(variantPrice, 'USD');
-                        variantFinalCurrency = 'MXN';
-                      }
-                      const variantName = getProductName(variant, lang);
-                      return (
-                        <option 
-                          value={variant.uuid}
-                          data-price={variantFinalPrice}
-                          data-currency={variantFinalCurrency}
-                          data-stock={variant.stock}
-                          data-name={variantName}
-                          data-image={variant.image_url || mainImage}
-                          data-id={variant.id}
-                        >
-                          {sizeOptionLabel(variant.nominal_size, variant.real_size)}
-                        </option>
-                      );
-                    })}
+                    {sizeOptions.map((opt, idx) => (
+                      <option 
+                        key={idx}
+                        value={opt.value} 
+                        data-price={opt.price} 
+                        data-currency={opt.currency}
+                        data-stock={opt.stock}
+                        data-name={opt.name}
+                        data-image={opt.image}
+                        data-id={opt.id}
+                        data-variant-id={opt.variantId || ''}
+                        data-bind-code={opt.bindCode || ''}
+                        selected={opt.isCurrentProduct}
+                      >
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
