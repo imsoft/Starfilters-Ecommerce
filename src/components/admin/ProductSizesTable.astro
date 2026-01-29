@@ -188,26 +188,42 @@ const normalizedSizes = initialSizes.map(size => ({
         var rows = tbody.querySelectorAll('tr[data-row-index]');
         var sizes = [];
 
-        rows.forEach(function(row) {
+        console.log('🔄 Actualizando JSON - Filas encontradas:', rows.length);
+
+        rows.forEach(function(row, index) {
           var nominalInput = row.querySelector('[data-field="nominal_size"]');
           var realInput = row.querySelector('[data-field="real_size"]');
           var priceInput = row.querySelector('[data-field="price"]');
           var currencySelect = row.querySelector('[data-field="currency"]');
           var bindCodeInput = row.querySelector('[data-field="bind_code"]');
 
-          // Incluir todas las filas, incluso si algunos campos están vacíos (excepto bind_code que es requerido para guardar)
-          if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
-            sizes.push({
-              nominal_size: nominalInput.value || '',
-              real_size: realInput.value || '',
-              price: parseFloat(priceInput.value) || 0,
-              currency: currencySelect.value || 'MXN',
-              bind_code: bindCodeInput.value || ''
+          // Verificar que todos los elementos existan
+          if (!nominalInput || !realInput || !priceInput || !currencySelect || !bindCodeInput) {
+            console.warn('⚠️ Fila ' + index + ' tiene elementos faltantes:', {
+              nominalInput: !!nominalInput,
+              realInput: !!realInput,
+              priceInput: !!priceInput,
+              currencySelect: !!currencySelect,
+              bindCodeInput: !!bindCodeInput
             });
+            return; // Omitir esta fila si falta algún elemento
           }
+
+          // Incluir todas las filas, incluso si algunos campos están vacíos
+          var sizeData = {
+            nominal_size: nominalInput.value || '',
+            real_size: realInput.value || '',
+            price: parseFloat(priceInput.value) || 0,
+            currency: currencySelect.value || 'MXN',
+            bind_code: bindCodeInput.value || ''
+          };
+
+          sizes.push(sizeData);
+          console.log('✅ Fila ' + index + ' agregada:', sizeData);
         });
 
         jsonInput.value = JSON.stringify(sizes);
+        console.log('📦 JSON actualizado con ' + sizes.length + ' tamaños:', sizes);
       }
 
       function showEmptyRow() {
@@ -252,8 +268,17 @@ const normalizedSizes = initialSizes.map(size => ({
 
       function removeRow(row) {
         row.remove();
+        // Reindexar todas las filas después de eliminar
+        reindexRows();
         updateJson();
         showEmptyRow();
+      }
+      
+      function reindexRows() {
+        var rows = tbody.querySelectorAll('tr[data-row-index]');
+        rows.forEach(function(row, newIndex) {
+          row.setAttribute('data-row-index', newIndex.toString());
+        });
       }
 
       function addRow() {
@@ -269,6 +294,8 @@ const normalizedSizes = initialSizes.map(size => ({
         var newRow = document.createElement('tr');
         newRow.className = 'hover:bg-gray-50';
         newRow.setAttribute('data-row-index', newIndex.toString());
+        
+        console.log('➕ Agregando nueva fila con índice:', newIndex);
 
         newRow.innerHTML =
           '<td class="px-4 py-3 whitespace-nowrap">' +
@@ -324,8 +351,14 @@ const normalizedSizes = initialSizes.map(size => ({
         // Agregar listeners a los inputs y selects para actualizar JSON
         var inputs = newRow.querySelectorAll('input, select');
         inputs.forEach(function(input) {
-          input.addEventListener('input', updateJson);
-          input.addEventListener('change', updateJson);
+          input.addEventListener('input', function() {
+            console.log('📝 Input cambiado en fila', newIndex);
+            updateJson();
+          });
+          input.addEventListener('change', function() {
+            console.log('🔄 Change en fila', newIndex);
+            updateJson();
+          });
         });
         
         // Agregar listener al input de bind_code para buscar stock automáticamente
@@ -359,6 +392,7 @@ const normalizedSizes = initialSizes.map(size => ({
         }
 
         updateJson();
+        console.log('✅ Nueva fila agregada y JSON actualizado');
 
         // Enfocar el primer input
         var firstInput = newRow.querySelector('input');
@@ -387,8 +421,14 @@ const normalizedSizes = initialSizes.map(size => ({
       // Agregar listeners a los inputs y selects existentes
       var existingInputs = tbody.querySelectorAll('input, select');
       existingInputs.forEach(function(input) {
-        input.addEventListener('input', updateJson);
-        input.addEventListener('change', updateJson);
+        input.addEventListener('input', function() {
+          console.log('📝 Input existente cambiado');
+          updateJson();
+        });
+        input.addEventListener('change', function() {
+          console.log('🔄 Change en input existente');
+          updateJson();
+        });
       });
       
       // Agregar listeners para buscar stock en filas existentes

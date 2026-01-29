@@ -57,21 +57,33 @@ if (Astro.request.method === "POST") {
 
       // Procesar tabla de tamaños
       const sizesJson = formData.get("product_sizes") as string;
+      console.log('📦 JSON recibido del formulario (raw):', sizesJson);
       let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
       if (sizesJson) {
         try {
           const parsed = JSON.parse(sizesJson);
+          console.log('📦 JSON parseado:', parsed);
+          console.log('📦 Es array?', Array.isArray(parsed));
+          console.log('📦 Longitud:', Array.isArray(parsed) ? parsed.length : 'N/A');
+          
           // Asegurar que sea un array y filtrar filas vacías o inválidas
           if (Array.isArray(parsed)) {
-            sizes = parsed.filter((size: any) => {
-              // Incluir todas las filas que tengan al menos algún dato
-              return size && (size.nominal_size || size.real_size || size.bind_code || size.price);
+            sizes = parsed.filter((size: any, index: number) => {
+              const hasData = size && (size.nominal_size || size.real_size || size.bind_code || size.price);
+              if (!hasData) {
+                console.log(`⚠️ Filtrando fila ${index} sin datos:`, size);
+              }
+              return hasData;
             });
           }
-          console.log(`📦 Tamaños recibidos del formulario: ${sizes.length}`);
+          console.log(`📦 Tamaños procesados después del filtro: ${sizes.length}`);
+          console.log('📦 Tamaños finales:', sizes);
         } catch (error) {
-          console.error('Error parseando tamaños:', error);
+          console.error('❌ Error parseando tamaños:', error);
+          console.error('❌ JSON que causó el error:', sizesJson);
         }
+      } else {
+        console.warn('⚠️ No se recibió product_sizes en el formulario');
       }
 
       // Usar el primer tamaño si existe, o mantener valores actuales
