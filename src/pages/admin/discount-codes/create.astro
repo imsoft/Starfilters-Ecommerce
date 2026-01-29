@@ -298,47 +298,30 @@ if (Astro.request.method === 'POST') {
 
         <!-- Productos específicos -->
         <div class="sm:col-span-6">
-          <label for="product_ids" class="block text-sm font-medium text-gray-900">
+          <label class="block text-sm font-medium text-gray-900 mb-2">
             Productos específicos (opcional)
           </label>
-          <p class="mt-1 text-sm text-gray-500 mb-2">
+          <p class="text-sm text-gray-500 mb-4">
             Selecciona los productos a los que se puede aplicar este código. Si no seleccionas ninguno, el código será válido para todos los productos.
           </p>
-          <select
-            name="product_ids"
-            id="product_ids"
-            multiple
-            size={5}
-            class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
-          >
-            {products.map((product) => (
-              <option
-                value={product.id}
-                selected={formData.product_ids.includes(product.id)}
-              >
-                {product.name} {product.name_en ? `(${product.name_en})` : ''}
-              </option>
-            ))}
-          </select>
-          <style>
-            #product_ids option {
-              padding: 0.75rem 1rem;
-              margin: 0.125rem 0;
-              border-radius: 0.25rem;
-              transition: background-color 0.15s ease-in-out;
-            }
-            #product_ids option:checked {
-              background-color: rgb(59 130 246);
-              color: white;
-            }
-            #product_ids option:hover:not(:checked) {
-              background-color: rgb(239 246 255);
-              color: rgb(37 99 235);
-            }
-          </style>
-          <p class="mt-1 text-sm text-gray-500">
-            Mantén presionada la tecla Ctrl (Windows/Linux) o Cmd (Mac) para seleccionar múltiples productos
-          </p>
+          <div class="border border-gray-300 rounded-md p-4 max-h-96 overflow-y-auto">
+            <div class="space-y-2">
+              {products.map((product) => (
+                <label class="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    name="product_ids"
+                    value={product.id}
+                    checked={formData.product_ids.includes(product.id)}
+                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span class="text-sm text-gray-900">
+                    {product.name} {product.name_en ? `(${product.name_en})` : ''}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
 
         <!-- Estado activo -->
