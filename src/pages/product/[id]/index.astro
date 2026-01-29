@@ -723,7 +723,8 @@ const benefitsList = parseListField(product.benefits);
     category: '',
     nominal_size: '',
     real_size: '',
-    size_label: ''
+    size_label: '',
+    bind_code: undefined as string | undefined
   };
 
   // Inicializar con los datos del producto actual
@@ -823,7 +824,8 @@ const benefitsList = parseListField(product.benefits);
       category: '',
       nominal_size: nominalSize,
       real_size: realSize,
-      size_label: sizeLabel
+      size_label: sizeLabel,
+      bind_code: bindCode || undefined
     };
   }
 
@@ -851,13 +853,44 @@ const benefitsList = parseListField(product.benefits);
       return;
     }
 
-    // Obtener carrito actual
+    // Obtener carrito actual para calcular cantidad total necesaria
     const cartData = localStorage.getItem('starfilters_cart');
     let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: currentProduct.currency };
 
-    // Buscar si el producto ya existe
+    // Buscar si el producto ya existe en el carrito
     const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === currentProduct.uuid);
+    const quantityInCart = existingItemIndex >= 0 ? cart.items[existingItemIndex].quantity : 0;
+    const totalQuantityNeeded = quantityInCart + quantity;
 
+    // Verificar stock antes de agregar
+    try {
+      let checkStockUrl = `/api/check-stock?uuid=${currentProduct.uuid}&quantity=${totalQuantityNeeded}`;
+      if (currentProduct.bind_code) {
+        checkStockUrl += `&bind_code=${encodeURIComponent(currentProduct.bind_code)}`;
+      }
+      
+      const stockResponse = await fetch(checkStockUrl);
+      const stockData = await stockResponse.json();
+
+      if (!stockData.available) {
+        if (stockData.stock === 0) {
+          showErrorNotification('Este producto está agotado. No se puede agregar al carrito.');
+        } else {
+          const availableQuantity = stockData.stock - quantityInCart;
+          if (availableQuantity <= 0) {
+            showErrorNotification(`No hay suficiente stock disponible. Ya tienes ${quantityInCart} unidad${quantityInCart !== 1 ? 'es' : ''} en el carrito.`);
+          } else {
+            showErrorNotification(`Solo hay ${stockData.stock} unidad${stockData.stock !== 1 ? 'es' : ''} disponible${stockData.stock !== 1 ? 's' : ''}. Ya tienes ${quantityInCart} en el carrito. Puedes agregar máximo ${availableQuantity} unidad${availableQuantity !== 1 ? 'es' : ''} más.`);
+          }
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('Error verificando stock:', error);
+      // Continuar con la adición si falla la verificación (fallback)
+    }
+
+    // Si llegamos aquí, hay stock suficiente, proceder a agregar
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += quantity;
       cart.items[existingItemIndex].price = currentProduct.price;
