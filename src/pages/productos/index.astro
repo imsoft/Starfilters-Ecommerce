@@ -254,114 +254,23 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
         )}
       </div>
 
-      <!-- Filtros -->
-      <div class="mb-8 space-y-6">
-        <!-- Búsqueda -->
-        <div>
-          <label for="search-products" class="block text-sm font-medium text-foreground mb-2">
-            Buscar productos
-          </label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-            <input
-              type="text"
-              id="search-products"
-              placeholder="Buscar por nombre..."
-              class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
+      <!-- Búsqueda -->
+      <div class="mb-8">
+        <label for="search-products" class="block text-sm font-medium text-foreground mb-2">
+          Buscar productos
+        </label>
+        <div class="relative max-w-md">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
           </div>
-        </div>
-
-        <!-- Filtros por categoría -->
-        {categories.length > 0 && (
-          <div>
-            <h3 class="text-lg font-medium text-foreground mb-4">Filtrar por categoría</h3>
-            <div class="flex flex-wrap gap-2">
-              <button
-                type="button"
-                class="filter-btn inline-flex items-center rounded-full border border-border bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
-                data-category="all"
-              >
-                Todos ({products.length})
-              </button>
-              {categories.map(category => {
-                const count = products.filter(p => p.category === category).length;
-                return (
-                  <button
-                    type="button"
-                    class="filter-btn inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                    data-category={category}
-                  >
-                    {category} ({count})
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <!-- Filtros por precio y disponibilidad -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Ordenar por -->
-          <div>
-            <label for="sort-by" class="block text-sm font-medium text-foreground mb-2">
-              Ordenar por
-            </label>
-            <select
-              id="sort-by"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="default">Predeterminado</option>
-              <option value="price-asc">Precio: Menor a Mayor</option>
-              <option value="price-desc">Precio: Mayor a Menor</option>
-              <option value="name-asc">Nombre: A-Z</option>
-              <option value="name-desc">Nombre: Z-A</option>
-            </select>
-          </div>
-
-          <!-- Filtro por disponibilidad -->
-          <div>
-            <label for="stock-filter" class="block text-sm font-medium text-foreground mb-2">
-              Disponibilidad
-            </label>
-            <select
-              id="stock-filter"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="all">Todos</option>
-              <option value="in-stock">En Stock</option>
-              <option value="out-of-stock">Agotados</option>
-            </select>
-          </div>
-
-          <!-- Rango de precio -->
-          <div>
-            <label for="price-range" class="block text-sm font-medium text-foreground mb-2">
-              Precio máximo
-            </label>
-            <input
-              type="range"
-              id="price-range"
-              min="0"
-              max="10000"
-              value="10000"
-              step="100"
-              class="w-full"
-            />
-            <div class="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>$0</span>
-              <span id="price-range-value">$10,000</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Contador de resultados -->
-        <div class="text-sm text-muted-foreground">
-          Mostrando <span id="results-count" class="font-medium text-foreground">{products.length}</span> de {products.length} productos
+          <input
+            type="text"
+            id="search-products"
+            placeholder="Buscar por nombre..."
+            class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
         </div>
       </div>
 
