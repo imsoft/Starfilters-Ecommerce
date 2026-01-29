@@ -924,6 +924,40 @@ console.log('📦 Tamaños preparados:', productSizes.length);
         
         productForm.addEventListener('submit', function(e) {
           console.log('📝 Formulario enviándose...');
+          
+          // Asegurar que el JSON de tamaños esté actualizado antes de enviar
+          const sizesTable = document.querySelector('[data-sizes-table]');
+          if (sizesTable) {
+            const jsonInput = sizesTable.querySelector('[data-sizes-json]') as HTMLInputElement;
+            const tbody = sizesTable.querySelector('[data-sizes-tbody]');
+            if (jsonInput && tbody) {
+              // Forzar actualización del JSON
+              const rows = tbody.querySelectorAll('tr[data-row-index]');
+              const sizes: any[] = [];
+              
+              rows.forEach(function(row) {
+                const nominalInput = row.querySelector('[data-field="nominal_size"]') as HTMLInputElement;
+                const realInput = row.querySelector('[data-field="real_size"]') as HTMLInputElement;
+                const priceInput = row.querySelector('[data-field="price"]') as HTMLInputElement;
+                const currencySelect = row.querySelector('[data-field="currency"]') as HTMLSelectElement;
+                const bindCodeInput = row.querySelector('[data-field="bind_code"]') as HTMLInputElement;
+                
+                if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
+                  sizes.push({
+                    nominal_size: nominalInput.value || '',
+                    real_size: realInput.value || '',
+                    price: parseFloat(priceInput.value) || 0,
+                    currency: currencySelect.value || 'MXN',
+                    bind_code: bindCodeInput.value || ''
+                  });
+                }
+              });
+              
+              jsonInput.value = JSON.stringify(sizes);
+              console.log('📦 JSON actualizado antes de enviar:', sizes.length, 'filas');
+              console.log('📦 Contenido JSON:', jsonInput.value);
+            }
+          }
         });
         
         saveButton.addEventListener('click', function(e) {
@@ -946,6 +980,40 @@ console.log('📦 Tamaños preparados:', productSizes.length);
       
       productForm.addEventListener('submit', function(e) {
         console.log('📝 Formulario enviándose...');
+        
+        // Asegurar que el JSON de tamaños esté actualizado antes de enviar
+        const sizesTable = document.querySelector('[data-sizes-table]');
+        if (sizesTable) {
+          const jsonInput = sizesTable.querySelector('[data-sizes-json]') as HTMLInputElement;
+          const tbody = sizesTable.querySelector('[data-sizes-tbody]');
+          if (jsonInput && tbody) {
+            // Forzar actualización del JSON
+            const rows = tbody.querySelectorAll('tr[data-row-index]');
+            const sizes: any[] = [];
+            
+            rows.forEach(function(row) {
+              const nominalInput = row.querySelector('[data-field="nominal_size"]') as HTMLInputElement;
+              const realInput = row.querySelector('[data-field="real_size"]') as HTMLInputElement;
+              const priceInput = row.querySelector('[data-field="price"]') as HTMLInputElement;
+              const currencySelect = row.querySelector('[data-field="currency"]') as HTMLSelectElement;
+              const bindCodeInput = row.querySelector('[data-field="bind_code"]') as HTMLInputElement;
+              
+              if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
+                sizes.push({
+                  nominal_size: nominalInput.value || '',
+                  real_size: realInput.value || '',
+                  price: parseFloat(priceInput.value) || 0,
+                  currency: currencySelect.value || 'MXN',
+                  bind_code: bindCodeInput.value || ''
+                });
+              }
+            });
+            
+            jsonInput.value = JSON.stringify(sizes);
+            console.log('📦 JSON actualizado antes de enviar:', sizes.length, 'filas');
+            console.log('📦 Contenido JSON:', jsonInput.value);
+          }
+        }
       });
       
       saveButton.addEventListener('click', function(e) {
