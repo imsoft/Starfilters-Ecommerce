@@ -767,22 +767,27 @@ const benefitsList = parseListField(product.benefits);
 
     // Inicializar producto actual
     if (sizeSelect) {
-      updateCurrentProduct(sizeSelect);
+      updateCurrentProduct(sizeSelect).then(() => {
+        // Actualizar UI después de obtener stock
+        updateStockDisplay();
+        updateQuantityInput();
+        updateDisplayedPrice();
+        updateAddToCartButton();
+      });
       
       // Escuchar cambios en el select de tamaño
-      sizeSelect.addEventListener('change', () => {
-        updateCurrentProduct(sizeSelect);
-        // Resetear cantidad a 1
-        if (quantityInput) {
-          quantityInput.value = '1';
-          quantityInput.max = String(currentProduct.stock);
-        }
-        // Actualizar info de stock
+      sizeSelect.addEventListener('change', async () => {
+        // Mostrar estado de carga
         if (stockInfo) {
-          stockInfo.textContent = currentProduct.stock > 0 
-            ? `${currentProduct.stock} disponibles` 
-            : 'Agotado';
+          stockInfo.textContent = 'Cargando...';
         }
+        
+        await updateCurrentProduct(sizeSelect);
+        
+        // Resetear cantidad a 1
+        updateQuantityInput();
+        // Actualizar info de stock
+        updateStockDisplay();
         // Actualizar precio mostrado
         updateDisplayedPrice();
         // Actualizar estado del botón
@@ -822,18 +827,56 @@ const benefitsList = parseListField(product.benefits);
     }
   });
 
-  function updateCurrentProduct(sizeSelect: HTMLSelectElement) {
+  async function updateCurrentProduct(sizeSelect: HTMLSelectElement) {
     const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+    const bindCode = selectedOption.getAttribute('data-bind-code') || '';
+    let stock = parseInt(selectedOption.getAttribute('data-stock') || '0');
+    
+    // Si hay un bind_code, obtener stock desde Bind ERP
+    if (bindCode && bindCode.trim()) {
+      try {
+        const response = await fetch(`/api/bind/search-by-code?code=${encodeURIComponent(bindCode.trim())}`);
+        const result = await response.json();
+        if (result.success && result.data && result.data.inventory !== undefined) {
+          stock = result.data.inventory || 0;
+        }
+      } catch (error) {
+        console.error('Error al obtener stock de Bind:', error);
+        // Mantener el stock del data-stock si falla la llamada
+      }
+    }
+    
     currentProduct = {
       uuid: selectedOption.value,
       id: parseInt(selectedOption.getAttribute('data-id') || '0'),
       name: selectedOption.getAttribute('data-name') || '',
       price: parseFloat(selectedOption.getAttribute('data-price') || '0'),
       currency: selectedOption.getAttribute('data-currency') || 'MXN',
-      stock: parseInt(selectedOption.getAttribute('data-stock') || '0'),
+      stock: stock,
       image: selectedOption.getAttribute('data-image') || '',
       category: ''
     };
+  }
+
+  function updateStockDisplay() {
+    const stockInfo = document.getElementById('stock-info');
+    if (stockInfo) {
+      stockInfo.textContent = currentProduct.stock > 0 
+        ? `${currentProduct.stock} disponibles` 
+        : 'Agotado';
+      stockInfo.className = currentProduct.stock > 0 
+        ? 'text-sm text-green-600 font-medium' 
+        : 'text-sm text-red-600 font-medium';
+    }
+  }
+
+  function updateQuantityInput() {
+    const quantityInput = document.getElementById('quantity') as HTMLInputElement;
+    if (quantityInput) {
+      quantityInput.value = '1';
+      quantityInput.max = String(currentProduct.stock || 999);
+      quantityInput.disabled = currentProduct.stock === 0;
+    }
   }
 
   function updateDisplayedPrice() {
