@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getBindProducts } from '@/lib/bind';
+import { getBindProducts, getBindProductById } from '@/lib/bind';
 
 export const prerender = false;
 
@@ -62,6 +62,23 @@ export const GET: APIRoute = async ({ url }) => {
     const nominalSize = customFields.nominalSize || customFields.nominal_size || customFields.medida_nominal || '';
     const realSize = customFields.realSize || customFields.real_size || customFields.medida_real || '';
     const price = product.price || 0;
+    
+    // Obtener inventario: primero intentar desde el producto encontrado, luego desde detalles completos
+    let inventory = product.inventory || product.Inventory || 0;
+    
+    // Si el producto tiene un ID y no tenemos inventario, obtener detalles completos
+    if (product.id && (!inventory || inventory === 0)) {
+      try {
+        const productDetails = await getBindProductById(product.id);
+        if (productDetails.success && productDetails.data) {
+          // El endpoint /api/Products/{id} devuelve CurrentInventory según la documentación
+          const bindData = productDetails.data as any;
+          inventory = bindData.CurrentInventory || bindData.currentInventory || bindData.Inventory || inventory || 0;
+        }
+      } catch (error) {
+        console.warn('No se pudo obtener inventario detallado de Bind:', error);
+      }
+    }
 
     return new Response(
       JSON.stringify({
@@ -71,6 +88,7 @@ export const GET: APIRoute = async ({ url }) => {
           nominalSize,
           realSize,
           price,
+          inventory: inventory || 0,
           // Información adicional del producto
           title: product.title,
           description: product.description,
