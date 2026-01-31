@@ -4,6 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import { getBlogPostByUuid } from "@/lib/database";
 import type { BlogPost } from "@/lib/database";
 import { generateBlogKeywords, generateArticleSchema, generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getHighQualityImageUrl } from "@/lib/image-utils";
 
 // Get blog post UUID from URL
 const { uuid } = Astro.params;
@@ -45,6 +46,14 @@ const formatDate = (date: Date): string => {
 const getTagsArray = (tags: string): string[] => {
   if (!tags) return [];
   return tags.split(',').map(tag => tag.trim()).filter(Boolean);
+};
+
+// Convert slug (e.g. cuartos-limpios) to readable format (e.g. Cuartos Limpios)
+const formatTagLabel = (tag: string): string => {
+  return tag
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 };
 
 const tags = getTagsArray(post.tags);
@@ -120,38 +129,22 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           {postData.title}
         </h1>
 
-        <div class="mt-6 flex items-center gap-x-4 text-sm">
+        <div class="mt-6 flex flex-wrap items-center gap-2 text-sm">
           <time datetime={post.created_at.toISOString()} class="text-muted-foreground">
             {formatDate(post.created_at)}
           </time>
-          {tags.map(tag => (
-            <a
-              href="#"
-              class="relative z-10 rounded-full bg-muted px-3 py-1.5 font-medium text-muted-foreground hover:bg-muted/80"
-            >
-              {tag}
-            </a>
-          ))}
-        </div>
-
-        <div class="mt-6 flex items-center gap-x-4">
-          {post.author_image ? (
-            <img
-              src={post.author_image}
-              alt={post.author}
-              class="size-10 rounded-full object-cover"
-            />
-          ) : (
-            <div class="size-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
-              {post.author.charAt(0).toUpperCase()}
-            </div>
+          {tags.length > 0 && (
+            <>
+              <span class="text-muted-foreground" aria-hidden="true">·</span>
+              {tags.map(tag => (
+                <span
+                  class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-medium text-primary"
+                >
+                  {formatTagLabel(tag)}
+                </span>
+              ))}
+            </>
           )}
-          <div class="text-sm">
-            <p class="font-semibold text-foreground">
-              {post.author}
-            </p>
-            <p class="text-muted-foreground">Author</p>
-          </div>
         </div>
       </header>
 
@@ -159,9 +152,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       {post.featured_image && (
         <div class="mt-8">
           <img
-            src={post.featured_image}
+            src={getHighQualityImageUrl(post.featured_image, { width: 1600 })}
             alt={postData.title}
             class="aspect-video w-full rounded-2xl bg-muted object-cover"
+            width={1600}
+            height={900}
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
           />
         </div>
       )}
@@ -169,36 +167,6 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       <!-- Article content -->
       <div class="mt-8 prose prose-lg max-w-none">
         <div class="text-lg leading-8 text-foreground" set:html={postData.content}></div>
-      </div>
-
-      <!-- Meta information -->
-      <div class="mt-12 border-t border-border pt-8">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-x-4">
-            {post.author_image ? (
-              <img
-                src={post.author_image}
-                alt={post.author}
-                class="size-12 rounded-full object-cover"
-              />
-            ) : (
-              <div class="size-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
-                {post.author.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div>
-              <p class="font-semibold text-foreground">{post.author}</p>
-              <p class="text-muted-foreground">Article Author</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-x-2">
-            <span class="text-sm text-muted-foreground">Published on</span>
-            <time datetime={post.created_at.toISOString()} class="text-sm font-medium text-foreground">
-              {formatDate(post.created_at)}
-            </time>
-          </div>
-        </div>
       </div>
 
       <!-- Navigation -->

@@ -1,11 +1,8 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
+import CleanroomsContent from "@/components/shared/CleanroomsContent.astro";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
-import { getLangFromUrl, useTranslations } from "@/i18n/utils";
-
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
@@ -41,122 +38,5 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   />
 
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
-  <div class="overflow-hidden bg-white py-24 sm:py-32">
-    <div class="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
-      <div class="max-w-4xl">
-        <p class="text-base/7 font-semibold text-indigo-600">{t('cleanrooms.badge')}</p>
-        <h1
-          class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl"
-        >
-          {t('cleanrooms.title')}
-        </h1>
-        <p class="mt-6 text-xl/8 text-balance text-gray-700">
-          {t('cleanrooms.description')}
-        </p>
-      </div>
-      <section
-        class="mt-20 grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-16"
-      >
-        <div class="lg:pr-8">
-          <h2
-            class="text-2xl font-semibold tracking-tight text-pretty text-gray-900"
-          >
-            {t('cleanrooms.experience.title')}
-          </h2>
-          <p class="mt-6 text-base/7 text-gray-600">
-            {t('cleanrooms.experience.p1')}
-          </p>
-          <p class="mt-8 text-base/7 text-gray-600">
-            {t('cleanrooms.experience.p2')}
-          </p>
-        </div>
-        <div class="pt-16 lg:row-span-2 lg:-mr-16 xl:mr-auto">
-          <div
-            class="-mx-8 grid grid-cols-2 gap-4 sm:-mx-16 sm:grid-cols-4 lg:mx-0 lg:grid-cols-2 xl:gap-8"
-          >
-            <div
-              class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10"
-            >
-              <img
-                src="/images/cleanrooms-page/Construcción%20Cuartos%20Limpios%20Star%20Filters.JPG"
-                alt="Star Filters cleanroom construction"
-                class="block size-full object-cover"
-              />
-            </div>
-            <div
-              class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40"
-            >
-              <img
-                src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
-                alt="Star Filters HEPA filtration system"
-                class="block size-full object-cover"
-              />
-            </div>
-            <div
-              class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10"
-            >
-              <img
-                src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
-                alt="ISO 14644 certification"
-                class="block size-full object-cover"
-              />
-            </div>
-            <div
-              class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40"
-            >
-              <img
-                src="/images/cleanrooms-page/Puerta%20Giratoria%20Star%20Filters.JPG"
-                alt="Star Filters revolving airlock door"
-                class="block size-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-        <div class="max-lg:mt-16 lg:col-span-1">
-          <p class="text-base/7 font-semibold text-gray-500">{t('cleanrooms.numbers.title')}</p>
-          <hr class="mt-6 border-t border-gray-200" />
-          <dl class="mt-6 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-            <div
-              class="flex flex-col gap-y-2 border-b border-dotted border-gray-200 pb-4"
-            >
-              <dt class="text-sm/6 text-gray-600">{t('cleanrooms.numbers.installations')}</dt>
-              <dd
-                class="order-first text-6xl font-semibold tracking-tight text-gray-900"
-              >
-                <span>{t('cleanrooms.numbers.installationsNumber')}</span>
-              </dd>
-            </div>
-            <div
-              class="flex flex-col gap-y-2 border-b border-dotted border-gray-200 pb-4"
-            >
-              <dt class="text-sm/6 text-gray-600">{t('cleanrooms.numbers.area')}</dt>
-              <dd
-                class="order-first text-6xl font-semibold tracking-tight text-gray-900"
-              >
-                <span>{t('cleanrooms.numbers.areaNumber')}</span>
-              </dd>
-            </div>
-            <div
-              class="flex flex-col gap-y-2 max-sm:border-b max-sm:border-dotted max-sm:border-gray-200 max-sm:pb-4"
-            >
-              <dt class="text-sm/6 text-gray-600">{t('cleanrooms.numbers.certifications')}</dt>
-              <dd
-                class="order-first text-6xl font-semibold tracking-tight text-gray-900"
-              >
-                <span>{t('cleanrooms.numbers.certificationsNumber')}</span>
-              </dd>
-            </div>
-            <div class="flex flex-col gap-y-2">
-              <dt class="text-sm/6 text-gray-600">{t('cleanrooms.numbers.warranty')}</dt>
-              <dd
-                class="order-first text-6xl font-semibold tracking-tight text-gray-900"
-              >
-                <span>{t('cleanrooms.numbers.warrantyNumber')}</span>
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-    </div>
-  </div>
+  <CleanroomsContent />
 </WebsiteLayout>

@@ -4,6 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import { getBlogPosts } from "@/lib/database";
 import type { BlogPost } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getHighQualityImageUrl } from "@/lib/image-utils";
 
 // Get blog posts from database
 const blogPosts = await getBlogPosts(6, 0);
@@ -97,9 +98,13 @@ const breadcrumbSchema = generateBreadcrumbSchema([
               <article class="flex flex-col items-start justify-between">
                 <div class="relative w-full">
                   <img
-                    src={post.featured_image || 'https://via.placeholder.com/600x400?text=Star Filters'}
+                    src={getHighQualityImageUrl(post.featured_image, { width: 900 }) || 'https://via.placeholder.com/600x400?text=Star Filters'}
                     alt={post.title}
                     class="aspect-video w-full rounded-2xl bg-muted object-cover sm:aspect-2/1 lg:aspect-3/2"
+                    width={900}
+                    height={600}
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div
                     class="absolute inset-0 rounded-2xl inset-ring inset-ring-gray-900/10"

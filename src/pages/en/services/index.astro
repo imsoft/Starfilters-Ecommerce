@@ -1,6 +1,6 @@
 ---
 import FeatureServiceSection from "@/components/shared/FeatureServiceSection.astro";
-import ServicesContactForm from "@/components/shared/ServicesContactForm.astro";
+import ServicesCTA from "@/components/shared/ServicesCTA.astro";
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -41,5 +41,5 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
   <FeatureServiceSection />
-  <ServicesContactForm />
+  <ServicesCTA />
 </WebsiteLayout>

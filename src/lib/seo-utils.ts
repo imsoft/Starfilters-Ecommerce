@@ -280,7 +280,7 @@ export function generateFAQSchema(faqs: Array<{ question: string; answer: string
       "name": faq.question,
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": faq.answer.replace(/\n/g, ' ').trim()
+        "text": faq.answer.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
       }
     }))
   };

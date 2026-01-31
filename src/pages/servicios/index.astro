@@ -1,6 +1,6 @@
 ---
 import FeatureServiceSection from "@/components/shared/FeatureServiceSection.astro";
-import ServicesContactForm from "@/components/shared/ServicesContactForm.astro";
+import ServicesCTA from "@/components/shared/ServicesCTA.astro";
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -19,17 +19,17 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 <WebsiteLayout
   title={lang === 'en' ? 'Services' : 'Servicios'}
   seoTitle={lang === 'en' ? 'Cleanroom Certification and Performance Testing Services | Star Filters' : 'Servicios de Pruebas y Validación de Desempeño en Cuartos Limpios | Star Filters'}
-  description={lang === 'en' ? 'NEBB-certified cleanroom performance testing to ensure controlled areas operate in full compliance with ISO 14644 and GMP standards. Air and filtration system validation in Mexico.' : 'Pruebas de desempeño certificadas por NEBB para cuartos limpios y áreas controladas conforme a normas ISO 14644 y GMP. Validación de sistemas de aire y filtración en México.'}
+  description={lang === 'en' ? 'Cleanroom performance testing to ensure controlled areas operate under optimal conditions. Air and filtration system validation in Mexico.' : 'Pruebas de desempeño para cuartos limpios y áreas controladas conforme a los más altos estándares de la industria. Validación de sistemas de aire y filtración en México.'}
   keywords={lang === 'en' ? [
     'cleanroom testing',
-    'NEBB certification',
+    'cleanroom certification',
     'ISO 14644 validation',
     'HEPA filter testing',
     'particle count testing',
     'air balancing'
   ] : [
     'pruebas de cuartos limpios',
-    'certificación NEBB',
+    'certificación cuartos limpios',
     'validación ISO 14644',
     'pruebas de filtros HEPA',
     'conteo de partículas',
@@ -39,20 +39,20 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   <SEO
     slot="seo"
     title={lang === 'en' ? 'Cleanroom Certification and Performance Testing Services' : 'Servicios de Pruebas y Validación de Desempeño en Cuartos Limpios'}
-    description={lang === 'en' ? 'NEBB-certified cleanroom performance testing to ensure controlled areas operate in full compliance with ISO 14644 and GMP standards. Air and filtration system validation in Mexico.' : 'Pruebas de desempeño certificadas por NEBB para cuartos limpios y áreas controladas conforme a normas ISO 14644 y GMP. Validación de sistemas de aire y filtración en México.'}
+    description={lang === 'en' ? 'Cleanroom performance testing to ensure controlled areas operate under optimal conditions. Air and filtration system validation in Mexico.' : 'Pruebas de desempeño para cuartos limpios y áreas controladas conforme a los más altos estándares de la industria. Validación de sistemas de aire y filtración en México.'}
     ogType="website"
     keywords={lang === 'en' ? [
       'cleanroom testing',
-      'NEBB certification',
+      'cleanroom certification',
       'ISO 14644 validation'
     ] : [
       'pruebas de cuartos limpios',
-      'certificación NEBB',
+      'certificación cuartos limpios',
       'validación ISO 14644'
     ]}
   />
 
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
   <FeatureServiceSection />
-  <ServicesContactForm />
+  <ServicesCTA />
 </WebsiteLayout>

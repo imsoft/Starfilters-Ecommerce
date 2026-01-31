@@ -9,26 +9,12 @@ const t = useTranslations(lang);
   <div class="mx-auto max-w-7xl px-4 lg:px-6">
     <div class="grid grid-cols-1 items-center gap-x-8 gap-y-16 lg:grid-cols-2">
       <div class="mx-auto w-full max-w-xl lg:mx-0">
-        <h2 class="text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl">
+        <h2 class="text-center text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl">
           {t('certificationSection.title')}
         </h2>
         <p class="mt-6 text-lg/8 text-muted-foreground">
           {t('certificationSection.description')}
         </p>
-        <div class="mt-8 flex items-center gap-x-6">
-          <a 
-            href={lang === 'en' ? '/en/contact' : '/contacto'} 
-            class="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            {t('certificationSection.cta')}
-          </a>
-          <a 
-            href={lang === 'en' ? '/en/services' : '/servicios'} 
-            class="text-sm font-semibold text-foreground hover:text-foreground/80"
-          >
-            {t('certificationSection.ctaSecondary')} <span aria-hidden="true">&rarr;</span>
-          </a>
-        </div>
       </div>
       <div class="mx-auto grid w-full max-w-xl grid-cols-2 items-center gap-y-12 sm:gap-y-14 lg:mx-0 lg:max-w-none lg:pl-8">
         <!-- ISO 9001 -->

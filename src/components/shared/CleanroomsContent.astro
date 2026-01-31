@@ -1,0 +1,156 @@
+---
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
+---
+
+<div class="overflow-hidden bg-white py-24 sm:py-32">
+  <div class="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
+    <div class="max-w-4xl">
+      <p class="text-base/7 font-semibold text-primary">{t('cleanrooms.badge')}</p>
+      <h1 class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
+        {t('cleanrooms.title')}
+      </h1>
+      <p class="mt-6 text-xl/8 text-balance text-gray-700 [&_strong]:font-semibold [&_strong]:text-foreground" set:html={t('cleanrooms.description')} />
+    </div>
+
+    <section class="mt-20 grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-16">
+      <div class="lg:pr-8">
+        <h2 class="text-2xl font-semibold tracking-tight text-pretty text-gray-900">
+          {t('cleanrooms.experience.title')}
+        </h2>
+        <p class="mt-6 text-base/7 text-gray-600">{t('cleanrooms.experience.p1')}</p>
+        <p class="mt-8 text-base/7 text-gray-600">{t('cleanrooms.experience.p2')}</p>
+        <p class="mt-8 text-base/7 text-gray-600">{t('cleanrooms.experience.p3')}</p>
+        <p class="mt-8 text-base/7 text-gray-600 [&_a]:text-primary [&_a]:hover:text-primary/80 [&_a]:font-medium" set:html={t('cleanrooms.experience.p4')} />
+      </div>
+
+      <div class="pt-16 lg:row-span-2 lg:-mr-16 xl:mr-auto">
+        <div class="-mx-8 grid grid-cols-2 gap-4 sm:-mx-16 sm:grid-cols-4 lg:mx-0 lg:grid-cols-2 xl:gap-8">
+          <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
+            <img
+              src="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
+              alt={lang === 'en' ? 'Star Filters cleanroom construction' : 'Construcción de cuartos limpios Star Filters'}
+              class="block size-full object-cover"
+            />
+          </div>
+          <div class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40">
+            <img
+              src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
+              alt={lang === 'en' ? 'Star Filters HEPA filtration system' : 'Filtros Star en cuarto limpio'}
+              class="block size-full object-cover"
+            />
+          </div>
+          <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
+            <img
+              src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
+              alt={lang === 'en' ? 'ISO 14644 certification' : 'Certificación ISO 14644 para cuartos limpios'}
+              class="block size-full object-cover"
+            />
+          </div>
+          <div class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40">
+            <img
+              src="/images/cleanrooms-page/Puerta%20Giratoria%20Star%20Filters.JPG"
+              alt={lang === 'en' ? 'Star Filters revolving airlock door' : 'Puerta giratoria para cuartos limpios Star Filters'}
+              class="block size-full object-cover"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="max-lg:mt-16 lg:col-span-1">
+        <p class="text-base/7 font-semibold text-gray-500">{t('cleanrooms.numbers.title')}</p>
+        <hr class="mt-6 border-t border-gray-200" />
+        <dl class="mt-6 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
+          <div class="flex flex-col gap-y-2 border-b border-dotted border-gray-200 pb-4">
+            <dt class="text-sm/6 text-gray-600">{t('cleanrooms.numbers.installations')}</dt>
+            <dd class="order-first text-6xl font-semibold tracking-tight text-gray-900">
+              <span class="counter-number" data-target="120">0</span>
+            </dd>
+          </div>
+          <div class="flex flex-col gap-y-2 border-b border-dotted border-gray-200 pb-4">
+            <dt class="text-sm/6 text-gray-600">{t('cleanrooms.numbers.experience')}</dt>
+            <dd class="order-first text-6xl font-semibold tracking-tight text-gray-900">
+              <span class="counter-number" data-target="40">0</span>
+            </dd>
+          </div>
+          <div class="flex flex-col gap-y-2 max-sm:border-b max-sm:border-dotted max-sm:border-gray-200 max-sm:pb-4">
+            <dt class="text-sm/6 text-gray-600">{t('cleanrooms.numbers.area')}</dt>
+            <dd class="order-first text-6xl font-semibold tracking-tight text-gray-900">
+              <span class="counter-number" data-target="20">0</span>{t('cleanrooms.numbers.areaSuffix')}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <div class="mt-24 bg-primary/5 rounded-2xl px-6 py-16 text-center sm:px-16 sm:py-24">
+      <h2 class="text-3xl font-semibold tracking-tight text-balance text-gray-900 sm:text-4xl">
+        {t('cleanrooms.cta.title')}
+      </h2>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-gray-600">
+        {t('cleanrooms.cta.subtitle')}
+      </p>
+      <div class="mt-10">
+        <a
+          href={contactUrl}
+          class="inline-flex rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {t('cleanrooms.cta.button')}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const counters = document.querySelectorAll('.counter-number');
+    const duration = 1200;
+    const stepInterval = 30;
+
+    const animateCounter = (el) => {
+      const target = parseInt(el.getAttribute('data-target') || '0', 10);
+      const start = 0;
+      const startTime = performance.now();
+
+      const update = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 2.5);
+        const current = Math.round(start + (target - start) * eased);
+        el.textContent = String(current);
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          el.textContent = String(target);
+        }
+      };
+
+      requestAnimationFrame(update);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const el = entry.target;
+            if (!el.hasAttribute('data-animated')) {
+              el.setAttribute('data-animated', 'true');
+              animateCounter(el);
+            }
+            observer.unobserve(el);
+          }
+        });
+      },
+      { threshold: 0.3, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    counters.forEach((counter) => observer.observe(counter));
+  });
+</script>
