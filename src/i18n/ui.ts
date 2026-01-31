@@ -11,7 +11,7 @@ export const ui = {
     'nav.home': 'Inicio',
     'nav.filters': 'Filtros de Aire',
     'nav.cleanrooms': 'Cuartos Limpios',
-    'nav.services': 'Servicios de validación',
+    'nav.services': 'Servicios de Validación',
     'nav.blog': 'Blog',
     'nav.contact': 'Contacto',
     'nav.cart': 'Carrito',
@@ -25,7 +25,7 @@ export const ui = {
     // Hero
     'hero.badge': 'Más de 40 años liderando la filtración industrial en México.',
     'hero.badgeLink': 'Conoce nuestra historia.',
-    'hero.title': 'Líder en cuartos limpios en Norteamérica',
+    'hero.title': 'Líder en Cuartos Limpios en Norteamérica',
     'hero.description': 'Con 40 años de experiencia, Star Filters es tu mejor opción en <a href="/cuartos-limpios" class="text-primary hover:text-primary/80 no-underline">cuartos limpios</a>, control de partículas y contaminantes en el aire. Hacemos desde el diseño, construcción, <a href="/servicios" class="text-primary hover:text-primary/80 no-underline">validación de tu cuarto limpio</a>. También fabricamos una alta gama de productos incluyendo filtros HEPA, para lograr la mayor pureza del aire. <a href="/filtros" class="text-primary hover:text-primary/80 no-underline">Explora nuestros productos</a>.',
     'hero.cta': 'Contáctanos',
     'hero.ctaSecondary': 'Nuestros filtros',
@@ -39,8 +39,8 @@ export const ui = {
     'stats.clientsNumber': '+1 millón',
 
     // Features
-    'features.title': 'Tu aliado en control de partículas',
-    'features.subtitle': 'Protegemos tus procesos de manufactura de la exposición a partículas y contaminantes.',
+    'features.title': 'Tu Aliado en Control de Partículas',
+    'features.subtitle': 'Protegemos tus Procesos de Manufactura de la Exposición a Partículas y Contaminantes.',
     'features.certifications.title': 'Cuartos Limpios',
     'features.certifications.description': 'Somos expertos en diseño y construcción de cuartos limpios. Creamos ambientes controlados en cuanto a partículas, temperatura, humedad relativa y presión.',
     'features.installation.title': 'Filtros de Aire',
@@ -51,10 +51,10 @@ export const ui = {
     'features.support.description': 'Unidades Manejadoras de Aire, Puertas y Ventanas especializadas, Air Showers, Gabinetes, manómetros de presión diferencial, cortina rápida, pass through.',
 
     // Cleanrooms
-    'cleanrooms.badge': 'Nuestro expertise',
-    'cleanrooms.title': 'Cuartos limpios certificados para procesos críticos',
+    'cleanrooms.badge': 'Nuestro Expertise',
+    'cleanrooms.title': 'Cuartos Limpios Certificados para Procesos Críticos',
     'cleanrooms.description': 'En Star Filters <strong>diseñamos, construimos y validamos</strong> cuartos limpios certificados bajo normas ISO 14644 y GMP, garantizando procesos seguros, precisos y reproducibles.',
-    'cleanrooms.experience.title': 'Calidad certificada',
+    'cleanrooms.experience.title': 'Calidad Certificada',
     'cleanrooms.experience.p1': 'Desde la ingeniería y el diseño arquitectónico hasta la validación y el monitoreo ambiental, garantizamos ambientes controlados y certificados, donde la calidad del aire define la calidad del producto.',
     'cleanrooms.experience.p2': 'Un cuarto limpio o sala blanca es un entorno especializado diseñado para controlar partículas en el aire, microorganismos y contaminantes, manteniendo condiciones hasta 50,000 veces más limpias que un ambiente estándar. Incluye control de humedad y temperatura.',
     'cleanrooms.experience.p3': 'Star Filters ofrece soluciones integrales de cuartos limpios llave en mano, con avanzados sistemas de filtración HEPA, flujos de aire de alta eficiencia y control preciso de temperatura, humedad y presión diferencial.',
@@ -75,20 +75,20 @@ export const ui = {
     'services.badge': 'Servicios de Pruebas y Validación',
     'services.title': 'Servicios de Pruebas y Validación de Desempeño en Cuartos Limpios',
     'services.description': 'En Star Filters, realizamos pruebas de desempeño para asegurar que cada cuarto limpio y área controlada opere con condiciones óptimas. Nuestros procedimientos están basados en los más altos estándares de la industria, asegurando condiciones óptimas para sus procesos.\n\nNuestro objetivo es verificar que los sistemas de aire y filtración mantengan la máxima eficiencia, seguridad y pureza del aire, protegiendo el proceso y la calidad del producto.',
-    'services.hepaIntegrity.title': 'Prueba de integridad de filtros HEPA',
+    'services.hepaIntegrity.title': 'Prueba de Integridad de Filtros HEPA',
     'services.hepaIntegrity.description': 'Confirma que los filtros HEPA instalados estén libres de fugas y conserven una barrera efectiva contra contaminantes, asegurando la protección del proceso y del producto final.',
-    'services.particleCount.title': 'Conteo de partículas de aire',
+    'services.particleCount.title': 'Conteo de Partículas de Aire',
     'services.particleCount.description': 'Determina la clasificación ISO del área mediante la medición del tamaño y cantidad de partículas suspendidas en el aire, garantizando el nivel de limpieza requerido por el proceso.',
-    'services.ductLeakage.title': 'Prueba de hermeticidad de ductos',
+    'services.ductLeakage.title': 'Prueba de Hermeticidad de Ductos',
     'services.ductLeakage.description': 'Verifica que los sistemas de aire y ductos estén correctamente sellados, evitando fugas que puedan afectar la presión del área o la eficiencia energética.',
-    'services.airBalancing.title': 'Balanceo y control de presión de áreas',
+    'services.airBalancing.title': 'Balanceo y Control de Presión de Áreas',
     'services.airBalancing.description': 'Mide y ajusta el flujo de aire, los cambios de aire por hora y las presiones diferenciales entre áreas, evitando contaminación cruzada y asegurando un desempeño óptimo del sistema.',
-    'services.requestSection.title': 'Solicita tu servicio de validación',
+    'services.requestSection.title': 'Solicita tu Servicio de Validación',
     'services.requestSection.description': 'En Star Filters garantizamos resultados confiables con equipos de medición calibrados de vanguardia y técnicos especializados.\n\nOfrecemos flexibilidad de horario, entrega rápida de reportes de validación y atención personalizada para cumplir con los más altos estándares de tu industria.\n\nCompleta el formulario y nuestro equipo te contactará para agendar tu validación.',
     'services.requestSection.locations': 'Guadalajara, Jal / Ciudad de México',
     'services.requestSection.phones': '+52 33 3898 7991 / +52 55 5087 0287',
     'services.requestSection.email': 'starinfo@starfilters.mx',
-    'services.requestSection.formTitle': 'Formulario de contacto',
+    'services.requestSection.formTitle': 'Formulario de Contacto',
     'services.requestSection.formDescription': 'Completa los campos y nos pondremos en contacto contigo a la brevedad.',
     'services.requestSection.fields.name': 'Nombre',
     'services.requestSection.fields.city': 'Ciudad',
@@ -97,15 +97,15 @@ export const ui = {
     'services.requestSection.fields.company': 'Nombre de empresa',
     'services.requestSection.fields.message': 'Mensaje',
     'services.requestSection.submitButton': 'Enviar mensaje',
-    'services.cta.title': 'Solicita tu servicio de validación',
+    'services.cta.title': 'Solicita tu Servicio de Validación',
     'services.cta.description': 'Garantizamos resultados confiables con equipos de medición calibrados y técnicos especializados. Ofrecemos flexibilidad de horario y atención personalizada para cumplir con los más altos estándares de tu industria.',
     'services.cta.button': 'Contáctanos',
 
     // Logo Section
-    'logoSection.title': 'Ya confiaron en nosotros',
+    'logoSection.title': 'Ya Confiaron en Nosotros',
     
     // Certification Section
-    'certificationSection.title': 'Star Filters cuenta con las certificaciones más exigentes de la industria',
+    'certificationSection.title': 'Star Filters Cuenta con las Certificaciones Más Exigentes de la Industria',
     'certificationSection.description': 'Nuestras soluciones están respaldadas por certificaciones internacionales que avalan su calidad, desempeño y confiabilidad. En Star Filters no solo cumplimos la normativa: superamos los estándares para garantizar máxima seguridad y eficiencia en los entornos más exigentes.',
     'certificationSection.cta': 'Contáctanos',
     'certificationSection.ctaSecondary': 'Nuestros servicios',
@@ -154,14 +154,14 @@ export const ui = {
     'footer.careers': 'Carreras',
     'footer.press': 'Prensa',
     'footer.legal': 'Legal',
-    'footer.terms': 'Términos de servicio',
-    'footer.privacy': 'Política de privacidad',
+    'footer.terms': 'Términos de Servicio',
+    'footer.privacy': 'Política de Privacidad',
     'footer.license': 'Licencia',
     'footer.copyright': '© 2026 Star Filters S.A. de C.V. Todos los derechos reservados.',
 
     // Testimonials
     'testimonials.badge': 'Testimonios',
-    'testimonials.title': 'Opiniones que nos respaldan',
+    'testimonials.title': 'Opiniones que Nos Respaldan',
     'testimonials.testimonial1': 'Se han realizado trabajos de Cuarto Limpio, HVAC y venta de filtros de aire acondicionado HEPA y Pleat, quedando a nuestra total satisfacción.',
     'testimonials.testimonial1.author': 'Ing. Luis C.',
     'testimonials.testimonial1.role': 'Facilities Engineer',
@@ -182,7 +182,7 @@ export const ui = {
     'testimonials.testimonial6.role': 'Principal and Cofounder',
 
     // FAQ
-    'faq.title': 'Preguntas frecuentes',
+    'faq.title': 'Preguntas Frecuentes',
     'faq.q1': '¿Qué experiencia tiene Star Filters en cuartos limpios y filtración industrial?',
     'faq.a1': 'Star Filters cuenta con más de <strong>40 años de experiencia</strong> en la fabricación, diseño y validación de sistemas de filtración y cuartos limpios para la industria farmacéutica, electrónica, médica, alimentos, semiconductores y hospitales. Contamos con la certificación <strong>ISO 9001</strong> de gestión de calidad.<br><br>Hemos construido más de <strong>120 cuartos limpios</strong> y suministrado sistemas de filtración para miles de proyectos en México, Centroamérica y Estados Unidos, ofreciendo soluciones confiables, certificadas y de alto rendimiento.',
     'faq.q2': '¿Qué normativas y estándares cumplen sus proyectos y filtros?',
@@ -273,7 +273,7 @@ export const ui = {
 
     // Features
     'features.title': 'Your Partner in Particle Control',
-    'features.subtitle': 'We protect your manufacturing processes from exposure to particles and contaminants.',
+    'features.subtitle': 'We Protect Your Manufacturing Processes from Exposure to Particles and Contaminants.',
     'features.certifications.title': 'Cleanrooms',
     'features.certifications.description': 'We are experts in cleanroom design and construction. We create controlled environments in terms of particles, temperature, relative humidity, and pressure.',
     'features.installation.title': 'Air Filters',
@@ -285,7 +285,7 @@ export const ui = {
 
     // Cleanrooms
     'cleanrooms.badge': 'Our Expertise',
-    'cleanrooms.title': 'Certified cleanrooms for critical processes',
+    'cleanrooms.title': 'Certified Cleanrooms for Critical Processes',
     'cleanrooms.description': 'At Star Filters we <strong>design, build, and validate</strong> cleanrooms certified under ISO 14644 and GMP standards, ensuring secure, precise, and reproducible processes.',
     'cleanrooms.experience.title': 'Certified Quality',
     'cleanrooms.experience.p1': 'From engineering and architectural design to validation and environmental monitoring, we guarantee controlled and certified environments where air quality defines product quality.',
@@ -335,10 +335,10 @@ export const ui = {
     'services.cta.button': 'Contact Us',
 
     // Logo Section
-    'logoSection.title': 'They already trusted us',
+    'logoSection.title': 'They Already Trusted Us',
     
     // Certification Section
-    'certificationSection.title': 'Star Filters has the most demanding certifications in the industry',
+    'certificationSection.title': 'Star Filters Has the Most Demanding Certifications in the Industry',
     'certificationSection.description': 'Our solutions are backed by international certifications that validate their quality, performance, and reliability. At Star Filters, we don\'t just meet regulations: we exceed standards to ensure maximum safety and efficiency in the most demanding environments.',
     'certificationSection.cta': 'Contact us',
     'certificationSection.ctaSecondary': 'Our services',
@@ -387,14 +387,14 @@ export const ui = {
     'footer.careers': 'Careers',
     'footer.press': 'Press',
     'footer.legal': 'Legal',
-    'footer.terms': 'Terms of service',
-    'footer.privacy': 'Privacy policy',
+    'footer.terms': 'Terms of Service',
+    'footer.privacy': 'Privacy Policy',
     'footer.license': 'License',
     'footer.copyright': '© 2026 Star Filters S.A. de C.V. All rights reserved.',
 
     // Testimonials
     'testimonials.badge': 'Testimonials',
-    'testimonials.title': 'Testimonials that back us up',
+    'testimonials.title': 'Testimonials That Back Us Up',
     'testimonials.testimonial1': 'Cleanroom, HVAC, and HEPA filter projects were carried out to our complete satisfaction.',
     'testimonials.testimonial1.author': 'Eng. Luis C.',
     'testimonials.testimonial1.role': 'Facilities Engineer',
@@ -415,7 +415,7 @@ export const ui = {
     'testimonials.testimonial6.role': 'Principal and Cofounder',
 
     // FAQ
-    'faq.title': 'Frequently asked questions',
+    'faq.title': 'Frequently Asked Questions',
     'faq.q1': 'What experience does Star Filters have in cleanrooms and industrial filtration?',
     'faq.a1': 'Star Filters has over <strong>40 years of experience</strong> in manufacturing, design, and validation of filtration systems and cleanrooms for the pharmaceutical, electronics, medical, food, semiconductor, and hospital industries. We hold <strong>ISO 9001</strong> quality management certification.<br><br>We have built over <strong>120 cleanrooms</strong> and supplied filtration systems for thousands of projects in Mexico, Central America, and the United States, offering reliable, certified, and high-performance solutions.',
     'faq.q2': 'What regulations and standards do your projects and filters comply with?',
