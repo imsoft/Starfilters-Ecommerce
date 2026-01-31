@@ -200,8 +200,6 @@ if (!user) {
   </div>
   
   <script>
-    import { getCart } from '@/lib/cart';
-    
     // Function to get cart from localStorage (client-side)
     function getCartFromStorage() {
       try {
@@ -288,6 +286,12 @@ if (!user) {
       }
     }
 
+    // Global variables to store Payment Element instance
+    let currentPaymentElement: any = null;
+    let currentStripe: any = null;
+    let currentElements: any = null;
+    let isElementMounted = false;
+
     // Function to initialize Stripe
     function initializeStripe(container: HTMLElement, clientSecret: string, amount: number, currency: string = 'USD') {
       try {
@@ -301,6 +305,18 @@ if (!user) {
         
         if (!clientSecret) {
           throw new Error('Client secret not received from server');
+        }
+
+        // Unmount previous Payment Element if exists
+        if (currentPaymentElement) {
+          try {
+            console.log('🗑️ Unmounting previous Payment Element...');
+            currentPaymentElement.unmount();
+            currentPaymentElement = null;
+            isElementMounted = false;
+          } catch (unmountError) {
+            console.warn('⚠️ Error unmounting previous Payment Element:', unmountError);
+          }
         }
 
         const stripe = (window as any).Stripe(publishableKey);
@@ -324,6 +340,11 @@ if (!user) {
         });
 
         const paymentElement = elements.create('payment');
+        
+        // Save global references
+        currentStripe = stripe;
+        currentElements = elements;
+        currentPaymentElement = paymentElement;
         
         // Get cart currency
         const cart = getCartFromStorage();
@@ -368,23 +389,29 @@ if (!user) {
           throw new Error('Submit button not found');
         }
 
+        // Get reference to visible button (used in callbacks)
+        const submitBtn = submitButton as HTMLButtonElement;
+
         // Disable button until Payment Element is ready
-        (submitButton as HTMLButtonElement).disabled = true;
-        (submitButton as HTMLButtonElement).textContent = 'Loading payment form...';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Loading payment form...';
 
         console.log('📦 Mounting Payment Element...');
         
-        // Variable to track if element is mounted
-        let isElementMounted = false;
+        // Reset mount state
+        isElementMounted = false;
         
-        paymentElement.mount(paymentElementDiv);
+        // Wait for next frame to ensure DOM is ready
+        requestAnimationFrame(() => {
+          paymentElement.mount(paymentElementDiv);
+        });
         
         // Wait for Payment Element to be completely ready
         paymentElement.on('ready', () => {
           console.log('✅ Payment Element ready and mounted');
           isElementMounted = true;
-          (submitButton as HTMLButtonElement).disabled = false;
-          (submitButton as HTMLButtonElement).textContent = `Pay ${formatPrice(amount, currency)}`;
+          submitBtn.disabled = false;
+          submitBtn.textContent = `Pay ${formatPrice(amount, currency)}`;
         });
 
         // Handle Payment Element errors
@@ -404,7 +431,21 @@ if (!user) {
           }
         });
 
-        submitButton.addEventListener('click', async () => {
+        // Handle Payment Element load error (e.g. 400 from Stripe - domain not registered)
+        paymentElement.on('loaderror', (event: any) => {
+          console.error('❌ Error loading Payment Element:', event);
+          isElementMounted = false;
+          if (messageDiv) {
+            messageDiv.innerHTML = 'Could not load payment form. If you\'re in production, add your domain in Stripe: <a href="https://dashboard.stripe.com/settings/payment_method_domains" target="_blank" rel="noopener" class="underline">Domain settings</a>.';
+            messageDiv.className = 'text-red-600 text-sm mt-2 p-2 bg-red-50 rounded';
+            messageDiv.classList.remove('hidden');
+          }
+          submitBtn.disabled = false;
+          submitBtn.textContent = `Retry - Pay ${formatPrice(amount, currency)}`;
+        });
+        
+        // Add listener to button
+        submitBtn.addEventListener('click', async () => {
           // Verify element is mounted before confirming
           if (!isElementMounted) {
             console.warn('⚠️ Payment Element not ready yet');
@@ -416,9 +457,20 @@ if (!user) {
             return;
           }
 
+          // Verify that Payment Element is really mounted
+          if (!currentPaymentElement || !currentStripe || !currentElements) {
+            console.error('❌ Payment Element is not available');
+            if (messageDiv) {
+              messageDiv.textContent = 'Error: Payment form is not ready. Please reload the page.';
+              messageDiv.className = 'text-red-600 text-sm mt-2 p-2 bg-red-50 rounded';
+              messageDiv.classList.remove('hidden');
+            }
+            return;
+          }
+
           console.log('🔄 Processing payment...');
-          (submitButton as HTMLButtonElement).disabled = true;
-          (submitButton as HTMLButtonElement).textContent = 'Processing...';
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Processing...';
           
           // Clear previous messages
           if (messageDiv) {
@@ -426,8 +478,8 @@ if (!user) {
           }
           
           try {
-            const { error } = await stripe.confirmPayment({
-              elements,
+            const { error } = await currentStripe.confirmPayment({
+              elements: currentElements,
               confirmParams: {
                 return_url: `${window.location.origin}/purchase-success`,
               },
@@ -440,8 +492,8 @@ if (!user) {
                 messageDiv.className = 'text-red-600 text-sm mt-2 p-2 bg-red-50 rounded';
                 messageDiv.classList.remove('hidden');
               }
-              (submitButton as HTMLButtonElement).disabled = false;
-              (submitButton as HTMLButtonElement).textContent = `Pay ${formatPrice(amount, currency)}`;
+              submitBtn.disabled = false;
+              submitBtn.textContent = `Pay ${formatPrice(amount, currency)}`;
             } else {
               console.log('✅ Payment processed successfully');
               if (messageDiv) {
@@ -457,8 +509,8 @@ if (!user) {
               messageDiv.className = 'text-red-600 text-sm mt-2 p-2 bg-red-50 rounded';
               messageDiv.classList.remove('hidden');
             }
-            (submitButton as HTMLButtonElement).disabled = false;
-            (submitButton as HTMLButtonElement).textContent = `Pay ${formatPrice(amount, currency)}`;
+            submitBtn.disabled = false;
+            submitBtn.textContent = `Pay ${formatPrice(amount, currency)}`;
           }
         });
 
@@ -507,6 +559,9 @@ if (!user) {
         return cart;
       }
 
+      // Get cart currency (before map to use inside)
+      const cartCurrency = cart.currency || 'USD';
+
       // Render items
       orderItemsList.innerHTML = cart.items.map(item => `
         <li class="flex px-4 py-6 sm:px-6">
@@ -539,9 +594,6 @@ if (!user) {
         </li>
       `).join('');
 
-      // Get cart currency
-      const cartCurrency = cart.currency || 'USD';
-      
       // Calculate totals
       const subtotal = cart.total;
       const discountAmount = appliedDiscount?.amount || 0;
@@ -627,7 +679,8 @@ if (!user) {
             discountCodeId: data.discountCode.id,
             amount: data.discountAmount,
           };
-          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(data.discountAmount, cartCurrency)}`;
+          const currency = cart.currency || 'USD';
+          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(data.discountAmount, currency)}`;
           messageDiv.className = 'mt-2 text-sm text-green-600';
           messageDiv.classList.remove('hidden');
           input.disabled = true;
@@ -691,8 +744,14 @@ if (!user) {
         });
       }
 
+      // Control to prevent concurrent calls and debounce
+      let loadPaymentFormTimeout: ReturnType<typeof setTimeout> | null = null;
+      let isLoadingPaymentForm = false;
+
       // Function to try loading payment form
       const loadPaymentForm = async () => {
+        if (isLoadingPaymentForm) return;
+        
         try {
           // Get form data
           const email = (document.getElementById('email-address') as HTMLInputElement)?.value;
@@ -708,6 +767,8 @@ if (!user) {
           if (!email || !firstName || !lastName || !address || !city || !state || !postalCode || !country) {
             return;
           }
+
+          isLoadingPaymentForm = true;
 
           // Show loading
           paymentFormContainer.innerHTML = '<div class="flex items-center justify-center p-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>';
@@ -729,7 +790,36 @@ if (!user) {
           const cart = getCartFromStorage();
           
           if (cart.items.length === 0) {
+            isLoadingPaymentForm = false;
             paymentFormContainer.innerHTML = '<p class="text-red-600">Your cart is empty. Please add products before continuing.</p>';
+            return;
+          }
+
+          // Calculate totals to validate minimum
+          const cartCurrency = cart.currency || 'USD';
+          const subtotal = cart.total;
+          const discountAmount = appliedDiscount?.amount || 0;
+          const subtotalAfterDiscount = subtotal - discountAmount;
+          const shipping = 5.00;
+          const tax = subtotalAfterDiscount * 0.16;
+          const total = subtotalAfterDiscount + shipping + tax;
+
+          // Validate minimum price (Stripe requires minimum $0.50 USD or $10 MXN)
+          const minAmount = cartCurrency === 'USD' ? 0.50 : 10.00;
+          if (total < minAmount) {
+            isLoadingPaymentForm = false;
+            paymentFormContainer.innerHTML = `
+              <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p class="text-yellow-800 font-medium">Minimum amount required</p>
+                <p class="text-yellow-700 text-sm mt-1">
+                  The minimum purchase amount is ${formatPrice(minAmount, cartCurrency)}. 
+                  Your current total is ${formatPrice(total, cartCurrency)}.
+                </p>
+                <p class="text-yellow-600 text-xs mt-2">
+                  Please add more products to your cart to continue with the purchase.
+                </p>
+              </div>
+            `;
             return;
           }
 
@@ -768,13 +858,11 @@ if (!user) {
             throw new Error('Client secret not received from server');
           }
 
-          // Load Stripe with real client_secret
-          const cartForCurrency = getCartFromStorage();
-          const cartCurrency = cartForCurrency.currency || 'USD';
+          // Load Stripe with real client_secret (cartCurrency already defined above)
           await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, cartCurrency);
-
         } catch (error) {
           console.error('❌ Complete error:', error);
+          isLoadingPaymentForm = false;
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           paymentFormContainer.innerHTML = `
             <div class="p-4 bg-red-50 border border-red-200 rounded-md">
@@ -783,18 +871,38 @@ if (!user) {
               <p class="text-red-600 text-xs mt-2">Please check the browser console (F12) for more details.</p>
             </div>
           `;
+        } finally {
+          isLoadingPaymentForm = false;
         }
       };
 
-      // Add listeners to all required fields
+      // Debounced function to load payment form
+      const loadPaymentFormDebounced = () => {
+        if (loadPaymentFormTimeout) clearTimeout(loadPaymentFormTimeout);
+        loadPaymentFormTimeout = setTimeout(loadPaymentForm, 400);
+      };
+
+      // Add listeners to all required fields (with debounce)
       const requiredFields = ['address', 'city', 'state', 'postal-code'];
       requiredFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) {
-          field.addEventListener('blur', loadPaymentForm);
-          field.addEventListener('change', loadPaymentForm);
+          field.addEventListener('blur', loadPaymentFormDebounced);
+          field.addEventListener('change', loadPaymentFormDebounced);
         }
       });
+
+      // Load form on init if fields are already filled (e.g. autofill)
+      setTimeout(() => {
+        const email = (document.getElementById('email-address') as HTMLInputElement)?.value;
+        const address = (document.getElementById('address') as HTMLInputElement)?.value;
+        const city = (document.getElementById('city') as HTMLInputElement)?.value;
+        const state = (document.getElementById('state') as HTMLInputElement)?.value;
+        const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value;
+        if (email && address && city && state && postalCode) {
+          loadPaymentForm();
+        }
+      }, 800);
     });
   </script>
 </WebsiteLayout>

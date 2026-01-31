@@ -226,10 +226,21 @@ stripe login
 stripe listen --forward-to localhost:4321/api/stripe-webhook
 ```
 
+## 🌐 Dominios para Payment Element (Producción)
+
+**Importante:** Para que el formulario de pago de Stripe funcione en producción, debes registrar tu dominio en Stripe:
+
+1. Ir a [Payment method domains](https://dashboard.stripe.com/settings/payment_method_domains)
+2. Clic en **Add a new domain**
+3. Agregar tu dominio (ej: `srv1171123.hstgr.cloud` o `starfilters.mx`)
+
+Sin esto, el Payment Element mostrará un área vacía y dará error 400 en la petición `sessions`.
+
 ## 📚 Recursos Útiles
 
 - [Stripe Payment Intents Docs](https://stripe.com/docs/payments/payment-intents)
 - [Stripe Webhooks Guide](https://stripe.com/docs/webhooks)
+- [Stripe Payment Method Domains](https://dashboard.stripe.com/settings/payment_method_domains)
 - [Testing Stripe Locally](https://stripe.com/docs/stripe-cli)
 
 ## ⚡ Prioridades
