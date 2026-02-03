@@ -8,8 +8,13 @@ export const GET: APIRoute = async ({ request }) => {
 
     // 1. Verificar si existe la categoría
     const categories = await query(
-      'SELECT id, name, status FROM filter_categories WHERE id = ?',
+      'SELECT id, name, slug, status FROM filter_categories WHERE id = ?',
       [categoryId]
+    ) as any[];
+
+    // 1.1 Listar todas las categorías con sus slugs
+    const allCategories = await query(
+      'SELECT id, name, slug, status FROM filter_categories ORDER BY id'
     ) as any[];
 
     // 2. Contar variantes para esta categoría
@@ -38,6 +43,7 @@ export const GET: APIRoute = async ({ request }) => {
       categoryId,
       category: categories[0] || null,
       categoryExists: categories.length > 0,
+      allCategories: allCategories, // Todas las categorías con sus slugs
       variantsForCategory: variants.length,
       variants: variants.slice(0, 5), // Solo primeras 5
       productsForCategory: products.length,
