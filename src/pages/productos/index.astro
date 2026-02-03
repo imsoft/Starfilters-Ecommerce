@@ -59,6 +59,17 @@ if (filterCategoryIdParam) {
   }
 }
 
+// Obtener tasa de cambio actual (necesario antes de procesar productos)
+const exchangeRate = await getExchangeRate();
+
+// Función para convertir precio USD a MXN
+const convertPriceToMXN = (price: number, currency: string): number => {
+  if (currency === 'USD') {
+    return price * exchangeRate;
+  }
+  return price;
+};
+
 // Obtener productos desde la base de datos
 let products: Array<{
   id: number;
@@ -158,17 +169,6 @@ try {
   console.error('❌ Error en página /productos:', error);
   console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack available');
 }
-
-// Obtener tasa de cambio actual
-const exchangeRate = await getExchangeRate();
-
-// Función para convertir precio USD a MXN
-const convertPriceToMXN = (price: number, currency: string): number => {
-  if (currency === 'USD') {
-    return price * exchangeRate;
-  }
-  return price;
-};
 
 // Función para formatear precio según idioma
 const formatPrice = (price: number, currency: 'MXN' | 'USD' = 'MXN'): string => {
