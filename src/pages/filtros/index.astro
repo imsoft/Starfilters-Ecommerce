@@ -108,7 +108,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
           return (
             <a
-              href={`${productsRoute}?filter_category_id=${category.id}`}
+              href={`${productsRoute}?category=${category.slug}`}
               class="group category-card relative flex flex-col cursor-pointer transition-transform hover:scale-105"
               data-name={category.name.toLowerCase()}
             >

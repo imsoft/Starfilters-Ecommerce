@@ -3,7 +3,7 @@ import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import { getActiveProducts, getProductsByFilterCategory, getProductsByFilterCategory as getVariantsByCategory } from "@/lib/product-service";
-import { getCategoryById } from "@/lib/filter-category-service";
+import { getCategoryById, getCategoryBySlug } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { getProductImages } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -17,13 +17,19 @@ export const prerender = false;
 // Detectar idioma actual
 const lang = getLangFromUrl(Astro.url);
 
-// Obtener parámetro de filter_category_id de la URL
+// Obtener parámetros de la URL (soporta filter_category_id o category slug)
 const filterCategoryIdParam = Astro.url.searchParams.get('filter_category_id');
-const filterCategoryId = filterCategoryIdParam ? parseInt(filterCategoryIdParam) : null;
+const categorySlugParam = Astro.url.searchParams.get('category');
+
+// Determinar el ID de categoría (por ID directo o buscando por slug)
+let filterCategoryId: number | null = null;
 
 // Obtener información de la categoría si existe
 let categoryInfo: { id: number; name: string; description?: string } | null = null;
-if (filterCategoryId) {
+
+if (filterCategoryIdParam) {
+  // Buscar por ID
+  filterCategoryId = parseInt(filterCategoryIdParam);
   try {
     const category = await getCategoryById(filterCategoryId);
     if (category) {
@@ -34,7 +40,22 @@ if (filterCategoryId) {
       };
     }
   } catch (error) {
-    console.error('❌ Error obteniendo información de categoría:', error);
+    console.error('❌ Error obteniendo información de categoría por ID:', error);
+  }
+} else if (categorySlugParam) {
+  // Buscar por slug
+  try {
+    const category = await getCategoryBySlug(categorySlugParam);
+    if (category) {
+      filterCategoryId = category.id;
+      categoryInfo = {
+        id: category.id,
+        name: getCategoryName(category, lang),
+        description: getCategoryDescription(category, lang)
+      };
+    }
+  } catch (error) {
+    console.error('❌ Error obteniendo información de categoría por slug:', error);
   }
 }
 
