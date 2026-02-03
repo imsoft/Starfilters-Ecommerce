@@ -30,11 +30,79 @@ export const getAllProducts = async (): Promise<Product[]> => {
 
 /**
  * Obtener un producto por su UUID
+ * También soporta UUIDs de variantes en formato "variant-{id}"
  */
 export const getProductByUuid = async (uuid: string): Promise<Product | null> => {
   try {
     console.log('🔍 Obteniendo producto por UUID:', uuid);
 
+    // Verificar si es un UUID de variante
+    if (uuid.startsWith('variant-')) {
+      const variantId = parseInt(uuid.replace('variant-', ''));
+      if (isNaN(variantId)) {
+        console.log('❌ ID de variante inválido');
+        return null;
+      }
+
+      console.log('🔍 Buscando variante con ID:', variantId);
+      const variantsAsProducts = await query(
+        `SELECT
+          fcv.id as id,
+          CONCAT('variant-', fcv.id) as uuid,
+          fcv.category_id as filter_category_id,
+          NULL as bind_id,
+          fcv.bind_code as bind_code,
+          NULL as sku,
+          fcv.nominal_size as nominal_size,
+          fcv.real_size as real_size,
+          CONCAT(fc.name, ' - ', fcv.nominal_size) as name,
+          CONCAT(COALESCE(fc.name_en, fc.name), ' - ', fcv.nominal_size) as name_en,
+          fc.description as description,
+          fc.description_en as description_en,
+          fcv.price as price,
+          COALESCE(fcv.currency, 'MXN') as currency,
+          fcv.price_usd as price_usd,
+          fc.name as category,
+          fc.name_en as category_en,
+          fcv.stock as stock,
+          IF(fcv.is_active = 1, 'active', 'inactive') as status,
+          NULL as tags,
+          NULL as dimensions,
+          NULL as weight,
+          NULL as material,
+          NULL as warranty,
+          fc.main_image as image_url,
+          NULL as efficiency,
+          NULL as efficiency_en,
+          NULL as efficiency_class,
+          NULL as characteristics,
+          NULL as characteristics_en,
+          NULL as frame_material,
+          NULL as max_temperature,
+          NULL as typical_installation,
+          NULL as typical_installation_en,
+          NULL as applications,
+          NULL as applications_en,
+          NULL as benefits,
+          NULL as benefits_en,
+          fcv.created_at as created_at,
+          fcv.updated_at as updated_at
+        FROM filter_category_variants fcv
+        INNER JOIN filter_categories fc ON fcv.category_id = fc.id
+        WHERE fcv.id = ?`,
+        [variantId]
+      ) as Product[];
+
+      if (variantsAsProducts.length === 0) {
+        console.log('❌ Variante no encontrada');
+        return null;
+      }
+
+      console.log('✅ Variante obtenida como producto');
+      return variantsAsProducts[0];
+    }
+
+    // Buscar producto normal por UUID
     const products = await query(
       'SELECT * FROM products WHERE uuid = ?',
       [uuid]
@@ -366,18 +434,77 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
 
 /**
  * Obtener productos por filter_category_id
+ * Si no hay productos directos, busca variantes de la categoría y las convierte en productos
  */
 export const getProductsByFilterCategory = async (filterCategoryId: number): Promise<Product[]> => {
   try {
     console.log('🔍 Obteniendo productos de filter_category_id:', filterCategoryId);
 
+    // Primero buscar productos directos con filter_category_id
     const products = await query(
       'SELECT * FROM products WHERE filter_category_id = ? AND status = "active" ORDER BY created_at DESC',
       [filterCategoryId]
     ) as Product[];
 
-    console.log(`✅ ${products.length} productos encontrados para categoría ${filterCategoryId}`);
-    return products;
+    if (products.length > 0) {
+      console.log(`✅ ${products.length} productos encontrados para categoría ${filterCategoryId}`);
+      return products;
+    }
+
+    // Si no hay productos, buscar variantes de la categoría y convertirlas en productos
+    console.log('⚠️ No hay productos directos, buscando variantes de categoría...');
+
+    const variantsAsProducts = await query(
+      `SELECT
+        fcv.id as id,
+        CONCAT('variant-', fcv.id) as uuid,
+        fcv.category_id as filter_category_id,
+        NULL as bind_id,
+        fcv.bind_code as bind_code,
+        NULL as sku,
+        fcv.nominal_size as nominal_size,
+        fcv.real_size as real_size,
+        CONCAT(fc.name, ' - ', fcv.nominal_size) as name,
+        CONCAT(COALESCE(fc.name_en, fc.name), ' - ', fcv.nominal_size) as name_en,
+        fc.description as description,
+        fc.description_en as description_en,
+        fcv.price as price,
+        COALESCE(fcv.currency, 'MXN') as currency,
+        fcv.price_usd as price_usd,
+        fc.name as category,
+        fc.name_en as category_en,
+        fcv.stock as stock,
+        IF(fcv.is_active = 1, 'active', 'inactive') as status,
+        NULL as tags,
+        NULL as dimensions,
+        NULL as weight,
+        NULL as material,
+        NULL as warranty,
+        fc.main_image as image_url,
+        NULL as efficiency,
+        NULL as efficiency_en,
+        NULL as efficiency_class,
+        NULL as characteristics,
+        NULL as characteristics_en,
+        NULL as frame_material,
+        NULL as max_temperature,
+        NULL as typical_installation,
+        NULL as typical_installation_en,
+        NULL as applications,
+        NULL as applications_en,
+        NULL as benefits,
+        NULL as benefits_en,
+        fcv.created_at as created_at,
+        fcv.updated_at as updated_at
+      FROM filter_category_variants fcv
+      INNER JOIN filter_categories fc ON fcv.category_id = fc.id
+      WHERE fcv.category_id = ? AND fcv.is_active = 1
+      ORDER BY fcv.bind_code`,
+      [filterCategoryId]
+    ) as Product[];
+
+    console.log(`✅ ${variantsAsProducts.length} variantes encontradas y convertidas a productos para categoría ${filterCategoryId}`);
+    return variantsAsProducts;
   } catch (error) {
     console.error('❌ Error obteniendo productos por filter_category_id:', error);
     return [];

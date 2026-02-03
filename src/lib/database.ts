@@ -174,6 +174,48 @@ export const getProductById = async (id: number): Promise<Product | null> => {
 };
 
 export const getProductByUuid = async (uuid: string): Promise<Product | null> => {
+  // Verificar si es un UUID de variante
+  if (uuid.startsWith('variant-')) {
+    const variantId = parseInt(uuid.replace('variant-', ''));
+    if (isNaN(variantId)) {
+      return null;
+    }
+
+    const variantSql = `SELECT
+      fcv.id as id,
+      CONCAT('variant-', fcv.id) as uuid,
+      fcv.category_id as filter_category_id,
+      NULL as bind_id,
+      fcv.bind_code as bind_code,
+      NULL as sku,
+      fcv.nominal_size as nominal_size,
+      fcv.real_size as real_size,
+      CONCAT(fc.name, ' - ', fcv.nominal_size) as name,
+      CONCAT(COALESCE(fc.name_en, fc.name), ' - ', fcv.nominal_size) as name_en,
+      fc.description as description,
+      fc.description_en as description_en,
+      fcv.price as price,
+      COALESCE(fcv.currency, 'MXN') as currency,
+      fcv.price_usd as price_usd,
+      fc.name as category,
+      fc.name_en as category_en,
+      fcv.stock as stock,
+      IF(fcv.is_active = 1, 'active', 'inactive') as status,
+      NULL as tags,
+      NULL as dimensions,
+      NULL as weight,
+      NULL as material,
+      NULL as warranty,
+      fc.main_image as image_url,
+      fcv.created_at as created_at,
+      fcv.updated_at as updated_at
+    FROM filter_category_variants fcv
+    INNER JOIN filter_categories fc ON fcv.category_id = fc.id
+    WHERE fcv.id = ?`;
+    const variantResult = await query(variantSql, [variantId]) as Product[];
+    return variantResult.length > 0 ? variantResult[0] : null;
+  }
+
   const sql = 'SELECT * FROM products WHERE uuid = ?';
   const result = await query(sql, [uuid]) as Product[];
   return result.length > 0 ? result[0] : null;
