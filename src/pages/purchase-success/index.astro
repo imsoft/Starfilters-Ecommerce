@@ -26,17 +26,17 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
   <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-16">
     <div class="text-center">
       <!-- Icono de éxito -->
-      <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+      <div id="success-icon" class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
         <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
       </div>
 
-      <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-4">
+      <h1 id="success-title" class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-4">
         ¡Compra Exitosa!
       </h1>
-      
-      <p class="text-lg text-muted-foreground mb-8">
+
+      <p id="success-description" class="text-lg text-muted-foreground mb-8">
         Tu pedido ha sido procesado correctamente. Recibirás un correo de confirmación con los detalles de tu compra.
       </p>
 
@@ -65,7 +65,7 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
         </div>
       </div>
 
-      <div class="mt-12 pt-8 border-t border-border">
+      <div id="next-steps" class="mt-12 pt-8 border-t border-border">
         <h2 class="text-lg font-semibold text-foreground mb-4">¿Qué sigue?</h2>
         <ul class="text-left space-y-2 text-sm text-muted-foreground max-w-md mx-auto">
           <li class="flex items-start">
@@ -93,6 +93,8 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
 </WebsiteLayout>
 
 <script>
+  import { loadStripe } from '@stripe/stripe-js';
+
   // Limpiar el carrito en el cliente
   if (typeof window !== 'undefined') {
     try {
@@ -101,6 +103,66 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
       console.log('✅ Carrito limpiado después de compra exitosa');
     } catch (error) {
       console.error('Error limpiando carrito:', error);
+    }
+
+    // Verificar estado del pago para transferencias bancarias
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientSecret = urlParams.get('payment_intent_client_secret');
+
+    if (clientSecret) {
+      try {
+        const stripe = await loadStripe(import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+        if (stripe) {
+          const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+
+          if (paymentIntent?.status === 'processing' || paymentIntent?.status === 'requires_action') {
+            // Mostrar mensaje de pago pendiente (transferencia bancaria)
+            const titleEl = document.getElementById('success-title');
+            const descEl = document.getElementById('success-description');
+            const iconContainer = document.getElementById('success-icon');
+            const nextSteps = document.getElementById('next-steps');
+
+            if (titleEl) {
+              titleEl.textContent = 'Transferencia bancaria pendiente';
+            }
+            if (descEl) {
+              descEl.textContent = 'Hemos recibido tu pedido. Realiza la transferencia bancaria con los datos que te fueron proporcionados. Una vez que recibamos el pago, procesaremos tu pedido y te enviaremos un correo de confirmación.';
+            }
+            if (iconContainer) {
+              iconContainer.classList.remove('bg-green-100');
+              iconContainer.classList.add('bg-yellow-100');
+              iconContainer.innerHTML = '<svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            }
+            if (nextSteps) {
+              nextSteps.innerHTML = `
+                <h2 class="text-lg font-semibold text-foreground mb-4">Instrucciones</h2>
+                <ul class="text-left space-y-2 text-sm text-muted-foreground max-w-md mx-auto">
+                  <li class="flex items-start">
+                    <svg class="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Realiza la transferencia bancaria con los datos proporcionados por Stripe</span>
+                  </li>
+                  <li class="flex items-start">
+                    <svg class="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Una vez confirmado el pago, recibirás un correo de confirmación</span>
+                  </li>
+                  <li class="flex items-start">
+                    <svg class="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Puedes revisar el estado de tu pedido en la sección "Mis Pedidos"</span>
+                  </li>
+                </ul>
+              `;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error verificando estado del pago:', error);
+      }
     }
   }
 </script>

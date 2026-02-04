@@ -87,9 +87,14 @@ const PaymentForm: React.FC<StripePaymentFormProps> = ({
           setMessage('Ocurrió un error inesperado.');
         }
         onError(error.message || 'Error en el pago');
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        setMessage('¡Pago exitoso!');
-        onSuccess(paymentIntent);
+      } else if (paymentIntent) {
+        if (paymentIntent.status === 'succeeded') {
+          setMessage('¡Pago exitoso!');
+          onSuccess(paymentIntent);
+        } else if (paymentIntent.status === 'processing') {
+          setMessage('Tu pago está siendo procesado. Recibirás una confirmación cuando se complete la transferencia.');
+          onSuccess(paymentIntent);
+        }
       }
     } catch (err) {
       setMessage('Ocurrió un error inesperado.');
@@ -104,7 +109,7 @@ const PaymentForm: React.FC<StripePaymentFormProps> = ({
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">
-            Información de la tarjeta
+            Método de pago
           </label>
           <div className="p-4 border border-border rounded-md bg-background">
             <PaymentElement

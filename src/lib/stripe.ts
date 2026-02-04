@@ -48,12 +48,20 @@ export const createPaymentIntent = async (data: PaymentIntentData): Promise<Crea
     const amountInCents = Math.round(data.amount * 100);
     console.log(`💳 Creando Payment Intent: ${amountInCents} centavos en ${data.currency || 'mxn'}`);
 
+    const currency = data.currency || 'mxn';
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
-      currency: data.currency || 'mxn',
+      currency,
       metadata: data.metadata || {},
-      automatic_payment_methods: {
-        enabled: true,
+      payment_method_types: ['card', 'customer_balance'],
+      payment_method_options: {
+        customer_balance: {
+          funding_type: 'bank_transfer',
+          bank_transfer: {
+            type: 'mx_bank_transfer',
+          },
+        },
       },
       ...(data.customer_email && { receipt_email: data.customer_email }),
     });
