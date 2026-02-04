@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx';
 
 // Template para Productos
 const productosHeaders = [
+  'sku',
   'nombre',
   'nombre_en',
   'descripcion',
@@ -19,16 +20,16 @@ const productosHeaders = [
   'categoria_en',
   'categoria_filtro',
   'stock',
-  'status',
-  'tags',
-  'tamaño_nominal',
-  'tamaño_real',
+  'estado',
+  'etiquetas',
+  'medida_nominal',
+  'medida_real',
   'dimensiones',
   'peso',
   'material',
   'garantia',
   'bind_id',
-  'bind_code',
+  'id_bind',
   'eficiencia',
   'eficiencia_en',
   'clase_eficiencia',
@@ -49,6 +50,7 @@ const productosHeaders = [
 const productosExample = [
   // Producto activo
   [
+    'SF-HEPA-H13-2424',
     'Filtro HEPA H13',
     'HEPA Filter H13',
     'Filtro HEPA de alta eficiencia para cuartos limpios',
@@ -88,6 +90,7 @@ const productosExample = [
   ],
   // Producto inactivo
   [
+    'SF-PRE-G4-2020',
     'Filtro Prefiltro G4',
     'Pre-filter G4',
     'Prefiltro de baja eficiencia para sistemas de ventilación',
@@ -134,7 +137,7 @@ const categoriasHeaders = [
   'descripcion',
   'descripcion_en',
   'imagen_principal',
-  'status',
+  'estado',
 ];
 
 const categoriasExample = [
