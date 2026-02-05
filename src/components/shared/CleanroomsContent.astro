@@ -19,10 +19,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 
     <section class="mt-20 grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-16">
       <div class="lg:pr-8">
-        <h2 class="text-2xl font-semibold tracking-tight text-pretty text-gray-900">
-          {t('cleanrooms.experience.title')}
-        </h2>
-        <p class="mt-6 text-base/7 text-gray-600">{t('cleanrooms.experience.p1')}</p>
+        <p class="text-base/7 text-gray-600">{t('cleanrooms.experience.p1')}</p>
         <p class="mt-8 text-base/7 text-gray-600">{t('cleanrooms.experience.p2')}</p>
         <p class="mt-8 text-base/7 text-gray-600">{t('cleanrooms.experience.p3')}</p>
         <p class="mt-8 text-base/7 text-gray-600 [&_a]:text-primary [&_a]:hover:text-primary/80 [&_a]:font-medium" set:html={t('cleanrooms.experience.p4')} />
