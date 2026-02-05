@@ -480,6 +480,10 @@ pm2 restart starfilters-app
 cd ~/starfilters-app && git pull origin main && pnpm install && pnpm build && pm2 restart starfilters-app
 ```
 
+mysql -u starfilters_user -p starfilters_ecommerce_db -e "ALTER TABLE filter_category_variants ADD COLUMN product_code VARCHAR(100) DEFAULT NULL AFTER bind_code;"
+
+
+
 ---
 
 ## 📊 COMANDOS ÚTILES

@@ -21,6 +21,7 @@ export interface Product {
   bind_id?: string | null;
   bind_code?: string | null;
   sku?: string | null;
+  product_code?: string | null;
   name: string;
   name_en?: string;
   description: string;
