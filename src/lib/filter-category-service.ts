@@ -39,6 +39,7 @@ export interface FilterCategoryVariant {
   id: number;
   category_id: number;
   bind_code: string;
+  product_code?: string;
   nominal_size: string;
   real_size: string;
   price: number;
@@ -426,11 +427,12 @@ export const addCategoryVariant = async (variantData: Partial<FilterCategoryVari
 
     const result = await query(
       `INSERT INTO filter_category_variants (
-        category_id, bind_code, nominal_size, real_size, price, currency, price_usd, stock, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        category_id, bind_code, product_code, nominal_size, real_size, price, currency, price_usd, stock, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         variantData.category_id,
         variantData.bind_code,
+        variantData.product_code || null,
         variantData.nominal_size,
         variantData.real_size,
         variantData.price,
@@ -458,10 +460,11 @@ export const updateCategoryVariant = async (id: number, variantData: Partial<Fil
 
     await query(
       `UPDATE filter_category_variants SET
-        bind_code = ?, nominal_size = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
+        bind_code = ?, product_code = ?, nominal_size = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
       WHERE id = ?`,
       [
         variantData.bind_code,
+        variantData.product_code || null,
         variantData.nominal_size,
         variantData.real_size,
         variantData.price,

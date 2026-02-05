@@ -58,7 +58,7 @@ if (Astro.request.method === "POST") {
       // Procesar tabla de tamaños
       const sizesJson = formData.get("product_sizes") as string;
       console.log('📦 JSON recibido del formulario (raw):', sizesJson);
-      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
+      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; product_code?: string}> = [];
       if (sizesJson) {
         try {
           const parsed = JSON.parse(sizesJson);
@@ -174,6 +174,7 @@ if (Astro.request.method === "POST") {
             const variantData = {
               category_id: filterCategoryId,
               bind_code: size.bind_code.trim(),
+              product_code: size.product_code?.trim() || null,
               nominal_size: size.nominal_size?.trim() || '',
               real_size: size.real_size?.trim() || '',
               price: size.price || 0,
@@ -290,7 +291,7 @@ function textToArray(text: string | null | undefined): string[] {
 
 // Preparar tamaños para la tabla
 // Cargar variantes de categoría si existe filter_category_id
-let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string}> = [];
+let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; product_code?: string}> = [];
 
 if (product.filter_category_id) {
   try {
@@ -306,7 +307,8 @@ if (product.filter_category_id) {
         real_size: v.real_size || '',
         price: v.price || 0,
         currency: (v.currency as 'MXN' | 'USD') || 'MXN',
-        bind_code: v.bind_code || ''
+        bind_code: v.bind_code || '',
+        product_code: v.product_code || ''
       }));
     } else {
       // Si no hay variantes de categoría, usar el producto actual como fallback
@@ -941,25 +943,27 @@ console.log('📦 Tamaños preparados:', productSizes.length);
                 const priceInput = row.querySelector('[data-field="price"]') as HTMLInputElement;
                 const currencySelect = row.querySelector('[data-field="currency"]') as HTMLSelectElement;
                 const bindCodeInput = row.querySelector('[data-field="bind_code"]') as HTMLInputElement;
-                
+                const productCodeInput = row.querySelector('[data-field="product_code"]') as HTMLInputElement;
+
                 if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
                   sizes.push({
                     nominal_size: nominalInput.value || '',
                     real_size: realInput.value || '',
                     price: parseFloat(priceInput.value) || 0,
                     currency: currencySelect.value || 'MXN',
-                    bind_code: bindCodeInput.value || ''
+                    bind_code: bindCodeInput.value || '',
+                    product_code: productCodeInput ? productCodeInput.value || '' : ''
                   });
                 }
               });
-              
+
               jsonInput.value = JSON.stringify(sizes);
               console.log('📦 JSON actualizado antes de enviar:', sizes.length, 'filas');
               console.log('📦 Contenido JSON:', jsonInput.value);
             }
           }
         });
-        
+
         saveButton.addEventListener('click', function(e) {
           console.log('🖱️ Click en Guardar Cambios');
           setTimeout(function() {
@@ -974,13 +978,13 @@ console.log('📦 Tamaños preparados:', productSizes.length);
   } else {
     var productForm = document.getElementById('product-form');
     var saveButton = document.getElementById('save-product-btn');
-    
+
     if (productForm && saveButton) {
       console.log('✅ Formulario y botón encontrados');
-      
+
       productForm.addEventListener('submit', function(e) {
         console.log('📝 Formulario enviándose...');
-        
+
         // Asegurar que el JSON de tamaños esté actualizado antes de enviar
         const sizesTable = document.querySelector('[data-sizes-table]');
         if (sizesTable) {
@@ -990,21 +994,23 @@ console.log('📦 Tamaños preparados:', productSizes.length);
             // Forzar actualización del JSON
             const rows = tbody.querySelectorAll('tr[data-row-index]');
             const sizes: any[] = [];
-            
+
             rows.forEach(function(row) {
               const nominalInput = row.querySelector('[data-field="nominal_size"]') as HTMLInputElement;
               const realInput = row.querySelector('[data-field="real_size"]') as HTMLInputElement;
               const priceInput = row.querySelector('[data-field="price"]') as HTMLInputElement;
               const currencySelect = row.querySelector('[data-field="currency"]') as HTMLSelectElement;
               const bindCodeInput = row.querySelector('[data-field="bind_code"]') as HTMLInputElement;
-              
+              const productCodeInput = row.querySelector('[data-field="product_code"]') as HTMLInputElement;
+
               if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
                 sizes.push({
                   nominal_size: nominalInput.value || '',
                   real_size: realInput.value || '',
                   price: parseFloat(priceInput.value) || 0,
                   currency: currencySelect.value || 'MXN',
-                  bind_code: bindCodeInput.value || ''
+                  bind_code: bindCodeInput.value || '',
+                  product_code: productCodeInput ? productCodeInput.value || '' : ''
                 });
               }
             });
