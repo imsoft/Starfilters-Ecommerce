@@ -131,7 +131,7 @@ export const ui = {
     'about.mission.title': 'Nuestra Misión',
     'about.mission.description': 'Proteger procesos de manufactura a exposición de partículas y contaminantes para asegurar productos seguros, de alta calidad y salvaguardar la salud de los usuarios finales.',
     'about.vision.title': 'Nuestra Visión',
-    'about.vision.description': 'Ser el líder en cuartos limpios y control de partículas',
+    'about.vision.description': 'Ser el líder en cuartos limpios y control de partículas.',
     'about.values.title': 'Nuestros Valores',
     'about.values.quality.title': 'Calidad Certificada',
     'about.values.quality.description': 'Cumplimos y superamos los estándares internacionales más exigentes, garantizando productos y servicios certificados.',
