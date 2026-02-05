@@ -104,6 +104,14 @@ export const ui = {
 
     // Logo Section
     'logoSection.title': 'Ya Confiaron en Nosotros',
+
+    // Industries that benefit
+    'industriesBenefit.title': 'Algunas industrias que se benefician de nuestros cuartos limpios',
+    'industriesBenefit.pharma': 'Farmacéutica y Biotecnología',
+    'industriesBenefit.medical': 'Dispositivos Médicos',
+    'industriesBenefit.electronics': 'Electrónica y Óptica',
+    'industriesBenefit.food': 'Alimentos, cosméticos y química',
+    'industriesBenefit.automotive': 'Automotriz',
     
     // Certification Section
     'certificationSection.title': 'Star Filters Cuenta con las Certificaciones Más Exigentes de la Industria',
@@ -338,6 +346,14 @@ export const ui = {
 
     // Logo Section
     'logoSection.title': 'They Already Trusted Us',
+
+    // Industries that benefit
+    'industriesBenefit.title': 'Some industries that benefit from our cleanrooms',
+    'industriesBenefit.pharma': 'Pharmaceutical and Biotechnology',
+    'industriesBenefit.medical': 'Medical Devices',
+    'industriesBenefit.electronics': 'Electronics and Optics',
+    'industriesBenefit.food': 'Food, cosmetics and chemistry',
+    'industriesBenefit.automotive': 'Automotive',
     
     // Certification Section
     'certificationSection.title': 'Star Filters Has the Most Demanding Certifications in the Industry',

@@ -1,0 +1,45 @@
+---
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const industriesBase = '/images/home-page/industries-that-benefit';
+
+const industries = [
+  { image: `${industriesBase}/farmaceutica-y-biotecnología.png`, labelKey: 'industriesBenefit.pharma' },
+  { image: `${industriesBase}/dispositivos-medicos.png`, labelKey: 'industriesBenefit.medical' },
+  { image: `${industriesBase}/electronica-y-Optica.png`, labelKey: 'industriesBenefit.electronics' },
+  { image: `${industriesBase}/alimentos-cosmeticos-y-quimica.png`, labelKey: 'industriesBenefit.food' },
+  { image: `${industriesBase}/automotriz.png`, labelKey: 'industriesBenefit.automotive' },
+];
+---
+
+<div class="bg-background py-12 sm:py-16">
+  <div class="mx-auto max-w-7xl px-4 lg:px-6">
+    <h2 class="mx-auto max-w-3xl text-center text-4xl font-semibold tracking-tight text-balance text-primary sm:text-5xl">
+      {t('industriesBenefit.title')}
+    </h2>
+    <div class="mx-auto mt-10 max-w-5xl">
+      <div class="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-5 items-center justify-items-center">
+        {industries.map((item) => (
+          <div class="flex flex-col items-center justify-center gap-3 w-full">
+            <div class="flex items-center justify-center h-16 w-16 shrink-0">
+              <img
+                src={item.image}
+                alt=""
+                class="h-14 w-14 object-contain"
+                width="56"
+                height="56"
+                loading="lazy"
+              />
+            </div>
+            <p class="text-center text-sm font-medium text-foreground sm:text-base">
+              {t(item.labelKey)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
