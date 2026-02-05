@@ -204,6 +204,9 @@ interface SizeOption {
 const sizeOptions: SizeOption[] = [];
 const addedSizes = new Set<string>();
 
+// Flujo de aire: siempre definido para la plantilla (producto o variante)
+let currentProductAirFlow: string | null = (product as any).air_flow || null;
+
 // Si hay variantes de categoría, usarlas como fuente principal
 if (categoryVariants.length > 0) {
   // Primero, crear clave única para el producto actual
@@ -214,7 +217,7 @@ if (categoryVariants.length > 0) {
   const currentProductVariantForAirFlow = product.bind_code 
     ? categoryVariants.find(v => v.bind_code && v.bind_code.trim().toLowerCase() === product.bind_code!.trim().toLowerCase())
     : null;
-  const currentProductAirFlow = (product as any).air_flow || currentProductVariantForAirFlow?.air_flow || null;
+  currentProductAirFlow = (product as any).air_flow || currentProductVariantForAirFlow?.air_flow || null;
 
   for (const variant of categoryVariants) {
     // Crear clave única basada en bind_code o en nominal/real (normalizado)
@@ -309,8 +312,7 @@ if (categoryVariants.length > 0) {
     addedSizes.add(normalizedCurrentKey);
   }
 } else {
-  // Fallback: usar producto actual y productos relacionados
-  // Agregar producto actual primero
+  // Fallback: usar producto actual y productos relacionados (currentProductAirFlow ya definido arriba)
   const currentSizeKey = product.bind_code || 
                         `${product.nominal_size || ''}_${product.real_size || ''}`;
   if (currentSizeKey && !addedSizes.has(currentSizeKey)) {
@@ -323,6 +325,7 @@ if (categoryVariants.length > 0) {
       name: productName,
       image: mainImage,
       id: product.id,
+      airFlow: currentProductAirFlow,
       isCurrentProduct: true
     });
     addedSizes.add(currentSizeKey);
