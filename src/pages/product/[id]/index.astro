@@ -508,21 +508,19 @@ const benefitsList = parseListField(product.benefits);
               </div>
             )}
 
-            {/* Instalación típica y Flujo de aire */}
-            {(product.typical_installation || currentProductAirFlow) && (
-              <div class="border-t border-border pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {product.typical_installation && (
-                  <div>
-                    <dt class="font-medium text-foreground">Instalación Típica</dt>
-                    <dd class="mt-2 text-sm text-muted-foreground">{product.typical_installation}</dd>
-                  </div>
-                )}
-                {currentProductAirFlow && (
-                  <div>
-                    <dt class="font-medium text-foreground">Flujo de Aire</dt>
-                    <dd class="mt-2 text-sm text-muted-foreground" id="air-flow-display">{currentProductAirFlow}</dd>
-                  </div>
-                )}
+            {/* Instalación Típica (su propio cuadrito, abajo de Aplicaciones, columna izquierda) */}
+            {product.typical_installation && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">Instalación Típica</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">{product.typical_installation}</dd>
+              </div>
+            )}
+
+            {/* Flujo de Aire (su propio cuadrito, abajo de Beneficios, columna derecha, al lado de Instalación Típica) */}
+            {currentProductAirFlow && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">Flujo de Aire</dt>
+                <dd class="mt-2 text-sm text-muted-foreground" id="air-flow-display">{currentProductAirFlow}</dd>
               </div>
             )}
           </dl>
