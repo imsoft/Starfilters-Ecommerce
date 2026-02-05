@@ -8,52 +8,60 @@ const stats = [
   { 
     label: t('stats.projects'), 
     value: t('stats.projectsNumber')?.trim(),
-    icon: 'calendar' // años de experiencia
+    image: '/images/home-page/stadistics/anos-de-experiencia.png',
+    counterEnd: 40,
+    counterPrefix: '+',
+    counterSuffix: '',
+    counterFormat: 'number'
   },
   { 
     label: t('stats.experience'), 
     value: t('stats.experienceNumber')?.trim(),
-    icon: 'cleanroom' // cuartos limpios construidos - ventilación/ambiente controlado
+    image: '/images/home-page/stadistics/cuartos-limpios-construidos.png',
+    counterEnd: 20000,
+    counterPrefix: '+',
+    counterSuffix: ' m²',
+    counterFormat: 'comma'
   },
   { 
     label: t('stats.clients'), 
     value: t('stats.clientsNumber')?.trim(),
-    icon: 'air-filter' // filtros vendidos
+    image: '/images/home-page/stadistics/filtros-vendidos.png',
+    counterEnd: 1,
+    counterPrefix: '+',
+    counterSuffix: t('stats.clientsNumberSuffix') ?? ' millón',
+    counterFormat: 'number'
   },
 ];
 ---
 
-<div class="bg-background py-12 sm:py-16">
+<div id="stats-section" class="bg-background py-12 sm:py-16">
   <div class="mx-auto max-w-7xl px-4 lg:px-6">
     <dl class="grid grid-cols-1 gap-x-8 gap-y-16 text-center lg:grid-cols-3">
       {stats.map((stat) => (
         <div class="mx-auto flex max-w-xs flex-col gap-y-4">
           {stat.value ? (
             <>
-              <!-- Icono -->
-              <div class="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                {stat.icon === 'calendar' && (
-                  <svg class="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                )}
-                {stat.icon === 'cleanroom' && (
-                  <svg class="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 17.5a2.5 2.5 0 1 1-4 2.03V12" />
-                    <path d="M6 12H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                    <path d="M6 8h12" />
-                    <path d="M6.6 15.572A2 2 0 1 0 10 17v-5" />
-                  </svg>
-                )}
-                {stat.icon === 'air-filter' && (
-                  <svg class="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10.827 16.379a6.082 6.082 0 0 1-8.618-7.002l5.412 1.45a6.082 6.082 0 0 1 7.002-8.618l-1.45 5.412a6.082 6.082 0 0 1 8.618 7.002l-5.412-1.45a6.082 6.082 0 0 1-7.002 8.618l1.45-5.412Z" />
-                    <path d="M12 12v.01" />
-                  </svg>
-                )}
+              <!-- Imagen de la estadística -->
+              <div class="mx-auto mb-2 flex h-20 w-20 items-center justify-center">
+                <img 
+                  src={stat.image} 
+                  alt="" 
+                  class="h-16 w-16 object-contain"
+                  width="64"
+                  height="64"
+                  loading="lazy"
+                />
               </div>
-              <dd class="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
-                {stat.value}
+              <dd 
+                class="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl min-h-[2.5rem] sm:min-h-[3rem] flex items-center justify-center"
+                data-counter
+                data-end={stat.counterEnd}
+                data-prefix={stat.counterPrefix}
+                data-suffix={stat.counterSuffix}
+                data-format={stat.counterFormat}
+              >
+                {stat.counterPrefix}0{stat.counterSuffix}
               </dd>
               <dt class="text-base/7 text-muted-foreground font-medium">
                 {stat.label}
@@ -69,3 +77,57 @@ const stats = [
     </dl>
   </div>
 </div>
+
+<script>
+  function formatCounterValue(current: number, format: string): string {
+    if (format === 'comma') {
+      return current.toLocaleString('es-MX');
+    }
+    return String(current);
+  }
+
+  function initCounters() {
+    const counters = document.querySelectorAll<HTMLElement>('[data-counter]');
+    const duration = 2000; // 2 segundos
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Easing easeOutQuart para que termine suave
+      const eased = 1 - Math.pow(1 - progress, 4);
+
+      counters.forEach((el) => {
+        const end = Number(el.dataset.end);
+        const prefix = el.dataset.prefix ?? '';
+        const suffix = el.dataset.suffix ?? '';
+        const format = el.dataset.format ?? 'number';
+        const current = Math.round(eased * end);
+        const formatted = formatCounterValue(current, format);
+        el.textContent = `${prefix}${formatted}${suffix}`;
+      });
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          initCounters();
+          observer.disconnect();
+          break;
+        }
+      }
+    },
+    { threshold: 0.2, rootMargin: '0px 0px -50px 0px' }
+  );
+
+  const section = document.getElementById('stats-section');
+  if (section) observer.observe(section);
+</script>

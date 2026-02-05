@@ -37,6 +37,7 @@ export const ui = {
     'stats.experienceNumber': '+20,000 m²',
     'stats.clients': 'de filtros vendidos',
     'stats.clientsNumber': '+1 millón',
+    'stats.clientsNumberSuffix': ' millón',
 
     // Features
     'features.title': 'Tu Aliado en Control de Partículas',
@@ -270,6 +271,7 @@ export const ui = {
     'stats.experienceNumber': '+20,000 m²',
     'stats.clients': 'filters sold',
     'stats.clientsNumber': '+1 million',
+    'stats.clientsNumberSuffix': ' million',
 
     // Features
     'features.title': 'Your Partner in Particle Control',
