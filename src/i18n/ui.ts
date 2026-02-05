@@ -114,7 +114,7 @@ export const ui = {
     'industriesBenefit.automotive': 'Automotriz',
     
     // Certification Section
-    'certificationSection.title': 'Star Filters Cuenta con las Certificaciones Más Exigentes de la Industria',
+    'certificationSection.title': 'Star Filters Cuenta con las Certificaciones más Exigentes de la Industria',
     'certificationSection.description': 'Nuestras soluciones están respaldadas por certificaciones internacionales que avalan su calidad, desempeño y confiabilidad. En Star Filters no solo cumplimos la normativa: superamos los estándares para garantizar máxima seguridad y eficiencia en los entornos más exigentes.',
     'certificationSection.cta': 'Contáctanos',
     'certificationSection.ctaSecondary': 'Nuestros servicios',
