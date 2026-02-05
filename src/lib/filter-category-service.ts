@@ -426,27 +426,56 @@ export const addCategoryVariant = async (variantData: Partial<FilterCategoryVari
   try {
     console.log('✨ Agregando variante:', variantData.bind_code);
 
-    const result = await query(
-      `INSERT INTO filter_category_variants (
-        category_id, bind_code, product_code, air_flow, nominal_size, real_size, price, currency, price_usd, stock, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        variantData.category_id,
-        variantData.bind_code,
-        variantData.product_code || null,
-        variantData.air_flow || null,
-        variantData.nominal_size,
-        variantData.real_size,
-        variantData.price,
-        variantData.currency || 'MXN',
-        variantData.price_usd || null,
-        variantData.stock || 0,
-        variantData.is_active !== undefined ? variantData.is_active : true,
-      ]
-    ) as ResultSetHeader;
+    // Intentar con air_flow primero (si la columna existe)
+    try {
+      const result = await query(
+        `INSERT INTO filter_category_variants (
+          category_id, bind_code, product_code, air_flow, nominal_size, real_size, price, currency, price_usd, stock, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          variantData.category_id,
+          variantData.bind_code,
+          variantData.product_code || null,
+          variantData.air_flow || null,
+          variantData.nominal_size,
+          variantData.real_size,
+          variantData.price,
+          variantData.currency || 'MXN',
+          variantData.price_usd || null,
+          variantData.stock || 0,
+          variantData.is_active !== undefined ? variantData.is_active : true,
+        ]
+      ) as ResultSetHeader;
 
-    console.log('✅ Variante agregada con ID:', result.insertId);
-    return result.insertId;
+      console.log('✅ Variante agregada con ID:', result.insertId);
+      return result.insertId;
+    } catch (error: any) {
+      // Si falla porque la columna air_flow no existe, intentar sin ella
+      if (error.code === 'ER_BAD_FIELD_ERROR' && error.sqlMessage?.includes('air_flow')) {
+        console.log('⚠️ Columna air_flow no existe, agregando sin ella...');
+        const result = await query(
+          `INSERT INTO filter_category_variants (
+            category_id, bind_code, product_code, nominal_size, real_size, price, currency, price_usd, stock, is_active
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            variantData.category_id,
+            variantData.bind_code,
+            variantData.product_code || null,
+            variantData.nominal_size,
+            variantData.real_size,
+            variantData.price,
+            variantData.currency || 'MXN',
+            variantData.price_usd || null,
+            variantData.stock || 0,
+            variantData.is_active !== undefined ? variantData.is_active : true,
+          ]
+        ) as ResultSetHeader;
+
+        console.log('✅ Variante agregada con ID (sin air_flow):', result.insertId);
+        return result.insertId;
+      }
+      throw error; // Re-lanzar si es otro tipo de error
+    }
   } catch (error) {
     console.error('❌ Error agregando variante:', error);
     return null;
@@ -460,27 +489,54 @@ export const updateCategoryVariant = async (id: number, variantData: Partial<Fil
   try {
     console.log('📝 Actualizando variante ID:', id);
 
-    await query(
-      `UPDATE filter_category_variants SET
-        bind_code = ?, product_code = ?, air_flow = ?, nominal_size = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
-      WHERE id = ?`,
-      [
-        variantData.bind_code,
-        variantData.product_code || null,
-        variantData.air_flow || null,
-        variantData.nominal_size,
-        variantData.real_size,
-        variantData.price,
-        variantData.currency || 'MXN',
-        variantData.price_usd || null,
-        variantData.stock,
-        variantData.is_active,
-        id,
-      ]
-    );
-
-    console.log('✅ Variante actualizada');
-    return true;
+    // Intentar con air_flow primero (si la columna existe)
+    try {
+      await query(
+        `UPDATE filter_category_variants SET
+          bind_code = ?, product_code = ?, air_flow = ?, nominal_size = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
+        WHERE id = ?`,
+        [
+          variantData.bind_code,
+          variantData.product_code || null,
+          variantData.air_flow || null,
+          variantData.nominal_size,
+          variantData.real_size,
+          variantData.price,
+          variantData.currency || 'MXN',
+          variantData.price_usd || null,
+          variantData.stock,
+          variantData.is_active !== undefined ? variantData.is_active : true,
+          id,
+        ]
+      );
+      console.log('✅ Variante actualizada');
+      return true;
+    } catch (error: any) {
+      // Si falla porque la columna air_flow no existe, intentar sin ella
+      if (error.code === 'ER_BAD_FIELD_ERROR' && error.sqlMessage?.includes('air_flow')) {
+        console.log('⚠️ Columna air_flow no existe, actualizando sin ella...');
+        await query(
+          `UPDATE filter_category_variants SET
+            bind_code = ?, product_code = ?, nominal_size = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
+          WHERE id = ?`,
+          [
+            variantData.bind_code,
+            variantData.product_code || null,
+            variantData.nominal_size,
+            variantData.real_size,
+            variantData.price,
+            variantData.currency || 'MXN',
+            variantData.price_usd || null,
+            variantData.stock,
+            variantData.is_active !== undefined ? variantData.is_active : true,
+            id,
+          ]
+        );
+        console.log('✅ Variante actualizada (sin air_flow)');
+        return true;
+      }
+      throw error; // Re-lanzar si es otro tipo de error
+    }
   } catch (error) {
     console.error('❌ Error actualizando variante:', error);
     return false;
