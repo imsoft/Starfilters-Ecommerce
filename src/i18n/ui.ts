@@ -26,7 +26,7 @@ export const ui = {
     'hero.badge': 'Más de 40 años liderando la filtración industrial en México.',
     'hero.badgeLink': 'Conoce nuestra historia.',
     'hero.title': 'Líder en Cuartos Limpios en Norteamérica',
-    'hero.description': 'Con 40 años de experiencia, Star Filters es tu mejor opción en <a href="/cuartos-limpios" class="text-primary hover:text-primary/80 no-underline">cuartos limpios</a>, control de partículas y contaminantes en el aire. Hacemos desde el diseño, construcción, <a href="/servicios" class="text-primary hover:text-primary/80 no-underline">validación de tu cuarto limpio</a>. También fabricamos una alta gama de productos incluyendo filtros HEPA, para lograr la mayor pureza del aire. <a href="/filtros" class="text-primary hover:text-primary/80 no-underline">Explora nuestros productos</a>.',
+    'hero.description': 'Con 40 años de experiencia, Star Filters es tu mejor opción en <a href="/cuartos-limpios" class="text-primary hover:text-primary/80 no-underline">cuartos limpios</a>, control de partículas y contaminantes en el aire. Hacemos desde el diseño, construcción, <a href="/servicios" class="text-primary hover:text-primary/80 no-underline">validación de tu cuarto limpio</a>. También fabricamos una alta gama de productos incluyendo filtros HEPA, para lograr la mayor pureza del aire. Nuestros filtros.',
     'hero.cta': 'Contáctanos',
     'hero.ctaSecondary': 'Nuestros filtros',
 
@@ -106,7 +106,7 @@ export const ui = {
     'logoSection.title': 'Ya Confiaron en Nosotros',
 
     // Industries that benefit
-    'industriesBenefit.title': 'Algunas industrias que se benefician de nuestros cuartos limpios',
+    'industriesBenefit.title': 'Algunas Industrias Que Se Benefician De Nuestros Cuartos Limpios',
     'industriesBenefit.pharma': 'Farmacéutica y Biotecnología',
     'industriesBenefit.medical': 'Dispositivos Médicos',
     'industriesBenefit.electronics': 'Electrónica y Óptica',
@@ -268,7 +268,7 @@ export const ui = {
     'hero.badge': 'Over 40 years leading industrial filtration in Mexico.',
     'hero.badgeLink': 'Learn more.',
     'hero.title': 'Cleanroom Leader in North America',
-    'hero.description': 'With 40 years of experience, Star Filters is your best choice for <a href="/en/cleanrooms" class="text-primary hover:text-primary/80 no-underline">cleanrooms</a>, particle control, and air contaminants. We handle everything from design, construction, to <a href="/en/services" class="text-primary hover:text-primary/80 no-underline">cleanroom validation</a>. We also manufacture a wide range of products including HEPA filters, to achieve the highest air purity. <a href="/en/filters" class="text-primary hover:text-primary/80 no-underline">Explore our products</a>.',
+    'hero.description': 'With 40 years of experience, Star Filters is your best choice for <a href="/en/cleanrooms" class="text-primary hover:text-primary/80 no-underline">cleanrooms</a>, particle control, and air contaminants. We handle everything from design, construction, to <a href="/en/services" class="text-primary hover:text-primary/80 no-underline">cleanroom validation</a>. We also manufacture a wide range of products including HEPA filters, to achieve the highest air purity. Our filters.',
     'hero.cta': 'Contact us',
     'hero.ctaSecondary': 'Our filters',
 
@@ -348,7 +348,7 @@ export const ui = {
     'logoSection.title': 'They Already Trusted Us',
 
     // Industries that benefit
-    'industriesBenefit.title': 'Some industries that benefit from our cleanrooms',
+    'industriesBenefit.title': 'Some Industries That Benefit From Our Cleanrooms',
     'industriesBenefit.pharma': 'Pharmaceutical and Biotechnology',
     'industriesBenefit.medical': 'Medical Devices',
     'industriesBenefit.electronics': 'Electronics and Optics',
