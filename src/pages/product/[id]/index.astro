@@ -210,7 +210,12 @@ if (categoryVariants.length > 0) {
   const currentProductSizeKey = product.bind_code?.trim() || 
                                 `${(product.nominal_size || '').trim()}_${(product.real_size || '').trim()}`;
   let currentProductAdded = false;
-  
+  // Flujo de aire: del producto (tabla products) o de la variante que coincida
+  const currentProductVariantForAirFlow = product.bind_code 
+    ? categoryVariants.find(v => v.bind_code && v.bind_code.trim().toLowerCase() === product.bind_code!.trim().toLowerCase())
+    : null;
+  const currentProductAirFlow = (product as any).air_flow || currentProductVariantForAirFlow?.air_flow || null;
+
   for (const variant of categoryVariants) {
     // Crear clave única basada en bind_code o en nominal/real (normalizado)
     const variantSizeKey = (variant.bind_code?.trim() || '').toLowerCase() || 
@@ -286,12 +291,6 @@ if (categoryVariants.length > 0) {
     
     addedSizes.add(normalizedVariantKey);
   }
-  
-  // Obtener air_flow del producto actual desde categoryVariants
-  const currentProductVariant = product.bind_code 
-    ? categoryVariants.find(v => v.bind_code && v.bind_code.trim().toLowerCase() === product.bind_code.trim().toLowerCase())
-    : null;
-  const currentProductAirFlow = currentProductVariant?.air_flow || null;
 
   // Si el producto actual no estaba en las variantes, agregarlo al principio
   if (!currentProductAdded && (product.nominal_size || product.real_size)) {

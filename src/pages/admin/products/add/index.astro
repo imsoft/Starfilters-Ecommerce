@@ -65,6 +65,7 @@ if (Astro.request.method === "POST") {
     
     const typicalInstallation = formData.get("typical_installation") as string || null;
     const typicalInstallationEn = formData.get("typical_installation_en") as string || null;
+    const airFlow = (formData.get("air_flow") as string)?.trim() || null;
     const applications = processListField(formData.get("applications"));
     const applicationsEn = processListField(formData.get("applications_en"));
     const benefits = processListField(formData.get("benefits"));
@@ -121,6 +122,7 @@ if (Astro.request.method === "POST") {
           max_temperature: null,
           typical_installation: typicalInstallation,
           typical_installation_en: typicalInstallationEn,
+          air_flow: airFlow,
           applications: applications,
           applications_en: applicationsEn,
           benefits: benefits,
@@ -161,6 +163,7 @@ if (Astro.request.method === "POST") {
         max_temperature: null,
         typical_installation: typicalInstallation,
         typical_installation_en: typicalInstallationEn,
+        air_flow: airFlow,
         applications: applications,
         applications_en: applicationsEn,
         benefits: benefits,
@@ -759,6 +762,19 @@ if (Astro.request.method === "POST") {
               class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             ></textarea>
           </div>
+        </div>
+
+        <div class="mt-6">
+          <label for="air_flow" class="mb-2 block text-sm font-semibold text-gray-700">
+            Flujo de Aire
+          </label>
+          <input
+            type="text"
+            id="air_flow"
+            name="air_flow"
+            placeholder="Ej: 850 CFM"
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
         </div>
       </div>
 

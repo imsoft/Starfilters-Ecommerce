@@ -22,6 +22,7 @@ export interface Product {
   bind_code?: string | null;
   sku?: string | null;
   product_code?: string | null;
+  air_flow?: string | null;
   name: string;
   name_en?: string;
   description: string;
