@@ -601,9 +601,6 @@ const benefitsList = parseListField(product.benefits);
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                       Precio
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                      Código Bind
-                    </th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                       Acción
                     </th>
@@ -637,9 +634,6 @@ const benefitsList = parseListField(product.benefits);
                             <span class="text-xs text-muted-foreground" data-price-usd={variant.price_usd}>{formatPrice(variant.price_usd, 'USD')} USD</span>
                           </>
                         )}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {variant.bind_code || '-'}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <a
