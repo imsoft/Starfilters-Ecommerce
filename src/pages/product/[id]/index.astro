@@ -61,6 +61,17 @@ const productName = getProductName(product, lang);
 const productDesc = getProductDescription(product, lang);
 const productCat = getProductCategory(product, lang);
 
+// Obtener tasa de cambio actual (necesaria antes de calcular precios)
+const exchangeRate = await getExchangeRate();
+
+// Función para convertir precio USD a MXN
+const convertPriceToMXN = (price: number, currency: string): number => {
+  if (currency === 'USD') {
+    return price * exchangeRate;
+  }
+  return price;
+};
+
 // Obtener precio y moneda según idioma
 const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCurrency(product, lang);
 
@@ -68,7 +79,6 @@ const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCur
 let finalPrice = displayPrice;
 let finalCurrency = displayCurrency;
 if (lang === 'es' && displayCurrency === 'USD') {
-  // Convertir USD a MXN usando la tasa de cambio
   finalPrice = convertPriceToMXN(displayPrice, 'USD');
   finalCurrency = 'MXN';
 }
@@ -109,17 +119,6 @@ const mainImage = primaryImage;
 const allImages = productImages.length > 0
   ? productImages.map(img => img.image_url)
   : [mainImage];
-
-// Obtener tasa de cambio actual
-const exchangeRate = await getExchangeRate();
-
-// Función para convertir precio USD a MXN
-const convertPriceToMXN = (price: number, currency: string): number => {
-  if (currency === 'USD') {
-    return price * exchangeRate;
-  }
-  return price;
-};
 
 // Precio final según idioma (ya calculado arriba)
 const productPriceFinal = finalPrice;
