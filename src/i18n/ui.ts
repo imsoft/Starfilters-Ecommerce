@@ -106,7 +106,7 @@ export const ui = {
     'logoSection.title': 'Ya Confiaron en Nosotros',
 
     // Industries that benefit
-    'industriesBenefit.title': 'Algunas Industrias Que Se Benefician De Nuestros Cuartos Limpios',
+    'industriesBenefit.title': 'Algunas Industrias que se Benefician de Nuestros Cuartos Limpios',
     'industriesBenefit.pharma': 'Farmacéutica y Biotecnología',
     'industriesBenefit.medical': 'Dispositivos Médicos',
     'industriesBenefit.electronics': 'Electrónica y Óptica',
