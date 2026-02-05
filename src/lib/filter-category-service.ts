@@ -384,10 +384,28 @@ export const getCategoryVariants = async (categoryId: number): Promise<FilterCat
     const variants = await query(
       'SELECT * FROM filter_category_variants WHERE category_id = ? ORDER BY bind_code',
       [categoryId]
-    ) as FilterCategoryVariant[];
+    ) as any[];
 
-    console.log(`✅ ${variants.length} variantes obtenidas`);
-    return variants;
+    // Normalizar resultados: asegurar que air_flow esté presente (puede no existir si la columna no está en la BD)
+    const normalizedVariants = variants.map(v => ({
+      id: v.id,
+      category_id: v.category_id,
+      bind_code: v.bind_code || '',
+      product_code: v.product_code || null,
+      air_flow: v.air_flow !== undefined ? v.air_flow : null, // Manejar cuando la columna no existe
+      nominal_size: v.nominal_size || '',
+      real_size: v.real_size || '',
+      price: v.price || 0,
+      currency: v.currency || 'MXN',
+      price_usd: v.price_usd || null,
+      stock: v.stock || 0,
+      is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+      created_at: v.created_at,
+      updated_at: v.updated_at
+    })) as FilterCategoryVariant[];
+
+    console.log(`✅ ${normalizedVariants.length} variantes obtenidas`);
+    return normalizedVariants;
   } catch (error) {
     console.error('❌ Error obteniendo variantes:', error);
     return [];
@@ -404,15 +422,32 @@ export const getVariantByBindCode = async (bindCode: string): Promise<FilterCate
     const variants = await query(
       'SELECT * FROM filter_category_variants WHERE bind_code = ?',
       [bindCode]
-    ) as FilterCategoryVariant[];
+    ) as any[];
 
     if (variants.length === 0) {
-      console.log('❌ Variante no encontrada');
       return null;
     }
 
-    console.log('✅ Variante obtenida');
-    return variants[0];
+    const v = variants[0];
+    // Normalizar resultado: asegurar que air_flow esté presente
+    const variant: FilterCategoryVariant = {
+      id: v.id,
+      category_id: v.category_id,
+      bind_code: v.bind_code || '',
+      product_code: v.product_code || null,
+      air_flow: v.air_flow !== undefined ? v.air_flow : null, // Manejar cuando la columna no existe
+      nominal_size: v.nominal_size || '',
+      real_size: v.real_size || '',
+      price: v.price || 0,
+      currency: v.currency || 'MXN',
+      price_usd: v.price_usd || null,
+      stock: v.stock || 0,
+      is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+      created_at: v.created_at,
+      updated_at: v.updated_at
+    };
+
+    return variant;
   } catch (error) {
     console.error('❌ Error obteniendo variante:', error);
     return null;
