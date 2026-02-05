@@ -72,7 +72,7 @@ if (Astro.request.method === "POST") {
     
     // Procesar tabla de tamaños
     const sizesJson = formData.get("product_sizes") as string;
-    let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; sku: string; product_code?: string}> = [];
+    let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; sku: string; product_code?: string; air_flow?: string}> = [];
     if (sizesJson) {
       try {
         sizes = JSON.parse(sizesJson);

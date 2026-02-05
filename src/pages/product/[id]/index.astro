@@ -197,6 +197,7 @@ interface SizeOption {
   id: number;
   variantId?: number;
   bindCode?: string;
+  airFlow?: string | null;
   isCurrentProduct: boolean;
 }
 
@@ -236,6 +237,7 @@ if (categoryVariants.length > 0) {
         name: productName,
         image: mainImage,
         id: product.id,
+        airFlow: currentProductAirFlow,
         isCurrentProduct: true
       });
       addedSizes.add(normalizedVariantKey);
@@ -278,12 +280,19 @@ if (categoryVariants.length > 0) {
       id: variantProduct?.id || product.id,
       variantId: variant.id,
       bindCode: variant.bind_code,
+      airFlow: variant.air_flow || null,
       isCurrentProduct: false
     });
     
     addedSizes.add(normalizedVariantKey);
   }
   
+  // Obtener air_flow del producto actual desde categoryVariants
+  const currentProductVariant = product.bind_code 
+    ? categoryVariants.find(v => v.bind_code && v.bind_code.trim().toLowerCase() === product.bind_code.trim().toLowerCase())
+    : null;
+  const currentProductAirFlow = currentProductVariant?.air_flow || null;
+
   // Si el producto actual no estaba en las variantes, agregarlo al principio
   if (!currentProductAdded && (product.nominal_size || product.real_size)) {
     sizeOptions.unshift({
@@ -295,6 +304,7 @@ if (categoryVariants.length > 0) {
       name: productName,
       image: mainImage,
       id: product.id,
+      airFlow: currentProductAirFlow,
       isCurrentProduct: true
     });
     addedSizes.add(normalizedCurrentKey);
@@ -496,11 +506,21 @@ const benefitsList = parseListField(product.benefits);
               </div>
             )}
 
-            {/* Instalación típica */}
-            {product.typical_installation && (
-              <div class="border-t border-border pt-4">
-                <dt class="font-medium text-foreground">Instalación Típica</dt>
-                <dd class="mt-2 text-sm text-muted-foreground">{product.typical_installation}</dd>
+            {/* Instalación típica y Flujo de aire */}
+            {(product.typical_installation || currentProductAirFlow) && (
+              <div class="border-t border-border pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {product.typical_installation && (
+                  <div>
+                    <dt class="font-medium text-foreground">Instalación Típica</dt>
+                    <dd class="mt-2 text-sm text-muted-foreground">{product.typical_installation}</dd>
+                  </div>
+                )}
+                {currentProductAirFlow && (
+                  <div>
+                    <dt class="font-medium text-foreground">Flujo de Aire</dt>
+                    <dd class="mt-2 text-sm text-muted-foreground" id="air-flow-display">{currentProductAirFlow}</dd>
+                  </div>
+                )}
               </div>
             )}
           </dl>
@@ -532,6 +552,7 @@ const benefitsList = parseListField(product.benefits);
                         data-id={opt.id}
                         data-variant-id={opt.variantId || ''}
                         data-bind-code={opt.bindCode || ''}
+                        data-air-flow={opt.airFlow || ''}
                         selected={opt.isCurrentProduct}
                       >
                         {opt.label}
@@ -748,6 +769,26 @@ const benefitsList = parseListField(product.benefits);
       
       // Escuchar cambios en el select de tamaño
       sizeSelect.addEventListener('change', async () => {
+        // Actualizar flujo de aire cuando cambia el tamaño
+        const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+        const airFlow = selectedOption.getAttribute('data-air-flow') || '';
+        const airFlowDisplay = document.getElementById('air-flow-display');
+        if (airFlowDisplay) {
+          if (airFlow) {
+            airFlowDisplay.textContent = airFlow;
+            // Asegurar que el contenedor padre sea visible
+            const airFlowContainer = airFlowDisplay.closest('div');
+            if (airFlowContainer) {
+              airFlowContainer.style.display = 'block';
+            }
+          } else {
+            // Ocultar si no hay flujo de aire
+            const airFlowContainer = airFlowDisplay.closest('div');
+            if (airFlowContainer) {
+              airFlowContainer.style.display = 'none';
+            }
+          }
+        }
         await updateCurrentProduct(sizeSelect);
         
         // Resetear cantidad a 1

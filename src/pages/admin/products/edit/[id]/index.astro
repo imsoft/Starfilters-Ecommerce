@@ -175,6 +175,7 @@ if (Astro.request.method === "POST") {
               category_id: filterCategoryId,
               bind_code: size.bind_code.trim(),
               product_code: size.product_code?.trim() || null,
+              air_flow: size.air_flow?.trim() || null,
               nominal_size: size.nominal_size?.trim() || '',
               real_size: size.real_size?.trim() || '',
               price: size.price || 0,
@@ -291,7 +292,7 @@ function textToArray(text: string | null | undefined): string[] {
 
 // Preparar tamaños para la tabla
 // Cargar variantes de categoría si existe filter_category_id
-let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; product_code?: string}> = [];
+let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; product_code?: string; air_flow?: string}> = [];
 
 if (product.filter_category_id) {
   try {
@@ -308,7 +309,8 @@ if (product.filter_category_id) {
         price: v.price || 0,
         currency: (v.currency as 'MXN' | 'USD') || 'MXN',
         bind_code: v.bind_code || '',
-        product_code: v.product_code || ''
+        product_code: v.product_code || '',
+        air_flow: v.air_flow || ''
       }));
     } else {
       // Si no hay variantes de categoría, usar el producto actual como fallback
@@ -944,6 +946,7 @@ console.log('📦 Tamaños preparados:', productSizes.length);
                 const currencySelect = row.querySelector('[data-field="currency"]') as HTMLSelectElement;
                 const bindCodeInput = row.querySelector('[data-field="bind_code"]') as HTMLInputElement;
                 const productCodeInput = row.querySelector('[data-field="product_code"]') as HTMLInputElement;
+                const airFlowInput = row.querySelector('[data-field="air_flow"]') as HTMLInputElement;
 
                 if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
                   sizes.push({
@@ -952,7 +955,8 @@ console.log('📦 Tamaños preparados:', productSizes.length);
                     price: parseFloat(priceInput.value) || 0,
                     currency: currencySelect.value || 'MXN',
                     bind_code: bindCodeInput.value || '',
-                    product_code: productCodeInput ? productCodeInput.value || '' : ''
+                    product_code: productCodeInput ? productCodeInput.value || '' : '',
+                    air_flow: airFlowInput ? airFlowInput.value || '' : ''
                   });
                 }
               });

@@ -9,6 +9,7 @@ interface Props {
     currency: 'MXN' | 'USD';
     bind_code: string;
     product_code?: string;
+    air_flow?: string;
   }>;
 }
 
@@ -59,6 +60,9 @@ const normalizedSizes = initialSizes.map(size => ({
           </th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
             Código de Producto
+          </th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+            Flujo de Aire
           </th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
             Stock
@@ -132,6 +136,15 @@ const normalizedSizes = initialSizes.map(size => ({
                 />
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
+                <input
+                  type="text"
+                  data-field="air_flow"
+                  value={size.air_flow || ''}
+                  placeholder="Ej: 850 CFM"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
                 <div class="flex items-center gap-2">
                   <span data-field="stock" class="text-sm font-medium text-gray-700 min-w-[60px]">
                     —
@@ -163,7 +176,7 @@ const normalizedSizes = initialSizes.map(size => ({
           ))
         ) : (
           <tr data-empty-row>
-            <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">
+            <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">
               No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.
             </td>
           </tr>
@@ -210,6 +223,7 @@ const normalizedSizes = initialSizes.map(size => ({
           var currencySelect = row.querySelector('[data-field="currency"]');
           var bindCodeInput = row.querySelector('[data-field="bind_code"]');
           var productCodeInput = row.querySelector('[data-field="product_code"]');
+          var airFlowInput = row.querySelector('[data-field="air_flow"]');
 
           // Verificar que todos los elementos existan
           if (!nominalInput || !realInput || !priceInput || !currencySelect || !bindCodeInput) {
@@ -230,7 +244,8 @@ const normalizedSizes = initialSizes.map(size => ({
             price: parseFloat(priceInput.value) || 0,
             currency: currencySelect.value || 'MXN',
             bind_code: bindCodeInput.value || '',
-            product_code: productCodeInput ? productCodeInput.value || '' : ''
+            product_code: productCodeInput ? productCodeInput.value || '' : '',
+            air_flow: airFlowInput ? airFlowInput.value || '' : ''
           };
 
           sizes.push(sizeData);
@@ -336,6 +351,9 @@ const normalizedSizes = initialSizes.map(size => ({
           '</td>' +
           '<td class="px-4 py-3 whitespace-nowrap">' +
             '<input type="text" data-field="product_code" placeholder="Ej: SF-001" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
+          '</td>' +
+          '<td class="px-4 py-3 whitespace-nowrap">' +
+            '<input type="text" data-field="air_flow" placeholder="Ej: 850 CFM" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
           '</td>' +
           '<td class="px-4 py-3 whitespace-nowrap">' +
             '<div class="flex items-center gap-2">' +

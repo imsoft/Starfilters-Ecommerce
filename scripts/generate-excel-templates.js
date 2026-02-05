@@ -31,6 +31,7 @@ const productosHeaders = [
   'bind_id',
   'id_bind',
   'codigo_de_producto',
+  'flujo_aire',
   'eficiencia',
   'eficiencia_en',
   'clase_eficiencia',
