@@ -8,14 +8,16 @@ export const GET: APIRoute = async ({ site }) => {
   const products = await getProducts(1000, 0);
   const blogPosts = await getBlogPosts(1000, 0);
   
-  // Páginas estáticas
+  // Páginas estáticas (ES y EN)
   const staticPages = [
     { url: '', priority: '1.0', changefreq: 'daily' },
     { url: 'filtros', priority: '0.9', changefreq: 'daily' },
     { url: 'cuartos-limpios', priority: '0.8', changefreq: 'weekly' },
-    { url: 'services', priority: '0.8', changefreq: 'weekly' },
+    { url: 'servicios', priority: '0.8', changefreq: 'weekly' },
     { url: 'blog', priority: '0.7', changefreq: 'daily' },
-    { url: 'contact', priority: '0.6', changefreq: 'monthly' },
+    { url: 'contacto', priority: '0.6', changefreq: 'monthly' },
+    { url: 'acerca-de', priority: '0.6', changefreq: 'monthly' },
+    { url: 'productos', priority: '0.9', changefreq: 'daily' },
     { url: 'terms', priority: '0.3', changefreq: 'yearly' },
     { url: 'privacy', priority: '0.3', changefreq: 'yearly' },
     { url: 'en/', priority: '0.9', changefreq: 'daily' },
@@ -24,6 +26,8 @@ export const GET: APIRoute = async ({ site }) => {
     { url: 'en/services', priority: '0.8', changefreq: 'weekly' },
     { url: 'en/blog', priority: '0.7', changefreq: 'daily' },
     { url: 'en/contact', priority: '0.6', changefreq: 'monthly' },
+    { url: 'en/about', priority: '0.6', changefreq: 'monthly' },
+    { url: 'en/products', priority: '0.9', changefreq: 'daily' },
     { url: 'en/terms', priority: '0.3', changefreq: 'yearly' },
     { url: 'en/privacy', priority: '0.3', changefreq: 'yearly' },
   ];

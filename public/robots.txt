@@ -38,9 +38,8 @@ Disallow: /orders
 Disallow: /profile
 Disallow: /purchase-success
 
-# Archivos y directorios bloqueados
+# Archivos y directorios bloqueados (sitemap.xml está permitido)
 Disallow: /*.json$
-Disallow: /*.xml$
 Disallow: /scripts/
 Disallow: /database/
 
