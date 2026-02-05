@@ -5,7 +5,7 @@ import { createOrder, createOrderItem } from '@/lib/database';
 import { query } from '@/config/database';
 import { sendEmail, createOrderConfirmationEmail, createNewOrderNotificationEmail } from '@/lib/email';
 import { recordDiscountCodeUsage } from '@/lib/discount-codes';
-import { updateBindProductInventory } from '@/lib/bind';
+import { adjustBindProductInventory } from '@/lib/bind';
 import type { RowDataPacket } from 'mysql2/promise';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -94,32 +94,30 @@ async function handlePaymentSucceeded(paymentIntent: any) {
           [item.quantity, item.product_id]
         );
 
-        // 4. Obtener el nuevo stock y bind_id del producto
+        // 4. Obtener bind_id del producto para ajustar inventario en Bind
         const productData = await query(
-          'SELECT stock, bind_id FROM products WHERE id = ?',
+          'SELECT bind_id FROM products WHERE id = ?',
           [item.product_id]
         ) as RowDataPacket[];
 
         if (productData && productData.length > 0) {
-          const product = productData[0];
-          const newStock = product.stock;
-          const bindId = product.bind_id;
+          const bindId = productData[0].bind_id;
 
-          // 5. Actualizar inventario en Bind si el producto tiene bind_id
+          // 5. Ajustar inventario en Bind usando POST /api/Inventory (delta negativo)
           if (bindId) {
             try {
-              const bindResult = await updateBindProductInventory(bindId, newStock);
+              const bindResult = await adjustBindProductInventory(bindId, item.quantity, orderNumber);
               if (bindResult.success) {
-                console.log(`✅ Stock actualizado en Bind para producto ${item.name}: ${newStock} unidades`);
+                console.log(`✅ Inventario ajustado en Bind para ${item.name}: -${item.quantity} unidades (Orden: ${orderNumber})`);
               } else {
-                console.error(`⚠️ Error al actualizar stock en Bind para ${item.name}:`, bindResult.error);
+                console.error(`⚠️ Error al ajustar inventario en Bind para ${item.name}:`, bindResult.error);
               }
             } catch (error) {
-              console.error(`⚠️ Error al actualizar inventario en Bind para ${item.name}:`, error);
+              console.error(`⚠️ Error al ajustar inventario en Bind para ${item.name}:`, error);
               // No lanzamos el error para no afectar el resto del proceso
             }
           } else {
-            console.log(`ℹ️ Producto ${item.name} no tiene bind_id, omitiendo actualización en Bind`);
+            console.log(`ℹ️ Producto ${item.name} no tiene bind_id, omitiendo ajuste en Bind`);
           }
         }
       }

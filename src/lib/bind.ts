@@ -118,8 +118,17 @@ class BindAPIClient {
       throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    return data;
+    // Manejar respuestas sin contenido (204 No Content)
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return {} as T;
+    }
+
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      return {} as T;
+    }
+
+    return JSON.parse(text) as T;
   }
 
   /**
@@ -456,36 +465,89 @@ export const syncBindProduct = async (
 };
 
 /**
- * Actualizar solo el inventario de un producto en Bind
- * Se usa después de una compra exitosa para reducir el stock
+ * Interface para el modelo NewInventoryAdjustment de Bind ERP
+ * Documentación: POST /api/Inventory
  */
-export const updateBindProductInventory = async (
+interface NewInventoryAdjustment {
+  ProductID: string;
+  WarehouseID: string;
+  AdjustQty: number;
+  Date: string;
+  Comments: string;
+}
+
+/**
+ * Ajustar el inventario de un producto en Bind mediante POST /api/Inventory
+ * Usa un ajuste de inventario (delta negativo) en lugar de establecer un valor absoluto.
+ * Esto garantiza que el stock de Bind siempre se ajuste correctamente,
+ * incluso si se modificó directamente en Bind (ej. entrada de mercancía).
+ *
+ * @param bindId - UUID del producto en Bind
+ * @param quantitySold - Cantidad vendida (número positivo, se convertirá a negativo internamente)
+ * @param orderNumber - Número de orden para trazabilidad
+ */
+export const adjustBindProductInventory = async (
   bindId: string,
-  newInventory: number
+  quantitySold: number,
+  orderNumber: string
 ): Promise<BindProductResponse> => {
   try {
-    console.log(`📦 Actualizando inventario en Bind (ID: ${bindId}) a ${newInventory} unidades`);
+    if (!BIND_WAREHOUSE_ID) {
+      console.error('❌ BIND_WAREHOUSE_ID no está configurado');
+      return {
+        success: false,
+        error: 'BIND_WAREHOUSE_ID no está configurado. No se puede ajustar inventario en Bind.',
+      };
+    }
 
-    // Solo actualizar el campo de inventario
-    const response = await bindClient.put<any>('/api/Products', {
-      id: bindId,
-      inventory: newInventory,
-    });
+    const adjustQty = -Math.abs(quantitySold);
 
-    console.log(`✅ Inventario actualizado en Bind: ${bindId} -> ${newInventory} unidades`);
+    console.log(`📦 Ajustando inventario en Bind (Producto: ${bindId}, Cantidad: ${adjustQty}, Orden: ${orderNumber})`);
+
+    const adjustment: NewInventoryAdjustment = {
+      ProductID: bindId,
+      WarehouseID: BIND_WAREHOUSE_ID,
+      AdjustQty: adjustQty,
+      Date: new Date().toISOString(),
+      Comments: `Venta e-commerce - Orden ${orderNumber} (${quantitySold} unidad${quantitySold !== 1 ? 'es' : ''})`,
+    };
+
+    await bindClient.post<any>('/api/Inventory', adjustment);
+
+    console.log(`✅ Inventario ajustado en Bind: producto ${bindId}, ${adjustQty} unidades (Orden: ${orderNumber})`);
 
     return {
       success: true,
-      data: response,
-      message: 'Inventario actualizado exitosamente en Bind',
+      message: `Inventario ajustado exitosamente en Bind: ${adjustQty} unidades`,
     };
   } catch (error) {
-    console.error('❌ Error al actualizar inventario en Bind:', error);
+    console.error('❌ Error al ajustar inventario en Bind:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido al actualizar inventario',
+      error: error instanceof Error ? error.message : 'Error desconocido al ajustar inventario',
     };
   }
+};
+
+/**
+ * @deprecated Usar adjustBindProductInventory en su lugar.
+ * Esta función usaba PUT /api/Products que NO actualiza inventario en Bind.
+ * Se mantiene temporalmente por compatibilidad pero redirige a la función correcta.
+ */
+export const updateBindProductInventory = async (
+  bindId: string,
+  _newInventory: number,
+  orderNumber: string = 'N/A',
+  quantitySold: number = 0
+): Promise<BindProductResponse> => {
+  if (quantitySold > 0) {
+    return adjustBindProductInventory(bindId, quantitySold, orderNumber);
+  }
+  console.warn('⚠️ updateBindProductInventory llamado sin quantitySold. No se puede ajustar inventario.');
+  return {
+    success: false,
+    error: 'Se requiere quantitySold para ajustar inventario correctamente.',
+  };
 };
 
 /**
@@ -509,6 +571,7 @@ export default {
   getBindProducts,
   getAllBindProducts,
   updateBindProduct,
+  adjustBindProductInventory,
   updateBindProductInventory,
   deleteBindProduct,
   syncBindProduct,
