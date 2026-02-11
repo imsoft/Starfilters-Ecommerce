@@ -27,34 +27,46 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 
       <div class="pt-16 lg:row-span-2 lg:-mr-16 xl:mr-auto">
         <div class="-mx-8 grid grid-cols-2 gap-4 sm:-mx-16 sm:grid-cols-4 lg:mx-0 lg:grid-cols-2 xl:gap-8">
-          <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
-            <img
-              src="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
-              alt={lang === 'en' ? 'Star Filters cleanroom construction' : 'Construcción de cuartos limpios Star Filters'}
-              class="block size-full object-cover"
-            />
-          </div>
-          <div class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40">
-            <img
-              src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
-              alt={lang === 'en' ? 'Star Filters HEPA filtration system' : 'Filtros Star en cuarto limpio'}
-              class="block size-full object-cover"
-            />
-          </div>
-          <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
-            <img
-              src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
-              alt={lang === 'en' ? 'ISO 14644 certification' : 'Certificación ISO 14644 para cuartos limpios'}
-              class="block size-full object-cover"
-            />
-          </div>
-          <div class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40">
-            <img
-              src="/images/cleanrooms-page/Puerta%20Giratoria%20Star%20Filters.JPG"
-              alt={lang === 'en' ? 'Star Filters revolving airlock door' : 'Puerta giratoria para cuartos limpios Star Filters'}
-              class="block size-full object-cover"
-            />
-          </div>
+          <figure class="space-y-2">
+            <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
+              <img
+                src="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
+                alt={lang === 'en' ? 'Star Filters cleanroom construction' : 'Construcción de cuartos limpios Star Filters'}
+                class="block size-full object-cover"
+              />
+            </div>
+            <figcaption class="text-center text-xs font-medium tracking-wide text-gray-500 sm:text-sm whitespace-pre-line">{t('cleanrooms.gallery.caption1')}</figcaption>
+          </figure>
+          <figure class="-mt-8 space-y-2 lg:-mt-40">
+            <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
+              <img
+                src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
+                alt={lang === 'en' ? 'Star Filters HEPA filtration system' : 'Filtros Star en cuarto limpio'}
+                class="block size-full object-cover"
+              />
+            </div>
+            <figcaption class="text-center text-xs font-medium tracking-wide text-gray-500 sm:text-sm whitespace-pre-line">{t('cleanrooms.gallery.caption2')}</figcaption>
+          </figure>
+          <figure class="space-y-2">
+            <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
+              <img
+                src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
+                alt={lang === 'en' ? 'ISO 14644 certification' : 'Certificación ISO 14644 para cuartos limpios'}
+                class="block size-full object-cover"
+              />
+            </div>
+            <figcaption class="text-center text-xs font-medium tracking-wide text-gray-500 sm:text-sm whitespace-pre-line">{t('cleanrooms.gallery.caption3')}</figcaption>
+          </figure>
+          <figure class="-mt-8 space-y-2 lg:-mt-40">
+            <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
+              <img
+                src="/images/cleanrooms-page/Puerta%20Giratoria%20Star%20Filters.JPG"
+                alt={lang === 'en' ? 'Star Filters revolving airlock door' : 'Puerta giratoria para cuartos limpios Star Filters'}
+                class="block size-full object-cover"
+              />
+            </div>
+            <figcaption class="text-center text-xs font-medium tracking-wide text-gray-500 sm:text-sm whitespace-pre-line">{t('cleanrooms.gallery.caption4')}</figcaption>
+          </figure>
         </div>
       </div>
 

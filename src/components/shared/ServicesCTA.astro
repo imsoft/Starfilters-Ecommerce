@@ -9,20 +9,46 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 
 <div class="bg-background">
   <div class="px-6 py-24 sm:py-32 lg:px-8">
-    <div class="mx-auto max-w-2xl text-center">
-      <h2 class="text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl">
-        {t('services.cta.title')}
-      </h2>
-      <p class="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-muted-foreground">
-        {t('services.cta.description')}
-      </p>
-      <div class="mt-10 flex items-center justify-center">
-        <a
-          href={contactUrl}
-          class="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          {t('services.cta.button')}
-        </a>
+    <div class="mx-auto max-w-4xl">
+      <!-- Beneficios: imagen arriba, texto abajo -->
+      <div class="mb-16 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-4">
+        <div class="flex flex-col items-center text-center">
+          <img src="/images/services/Servicios de validacion 2-01.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit1')}</span>
+        </div>
+        <div class="flex flex-col items-center text-center">
+          <img src="/images/services/Servicios de validacion 2-02.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit2')}</span>
+        </div>
+        <div class="flex flex-col items-center text-center">
+          <img src="/images/services/Servicios de validacion 2-03.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit3')}</span>
+        </div>
+        <div class="flex flex-col items-center text-center">
+          <img src="/images/services/Servicios de validacion 2-04.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit4')}</span>
+        </div>
+        <div class="flex flex-col items-center text-center">
+          <img src="/images/services/Servicios de validacion 2-05.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit5')}</span>
+        </div>
+      </div>
+
+      <div class="mx-auto max-w-2xl text-center">
+        <h2 class="text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl">
+          {t('services.cta.title')}
+        </h2>
+        <p class="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-muted-foreground">
+          {t('services.cta.description')}
+        </p>
+        <div class="mt-10 flex items-center justify-center">
+          <a
+            href={contactUrl}
+            class="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            {t('services.cta.button')}
+          </a>
+        </div>
       </div>
     </div>
   </div>
