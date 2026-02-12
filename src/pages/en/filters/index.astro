@@ -5,13 +5,14 @@ import LazyImage from "@/components/shared/LazyImage.astro";
 import { getActiveCategories } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
-import { getLangFromUrl } from "@/i18n/utils";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import { getCategoryName, getCategoryDescription } from "@/lib/i18n-helpers";
 
 export const prerender = false;
 
 // Detect current language
 const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 // Use /en/products for English
 const productsRoute = '/en/products';
 
@@ -175,6 +176,43 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         </div>
       )}
     </section>
+
+    <!-- Why Star Filters? -->
+    <div class="mx-auto max-w-6xl px-4 mt-24 sm:px-6 lg:px-8">
+      <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl">
+        {t('filters.whyStarFilters.title')}
+      </h2>
+      <div class="mb-16 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 lg:gap-x-4">
+        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+          <img src="/images/category-filters/iconos filtros-01.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-primary">{t('filters.whyStarFilters.benefit1')}</span>
+        </div>
+        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+          <img src="/images/category-filters/iconos filtros-02.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-primary">{t('filters.whyStarFilters.benefit2')}</span>
+        </div>
+        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+          <img src="/images/category-filters/iconos filtros-03.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-primary">{t('filters.whyStarFilters.benefit3')}</span>
+        </div>
+        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+          <img src="/images/category-filters/iconos filtros-04.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-primary">{t('filters.whyStarFilters.benefit4')}</span>
+        </div>
+        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+          <img src="/images/category-filters/iconos filtros-05.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-primary">{t('filters.whyStarFilters.benefit5')}</span>
+        </div>
+        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+          <img src="/images/category-filters/iconos filtros-06.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-primary">{t('filters.whyStarFilters.benefit6')}</span>
+        </div>
+        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+          <img src="/images/category-filters/iconos filtros-07.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-primary">{t('filters.whyStarFilters.benefit7')}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </WebsiteLayout>
 

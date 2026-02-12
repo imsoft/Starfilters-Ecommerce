@@ -22,6 +22,16 @@ export const ui = {
     'nav.changePassword': 'Cambiar Contraseña',
     'nav.myOrders': 'Mis Pedidos',
 
+    // Filtros - ¿Por qué Star Filters?
+    'filters.whyStarFilters.title': '¿Por qué Star Filters?',
+    'filters.whyStarFilters.benefit1': 'Entrega rápida',
+    'filters.whyStarFilters.benefit2': 'Filtros de alta calidad',
+    'filters.whyStarFilters.benefit3': 'Cumplimiento normativo/certificados',
+    'filters.whyStarFilters.benefit4': 'Asesoría técnica',
+    'filters.whyStarFilters.benefit5': 'Atención al cliente',
+    'filters.whyStarFilters.benefit6': 'Envío a todo México',
+    'filters.whyStarFilters.benefit7': 'Somos fabricantes',
+
     // Hero
     'hero.badge': 'Más de 40 años liderando la filtración industrial en México.',
     'hero.badgeLink': 'Conoce nuestra historia.',
@@ -72,6 +82,13 @@ export const ui = {
     'cleanrooms.gallery.caption2': 'Sistema de ductos',
     'cleanrooms.gallery.caption3': 'Puertas giratorias',
     'cleanrooms.gallery.caption4': 'Industria microelectrónica:\nISO 5, 1200 m²',
+    'cleanrooms.cta.benefitsTitle': '¿Por qué contratarnos?',
+    'cleanrooms.cta.benefit1': 'Normativa y cumplimiento (clasificación ISO)',
+    'cleanrooms.cta.benefit2': 'Calidad certificada (ISO 9001)',
+    'cleanrooms.cta.benefit3': 'Materiales y acabados sanitarios premium',
+    'cleanrooms.cta.benefit4': 'Entrega puntual',
+    'cleanrooms.cta.benefit5': 'Proyectos llave en mano',
+    'cleanrooms.cta.benefit6': 'Soluciones adaptadas y escalables',
     'cleanrooms.cta.title': '¿Listo para empezar?',
     'cleanrooms.cta.subtitle': 'Cuéntanos de tu proyecto',
     'cleanrooms.cta.button': 'Contáctanos',
@@ -272,6 +289,16 @@ export const ui = {
     'nav.changePassword': 'Change Password',
     'nav.myOrders': 'My Orders',
 
+    // Filters - Why Star Filters?
+    'filters.whyStarFilters.title': 'Why Star Filters?',
+    'filters.whyStarFilters.benefit1': 'Fast delivery',
+    'filters.whyStarFilters.benefit2': 'High-quality filters',
+    'filters.whyStarFilters.benefit3': 'Regulatory compliance/certificates',
+    'filters.whyStarFilters.benefit4': 'Technical advice',
+    'filters.whyStarFilters.benefit5': 'Customer service',
+    'filters.whyStarFilters.benefit6': 'Shipping across Mexico',
+    'filters.whyStarFilters.benefit7': 'We are manufacturers',
+
     // Hero
     'hero.badge': 'Over 40 years leading industrial filtration in Mexico.',
     'hero.badgeLink': 'Learn more.',
@@ -322,6 +349,13 @@ export const ui = {
     'cleanrooms.gallery.caption2': 'Duct system',
     'cleanrooms.gallery.caption3': 'Revolving doors',
     'cleanrooms.gallery.caption4': 'Microelectronics industry:\nISO 5, 1,200 m²',
+    'cleanrooms.cta.benefitsTitle': 'Why choose us?',
+    'cleanrooms.cta.benefit1': 'Regulatory compliance (ISO classification)',
+    'cleanrooms.cta.benefit2': 'Certified quality (ISO 9001)',
+    'cleanrooms.cta.benefit3': 'Premium sanitary materials and finishes',
+    'cleanrooms.cta.benefit4': 'On-time delivery',
+    'cleanrooms.cta.benefit5': 'Turnkey projects',
+    'cleanrooms.cta.benefit6': 'Adapted and scalable solutions',
     'cleanrooms.cta.title': 'Ready to get started?',
     'cleanrooms.cta.subtitle': 'Tell us about your project',
     'cleanrooms.cta.button': 'Contact Us',
