@@ -359,7 +359,7 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
     return true;
   } catch (error) {
     console.error('❌ Error actualizando producto:', error);
-    return false;
+    throw error;
   }
 };
 

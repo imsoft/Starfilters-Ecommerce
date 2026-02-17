@@ -231,9 +231,10 @@ if (Astro.request.method === "POST") {
         error = "Error al actualizar el producto";
       }
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error procesando formulario:", err);
-    error = err instanceof Error ? err.message : "Error desconocido";
+    const detail = err?.sqlMessage || err?.message || "Error desconocido";
+    error = `Error al actualizar el producto: ${detail}`;
   }
 }
 
