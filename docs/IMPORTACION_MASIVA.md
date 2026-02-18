@@ -7,9 +7,10 @@ Esta guía explica cómo usar la funcionalidad de importación masiva para produ
 ## 📋 Contenido
 
 1. [Importar Productos](#importar-productos)
-2. [Importar Categorías](#importar-categorías)
-3. [Formato de Archivos Excel](#formato-de-archivos-excel)
-4. [Solución de Problemas](#solución-de-problemas)
+2. [Importar Tamaños por Producto](#importar-tamaños-por-producto)
+3. [Importar Categorías](#importar-categorías)
+4. [Formato de Archivos Excel](#formato-de-archivos-excel)
+5. [Solución de Problemas](#solución-de-problemas)
 
 ---
 
@@ -92,6 +93,43 @@ El archivo incluye todas las columnas disponibles. **Solo necesitas llenar las q
 4. Revisa los resultados:
    - ✅ Productos importados exitosamente
    - ❌ Errores (si los hay) con detalles de la fila
+
+---
+
+## 📐 Importar Tamaños por Producto
+
+Para productos con **categoría de filtro asignada**, puedes subir muchos tamaños/variantes a la vez desde un Excel, sin cargarlos uno por uno en la tabla.
+
+### Paso 1: Editar el producto
+
+1. En **Productos** → **Gestión de Productos**, abre el producto a editar.
+2. Asegúrate de que tenga **Categoría de Filtro** seleccionada (si no, asígnala y guarda).
+
+### Paso 2: Descargar la plantilla de tamaños
+
+1. En la sección **Tamaños/Variantes**, usa el enlace **"Descargar plantilla de tamaños"**.
+2. Se descargará `tamanos-producto-template.xlsx` con las columnas necesarias.
+
+### Paso 3: Columnas del Excel de tamaños
+
+- **medida_nominal**: Medida nominal (ej: `9.125" x 9.125" x 3"`).
+- **medida_real**: Medida real (ej: `231 x 231 x 75 mm`).
+- **precio**: Precio numérico.
+- **moneda**: `MXN` o `USD`.
+- **id_bind**: Código en Bind (obligatorio por fila).
+- **codigo_producto**: Código de producto (opcional).
+- **flujo_aire**: Flujo de aire (opcional, ej: `850 CFM`).
+
+Puedes tener tantas filas como tamaños necesites (por ejemplo 30 o más).
+
+### Paso 4: Subir el archivo
+
+1. Rellena el Excel y guárdalo.
+2. En la misma sección **Tamaños/Variantes**, elige el archivo con **Seleccionar archivo**.
+3. Haz clic en **"Subir tamaños desde Excel"**.
+4. Se importarán/actualizarán los tamaños y la página se recargará con la tabla actualizada.
+
+**Nota:** Las filas sin `id_bind` se omiten. Si un `id_bind` ya existe para esa categoría, se actualiza; si no, se crea una nueva variante.
 
 ---
 

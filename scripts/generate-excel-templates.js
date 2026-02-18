@@ -134,6 +134,23 @@ const productosExample = [
   ],
 ];
 
+// Template para Tamaños de producto (variantes por producto/categoría)
+const tamanosHeaders = [
+  'medida_nominal',
+  'medida_real',
+  'precio',
+  'moneda',
+  'id_bind',
+  'codigo_producto',
+  'flujo_aire',
+];
+
+const tamanosExample = [
+  ['9.125" x 9.125" x 3"', '231 x 231 x 75 mm', '1250.00', 'MXN', 'HGD1', 'SF-HEPA-001', '850 CFM'],
+  ['12" x 12" x 5.875"', '305 x 305 x 150 mm', '1850.00', 'MXN', 'HGD2', 'SF-HEPA-002', '1200 CFM'],
+  ['24" x 24" x 11.5"', '610 x 610 x 292 mm', '3200.00', 'MXN', 'HGD3', 'SF-HEPA-003', '2000 CFM'],
+];
+
 // Template para Categorías
 const categoriasHeaders = [
   'nombre',
@@ -187,6 +204,12 @@ const productosWS = XLSX.utils.aoa_to_sheet([productosHeaders, ...productosExamp
 applyBoldHeaders(productosWS, productosHeaders.length);
 XLSX.utils.book_append_sheet(productosWB, productosWS, 'Productos');
 
+// Crear workbook para tamaños de producto
+const tamanosWB = XLSX.utils.book_new();
+const tamanosWS = XLSX.utils.aoa_to_sheet([tamanosHeaders, ...tamanosExample]);
+applyBoldHeaders(tamanosWS, tamanosHeaders.length);
+XLSX.utils.book_append_sheet(tamanosWB, tamanosWS, 'Tamaños');
+
 // Crear workbook para categorías
 const categoriasWB = XLSX.utils.book_new();
 const categoriasWS = XLSX.utils.aoa_to_sheet([categoriasHeaders, ...categoriasExample]);
@@ -196,7 +219,9 @@ XLSX.utils.book_append_sheet(categoriasWB, categoriasWS, 'Categorías');
 // Escribir archivos
 XLSX.writeFile(productosWB, 'public/templates/productos-template.xlsx');
 XLSX.writeFile(categoriasWB, 'public/templates/categorias-template.xlsx');
+XLSX.writeFile(tamanosWB, 'public/templates/tamanos-producto-template.xlsx');
 
 console.log('✅ Templates de Excel generados:');
 console.log('   - public/templates/productos-template.xlsx');
 console.log('   - public/templates/categorias-template.xlsx');
+console.log('   - public/templates/tamanos-producto-template.xlsx');
