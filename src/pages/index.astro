@@ -10,6 +10,7 @@ import CertificationSection from '@/components/shared/CertificationSection.astro
 import TestimonialSections from '@/components/shared/TestimonialSections.astro';
 import FooterSection from '@/components/shared/FooterSection.astro';
 import WhatsAppButton from '@/components/shared/WhatsAppButton.astro';
+import BenefitsBanner from '@/components/shared/BenefitsBanner.astro';
 import { generateOrganizationSchema } from '@/lib/seo-utils';
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
@@ -53,6 +54,7 @@ const siteUrl = Astro.site?.href || Astro.url.origin;
 
 	<body>
 		<HeroSection />
+		<BenefitsBanner />
 		<Stats />
 		<BentoGrid />
 		<IndustriesBenefitSection />

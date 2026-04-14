@@ -1,0 +1,67 @@
+---
+import { getLangFromUrl } from '@/i18n/utils';
+import { getActiveBenefits } from '@/lib/benefit-service';
+
+const lang = getLangFromUrl(Astro.url);
+const benefits = await getActiveBenefits();
+---
+
+{benefits.length > 0 && (
+  <div id="benefits-banner" class="relative bg-primary px-6 py-2.5 sm:px-3.5">
+    <div class="overflow-hidden">
+      <div class="benefits-track flex items-center whitespace-nowrap">
+        {[...benefits, ...benefits].map((benefit) => (
+          <span class="flex-shrink-0 flex items-center gap-x-2 text-sm/6 font-medium text-primary-foreground px-8">
+            <svg viewBox="0 0 2 2" aria-hidden="true" class="inline size-0.5 fill-current opacity-60">
+              <circle r="1" cx="1" cy="1" />
+            </svg>
+            {lang === 'en' ? benefit.text_en : benefit.text_es}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+      <button
+        id="dismiss-benefits-banner"
+        type="button"
+        class="-m-3 p-3 focus-visible:-outline-offset-4"
+        aria-label="Cerrar"
+      >
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="size-5 text-primary-foreground opacity-80 hover:opacity-100">
+          <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+)}
+
+<style>
+  .benefits-track {
+    animation: scroll-benefits 25s linear infinite;
+    width: max-content;
+  }
+
+  #benefits-banner:hover .benefits-track {
+    animation-play-state: paused;
+  }
+
+  @keyframes scroll-benefits {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+</style>
+
+<script>
+  const banner = document.getElementById('benefits-banner');
+  const dismissBtn = document.getElementById('dismiss-benefits-banner');
+
+  if (localStorage.getItem('benefits-banner-dismissed') === 'true') {
+    banner?.remove();
+  }
+
+  dismissBtn?.addEventListener('click', () => {
+    banner?.remove();
+    localStorage.setItem('benefits-banner-dismissed', 'true');
+  });
+</script>
