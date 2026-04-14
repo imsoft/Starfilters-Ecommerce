@@ -103,7 +103,7 @@ const navLinks = [...baseNavLinks];
           <!-- Enlace directo a Filtros de Aire -->
           <a
             href={lang === 'en' ? '/en/filters' : '/filtros'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
+            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-foreground transition-colors"
           >
             {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
           </a>
@@ -111,7 +111,7 @@ const navLinks = [...baseNavLinks];
           {navLinks.map((link) => (
             <a
               href={link.href}
-              class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-primary transition-colors"
+              class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-foreground transition-colors"
             >
               {link.label}
             </a>
@@ -124,7 +124,7 @@ const navLinks = [...baseNavLinks];
           {!user ? (
             <a
               href={lang === 'en' ? '/en/login' : '/login'}
-              class="text-sm font-semibold text-foreground hover:text-primary transition-colors"
+              class="text-sm font-semibold text-foreground hover:text-foreground transition-colors"
             >
               {t('nav.login')}
             </a>

@@ -143,6 +143,77 @@ if (!user) {
               </div>
             </div>
   
+            <!-- Delivery Method -->
+            <div class="mt-10 border-t border-border pt-10">
+              <h2 class="text-lg font-medium text-foreground">Delivery Method</h2>
+              <div class="mt-4 space-y-3" id="delivery-options">
+                <!-- Option 1: Pick up in GDL -->
+                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
+                  <input type="radio" name="delivery-method" value="pickup-gdl" class="sr-only" id="delivery-pickup-gdl" />
+                  <span class="flex flex-1">
+                    <span class="flex flex-col">
+                      <span class="block text-sm font-medium text-foreground">Pick up in Guadalajara</span>
+                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Pick up your order at our branch</span>
+                      <span class="mt-1 text-xs text-muted-foreground">Blvd. Puerta de Hierro 5153 Int. 18, Fracc. Puerta de Hierro, 45116 Zapopan, Jal.</span>
+                    </span>
+                  </span>
+                  <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Free</span>
+                </label>
+
+                <!-- Option 2: Pick up in CDMX -->
+                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
+                  <input type="radio" name="delivery-method" value="pickup-cdmx" class="sr-only" id="delivery-pickup-cdmx" />
+                  <span class="flex flex-1">
+                    <span class="flex flex-col">
+                      <span class="block text-sm font-medium text-foreground">Pick up in Mexico City</span>
+                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Pick up your order at our branch</span>
+                      <span class="mt-1 text-xs text-muted-foreground">Check address when confirming order</span>
+                    </span>
+                  </span>
+                  <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Free</span>
+                </label>
+
+                <!-- Option 3: Metro GDL delivery -->
+                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
+                  <input type="radio" name="delivery-method" value="metro-gdl" class="sr-only" id="delivery-metro-gdl" />
+                  <span class="flex flex-1">
+                    <span class="flex flex-col">
+                      <span class="block text-sm font-medium text-foreground">GDL Metro Area Delivery</span>
+                      <span class="mt-1 flex items-center text-sm text-muted-foreground">1–3 business days</span>
+                      <span class="mt-1 text-xs text-muted-foreground">Free on orders of $5,000 MXN or more</span>
+                    </span>
+                  </span>
+                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-metro-gdl">$250.00</span>
+                </label>
+
+                <!-- Option 4: Metro CDMX delivery -->
+                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
+                  <input type="radio" name="delivery-method" value="metro-cdmx" class="sr-only" id="delivery-metro-cdmx" />
+                  <span class="flex flex-1">
+                    <span class="flex flex-col">
+                      <span class="block text-sm font-medium text-foreground">CDMX Metro Area Delivery</span>
+                      <span class="mt-1 flex items-center text-sm text-muted-foreground">1–3 business days</span>
+                      <span class="mt-1 text-xs text-muted-foreground">Free on orders of $5,000 MXN or more</span>
+                    </span>
+                  </span>
+                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-metro-cdmx">$250.00</span>
+                </label>
+
+                <!-- Option 5: Shipping carrier -->
+                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
+                  <input type="radio" name="delivery-method" value="paqueteria" class="sr-only" id="delivery-paqueteria" />
+                  <span class="flex flex-1">
+                    <span class="flex flex-col">
+                      <span class="block text-sm font-medium text-foreground">Carrier Shipping</span>
+                      <span class="mt-1 flex items-center text-sm text-muted-foreground">4–10 business days</span>
+                      <span class="mt-1 text-xs text-muted-foreground">Free on orders of $5,000 MXN or more</span>
+                    </span>
+                  </span>
+                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-paqueteria">$350.00</span>
+                </label>
+              </div>
+            </div>
+
             <!-- Payment -->
             <div class="mt-10 border-t border-border pt-10">
               <h2 class="text-lg font-medium text-foreground">Payment</h2>
@@ -222,6 +293,47 @@ if (!user) {
           currency: currency
         }
       ).format(price);
+    }
+
+    const FREE_SHIPPING_THRESHOLD = 5000;
+
+    function getShippingCost(method: string, subtotalMXN: number): number {
+      switch (method) {
+        case 'pickup-gdl':
+        case 'pickup-cdmx':
+          return 0;
+        case 'metro-gdl':
+        case 'metro-cdmx':
+          return subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250;
+        case 'paqueteria':
+          return subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 350;
+        default:
+          return 0;
+      }
+    }
+
+    function getSelectedDeliveryMethod(): string {
+      const selected = document.querySelector('input[name="delivery-method"]:checked') as HTMLInputElement;
+      return selected?.value || '';
+    }
+
+    function updateDeliveryPrices(subtotal: number) {
+      const metroGdlEl = document.getElementById('price-metro-gdl');
+      const metroCdmxEl = document.getElementById('price-metro-cdmx');
+      const paqueteriaEl = document.getElementById('price-paqueteria');
+      const isFree = subtotal >= FREE_SHIPPING_THRESHOLD;
+      if (metroGdlEl) {
+        metroGdlEl.textContent = isFree ? 'Free' : '$250.00';
+        metroGdlEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
+      }
+      if (metroCdmxEl) {
+        metroCdmxEl.textContent = isFree ? 'Free' : '$250.00';
+        metroCdmxEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
+      }
+      if (paqueteriaEl) {
+        paqueteriaEl.textContent = isFree ? 'Free' : '$350.00';
+        paqueteriaEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
+      }
     }
 
     // Function to load Stripe Elements directly
@@ -598,9 +710,21 @@ if (!user) {
       const subtotal = cart.total;
       const discountAmount = appliedDiscount?.amount || 0;
       const subtotalAfterDiscount = subtotal - discountAmount;
-      const shipping = 5.00; // Standard shipping
+      const deliveryMethod = getSelectedDeliveryMethod();
+      const shipping = deliveryMethod ? getShippingCost(deliveryMethod, subtotalAfterDiscount) : 0;
       const tax = subtotalAfterDiscount * 0.16;
       const total = subtotalAfterDiscount + shipping + tax;
+
+      updateDeliveryPrices(subtotalAfterDiscount);
+
+      const deliveryLabels: Record<string, string> = {
+        'pickup-gdl': 'Pick up in GDL',
+        'pickup-cdmx': 'Pick up in CDMX',
+        'metro-gdl': 'GDL Metro Area Delivery',
+        'metro-cdmx': 'CDMX Metro Area Delivery',
+        'paqueteria': 'Carrier Shipping',
+      };
+      const deliveryLabel = deliveryMethod ? (deliveryLabels[deliveryMethod] || 'Shipping') : 'Select delivery method';
 
       // Render summary
       let summaryHTML = `
@@ -621,8 +745,8 @@ if (!user) {
 
       summaryHTML += `
         <div class="flex items-center justify-between">
-          <dt class="text-sm text-muted-foreground">Shipping (4-10 business days)</dt>
-          <dd class="text-sm font-medium text-foreground">${formatPrice(shipping, cartCurrency)}</dd>
+          <dt class="text-sm text-muted-foreground">${deliveryLabel}</dt>
+          <dd class="text-sm font-medium ${shipping === 0 && deliveryMethod ? 'text-green-600' : 'text-foreground'}">${shipping === 0 && deliveryMethod ? 'Free' : formatPrice(shipping, cartCurrency)}</dd>
         </div>
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">Tax (VAT 16%)</dt>
@@ -764,7 +888,8 @@ if (!user) {
           const country = (document.getElementById('country') as HTMLInputElement)?.value;
 
           // Validate all required fields are filled
-          if (!email || !firstName || !lastName || !address || !city || !state || !postalCode || !country) {
+          const deliveryMethod = getSelectedDeliveryMethod();
+          if (!email || !firstName || !lastName || !address || !city || !state || !postalCode || !country || !deliveryMethod) {
             return;
           }
 
@@ -800,7 +925,7 @@ if (!user) {
           const subtotal = cart.total;
           const discountAmount = appliedDiscount?.amount || 0;
           const subtotalAfterDiscount = subtotal - discountAmount;
-          const shipping = 5.00;
+          const shipping = getShippingCost(deliveryMethod, subtotalAfterDiscount);
           const tax = subtotalAfterDiscount * 0.16;
           const total = subtotalAfterDiscount + shipping + tax;
 
@@ -832,7 +957,7 @@ if (!user) {
             body: JSON.stringify({
               ...checkoutData,
               items: cart.items, // Send cart items
-              shippingMethod: 'standard', // Can be 'standard' or 'express'
+              shippingMethod: deliveryMethod,
               discountCode: appliedDiscount ? {
                 code: appliedDiscount.code,
                 discountCodeId: appliedDiscount.discountCodeId,
@@ -890,6 +1015,16 @@ if (!user) {
           field.addEventListener('blur', loadPaymentFormDebounced);
           field.addEventListener('change', loadPaymentFormDebounced);
         }
+      });
+
+      // Add listeners to delivery method radio buttons
+      const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
+      deliveryRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          isLoadingPaymentForm = false;
+          renderOrderSummary();
+          loadPaymentFormDebounced();
+        });
       });
 
       // Load form on init if fields are already filled (e.g. autofill)

@@ -25,24 +25,37 @@ export interface DiscountData {
   amount: number;
 }
 
+// Tipos de método de entrega
+export type DeliveryMethod = 'standard' | 'express' | 'pickup-gdl' | 'pickup-cdmx' | 'metro-gdl' | 'metro-cdmx' | 'paqueteria';
+
 // Interface para datos de envío
 export interface ShippingData {
-  method: 'standard' | 'express';
+  method: DeliveryMethod;
   cost: number;
   days: string;
 }
 
+// Umbral para envío gratis (MXN)
+const FREE_SHIPPING_THRESHOLD = 5000;
+
 // Calcular costos de envío
-export const calculateShipping = (method: 'standard' | 'express'): ShippingData => {
-  const shippingOptions = {
-    standard: { cost: 5.00, days: '4-10 días hábiles' },
-    express: { cost: 16.00, days: '2-5 días hábiles' }
-  };
-  
-  return {
-    method,
-    ...shippingOptions[method]
-  };
+export const calculateShipping = (method: DeliveryMethod, subtotalMXN: number = 0): ShippingData => {
+  switch (method) {
+    case 'pickup-gdl':
+      return { method, cost: 0, days: 'Recoger en sucursal GDL' };
+    case 'pickup-cdmx':
+      return { method, cost: 0, days: 'Recoger en sucursal CDMX' };
+    case 'metro-gdl':
+      return { method, cost: subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250, days: '1-3 días hábiles' };
+    case 'metro-cdmx':
+      return { method, cost: subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250, days: '1-3 días hábiles' };
+    case 'paqueteria':
+      return { method, cost: subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 350, days: '4-10 días hábiles' };
+    case 'express':
+      return { method, cost: 16.00, days: '2-5 días hábiles' };
+    default:
+      return { method: 'standard', cost: 0, days: '4-10 días hábiles' };
+  }
 };
 
 // Calcular impuestos (IVA 16% en México)
@@ -53,7 +66,7 @@ export const calculateTax = (subtotal: number): number => {
 // Calcular total del pedido (convierte USD a MXN automáticamente)
 export const calculateOrderTotal = async (
   cartItems: CartItem[],
-  shippingMethod: 'standard' | 'express',
+  shippingMethod: DeliveryMethod,
   discountAmount: number = 0
 ): Promise<{
   subtotal: number;
@@ -84,7 +97,7 @@ export const calculateOrderTotal = async (
 
   const discount = discountAmount;
   const subtotalAfterDiscount = Math.max(0, subtotal - discount);
-  const shipping = calculateShipping(shippingMethod).cost;
+  const shipping = calculateShipping(shippingMethod, subtotalAfterDiscount).cost;
   const tax = calculateTax(subtotalAfterDiscount);
   const total = subtotalAfterDiscount + shipping + tax;
 
@@ -101,7 +114,7 @@ export const calculateOrderTotal = async (
 // Crear Payment Intent para el checkout
 export const createCheckoutPaymentIntent = async (
   checkoutData: CheckoutData,
-  shippingMethod: 'standard' | 'express' = 'standard',
+  shippingMethod: DeliveryMethod = 'pickup-gdl',
   userId?: number,
   discountData?: DiscountData,
   cartItems?: CartItem[] // Items del carrito pasados como parámetro
@@ -281,11 +294,11 @@ export const formatCartForCheckout = (cartItems: CartItem[]) => {
 // Generar resumen del pedido
 export const generateOrderSummary = async (
   cartItems: CartItem[],
-  shippingMethod: 'standard' | 'express' = 'standard',
+  shippingMethod: DeliveryMethod = 'pickup-gdl',
   discountAmount: number = 0
 ) => {
   const orderTotals = await calculateOrderTotal(cartItems, shippingMethod, discountAmount);
-  const shippingData = calculateShipping(shippingMethod);
+  const shippingData = calculateShipping(shippingMethod, orderTotals.subtotal - orderTotals.discount);
 
   return {
     items: formatCartForCheckout(cartItems),

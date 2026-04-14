@@ -8,23 +8,11 @@ import IndustriesBenefitSection from '@/components/shared/IndustriesBenefitSecti
 import LogoSection from '@/components/shared/LogoSection.astro';
 import CertificationSection from '@/components/shared/CertificationSection.astro';
 import TestimonialSections from '@/components/shared/TestimonialSections.astro';
-import FaqSection from '@/components/shared/FaqSection.astro';
 import FooterSection from '@/components/shared/FooterSection.astro';
 import WhatsAppButton from '@/components/shared/WhatsAppButton.astro';
-import { generateOrganizationSchema, generateFAQSchema } from '@/lib/seo-utils';
-import { useTranslations } from '@/i18n/utils';
+import { generateOrganizationSchema } from '@/lib/seo-utils';
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
-const t = useTranslations('en');
-
-// Generar FAQs para schema
-const faqs = Array.from({ length: 7 }, (_, index) => {
-  const question = t(`faq.q${index + 1}`);
-  const answer = t(`faq.a${index + 1}`);
-  return question && answer ? { question, answer } : null;
-}).filter(Boolean);
-
-const faqSchema = generateFAQSchema(faqs);
 ---
 
 <html lang="en">
@@ -61,8 +49,6 @@ const faqSchema = generateFAQSchema(faqs);
 		<!-- Organization Schema -->
 		<script type="application/ld+json" set:html={JSON.stringify(generateOrganizationSchema(siteUrl))} />
 		
-		<!-- FAQ Schema -->
-		<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 	</head>
 
 	<body>
@@ -72,7 +58,6 @@ const faqSchema = generateFAQSchema(faqs);
 		<IndustriesBenefitSection />
 		<LogoSection />
 		<CertificationSection />
-		<FaqSection />
 		<TestimonialSections />
 		<FooterSection />
 		<WhatsAppButton />

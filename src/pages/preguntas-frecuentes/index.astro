@@ -1,0 +1,21 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import FaqSection from "@/components/shared/FaqSection.astro";
+import SEO from "@/components/shared/SEO.astro";
+---
+
+<WebsiteLayout
+  title="Preguntas Frecuentes"
+  seoTitle="Preguntas Frecuentes | Star Filters"
+  description="Respuestas a las preguntas más frecuentes sobre filtros de aire, cuartos limpios y servicios de validación de Star Filters."
+  keywords={[
+    'preguntas frecuentes',
+    'filtros de aire',
+    'cuartos limpios',
+    'Star Filters'
+  ]}
+>
+  <div class="mx-auto max-w-7xl px-4 pt-16 pb-24 sm:px-6 lg:px-8">
+    <FaqSection />
+  </div>
+</WebsiteLayout>
