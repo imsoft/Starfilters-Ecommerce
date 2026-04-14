@@ -11,6 +11,7 @@ import TestimonialSections from '@/components/shared/TestimonialSections.astro';
 import FooterSection from '@/components/shared/FooterSection.astro';
 import WhatsAppButton from '@/components/shared/WhatsAppButton.astro';
 import BenefitsBanner from '@/components/shared/BenefitsBanner.astro';
+import VideoSection from '@/components/shared/VideoSection.astro';
 import { generateOrganizationSchema } from '@/lib/seo-utils';
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
@@ -57,6 +58,7 @@ const siteUrl = Astro.site?.href || Astro.url.origin;
 		<HeroSection />
 		<Stats />
 		<BentoGrid />
+		<VideoSection videoId="EziLQznVOZ0" title="Star Filters" isShort={true} />
 		<IndustriesBenefitSection />
 		<LogoSection />
 		<CertificationSection />

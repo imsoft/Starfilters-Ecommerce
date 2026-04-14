@@ -2,6 +2,7 @@
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import CleanroomsContent from "@/components/shared/CleanroomsContent.astro";
+import VideoSection from "@/components/shared/VideoSection.astro";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
@@ -39,4 +40,8 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <CleanroomsContent />
+  <VideoSection
+    videoId="_Lc71ZZN6ow"
+    title="Cuartos Limpios - Star Filters"
+  />
 </WebsiteLayout>

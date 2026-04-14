@@ -1,0 +1,79 @@
+---
+interface Props {
+  videoId: string;
+  title: string;
+  isShort?: boolean;
+}
+
+const { videoId, title, isShort = false } = Astro.props;
+const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+const uid = `video-${videoId}`;
+---
+
+<div class="bg-background py-12 sm:py-16">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class={`mx-auto ${isShort ? 'max-w-sm' : 'max-w-4xl'}`}>
+      <div
+        id={uid}
+        class={`video-container relative overflow-hidden rounded-2xl shadow-xl bg-black cursor-pointer ${isShort ? 'aspect-[9/16]' : 'aspect-video'}`}
+        data-video-id={videoId}
+        data-title={title}
+      >
+        <!-- Thumbnail con play button -->
+        <img
+          src={thumbnailUrl}
+          alt={title}
+          class="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+          loading="lazy"
+        />
+        <div class="play-btn absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300">
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg sm:h-20 sm:w-20">
+            <svg class="h-7 w-7 translate-x-0.5 text-primary sm:h-9 sm:w-9" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.video-container').forEach((container) => {
+    const videoId = container.dataset.videoId!;
+    const title = container.dataset.title!;
+
+    function loadVideo() {
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&playsinline=1`;
+      iframe.title = title;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allowFullscreen = true;
+      iframe.className = 'absolute inset-0 h-full w-full';
+      iframe.setAttribute('frameborder', '0');
+      container.innerHTML = '';
+      container.appendChild(iframe);
+    }
+
+    // Autoplay al hacer scroll hasta el elemento
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            loadVideo();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.4 }
+    );
+
+    observer.observe(container);
+
+    // También cargar al hacer click (para quienes quieren reproducir antes)
+    container.addEventListener('click', () => {
+      loadVideo();
+      observer.disconnect();
+    });
+  });
+</script>

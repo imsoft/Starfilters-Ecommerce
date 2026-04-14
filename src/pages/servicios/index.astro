@@ -1,6 +1,7 @@
 ---
 import FeatureServiceSection from "@/components/shared/FeatureServiceSection.astro";
 import ServicesCTA from "@/components/shared/ServicesCTA.astro";
+import VideoSection from "@/components/shared/VideoSection.astro";
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -54,5 +55,9 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
   <FeatureServiceSection />
+  <VideoSection
+    videoId="7TH3CgAz3fk"
+    title={lang === 'en' ? 'Validation Services - Star Filters' : 'Servicios de Validación - Star Filters'}
+  />
   <ServicesCTA />
 </WebsiteLayout>

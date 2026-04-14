@@ -60,6 +60,7 @@ export const ui = {
     'features.technology.description': 'Pruebas de funcionamiento y desempeño de los sistemas de filtración y control de partículas en cuartos limpios y áreas críticas basado en normativas aplicables.',
     'features.support.title': 'Accesorios',
     'features.support.description': 'Unidades Manejadoras de Aire, Puertas y Ventanas especializadas, Air Showers, Gabinetes, manómetros de presión diferencial, cortina rápida, pass through.',
+    'features.cta': 'Conocer más',
 
     // Cleanrooms
     'cleanrooms.badge': 'Nuestro Expertise',
@@ -328,6 +329,7 @@ export const ui = {
     'features.technology.description': 'Performance and operation testing of filtration and particle control systems in cleanrooms and critical areas based on applicable regulations.',
     'features.support.title': 'Accessories',
     'features.support.description': 'Air Handling Units, specialized Doors and Windows, Air Showers, Cabinets, differential pressure manometers, fast curtain, pass through.',
+    'features.cta': 'Learn more',
 
     // Cleanrooms
     'cleanrooms.badge': 'Our Expertise',
