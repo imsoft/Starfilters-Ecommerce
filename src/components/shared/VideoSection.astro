@@ -3,16 +3,17 @@ interface Props {
   videoId: string;
   title: string;
   isShort?: boolean;
+  noPadding?: boolean;
 }
 
-const { videoId, title, isShort = false } = Astro.props;
+const { videoId, title, isShort = false, noPadding = false } = Astro.props;
 const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 const uid = `video-${videoId}`;
 ---
 
-<div class="bg-background py-12 sm:py-16">
-  <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <div class={`mx-auto ${isShort ? 'max-w-sm' : 'max-w-4xl'}`}>
+<div class={noPadding ? '' : 'bg-background py-12 sm:py-16'}>
+  <div class={noPadding ? '' : 'mx-auto max-w-7xl px-6 lg:px-8'}>
+    <div class={`mx-auto ${isShort ? 'max-w-sm' : noPadding ? '' : 'max-w-4xl'}`}>
       <div
         id={uid}
         class={`video-container relative overflow-hidden rounded-2xl shadow-xl bg-black cursor-pointer ${isShort ? 'aspect-[9/16]' : 'aspect-video'}`}
