@@ -41,108 +41,6 @@ if (!user) {
               </div>
             </div>
   
-            <div class="mt-10 border-t border-border pt-10" id="shipping-info-section">
-              <h2 class="text-lg font-medium text-foreground">
-                Shipping Information
-              </h2>
-
-              <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4" id="shipping-address-fields">
-                <div>
-                  <label for="first-name" class="block text-sm/6 font-medium text-foreground">First Name</label>
-                  <div class="mt-2">
-                    <input
-                      id="first-name"
-                      type="text"
-                      name="first-name"
-                      value={user.firstName}
-                      readonly
-                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                    />
-                  </div>
-                </div>
-  
-                <div>
-                  <label for="last-name" class="block text-sm/6 font-medium text-foreground">Last Name</label>
-                  <div class="mt-2">
-                    <input
-                      id="last-name"
-                      type="text"
-                      name="last-name"
-                      value={user.lastName}
-                      readonly
-                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                    />
-                  </div>
-                </div>
-  
-                <div class="sm:col-span-2">
-                  <label for="address" class="block text-sm/6 font-medium text-foreground">Address</label>
-                  <div class="mt-2">
-                    <input
-                      id="address"
-                      type="text"
-                      name="address"
-                      required
-                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                    />
-                  </div>
-                </div>
-  
-                <div>
-                  <label for="city" class="block text-sm/6 font-medium text-foreground">City</label>
-                  <div class="mt-2">
-                    <input
-                      id="city"
-                      type="text"
-                      name="city"
-                      required
-                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                    />
-                  </div>
-                </div>
-  
-                <div>
-                  <label for="state" class="block text-sm/6 font-medium text-foreground">State</label>
-                  <div class="mt-2">
-                    <input
-                      id="state"
-                      type="text"
-                      name="state"
-                      required
-                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                    />
-                  </div>
-                </div>
-  
-                <div>
-                  <label for="postal-code" class="block text-sm/6 font-medium text-foreground">Postal Code</label>
-                  <div class="mt-2">
-                    <input
-                      id="postal-code"
-                      type="text"
-                      name="postal-code"
-                      required
-                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                    />
-                  </div>
-                </div>
-  
-                <div>
-                  <label for="country" class="block text-sm/6 font-medium text-foreground">Country</label>
-                  <div class="mt-2">
-                    <input
-                      id="country"
-                      type="text"
-                      name="country"
-                      value="Mexico"
-                      readonly
-                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-  
             <!-- Delivery Method -->
             <div class="mt-10 border-t border-border pt-10">
               <h2 class="text-lg font-medium text-foreground">Delivery Method</h2>
@@ -211,6 +109,105 @@ if (!user) {
                   </span>
                   <span class="ml-4 shrink-0 text-sm font-medium" id="price-paqueteria">$350.00</span>
                 </label>
+              </div>
+            </div>
+
+            <!-- Shipping Information (only for options that require an address) -->
+            <div class="mt-10 border-t border-border pt-10 hidden" id="shipping-info-section">
+              <h2 class="text-lg font-medium text-foreground">
+                Shipping Information
+              </h2>
+
+              <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4" id="shipping-address-fields">
+                <div>
+                  <label for="first-name" class="block text-sm/6 font-medium text-foreground">First Name</label>
+                  <div class="mt-2">
+                    <input
+                      id="first-name"
+                      type="text"
+                      name="first-name"
+                      value={user.firstName}
+                      readonly
+                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="last-name" class="block text-sm/6 font-medium text-foreground">Last Name</label>
+                  <div class="mt-2">
+                    <input
+                      id="last-name"
+                      type="text"
+                      name="last-name"
+                      value={user.lastName}
+                      readonly
+                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label for="address" class="block text-sm/6 font-medium text-foreground">Address</label>
+                  <div class="mt-2">
+                    <input
+                      id="address"
+                      type="text"
+                      name="address"
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="city" class="block text-sm/6 font-medium text-foreground">City</label>
+                  <div class="mt-2">
+                    <input
+                      id="city"
+                      type="text"
+                      name="city"
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="state" class="block text-sm/6 font-medium text-foreground">State</label>
+                  <div class="mt-2">
+                    <input
+                      id="state"
+                      type="text"
+                      name="state"
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="postal-code" class="block text-sm/6 font-medium text-foreground">Postal Code</label>
+                  <div class="mt-2">
+                    <input
+                      id="postal-code"
+                      type="text"
+                      name="postal-code"
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="country" class="block text-sm/6 font-medium text-foreground">Country</label>
+                  <div class="mt-2">
+                    <input
+                      id="country"
+                      type="text"
+                      name="country"
+                      value="Mexico"
+                      readonly
+                      class="block w-full rounded-md bg-muted px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -318,17 +315,18 @@ if (!user) {
     }
 
     function toggleShippingFields(method: string) {
+      const section = document.getElementById('shipping-info-section');
       const fields = document.getElementById('shipping-address-fields');
       const addressInputs = fields?.querySelectorAll('input:not([readonly])') as NodeListOf<HTMLInputElement>;
       const isPickup = method === 'pickup-gdl' || method === 'pickup-cdmx';
 
-      if (!fields) return;
+      if (!section) return;
 
       if (isPickup) {
-        fields.classList.add('hidden');
+        section.classList.add('hidden');
         addressInputs?.forEach(input => input.removeAttribute('required'));
       } else {
-        fields.classList.remove('hidden');
+        section.classList.remove('hidden');
         addressInputs?.forEach(input => input.setAttribute('required', ''));
       }
     }
