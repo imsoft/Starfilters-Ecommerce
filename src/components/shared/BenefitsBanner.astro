@@ -7,7 +7,7 @@ const benefits = await getActiveBenefits();
 ---
 
 {benefits.length > 0 && (
-  <div id="benefits-banner" class="relative bg-primary px-6 py-2.5 sm:px-3.5">
+  <div id="benefits-banner" class="relative bg-primary px-6 py-2 sm:px-3.5 m-0">
     <div class="overflow-hidden">
       <div class="benefits-track flex items-center whitespace-nowrap">
         {[...benefits, ...benefits].map((benefit) => (
