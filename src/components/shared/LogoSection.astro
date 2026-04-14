@@ -3,6 +3,21 @@ import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
+
+const logos = [
+  { src: '/images/companies/Logo%20Honda.png', alt: 'Honda' },
+  { src: '/images/companies/Logo%20GSK.png', alt: 'GlaxoSmithKline' },
+  { src: '/images/companies/Logo%20Airbus.png', alt: 'Airbus' },
+  { src: '/images/companies/Logo%20Cryopharma.png', alt: 'Laboratorios Cryopharma' },
+  { src: '/images/companies/Logo%20Virbac%20Landing%20Page.png', alt: 'Virbac' },
+  { src: '/images/companies/Logo%20Sonoma%20Landing%20Page.png', alt: 'Sonoma' },
+  { src: '/images/home-page/amazon.png', alt: 'Amazon' },
+  { src: '/images/home-page/continental.png', alt: 'Continental' },
+  { src: '/images/home-page/jabil.png', alt: 'Jabil' },
+  { src: '/images/home-page/omnilife.png', alt: 'Omnilife' },
+  { src: '/images/home-page/pisa.png', alt: 'PiSA' },
+  { src: '/images/home-page/flex.png', alt: 'Flex' },
+];
 ---
 
 <div class="bg-background py-12 sm:py-16">
@@ -10,93 +25,39 @@ const t = useTranslations(lang);
     <h2 class="mx-auto max-w-3xl text-center text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl">
       {t('logoSection.title')}
     </h2>
-    <div class="mx-auto mt-10 max-w-6xl">
-      <div class="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-6 items-center justify-items-center">
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
+  </div>
+
+  <div class="mt-10 overflow-hidden">
+    <div class="logo-track flex">
+      {[...logos, ...logos].map((logo) => (
+        <div class="logo-item flex-shrink-0 flex items-center justify-center h-20 w-40 mx-6 grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-300">
           <img
-            src="/images/companies/Logo%20Honda.png"
-            alt="Honda"
-            class="max-h-16 w-auto object-contain"
+            src={logo.src}
+            alt={logo.alt}
+            class="max-h-14 w-auto object-contain"
           />
         </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/companies/Logo%20GSK.png"
-            alt="GlaxoSmithKline"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/companies/Logo%20Airbus.png"
-            alt="Airbus"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/companies/Logo%20Cryopharma.png"
-            alt="Laboratorios Cryopharma"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/companies/Logo%20Virbac%20Landing%20Page.png"
-            alt="Virbac"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/companies/Logo%20Sonoma%20Landing%20Page.png"
-            alt="Sonoma"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/home-page/amazon.png"
-            alt="Amazon"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/home-page/continental.png"
-            alt="Continental"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/home-page/jabil.png"
-            alt="Jabil"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/home-page/omnilife.png"
-            alt="Omnilife"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/home-page/pisa.png"
-            alt="PiSA"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-        <div class="flex items-center justify-center h-20 w-full grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100">
-          <img
-            src="/images/home-page/flex.png"
-            alt="Flex"
-            class="max-h-16 w-auto object-contain"
-          />
-        </div>
-      </div>
+      ))}
     </div>
   </div>
 </div>
+
+<style>
+  .logo-track {
+    animation: scroll-logos 30s linear infinite;
+    width: max-content;
+  }
+
+  .logo-track:hover {
+    animation-play-state: paused;
+  }
+
+  @keyframes scroll-logos {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+</style>
