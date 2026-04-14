@@ -41,12 +41,12 @@ if (!user) {
               </div>
             </div>
   
-            <div class="mt-10 border-t border-border pt-10">
+            <div class="mt-10 border-t border-border pt-10" id="shipping-info-section">
               <h2 class="text-lg font-medium text-foreground">
                 Shipping Information
               </h2>
 
-              <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+              <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4" id="shipping-address-fields">
                 <div>
                   <label for="first-name" class="block text-sm/6 font-medium text-foreground">First Name</label>
                   <div class="mt-2">
@@ -315,6 +315,22 @@ if (!user) {
     function getSelectedDeliveryMethod(): string {
       const selected = document.querySelector('input[name="delivery-method"]:checked') as HTMLInputElement;
       return selected?.value || '';
+    }
+
+    function toggleShippingFields(method: string) {
+      const fields = document.getElementById('shipping-address-fields');
+      const addressInputs = fields?.querySelectorAll('input:not([readonly])') as NodeListOf<HTMLInputElement>;
+      const isPickup = method === 'pickup-gdl' || method === 'pickup-cdmx';
+
+      if (!fields) return;
+
+      if (isPickup) {
+        fields.classList.add('hidden');
+        addressInputs?.forEach(input => input.removeAttribute('required'));
+      } else {
+        fields.classList.remove('hidden');
+        addressInputs?.forEach(input => input.setAttribute('required', ''));
+      }
     }
 
     function updateDeliveryPrices(subtotal: number) {
@@ -889,7 +905,12 @@ if (!user) {
 
           // Validate all required fields are filled
           const deliveryMethod = getSelectedDeliveryMethod();
-          if (!email || !firstName || !lastName || !address || !city || !state || !postalCode || !country || !deliveryMethod) {
+          const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
+          if (!email || !firstName || !lastName || !deliveryMethod) {
+            return;
+          }
+          // Only validate address fields if not a pickup option
+          if (!isPickup && (!address || !city || !state || !postalCode || !country)) {
             return;
           }
 
@@ -1021,6 +1042,8 @@ if (!user) {
       const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
       deliveryRadios.forEach(radio => {
         radio.addEventListener('change', () => {
+          const method = (radio as HTMLInputElement).value;
+          toggleShippingFields(method);
           isLoadingPaymentForm = false;
           renderOrderSummary();
           loadPaymentFormDebounced();

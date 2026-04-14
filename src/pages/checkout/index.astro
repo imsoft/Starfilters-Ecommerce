@@ -41,12 +41,12 @@ if (!user) {
               </div>
             </div>
   
-            <div class="mt-10 border-t border-border pt-10">
+            <div class="mt-10 border-t border-border pt-10" id="shipping-info-section">
               <h2 class="text-lg font-medium text-foreground">
                 Información de envío
               </h2>
 
-              <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+              <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4" id="shipping-address-fields">
                 <div>
                   <label for="first-name" class="block text-sm/6 font-medium text-foreground">Nombre</label>
                   <div class="mt-2">
@@ -317,6 +317,24 @@ if (!user) {
     function getSelectedDeliveryMethod(): string {
       const selected = document.querySelector('input[name="delivery-method"]:checked') as HTMLInputElement;
       return selected?.value || '';
+    }
+
+    // Mostrar u ocultar campos de dirección según el método de entrega
+    function toggleShippingFields(method: string) {
+      const section = document.getElementById('shipping-info-section');
+      const fields = document.getElementById('shipping-address-fields');
+      const addressInputs = fields?.querySelectorAll('input:not([readonly])') as NodeListOf<HTMLInputElement>;
+      const isPickup = method === 'pickup-gdl' || method === 'pickup-cdmx';
+
+      if (!section || !fields) return;
+
+      if (isPickup) {
+        fields.classList.add('hidden');
+        addressInputs?.forEach(input => input.removeAttribute('required'));
+      } else {
+        fields.classList.remove('hidden');
+        addressInputs?.forEach(input => input.setAttribute('required', ''));
+      }
     }
 
     // Actualizar precios dinámicos de opciones de entrega
@@ -894,7 +912,12 @@ if (!user) {
 
           // Validar que todos los campos requeridos estén llenos
           const deliveryMethod = getSelectedDeliveryMethod();
-          if (!email || !firstName || !lastName || !address || !city || !state || !postalCode || !country || !deliveryMethod) {
+          const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
+          if (!email || !firstName || !lastName || !deliveryMethod) {
+            return;
+          }
+          // Solo validar dirección si no es recogida en sucursal
+          if (!isPickup && (!address || !city || !state || !postalCode || !country)) {
             return;
           }
 
@@ -1026,6 +1049,8 @@ if (!user) {
       const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
       deliveryRadios.forEach(radio => {
         radio.addEventListener('change', () => {
+          const method = (radio as HTMLInputElement).value;
+          toggleShippingFields(method);
           // Resetear Stripe para recalcular el total con el nuevo método de entrega
           isLoadingPaymentForm = false;
           renderOrderSummary();
