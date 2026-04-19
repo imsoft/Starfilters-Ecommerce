@@ -21,18 +21,6 @@ const benefits = await getActiveBenefits();
       </div>
     </div>
 
-    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-      <button
-        id="dismiss-benefits-banner"
-        type="button"
-        class="-m-3 p-3 focus-visible:-outline-offset-4"
-        aria-label="Cerrar"
-      >
-        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="size-5 text-primary-foreground opacity-80 hover:opacity-100">
-          <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-        </svg>
-      </button>
-    </div>
   </div>
 )}
 
@@ -52,16 +40,3 @@ const benefits = await getActiveBenefits();
   }
 </style>
 
-<script>
-  const banner = document.getElementById('benefits-banner');
-  const dismissBtn = document.getElementById('dismiss-benefits-banner');
-
-  if (localStorage.getItem('benefits-banner-dismissed') === 'true') {
-    banner?.remove();
-  }
-
-  dismissBtn?.addEventListener('click', () => {
-    banner?.remove();
-    localStorage.setItem('benefits-banner-dismissed', 'true');
-  });
-</script>
