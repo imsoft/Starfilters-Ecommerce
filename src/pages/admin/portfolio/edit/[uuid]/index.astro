@@ -14,7 +14,6 @@ if (Astro.request.method === 'POST') {
   const description = formData.get('description') as string;
   const description_en = formData.get('description_en') as string | null;
   const image_url = formData.get('image_url') as string;
-  const sort_order = parseInt(formData.get('sort_order') as string || '0');
   const is_active = formData.get('is_active') === '1';
 
   if (!title || !description || !image_url) {
@@ -28,7 +27,6 @@ if (Astro.request.method === 'POST') {
       description,
       description_en: description_en || undefined,
       image_url,
-      sort_order,
       is_active,
     });
     if (updated) return Astro.redirect('/admin/portfolio?success=updated');
@@ -137,14 +135,7 @@ const error = url.searchParams.get('error');
       <!-- Configuración -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-4">Configuración</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <label for="sort_order" class="block text-sm font-medium text-foreground mb-1">Orden</label>
-            <input type="number" id="sort_order" name="sort_order" value={project.sort_order} min="0"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-          </div>
-        </div>
-        <div class="mt-4">
+        <div>
           <label class="block text-sm font-medium text-foreground mb-2">Estado</label>
           <div class="flex gap-4">
             <label class="flex items-center gap-2 cursor-pointer">

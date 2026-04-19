@@ -16,7 +16,6 @@ if (Astro.request.method === 'POST') {
   const role_en = formData.get('role_en') as string | null;
   const company_logo_url = formData.get('company_logo_url') as string | null;
   const project_image_url = formData.get('project_image_url') as string | null;
-  const sort_order = parseInt(formData.get('sort_order') as string || '0');
   const is_active = formData.get('is_active') === '1';
 
   if (!body || !author || !role) {
@@ -32,7 +31,6 @@ if (Astro.request.method === 'POST') {
       role_en: role_en || undefined,
       company_logo_url: company_logo_url || undefined,
       project_image_url: project_image_url || undefined,
-      sort_order,
       is_active,
     });
     if (updated) return Astro.redirect('/admin/testimonials?success=updated');
@@ -181,24 +179,17 @@ const error = url.searchParams.get('error');
       <!-- Configuración -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-4">Configuración</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <label for="sort_order" class="block text-sm font-medium text-foreground mb-1">Orden</label>
-            <input type="number" id="sort_order" name="sort_order" value={testimonial.sort_order} min="0"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-2">Estado</label>
-            <div class="flex gap-4 mt-3">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="is_active" value="1" checked={testimonial.is_active} class="text-primary" />
-                <span class="text-sm text-foreground">Activo</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="is_active" value="0" checked={!testimonial.is_active} class="text-primary" />
-                <span class="text-sm text-foreground">Inactivo</span>
-              </label>
-            </div>
+        <div>
+          <label class="block text-sm font-medium text-foreground mb-2">Estado</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="is_active" value="1" checked={testimonial.is_active} class="text-primary" />
+              <span class="text-sm text-foreground">Activo</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="is_active" value="0" checked={!testimonial.is_active} class="text-primary" />
+              <span class="text-sm text-foreground">Inactivo</span>
+            </label>
           </div>
         </div>
       </div>

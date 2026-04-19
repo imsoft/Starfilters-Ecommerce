@@ -1452,7 +1452,7 @@ export const updatePortfolioProject = async (uuid: string, data: UpdatePortfolio
     await query(
       `UPDATE portfolio_projects SET
         title = ?, title_en = ?, description = ?, description_en = ?,
-        image_url = ?, link_url = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+        image_url = ?, link_url = ?, sort_order = COALESCE(?, sort_order), is_active = ?, updated_at = NOW()
        WHERE uuid = ?`,
       [
         data.title,
@@ -1461,7 +1461,7 @@ export const updatePortfolioProject = async (uuid: string, data: UpdatePortfolio
         data.description_en || null,
         data.image_url,
         data.link_url || null,
-        data.sort_order ?? 0,
+        data.sort_order ?? null,
         data.is_active !== false ? 1 : 0,
         uuid,
       ]
@@ -1481,6 +1481,23 @@ export const deletePortfolioProject = async (uuid: string): Promise<boolean> => 
     console.error('Error eliminando proyecto de portafolio:', error);
     return false;
   }
+};
+
+export const reorderPortfolioProjects = async (items: { uuid: string; sort_order: number }[]): Promise<boolean> => {
+  try {
+    for (const item of items) {
+      await query('UPDATE portfolio_projects SET sort_order = ? WHERE uuid = ?', [item.sort_order, item.uuid]);
+    }
+    return true;
+  } catch (error) {
+    console.error('Error reordenando proyectos:', error);
+    return false;
+  }
+};
+
+export const getNextPortfolioSortOrder = async (): Promise<number> => {
+  const rows = await query('SELECT MAX(sort_order) as max_order FROM portfolio_projects') as any[];
+  return (rows[0]?.max_order ?? -1) + 1;
 };
 
 // ── Testimonios ──────────────────────────────────────────────────────────────
@@ -1579,7 +1596,7 @@ export const updateTestimonial = async (uuid: string, data: UpdateTestimonialDat
     await query(
       `UPDATE testimonials SET
         body = ?, body_en = ?, author = ?, role = ?, role_en = ?,
-        company_logo_url = ?, project_image_url = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+        company_logo_url = ?, project_image_url = ?, sort_order = COALESCE(?, sort_order), is_active = ?, updated_at = NOW()
        WHERE uuid = ?`,
       [
         data.body,
@@ -1589,7 +1606,7 @@ export const updateTestimonial = async (uuid: string, data: UpdateTestimonialDat
         data.role_en || null,
         data.company_logo_url || null,
         data.project_image_url || null,
-        data.sort_order ?? 0,
+        data.sort_order ?? null,
         data.is_active !== false ? 1 : 0,
         uuid,
       ]
@@ -1609,4 +1626,21 @@ export const deleteTestimonial = async (uuid: string): Promise<boolean> => {
     console.error('Error eliminando testimonio:', error);
     return false;
   }
+};
+
+export const reorderTestimonials = async (items: { uuid: string; sort_order: number }[]): Promise<boolean> => {
+  try {
+    for (const item of items) {
+      await query('UPDATE testimonials SET sort_order = ? WHERE uuid = ?', [item.sort_order, item.uuid]);
+    }
+    return true;
+  } catch (error) {
+    console.error('Error reordenando testimonios:', error);
+    return false;
+  }
+};
+
+export const getNextTestimonialSortOrder = async (): Promise<number> => {
+  const rows = await query('SELECT MAX(sort_order) as max_order FROM testimonials') as any[];
+  return (rows[0]?.max_order ?? -1) + 1;
 };

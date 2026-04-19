@@ -23,7 +23,7 @@ try {
         <div>
           <h1 class="text-3xl font-bold tracking-tight text-foreground">Galería de Proyectos</h1>
           <p class="mt-2 text-muted-foreground">
-            Administra los proyectos que se muestran en la página principal
+            Arrastra las filas para cambiar el orden de aparición
           </p>
         </div>
         <a href="/admin/portfolio/create">
@@ -53,20 +53,24 @@ try {
       </div>
     )}
 
+    <div id="save-toast" class="hidden mb-4 rounded-md bg-green-50 p-3 text-sm font-medium text-green-800">
+      ✅ Orden guardado correctamente
+    </div>
+
     <!-- Tabla -->
     <div class="rounded-lg border border-border bg-background">
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-muted">
             <tr>
+              <th class="px-3 py-3 w-10"></th>
               <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Proyecto</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Descripción</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Orden</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-border">
+          <tbody id="sortable-list" class="divide-y divide-border">
             {projects.length === 0 ? (
               <tr>
                 <td colspan="5" class="px-6 py-12 text-center">
@@ -86,7 +90,16 @@ try {
               </tr>
             ) : (
               projects.map((project) => (
-                <tr class="hover:bg-muted/50">
+                <tr
+                  class="hover:bg-muted/50 cursor-grab active:cursor-grabbing drag-row"
+                  draggable="true"
+                  data-uuid={project.uuid}
+                >
+                  <td class="px-3 py-4 text-muted-foreground">
+                    <svg class="h-5 w-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                    </svg>
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center gap-3">
                       <img
@@ -105,7 +118,6 @@ try {
                   <td class="px-6 py-4">
                     <p class="text-sm text-muted-foreground line-clamp-2 max-w-xs">{project.description}</p>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{project.sort_order}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${project.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                       {project.is_active ? 'Activo' : 'Inactivo'}
@@ -151,6 +163,7 @@ try {
 </AdminLayout>
 
 <script>
+  // ── Delete ──────────────────────────────────────────────────────────────────
   document.querySelectorAll<HTMLElement>('.delete-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const uuid = btn.dataset.uuid || '';
@@ -169,5 +182,67 @@ try {
         })
         .catch(() => alert('Error al eliminar el proyecto.'));
     });
+  });
+
+  // ── Drag and drop ───────────────────────────────────────────────────────────
+  const tbody = document.getElementById('sortable-list') as HTMLElement;
+  const toast = document.getElementById('save-toast') as HTMLElement;
+  let dragRow: HTMLElement | null = null;
+
+  function showToast() {
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+  }
+
+  tbody?.addEventListener('dragstart', (e) => {
+    dragRow = (e.target as HTMLElement).closest('tr');
+    setTimeout(() => dragRow?.classList.add('opacity-40'), 0);
+  });
+
+  tbody?.addEventListener('dragend', () => {
+    dragRow?.classList.remove('opacity-40');
+    dragRow = null;
+    document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over', 'border-t-2', 'border-primary'));
+  });
+
+  tbody?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const target = (e.target as HTMLElement).closest('tr') as HTMLElement;
+    if (!target || target === dragRow) return;
+    document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over', 'border-t-2', 'border-primary'));
+    target.classList.add('drag-over', 'border-t-2', 'border-primary');
+  });
+
+  tbody?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const target = (e.target as HTMLElement).closest('tr') as HTMLElement;
+    if (!target || target === dragRow || !dragRow) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr[data-uuid]'));
+    const fromIndex = rows.indexOf(dragRow);
+    const toIndex = rows.indexOf(target);
+
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    if (fromIndex < toIndex) {
+      target.after(dragRow);
+    } else {
+      target.before(dragRow);
+    }
+
+    // Save new order
+    const updated = Array.from(tbody.querySelectorAll('tr[data-uuid]')).map((row, i) => ({
+      uuid: (row as HTMLElement).dataset.uuid!,
+      sort_order: i,
+    }));
+
+    fetch('/api/portfolio/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: updated }),
+    })
+      .then((r) => r.json())
+      .then((data) => { if (data.success) showToast(); })
+      .catch(() => {});
   });
 </script>
