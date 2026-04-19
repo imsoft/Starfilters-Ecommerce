@@ -6,46 +6,50 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 ---
 
-<div class="relative min-h-screen flex flex-col bg-background p-3 sm:p-4">
-  <!-- Imagen de fondo con bordes redondeados y margen -->
-  <div class="absolute inset-3 sm:inset-4 z-0 rounded-2xl overflow-hidden">
-    <img
-      src="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"
-      alt="Cuarto limpio sala blanca ISO 14644 Star Filters"
-      class="hero-image h-full w-full object-cover"
-    />
-    <!-- Overlay suave para legibilidad -->
-    <div class="absolute inset-0 bg-black/20"></div>
-  </div>
+<div class="bg-background p-3 sm:p-4 min-h-screen">
+  <!-- Contenedor redondeado que envuelve TODO: navbar + imagen + tarjeta -->
+  <div class="relative min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] flex flex-col rounded-2xl overflow-hidden">
 
-  <!-- Navbar encima de la imagen -->
-  <div class="relative z-20">
-    <Navbar />
-  </div>
+    <!-- Imagen de fondo -->
+    <div class="absolute inset-0 z-0">
+      <img
+        src="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"
+        alt="Cuarto limpio sala blanca ISO 14644 Star Filters"
+        class="hero-image h-full w-full object-cover"
+      />
+      <div class="absolute inset-0 bg-black/20"></div>
+    </div>
 
-  <!-- Tarjeta blanca flotante - bottom left (igual que Camfil) -->
-  <div class="relative z-10 flex flex-1 items-end pb-16 px-6 sm:px-12 lg:px-16">
-    <div class="hero-card bg-white rounded-2xl p-8 sm:p-10 max-w-lg w-full shadow-xl">
-      <h1 class="hero-title text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl leading-[1.08]">
-        {t('hero.title')}
-      </h1>
-      <p class="hero-description mt-4 text-base text-gray-600 leading-relaxed sm:text-lg">
-        {t('hero.description')}
-      </p>
-      <div class="hero-cta mt-8 flex flex-wrap gap-3">
-        <a
-          href={lang === 'en' ? '/en/filters' : '/filtros'}
-          class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
-        >
-          {t('hero.cta')}
-        </a>
-        <a
-          href={lang === 'en' ? '/en/portfolio' : '/portafolio'}
-          class="inline-flex items-center gap-2 rounded-full border-2 border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors"
-        >
-          {t('hero.ctaSecondary')}
-        </a>
+    <!-- Navbar encima de la imagen -->
+    <div class="relative z-20">
+      <Navbar />
+    </div>
+
+    <!-- Tarjeta blanca flotante - bottom left -->
+    <div class="relative z-10 flex flex-1 items-end pb-16 px-6 sm:px-12 lg:px-16">
+      <div class="hero-card bg-white rounded-2xl p-8 sm:p-10 max-w-lg w-full shadow-xl">
+        <h1 class="hero-title text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl leading-[1.08]">
+          {t('hero.title')}
+        </h1>
+        <p class="hero-description mt-4 text-base text-gray-600 leading-relaxed sm:text-lg">
+          {t('hero.description')}
+        </p>
+        <div class="hero-cta mt-8 flex flex-wrap gap-3">
+          <a
+            href={lang === 'en' ? '/en/filters' : '/filtros'}
+            class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            {t('hero.cta')}
+          </a>
+          <a
+            href={lang === 'en' ? '/en/portfolio' : '/portafolio'}
+            class="inline-flex items-center gap-2 rounded-full border-2 border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors"
+          >
+            {t('hero.ctaSecondary')}
+          </a>
+        </div>
       </div>
     </div>
+
   </div>
 </div>
