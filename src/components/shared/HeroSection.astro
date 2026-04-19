@@ -6,67 +6,46 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 ---
 
-<div class="relative bg-background flex flex-col min-h-screen">
-  <Navbar />
+<div class="relative min-h-screen flex flex-col">
+  <!-- Imagen de fondo full-bleed -->
+  <div class="absolute inset-0 z-0">
+    <img
+      src="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"
+      alt="Cuarto limpio sala blanca ISO 14644 Star Filters"
+      class="hero-image h-full w-full object-cover"
+    />
+    <!-- Overlay suave para legibilidad -->
+    <div class="absolute inset-0 bg-black/20"></div>
+  </div>
 
-  <div class="flex-1 flex flex-col lg:flex-row">
+  <!-- Navbar encima de la imagen -->
+  <div class="relative z-20">
+    <Navbar />
+  </div>
 
-    <!-- Left: Text panel -->
-    <div class="relative z-10 flex flex-col justify-center px-6 py-20 sm:px-12 lg:px-16 lg:py-0 lg:w-1/2 xl:w-[52%]">
-      <!-- Badge -->
-      <div class="mb-8 hidden sm:flex">
-        <div class="inline-flex items-center gap-2 rounded-full border border-border bg-primary/5 px-4 py-1.5 text-sm text-muted-foreground">
-          <span class="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0"></span>
-          <span>{t('hero.badge')}</span>
-          <a
-            href={lang === 'en' ? '/en/about' : '/acerca-de'}
-            class="font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
-          >
-            {t('hero.badgeLink')} →
-          </a>
-        </div>
-      </div>
-
-      <!-- Heading -->
-      <h1 class="hero-title text-5xl font-bold tracking-tight text-foreground sm:text-6xl xl:text-7xl leading-[1.05]">
+  <!-- Tarjeta blanca flotante - bottom left (igual que Camfil) -->
+  <div class="relative z-10 flex flex-1 items-end pb-16 px-6 sm:px-12 lg:px-16">
+    <div class="hero-card bg-white rounded-2xl p-8 sm:p-10 max-w-lg w-full shadow-xl">
+      <h1 class="hero-title text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl leading-[1.08]">
         {t('hero.title')}
       </h1>
-
-      <!-- Description -->
-      <p class="hero-description mt-6 text-lg text-muted-foreground leading-relaxed max-w-lg sm:text-xl">
+      <p class="hero-description mt-4 text-base text-gray-600 leading-relaxed sm:text-lg">
         {t('hero.description')}
       </p>
-
-      <!-- CTAs -->
-      <div class="hero-cta mt-10 flex flex-wrap items-center gap-4">
+      <div class="hero-cta mt-8 flex flex-wrap gap-3">
         <a
           href={lang === 'en' ? '/en/filters' : '/filtros'}
-          class="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
         >
           {t('hero.cta')}
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-          </svg>
         </a>
         <a
           href={lang === 'en' ? '/en/portfolio' : '/portafolio'}
-          class="inline-flex items-center gap-2 rounded-md border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+          class="inline-flex items-center gap-2 rounded-full border-2 border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors"
         >
           {t('hero.ctaSecondary')}
         </a>
       </div>
     </div>
-
-    <!-- Right: Full image -->
-    <div class="relative lg:w-1/2 xl:w-[48%] h-72 sm:h-96 lg:h-auto lg:min-h-screen">
-      <img
-        src="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"
-        alt="Cuarto limpio sala blanca ISO 14644 Star Filters"
-        class="hero-image absolute inset-0 h-full w-full object-cover"
-      />
-      <!-- Overlay sutil para profundidad -->
-      <div class="absolute inset-0 bg-gradient-to-r from-background/20 to-transparent lg:from-background/10 pointer-events-none"></div>
-    </div>
-
   </div>
 </div>
