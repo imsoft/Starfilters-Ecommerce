@@ -208,6 +208,21 @@ const currentPath = Astro.url.pathname;
                       Galería Proyectos
                     </a>
                   </li>
+                  <li>
+                    <a
+                      href="/admin/testimonials"
+                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                        currentPath.startsWith('/admin/testimonials')
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"></path>
+                      </svg>
+                      Testimonios
+                    </a>
+                  </li>
                 </ul>
               </li>
 
@@ -363,6 +378,16 @@ const currentPath = Astro.url.pathname;
                     }`}
                   >
                     Galería Proyectos
+                  </a>
+                  <a
+                    href="/admin/testimonials"
+                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
+                      currentPath.startsWith('/admin/testimonials')
+                        ? 'bg-muted'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    Testimonios
                   </a>
                 </div>
                 <div class="py-6">

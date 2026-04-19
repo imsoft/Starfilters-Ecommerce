@@ -1482,3 +1482,131 @@ export const deletePortfolioProject = async (uuid: string): Promise<boolean> => 
     return false;
   }
 };
+
+// ── Testimonios ──────────────────────────────────────────────────────────────
+
+export interface Testimonial {
+  id: number;
+  uuid: string;
+  body: string;
+  body_en?: string;
+  author: string;
+  role: string;
+  role_en?: string;
+  company_logo_url?: string;
+  project_image_url?: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateTestimonialData {
+  body: string;
+  body_en?: string;
+  author: string;
+  role: string;
+  role_en?: string;
+  company_logo_url?: string;
+  project_image_url?: string;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateTestimonialData extends Partial<CreateTestimonialData> {}
+
+function mapTestimonialFromDB(row: any): Testimonial {
+  return {
+    id: row.id,
+    uuid: row.uuid,
+    body: row.body,
+    body_en: row.body_en,
+    author: row.author,
+    role: row.role,
+    role_en: row.role_en,
+    company_logo_url: row.company_logo_url,
+    project_image_url: row.project_image_url,
+    sort_order: row.sort_order,
+    is_active: Boolean(row.is_active),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+export const getAllTestimonials = async (): Promise<Testimonial[]> => {
+  const rows = await query('SELECT * FROM testimonials ORDER BY sort_order ASC, created_at ASC') as any[];
+  return rows.map(mapTestimonialFromDB);
+};
+
+export const getActiveTestimonials = async (): Promise<Testimonial[]> => {
+  const rows = await query('SELECT * FROM testimonials WHERE is_active = 1 ORDER BY sort_order ASC, created_at ASC') as any[];
+  return rows.map(mapTestimonialFromDB);
+};
+
+export const getTestimonialByUuid = async (uuid: string): Promise<Testimonial | null> => {
+  const rows = await query('SELECT * FROM testimonials WHERE uuid = ?', [uuid]) as any[];
+  return rows.length > 0 ? mapTestimonialFromDB(rows[0]) : null;
+};
+
+export const createTestimonial = async (data: CreateTestimonialData): Promise<Testimonial | null> => {
+  try {
+    const uuid = generateUUID();
+    await query(
+      `INSERT INTO testimonials (uuid, body, body_en, author, role, role_en, company_logo_url, project_image_url, sort_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        uuid,
+        data.body,
+        data.body_en || null,
+        data.author,
+        data.role,
+        data.role_en || null,
+        data.company_logo_url || null,
+        data.project_image_url || null,
+        data.sort_order ?? 0,
+        data.is_active !== false ? 1 : 0,
+      ]
+    );
+    return getTestimonialByUuid(uuid);
+  } catch (error) {
+    console.error('Error creando testimonio:', error);
+    return null;
+  }
+};
+
+export const updateTestimonial = async (uuid: string, data: UpdateTestimonialData): Promise<Testimonial | null> => {
+  try {
+    await query(
+      `UPDATE testimonials SET
+        body = ?, body_en = ?, author = ?, role = ?, role_en = ?,
+        company_logo_url = ?, project_image_url = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+       WHERE uuid = ?`,
+      [
+        data.body,
+        data.body_en || null,
+        data.author,
+        data.role,
+        data.role_en || null,
+        data.company_logo_url || null,
+        data.project_image_url || null,
+        data.sort_order ?? 0,
+        data.is_active !== false ? 1 : 0,
+        uuid,
+      ]
+    );
+    return getTestimonialByUuid(uuid);
+  } catch (error) {
+    console.error('Error actualizando testimonio:', error);
+    return null;
+  }
+};
+
+export const deleteTestimonial = async (uuid: string): Promise<boolean> => {
+  try {
+    const result = await query('DELETE FROM testimonials WHERE uuid = ?', [uuid]) as any;
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Error eliminando testimonio:', error);
+    return false;
+  }
+};

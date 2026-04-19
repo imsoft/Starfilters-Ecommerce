@@ -1,0 +1,270 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { Button } from "@/components/ui/button";
+import { createTestimonial } from "@/lib/database";
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+
+  const body = formData.get('body') as string;
+  const body_en = formData.get('body_en') as string | null;
+  const author = formData.get('author') as string;
+  const role = formData.get('role') as string;
+  const role_en = formData.get('role_en') as string | null;
+  const company_logo_url = formData.get('company_logo_url') as string | null;
+  const project_image_url = formData.get('project_image_url') as string | null;
+  const sort_order = parseInt(formData.get('sort_order') as string || '0');
+  const is_active = formData.get('is_active') === '1';
+
+  if (!body || !author || !role) {
+    return Astro.redirect('/admin/testimonials/create?error=missing_fields');
+  }
+
+  try {
+    const testimonial = await createTestimonial({
+      body,
+      body_en: body_en || undefined,
+      author,
+      role,
+      role_en: role_en || undefined,
+      company_logo_url: company_logo_url || undefined,
+      project_image_url: project_image_url || undefined,
+      sort_order,
+      is_active,
+    });
+
+    if (testimonial) return Astro.redirect('/admin/testimonials?success=created');
+    return Astro.redirect('/admin/testimonials/create?error=creation_failed');
+  } catch {
+    return Astro.redirect('/admin/testimonials/create?error=creation_failed');
+  }
+}
+
+const url = new URL(Astro.request.url);
+const error = url.searchParams.get('error');
+---
+
+<AdminLayout title="Nuevo Testimonio">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+    <div class="mt-10 mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Nuevo Testimonio</h1>
+        <p class="mt-2 text-muted-foreground">Agrega un testimonio de cliente</p>
+      </div>
+      <a href="/admin/testimonials">
+        <Button variant="outline" className="border-border text-foreground hover:bg-muted">
+          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Volver
+        </Button>
+      </a>
+    </div>
+
+    {error === 'missing_fields' && (
+      <div class="mb-6 rounded-md bg-yellow-50 p-4">
+        <p class="text-sm font-medium text-yellow-800">Por favor completa todos los campos requeridos.</p>
+      </div>
+    )}
+    {error === 'creation_failed' && (
+      <div class="mb-6 rounded-md bg-red-50 p-4">
+        <p class="text-sm font-medium text-red-800">Error al crear el testimonio. Inténtalo de nuevo.</p>
+      </div>
+    )}
+
+    <form method="POST" class="space-y-6">
+
+      <!-- Testimonio -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-6">Testimonio</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="space-y-4">
+            <span class="text-base font-medium text-foreground">🇲🇽 Español</span>
+            <div>
+              <label for="body" class="block text-sm font-medium text-foreground mb-1">Texto del testimonio *</label>
+              <textarea id="body" name="body" rows="5" required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Escribe el testimonio del cliente..."></textarea>
+            </div>
+          </div>
+          <div class="space-y-4">
+            <span class="text-base font-medium text-foreground">🇺🇸 English</span>
+            <div>
+              <label for="body_en" class="block text-sm font-medium text-foreground mb-1">Testimonial text</label>
+              <textarea id="body_en" name="body_en" rows="5"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Write the testimonial in English..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos del cliente -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-6">Datos del Cliente</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="space-y-4">
+            <span class="text-base font-medium text-foreground">🇲🇽 Español</span>
+            <div>
+              <label for="author" class="block text-sm font-medium text-foreground mb-1">Nombre *</label>
+              <input type="text" id="author" name="author" required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: Ing. Luis C." />
+            </div>
+            <div>
+              <label for="role" class="block text-sm font-medium text-foreground mb-1">Cargo *</label>
+              <input type="text" id="role" name="role" required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: Facilities Engineer" />
+            </div>
+          </div>
+          <div class="space-y-4">
+            <span class="text-base font-medium text-foreground">🇺🇸 English</span>
+            <div>
+              <label class="block text-sm font-medium text-muted-foreground mb-1">Name</label>
+              <p class="text-sm text-muted-foreground italic">Same as Spanish</p>
+            </div>
+            <div>
+              <label for="role_en" class="block text-sm font-medium text-foreground mb-1">Job title</label>
+              <input type="text" id="role_en" name="role_en"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ex: Facilities Engineer" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logo de la empresa -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-2">Logo de la Empresa</h2>
+        <p class="text-sm text-muted-foreground mb-4">Aparece junto al nombre del cliente en la tarjeta del testimonio.</p>
+        <div id="logo-preview-wrap" class="hidden mb-4">
+          <img id="logo-preview" src="" alt="Logo preview" class="h-16 object-contain rounded border border-border p-2 bg-white" />
+        </div>
+        <div id="logo-drop-zone" class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 cursor-pointer hover:border-primary transition-colors">
+          <svg class="h-8 w-8 text-muted-foreground mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+          </svg>
+          <p class="text-sm text-muted-foreground">Arrastra el logo o haz clic para seleccionar</p>
+          <p class="text-xs text-muted-foreground">PNG, SVG recomendado · Máx. 10MB</p>
+          <input id="logo-file-input" type="file" accept="image/*" class="hidden" />
+        </div>
+        <p id="logo-upload-status" class="mt-2 text-xs text-muted-foreground"></p>
+        <input type="hidden" id="company_logo_url" name="company_logo_url" />
+      </div>
+
+      <!-- Imagen del proyecto -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-2">Imagen del Proyecto <span class="text-sm font-normal text-muted-foreground">(opcional)</span></h2>
+        <p class="text-sm text-muted-foreground mb-4">Se muestra en la parte superior de la tarjeta del testimonio para mostrar el trabajo realizado.</p>
+        <div id="project-preview-wrap" class="hidden mb-4">
+          <img id="project-preview" src="" alt="Project preview" class="h-40 w-full object-cover rounded-lg" />
+        </div>
+        <div id="project-drop-zone" class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 cursor-pointer hover:border-primary transition-colors">
+          <svg class="h-8 w-8 text-muted-foreground mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <p class="text-sm text-muted-foreground">Arrastra la foto del proyecto o haz clic para seleccionar</p>
+          <p class="text-xs text-muted-foreground">JPG, PNG, WEBP · Máx. 10MB</p>
+          <input id="project-file-input" type="file" accept="image/*" class="hidden" />
+        </div>
+        <p id="project-upload-status" class="mt-2 text-xs text-muted-foreground"></p>
+        <input type="hidden" id="project_image_url" name="project_image_url" />
+      </div>
+
+      <!-- Configuración -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-4">Configuración</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <label for="sort_order" class="block text-sm font-medium text-foreground mb-1">Orden</label>
+            <input type="number" id="sort_order" name="sort_order" value="0" min="0"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            <p class="mt-1 text-xs text-muted-foreground">Menor número = aparece primero</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-2">Estado</label>
+            <div class="flex gap-4 mt-3">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="is_active" value="1" checked class="text-primary" />
+                <span class="text-sm text-foreground">Activo</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="is_active" value="0" class="text-primary" />
+                <span class="text-sm text-foreground">Inactivo</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-4">
+        <a href="/admin/testimonials">
+          <Button type="button" variant="outline" className="border-border text-foreground hover:bg-muted">Cancelar</Button>
+        </a>
+        <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+          Guardar Testimonio
+        </Button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  function setupUploader(
+    dropZoneId: string,
+    fileInputId: string,
+    hiddenInputId: string,
+    statusId: string,
+    previewWrapId: string,
+    previewImgId: string,
+    uploadType: string
+  ) {
+    const dropZone = document.getElementById(dropZoneId) as HTMLElement;
+    const fileInput = document.getElementById(fileInputId) as HTMLInputElement;
+    const hiddenInput = document.getElementById(hiddenInputId) as HTMLInputElement;
+    const statusEl = document.getElementById(statusId) as HTMLElement;
+    const previewWrap = document.getElementById(previewWrapId) as HTMLElement;
+    const previewImg = document.getElementById(previewImgId) as HTMLImageElement;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-primary'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-primary'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-primary');
+      const file = e.dataTransfer?.files[0];
+      if (file) upload(file);
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) upload(fileInput.files[0]); });
+
+    async function upload(file: File) {
+      statusEl.textContent = 'Subiendo...';
+      statusEl.style.color = '';
+      const fd = new FormData();
+      fd.append('image', file);
+      fd.append('type', uploadType);
+      try {
+        const res = await fetch('/api/testimonials/upload-image', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+          hiddenInput.value = data.url;
+          previewImg.src = data.url;
+          previewWrap.classList.remove('hidden');
+          dropZone.classList.add('hidden');
+          statusEl.textContent = '✅ Imagen subida';
+          statusEl.style.color = 'green';
+        } else {
+          statusEl.textContent = '❌ ' + data.message;
+          statusEl.style.color = 'red';
+        }
+      } catch {
+        statusEl.textContent = '❌ Error al subir';
+        statusEl.style.color = 'red';
+      }
+    }
+  }
+
+  setupUploader('logo-drop-zone', 'logo-file-input', 'company_logo_url', 'logo-upload-status', 'logo-preview-wrap', 'logo-preview', 'logo');
+  setupUploader('project-drop-zone', 'project-file-input', 'project_image_url', 'project-upload-status', 'project-preview-wrap', 'project-preview', 'project');
+</script>
