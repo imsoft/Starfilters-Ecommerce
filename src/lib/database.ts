@@ -1356,9 +1356,129 @@ export const deleteProductImage = async (id: number): Promise<void> => {
 };
 
 export const setPrimaryImage = async (productId: number, imageId: number): Promise<void> => {
-  // Primero quitar primary de todas las imágenes del producto
   await query('UPDATE product_images SET is_primary = 0 WHERE product_id = ?', [productId]);
-  
-  // Luego establecer la nueva imagen como primary
   await query('UPDATE product_images SET is_primary = 1 WHERE id = ? AND product_id = ?', [imageId, productId]);
+};
+
+// ── Portafolio de proyectos ──────────────────────────────────────────────────
+
+export interface PortfolioProject {
+  id: number;
+  uuid: string;
+  title: string;
+  title_en?: string;
+  description: string;
+  description_en?: string;
+  image_url: string;
+  link_url?: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreatePortfolioProjectData {
+  title: string;
+  title_en?: string;
+  description: string;
+  description_en?: string;
+  image_url: string;
+  link_url?: string;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+export interface UpdatePortfolioProjectData extends Partial<CreatePortfolioProjectData> {}
+
+function mapPortfolioFromDB(row: any): PortfolioProject {
+  return {
+    id: row.id,
+    uuid: row.uuid,
+    title: row.title,
+    title_en: row.title_en,
+    description: row.description,
+    description_en: row.description_en,
+    image_url: row.image_url,
+    link_url: row.link_url,
+    sort_order: row.sort_order,
+    is_active: Boolean(row.is_active),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+export const getAllPortfolioProjects = async (): Promise<PortfolioProject[]> => {
+  const rows = await query('SELECT * FROM portfolio_projects ORDER BY sort_order ASC, created_at DESC') as any[];
+  return rows.map(mapPortfolioFromDB);
+};
+
+export const getActivePortfolioProjects = async (): Promise<PortfolioProject[]> => {
+  const rows = await query('SELECT * FROM portfolio_projects WHERE is_active = 1 ORDER BY sort_order ASC, created_at DESC') as any[];
+  return rows.map(mapPortfolioFromDB);
+};
+
+export const getPortfolioProjectByUuid = async (uuid: string): Promise<PortfolioProject | null> => {
+  const rows = await query('SELECT * FROM portfolio_projects WHERE uuid = ?', [uuid]) as any[];
+  return rows.length > 0 ? mapPortfolioFromDB(rows[0]) : null;
+};
+
+export const createPortfolioProject = async (data: CreatePortfolioProjectData): Promise<PortfolioProject | null> => {
+  try {
+    const uuid = generateUUID();
+    await query(
+      `INSERT INTO portfolio_projects (uuid, title, title_en, description, description_en, image_url, link_url, sort_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        uuid,
+        data.title,
+        data.title_en || null,
+        data.description,
+        data.description_en || null,
+        data.image_url,
+        data.link_url || null,
+        data.sort_order ?? 0,
+        data.is_active !== false ? 1 : 0,
+      ]
+    );
+    return getPortfolioProjectByUuid(uuid);
+  } catch (error) {
+    console.error('Error creando proyecto de portafolio:', error);
+    return null;
+  }
+};
+
+export const updatePortfolioProject = async (uuid: string, data: UpdatePortfolioProjectData): Promise<PortfolioProject | null> => {
+  try {
+    await query(
+      `UPDATE portfolio_projects SET
+        title = ?, title_en = ?, description = ?, description_en = ?,
+        image_url = ?, link_url = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+       WHERE uuid = ?`,
+      [
+        data.title,
+        data.title_en || null,
+        data.description,
+        data.description_en || null,
+        data.image_url,
+        data.link_url || null,
+        data.sort_order ?? 0,
+        data.is_active !== false ? 1 : 0,
+        uuid,
+      ]
+    );
+    return getPortfolioProjectByUuid(uuid);
+  } catch (error) {
+    console.error('Error actualizando proyecto de portafolio:', error);
+    return null;
+  }
+};
+
+export const deletePortfolioProject = async (uuid: string): Promise<boolean> => {
+  try {
+    const result = await query('DELETE FROM portfolio_projects WHERE uuid = ?', [uuid]) as any;
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Error eliminando proyecto de portafolio:', error);
+    return false;
+  }
 };

@@ -1,0 +1,228 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { Button } from "@/components/ui/button";
+import { createPortfolioProject } from "@/lib/database";
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+
+  const title = formData.get('title') as string;
+  const title_en = formData.get('title_en') as string | null;
+  const description = formData.get('description') as string;
+  const description_en = formData.get('description_en') as string | null;
+  const image_url = formData.get('image_url') as string;
+  const link_url = formData.get('link_url') as string | null;
+  const sort_order = parseInt(formData.get('sort_order') as string || '0');
+  const is_active = formData.get('is_active') === '1';
+
+  if (!title || !description || !image_url) {
+    return Astro.redirect('/admin/portfolio/create?error=missing_fields');
+  }
+
+  try {
+    const project = await createPortfolioProject({
+      title,
+      title_en: title_en || undefined,
+      description,
+      description_en: description_en || undefined,
+      image_url,
+      link_url: link_url || undefined,
+      sort_order,
+      is_active,
+    });
+
+    if (project) return Astro.redirect('/admin/portfolio?success=created');
+    return Astro.redirect('/admin/portfolio/create?error=creation_failed');
+  } catch (error) {
+    return Astro.redirect('/admin/portfolio/create?error=creation_failed');
+  }
+}
+
+const url = new URL(Astro.request.url);
+const error = url.searchParams.get('error');
+---
+
+<AdminLayout title="Nuevo Proyecto">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mt-10 mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Nuevo Proyecto</h1>
+        <p class="mt-2 text-muted-foreground">Agrega un proyecto a la galería de la página principal</p>
+      </div>
+      <a href="/admin/portfolio">
+        <Button variant="outline" className="border-border text-foreground hover:bg-muted">
+          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Volver
+        </Button>
+      </a>
+    </div>
+
+    {error === 'missing_fields' && (
+      <div class="mb-6 rounded-md bg-yellow-50 p-4">
+        <p class="text-sm font-medium text-yellow-800">Por favor completa todos los campos requeridos.</p>
+      </div>
+    )}
+    {error === 'creation_failed' && (
+      <div class="mb-6 rounded-md bg-red-50 p-4">
+        <p class="text-sm font-medium text-red-800">Error al crear el proyecto. Inténtalo de nuevo.</p>
+      </div>
+    )}
+
+    <form method="POST" class="space-y-6">
+      <!-- Imagen -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-4">Imagen del Proyecto</h2>
+        <div id="image-preview-wrap" class="hidden mb-4">
+          <img id="image-preview" src="" alt="Preview" class="h-48 w-full object-cover rounded-lg" />
+        </div>
+        <div
+          id="drop-zone"
+          class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-10 cursor-pointer hover:border-primary transition-colors"
+        >
+          <svg class="h-10 w-10 text-muted-foreground mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <p class="text-sm text-muted-foreground mb-1">Arrastra una imagen o haz clic para seleccionar</p>
+          <p class="text-xs text-muted-foreground">JPG, PNG, WEBP · Máx. 10MB</p>
+          <input id="image-file-input" type="file" accept="image/*" class="hidden" />
+        </div>
+        <p id="upload-status" class="mt-2 text-xs text-muted-foreground"></p>
+        <input type="hidden" id="image_url" name="image_url" required />
+      </div>
+
+      <!-- Contenido -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-6">Contenido</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Español -->
+          <div class="space-y-4">
+            <span class="text-base font-medium text-foreground">🇲🇽 Español</span>
+            <div>
+              <label for="title" class="block text-sm font-medium text-foreground mb-1">Título *</label>
+              <input type="text" id="title" name="title" required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ej: Cuarto Limpio ISO 5 para Pfizer" />
+            </div>
+            <div>
+              <label for="description" class="block text-sm font-medium text-foreground mb-1">Descripción *</label>
+              <textarea id="description" name="description" rows="4" required
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Descripción breve del proyecto..."></textarea>
+            </div>
+          </div>
+          <!-- English -->
+          <div class="space-y-4">
+            <span class="text-base font-medium text-foreground">🇺🇸 English</span>
+            <div>
+              <label for="title_en" class="block text-sm font-medium text-foreground mb-1">Title</label>
+              <input type="text" id="title_en" name="title_en"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Ex: ISO 5 Cleanroom for Pfizer" />
+            </div>
+            <div>
+              <label for="description_en" class="block text-sm font-medium text-foreground mb-1">Description</label>
+              <textarea id="description_en" name="description_en" rows="4"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Brief project description..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuración -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-4">Configuración</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div class="sm:col-span-2">
+            <label for="link_url" class="block text-sm font-medium text-foreground mb-1">URL del proyecto (opcional)</label>
+            <input type="text" id="link_url" name="link_url"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="/portafolio/proyecto-1 o https://..." />
+            <p class="mt-1 text-xs text-muted-foreground">Página a la que lleva el clic. Déjalo vacío si no tiene página aún.</p>
+          </div>
+          <div>
+            <label for="sort_order" class="block text-sm font-medium text-foreground mb-1">Orden</label>
+            <input type="number" id="sort_order" name="sort_order" value="0" min="0"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            <p class="mt-1 text-xs text-muted-foreground">Menor número = aparece primero</p>
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="block text-sm font-medium text-foreground mb-2">Estado</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="is_active" value="1" checked class="text-primary" />
+              <span class="text-sm text-foreground">Activo (visible en el sitio)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="is_active" value="0" class="text-primary" />
+              <span class="text-sm text-foreground">Inactivo (oculto)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex justify-end gap-4">
+        <a href="/admin/portfolio">
+          <Button type="button" variant="outline" className="border-border text-foreground hover:bg-muted">
+            Cancelar
+          </Button>
+        </a>
+        <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+          Guardar Proyecto
+        </Button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  const dropZone = document.getElementById('drop-zone') as HTMLElement;
+  const fileInput = document.getElementById('image-file-input') as HTMLInputElement;
+  const imageUrlInput = document.getElementById('image_url') as HTMLInputElement;
+  const statusEl = document.getElementById('upload-status') as HTMLElement;
+  const previewWrap = document.getElementById('image-preview-wrap') as HTMLElement;
+  const previewImg = document.getElementById('image-preview') as HTMLImageElement;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-primary'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-primary'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary');
+    const file = e.dataTransfer?.files[0];
+    if (file) uploadFile(file);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files?.[0]) uploadFile(fileInput.files[0]);
+  });
+
+  async function uploadFile(file: File) {
+    statusEl.textContent = 'Subiendo imagen...';
+    statusEl.style.color = '';
+    const fd = new FormData();
+    fd.append('image', file);
+    try {
+      const res = await fetch('/api/portfolio/upload-image', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        imageUrlInput.value = data.url;
+        previewImg.src = data.url;
+        previewWrap.classList.remove('hidden');
+        dropZone.classList.add('hidden');
+        statusEl.textContent = '✅ Imagen subida correctamente';
+        statusEl.style.color = 'green';
+      } else {
+        statusEl.textContent = '❌ ' + data.message;
+        statusEl.style.color = 'red';
+      }
+    } catch {
+      statusEl.textContent = '❌ Error al subir la imagen';
+      statusEl.style.color = 'red';
+    }
+  }
+</script>

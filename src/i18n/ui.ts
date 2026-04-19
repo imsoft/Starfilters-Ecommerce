@@ -35,17 +35,18 @@ export const ui = {
     // Hero
     'hero.badge': 'Más de 40 años liderando la filtración industrial en México.',
     'hero.badgeLink': 'Conoce nuestra historia.',
-    'hero.title': 'Líder en Cuartos Limpios en Norteamérica',
-    'hero.description': 'Con 40 años de experiencia, Star Filters es tu mejor opción en <a href="/cuartos-limpios" class="text-primary hover:text-primary/80 no-underline">cuartos limpios</a>, control de partículas y contaminantes en el aire. Hacemos desde el diseño, construcción, <a href="/servicios" class="text-primary hover:text-primary/80 no-underline">validación de tu cuarto limpio</a>. También fabricamos una alta gama de productos incluyendo filtros HEPA, para lograr la mayor pureza del aire.',
-    'hero.cta': 'Contáctanos',
-    'hero.ctaSecondary': 'Explora nuestros productos',
+    'hero.title': 'Controlamos partículas en el aire.',
+    'hero.description': 'Nuestro propósito es proteger procesos de manufactura a exposición de partículas y contaminantes para asegurar productos seguros, de alta calidad y salvaguardar la salud de los usuarios finales.',
+    'hero.cta': 'Explora productos',
+    'hero.ctaSecondary': 'Conocer proyectos',
 
     // Stats
     'stats.projects': 'años de experiencia',
     'stats.projectsNumber': '+40',
     'stats.experience': 'de cuartos limpios construidos',
     'stats.experienceNumber': '+20,000 m²',
-    'stats.clients': 'de filtros vendidos',
+    'stats.title': 'Nuestro portafolio incluye',
+    'stats.clients': 'de filtros de aire vendidos',
     'stats.clientsNumber': '+1 millón',
     'stats.clientsNumberSuffix': ' millón',
 
@@ -131,7 +132,7 @@ export const ui = {
     'services.cta.benefit5': 'Técnicos calificados',
 
     // Logo Section
-    'logoSection.title': 'Ya Confiaron en Nosotros',
+    'logoSection.title': 'Ya Confían en Nosotros',
 
     // Industries that benefit
     'industriesBenefit.title': 'Algunas Industrias que se Benefician de Nuestros Cuartos Limpios',
@@ -304,17 +305,18 @@ export const ui = {
     // Hero
     'hero.badge': 'Over 40 years leading industrial filtration in Mexico.',
     'hero.badgeLink': 'Learn more.',
-    'hero.title': 'Cleanroom Leader in North America',
-    'hero.description': 'With 40 years of experience, Star Filters is your best choice for <a href="/en/cleanrooms" class="text-primary hover:text-primary/80 no-underline">cleanrooms</a>, particle control, and air contaminants. We handle everything from design, construction, to <a href="/en/services" class="text-primary hover:text-primary/80 no-underline">cleanroom validation</a>. We also manufacture a wide range of products including HEPA filters, to achieve the highest air purity.',
-    'hero.cta': 'Contact us',
-    'hero.ctaSecondary': 'Explore our products',
+    'hero.title': 'We control particles in the air.',
+    'hero.description': 'Our purpose is to protect manufacturing processes from exposure to particles and contaminants to ensure safe, high-quality products and safeguard the health of end users.',
+    'hero.cta': 'Explore products',
+    'hero.ctaSecondary': 'View projects',
 
     // Stats
     'stats.projects': 'years of experience',
     'stats.projectsNumber': '+40',
     'stats.experience': 'of cleanrooms built',
     'stats.experienceNumber': '+20,000 m²',
-    'stats.clients': 'filters sold',
+    'stats.title': 'Our portfolio includes',
+    'stats.clients': 'air filters sold',
     'stats.clientsNumber': '+1 million',
     'stats.clientsNumberSuffix': ' million',
 

@@ -6,67 +6,67 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 ---
 
-<div class="relative bg-background min-h-screen flex flex-col pb-12 sm:pb-16">
+<div class="relative bg-background flex flex-col min-h-screen">
   <Navbar />
 
-  <div class="relative flex-1 flex">
-    <div class="mx-auto max-w-7xl w-full flex">
-      <div class="relative z-10 pt-14 lg:w-full lg:max-w-2xl flex flex-col justify-center">
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          class="absolute inset-y-0 right-8 hidden h-full w-80 translate-x-1/2 transform fill-background lg:block"
-        >
-          <polygon points="0,0 90,0 50,100 0,100"></polygon>
-        </svg>
+  <div class="flex-1 flex flex-col lg:flex-row">
 
-        <div class="relative px-6 py-32 sm:py-40 lg:px-8 lg:py-56 lg:pr-0">
-          <div class="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl">
-            <div class="hidden sm:mb-10 sm:flex">
-              <div
-                class="hero-badge relative rounded-full px-3 py-1 text-sm/6 text-muted-foreground border border-border bg-white/50 backdrop-blur-sm whitespace-nowrap flex items-center gap-1"
-              >
-                <span>{t('hero.badge')}</span> <a
-                  href={lang === 'en' ? '/en/about' : '/acerca-de'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="font-semibold whitespace-nowrap text-primary hover:text-foreground transition-colors"
-                  ><span aria-hidden="true" class="absolute inset-0"></span>{t('hero.badgeLink')}<span aria-hidden="true"> &rarr;</span></a
-                >
-              </div>
-            </div>
-            <h1
-              class="hero-title text-5xl font-semibold tracking-tight text-pretty text-foreground sm:text-7xl"
-            >
-              {t('hero.title')}
-            </h1>
-            <p
-              class="hero-description mt-8 text-lg font-medium text-pretty text-muted-foreground sm:text-xl/8"
-              set:html={t('hero.description')}
-            >
-            </p>
-            <div class="hero-cta mt-10 flex items-center gap-x-6">
-              <a
-                href={lang === 'en' ? '/en/contact' : '/contacto'}
-                class="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                >{t('hero.cta')}</a
-              >
-              <a href={lang === 'en' ? '/en/filters' : '/filtros'} class="text-sm/6 font-semibold text-foreground"
-                >{t('hero.ctaSecondary')} <span aria-hidden="true">→</span></a
-              >
-            </div>
-          </div>
+    <!-- Left: Text panel -->
+    <div class="relative z-10 flex flex-col justify-center px-6 py-20 sm:px-12 lg:px-16 lg:py-0 lg:w-1/2 xl:w-[52%]">
+      <!-- Badge -->
+      <div class="mb-8 hidden sm:flex">
+        <div class="inline-flex items-center gap-2 rounded-full border border-border bg-primary/5 px-4 py-1.5 text-sm text-muted-foreground">
+          <span class="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0"></span>
+          <span>{t('hero.badge')}</span>
+          <a
+            href={lang === 'en' ? '/en/about' : '/acerca-de'}
+            class="font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+          >
+            {t('hero.badgeLink')} →
+          </a>
         </div>
       </div>
+
+      <!-- Heading -->
+      <h1 class="hero-title text-5xl font-bold tracking-tight text-foreground sm:text-6xl xl:text-7xl leading-[1.05]">
+        {t('hero.title')}
+      </h1>
+
+      <!-- Description -->
+      <p class="hero-description mt-6 text-lg text-muted-foreground leading-relaxed max-w-lg sm:text-xl">
+        {t('hero.description')}
+      </p>
+
+      <!-- CTAs -->
+      <div class="hero-cta mt-10 flex flex-wrap items-center gap-4">
+        <a
+          href={lang === 'en' ? '/en/filters' : '/filtros'}
+          class="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {t('hero.cta')}
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </a>
+        <a
+          href={lang === 'en' ? '/en/portfolio' : '/portafolio'}
+          class="inline-flex items-center gap-2 rounded-md border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+        >
+          {t('hero.ctaSecondary')}
+        </a>
+      </div>
     </div>
-    <div class="bg-muted lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 flex items-center justify-center">
+
+    <!-- Right: Full image -->
+    <div class="relative lg:w-1/2 xl:w-[48%] h-72 sm:h-96 lg:h-auto lg:min-h-screen">
       <img
         src="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"
         alt="Cuarto limpio sala blanca ISO 14644 Star Filters"
-        class="hero-image aspect-3/2 object-cover lg:aspect-auto lg:h-full lg:w-full"
+        class="hero-image absolute inset-0 h-full w-full object-cover"
       />
+      <!-- Overlay sutil para profundidad -->
+      <div class="absolute inset-0 bg-gradient-to-r from-background/20 to-transparent lg:from-background/10 pointer-events-none"></div>
     </div>
+
   </div>
 </div>
-

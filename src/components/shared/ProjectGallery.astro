@@ -1,0 +1,77 @@
+---
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+import { getActivePortfolioProjects } from '@/lib/database';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const isEn = lang === 'en';
+
+let projects = [];
+try {
+  projects = await getActivePortfolioProjects();
+} catch (error) {
+  console.error('Error cargando proyectos de portafolio:', error);
+}
+
+if (projects.length === 0) return;
+---
+
+<section class="bg-background py-12 sm:py-16">
+  <div class="mx-auto max-w-7xl px-4 lg:px-6">
+    <!-- Header -->
+    <div class="mx-auto max-w-2xl text-center mb-12">
+      <h2 class="text-base/7 font-semibold text-primary">
+        {isEn ? 'Our Work' : 'Nuestro Trabajo'}
+      </h2>
+      <p class="mt-2 text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl">
+        {isEn ? 'Project Gallery' : 'Galería de Proyectos'}
+      </p>
+      <p class="mt-4 text-lg text-muted-foreground">
+        {isEn
+          ? 'A glimpse of the cleanrooms, HVAC systems, and filtration projects we have built.'
+          : 'Una muestra de los cuartos limpios, sistemas HVAC y proyectos de filtración que hemos construido.'}
+      </p>
+    </div>
+
+    <!-- Grid de proyectos -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {projects.map((project) => {
+        const title = (isEn && project.title_en) ? project.title_en : project.title;
+        const description = (isEn && project.description_en) ? project.description_en : project.description;
+        const hasLink = Boolean(project.link_url);
+
+        return (
+          <div class="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <!-- Imagen -->
+            <div class="relative h-56 overflow-hidden">
+              <img
+                src={project.image_url}
+                alt={title}
+                class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+            </div>
+
+            <!-- Contenido -->
+            <div class="flex flex-1 flex-col p-5">
+              <h3 class="text-lg font-semibold text-foreground leading-snug mb-2">{title}</h3>
+              <p class="text-sm text-muted-foreground leading-relaxed flex-1">{description}</p>
+
+              {hasLink && (
+                <a
+                  href={project.link_url}
+                  class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  {isEn ? 'View project' : 'Ver proyecto'}
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                  </svg>
+                </a>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
