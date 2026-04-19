@@ -62,3 +62,14 @@ export async function updateBenefit(
 export async function deleteBenefit(id: number): Promise<void> {
   await query('DELETE FROM benefits WHERE id = ?', [id]);
 }
+
+export async function reorderBenefits(items: { id: number; sort_order: number }[]): Promise<void> {
+  for (const item of items) {
+    await query('UPDATE benefits SET sort_order = ? WHERE id = ?', [item.sort_order, item.id]);
+  }
+}
+
+export async function getNextBenefitSortOrder(): Promise<number> {
+  const rows = await query('SELECT MAX(sort_order) as max_order FROM benefits') as any[];
+  return ((rows as any[])[0]?.max_order ?? -1) + 1;
+}

@@ -41,7 +41,7 @@ const benefits = await getAllBenefits();
       <div>
         <h1 class="text-3xl font-bold tracking-tight text-foreground">Beneficios del Banner</h1>
         <p class="mt-2 text-muted-foreground">
-          Gestiona los beneficios que aparecen en el banner de la homepage
+          Arrastra las filas para cambiar el orden de aparición
         </p>
       </div>
       <a href="/admin/benefits/create">
@@ -65,6 +65,10 @@ const benefits = await getAllBenefits();
       </div>
     )}
 
+    <div id="save-toast" class="hidden mb-4 rounded-md bg-green-50 p-3 text-sm font-medium text-green-800">
+      ✅ Orden guardado correctamente
+    </div>
+
     <div class="overflow-hidden rounded-lg border border-border bg-background shadow">
       {benefits.length === 0 ? (
         <div class="p-12 text-center">
@@ -84,17 +88,25 @@ const benefits = await getAllBenefits();
           <table class="min-w-full divide-y divide-border">
             <thead class="bg-muted/50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Orden</th>
+                <th class="px-3 py-3 w-10"></th>
                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Español</th>
                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">English</th>
                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Estado</th>
                 <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">Acciones</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-border bg-background">
+            <tbody id="sortable-list" class="divide-y divide-border bg-background">
               {benefits.map((benefit) => (
-                <tr class="hover:bg-muted/50">
-                  <td class="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">{benefit.sort_order}</td>
+                <tr
+                  class="hover:bg-muted/50 cursor-grab active:cursor-grabbing drag-row"
+                  draggable="true"
+                  data-id={benefit.id}
+                >
+                  <td class="px-3 py-4 text-muted-foreground">
+                    <svg class="h-5 w-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                    </svg>
+                  </td>
                   <td class="px-6 py-4 text-sm text-foreground max-w-xs truncate">{benefit.text_es}</td>
                   <td class="px-6 py-4 text-sm text-muted-foreground max-w-xs truncate">{benefit.text_en}</td>
                   <td class="whitespace-nowrap px-6 py-4 text-sm">
@@ -129,3 +141,65 @@ const benefits = await getAllBenefits();
     </div>
   </div>
 </AdminLayout>
+
+<script>
+  const tbody = document.getElementById('sortable-list') as HTMLElement;
+  const toast = document.getElementById('save-toast') as HTMLElement;
+  let dragRow: HTMLElement | null = null;
+
+  function showToast() {
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+  }
+
+  tbody?.addEventListener('dragstart', (e) => {
+    dragRow = (e.target as HTMLElement).closest('tr');
+    setTimeout(() => dragRow?.classList.add('opacity-40'), 0);
+  });
+
+  tbody?.addEventListener('dragend', () => {
+    dragRow?.classList.remove('opacity-40');
+    dragRow = null;
+    document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over', 'border-t-2', 'border-primary'));
+  });
+
+  tbody?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const target = (e.target as HTMLElement).closest('tr') as HTMLElement;
+    if (!target || target === dragRow) return;
+    document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over', 'border-t-2', 'border-primary'));
+    target.classList.add('drag-over', 'border-t-2', 'border-primary');
+  });
+
+  tbody?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const target = (e.target as HTMLElement).closest('tr') as HTMLElement;
+    if (!target || target === dragRow || !dragRow) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+    const fromIndex = rows.indexOf(dragRow);
+    const toIndex = rows.indexOf(target);
+
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    if (fromIndex < toIndex) {
+      target.after(dragRow);
+    } else {
+      target.before(dragRow);
+    }
+
+    const updated = Array.from(tbody.querySelectorAll('tr[data-id]')).map((row, i) => ({
+      id: parseInt((row as HTMLElement).dataset.id!),
+      sort_order: i,
+    }));
+
+    fetch('/api/benefits/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: updated }),
+    })
+      .then((r) => r.json())
+      .then((data) => { if (data.success) showToast(); })
+      .catch(() => {});
+  });
+</script>
