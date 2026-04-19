@@ -6,9 +6,9 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 ---
 
-<div class="relative min-h-screen flex flex-col">
-  <!-- Imagen de fondo full-bleed -->
-  <div class="absolute inset-0 z-0">
+<div class="relative min-h-screen flex flex-col bg-background p-3 sm:p-4">
+  <!-- Imagen de fondo con bordes redondeados y margen -->
+  <div class="absolute inset-3 sm:inset-4 z-0 rounded-2xl overflow-hidden">
     <img
       src="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"
       alt="Cuarto limpio sala blanca ISO 14644 Star Filters"
