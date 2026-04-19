@@ -135,14 +135,7 @@ const error = url.searchParams.get('error');
       <!-- Configuración -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-4">Configuración</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div class="sm:col-span-2">
-            <label for="link_url" class="block text-sm font-medium text-foreground mb-1">URL del proyecto (opcional)</label>
-            <input type="text" id="link_url" name="link_url"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="/portafolio/proyecto-1 o https://..." />
-            <p class="mt-1 text-xs text-muted-foreground">Página a la que lleva el clic. Déjalo vacío si no tiene página aún.</p>
-          </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label for="sort_order" class="block text-sm font-medium text-foreground mb-1">Orden</label>
             <input type="number" id="sort_order" name="sort_order" value="0" min="0"
