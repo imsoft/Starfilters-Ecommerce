@@ -26,4 +26,8 @@ export default defineConfig({
 	},
 
   integrations: [react()],
+
+  security: {
+    checkOrigin: false,
+  },
 });
