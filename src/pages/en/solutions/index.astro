@@ -1,0 +1,299 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getActiveCategories } from "@/lib/filter-category-service";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+
+export const prerender = false;
+
+const categories = await getActiveCategories();
+
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Home', url: siteUrl },
+  { name: 'Filtration Solutions', url: `${siteUrl}/en/solutions` },
+]);
+---
+
+<WebsiteLayout
+  title="Industrial Filtration Solutions"
+  seoTitle="Industrial Filtration Solutions: Low, Medium & HEPA | Star Filters"
+  description="Interactive catalog of industrial filtration solutions: low, medium, and HEPA high-efficiency filters. Maintenance packages and service policies. Star Filters Mexico."
+  keywords={[
+    'industrial filtration solutions',
+    'HEPA filters Mexico',
+    'medium efficiency filters',
+    'cleanroom filters',
+    'filter maintenance policy',
+    'Star Filters solutions',
+  ]}
+>
+  <SEO
+    slot="seo"
+    title="Industrial Filtration Solutions"
+    description="Interactive catalog of industrial filters by efficiency level: Low, Medium, and HEPA. Includes service packages and maintenance policies."
+    ogType="website"
+    keywords={['HEPA filters', 'industrial filtration', 'Star Filters solutions']}
+  />
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+
+  <!-- Hero -->
+  <section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-primary/80 py-24 sm:py-32">
+    <div class="absolute inset-0 opacity-10">
+      <svg class="h-full w-full" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+    </div>
+    <div class="relative mx-auto max-w-7xl px-6 lg:px-8 text-center">
+      <p class="text-sm font-semibold uppercase tracking-widest text-primary-foreground/70 mb-4">
+        Interactive Technical Catalog
+      </p>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+        Industrial Filtration<br class="hidden sm:block" />
+        <span class="text-primary">Solutions</span>
+      </h1>
+      <p class="mt-6 text-lg text-slate-300 max-w-2xl mx-auto">
+        Find the exact filter for your industry. Select the efficiency level, review our service packages, and add directly to your cart.
+      </p>
+      <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="#catalog"
+          class="inline-flex items-center justify-center rounded-md bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Browse catalog
+          <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </a>
+        <a
+          href="/en/contact"
+          class="inline-flex items-center justify-center rounded-md border border-white/30 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+        >
+          Free technical advisory
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="bg-white border-b border-gray-100">
+    <div class="mx-auto max-w-7xl px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
+      <div><p class="text-3xl font-bold text-primary">+500</p><p class="mt-1 text-sm text-muted-foreground">Projects delivered</p></div>
+      <div><p class="text-3xl font-bold text-primary">99.97%</p><p class="mt-1 text-sm text-muted-foreground">Certified HEPA efficiency</p></div>
+      <div><p class="text-3xl font-bold text-primary">15+</p><p class="mt-1 text-sm text-muted-foreground">Years of experience</p></div>
+      <div><p class="text-3xl font-bold text-primary">ISO</p><p class="mt-1 text-sm text-muted-foreground">ISO 14644 certified</p></div>
+    </div>
+  </section>
+
+  <!-- Catalog -->
+  <section id="catalog" class="bg-background py-20">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-foreground sm:text-4xl">Catalog by Efficiency Level</h2>
+        <p class="mt-4 text-muted-foreground max-w-xl mx-auto">Select the efficiency level required by your production process.</p>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-2 mb-10" id="efficiency-tabs">
+        <button class="efficiency-tab active rounded-full border-2 border-primary bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-all" data-tab="all">All</button>
+        <button class="efficiency-tab rounded-full border-2 border-border px-6 py-2.5 text-sm font-semibold text-foreground hover:border-primary transition-all" data-tab="baja">🔵 Low Efficiency (G1–G4)</button>
+        <button class="efficiency-tab rounded-full border-2 border-border px-6 py-2.5 text-sm font-semibold text-foreground hover:border-primary transition-all" data-tab="media">🟡 Medium Efficiency (M5–M9)</button>
+        <button class="efficiency-tab rounded-full border-2 border-border px-6 py-2.5 text-sm font-semibold text-foreground hover:border-primary transition-all" data-tab="hepa">🔴 HEPA / High Efficiency (H10–U17)</button>
+      </div>
+
+      {categories.length > 0 ? (
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {categories.map((cat) => (
+            <div class="product-card group flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden" data-efficiency="all">
+              {cat.main_image ? (
+                <div class="relative h-44 overflow-hidden">
+                  <img src={cat.main_image} alt={cat.name_en || cat.name} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                </div>
+              ) : (
+                <div class="h-44 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                  <svg class="h-12 w-12 text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                  </svg>
+                </div>
+              )}
+              <div class="flex flex-1 flex-col p-5">
+                <h3 class="font-semibold text-foreground text-sm leading-snug mb-2">{cat.name_en || cat.name}</h3>
+                {(cat.description_en || cat.description) && (
+                  <p class="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1">{cat.description_en || cat.description}</p>
+                )}
+                <div class="mt-4 flex flex-col gap-2">
+                  <a href={`/en/filters/${cat.slug}`} class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                    View sizes & prices
+                  </a>
+                  <a href="/en/contact" class="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    Request advisory
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-12 text-muted-foreground">No products available at this time.</div>
+      )}
+
+      <div class="mt-10 text-center">
+        <a href="/en/filters" class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+          View full filter catalog
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Efficiency guide -->
+  <section class="bg-muted/30 py-20 border-t border-border">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-foreground">Which efficiency level do I need?</h2>
+        <p class="mt-4 text-muted-foreground">Quick guide to selecting the correct filter for your industry.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="rounded-2xl bg-white border border-blue-100 p-7 shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+              <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">Low Efficiency</p>
+              <p class="text-sm font-bold text-foreground">G1 – G4 · ≥10 µm</p>
+            </div>
+          </div>
+          <ul class="space-y-1.5 text-sm text-muted-foreground">
+            <li class="flex items-center gap-2"><span class="text-blue-500">✓</span> Automotive industry</li>
+            <li class="flex items-center gap-2"><span class="text-blue-500">✓</span> Warehouses & logistics</li>
+            <li class="flex items-center gap-2"><span class="text-blue-500">✓</span> HVAC pre-filters</li>
+          </ul>
+        </div>
+        <div class="rounded-2xl bg-white border border-yellow-100 p-7 shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100">
+              <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wide text-yellow-600">Medium Efficiency</p>
+              <p class="text-sm font-bold text-foreground">M5 – M9 · 1–10 µm</p>
+            </div>
+          </div>
+          <ul class="space-y-1.5 text-sm text-muted-foreground">
+            <li class="flex items-center gap-2"><span class="text-yellow-500">✓</span> Food industry</li>
+            <li class="flex items-center gap-2"><span class="text-yellow-500">✓</span> Control laboratories</li>
+            <li class="flex items-center gap-2"><span class="text-yellow-500">✓</span> General hospital areas</li>
+          </ul>
+        </div>
+        <div class="rounded-2xl bg-white border border-red-100 p-7 shadow-sm ring-2 ring-primary/20">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+              <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wide text-red-600">HEPA High Efficiency</p>
+              <p class="text-sm font-bold text-foreground">H10 – U17 · ≥99.97%</p>
+            </div>
+          </div>
+          <ul class="space-y-1.5 text-sm text-muted-foreground">
+            <li class="flex items-center gap-2"><span class="text-red-500">✓</span> Pharmaceutical industry</li>
+            <li class="flex items-center gap-2"><span class="text-red-500">✓</span> ISO cleanrooms</li>
+            <li class="flex items-center gap-2"><span class="text-red-500">✓</span> Surgical suites & ICU</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Maintenance packages -->
+  <section class="bg-white py-20 border-t border-border">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="text-center mb-14">
+        <p class="text-sm font-semibold uppercase tracking-widest text-primary">Service Policies</p>
+        <h2 class="mt-2 text-3xl font-bold text-foreground sm:text-4xl">Maintenance Packages</h2>
+        <p class="mt-4 text-muted-foreground max-w-xl mx-auto">Keep your filtration system in optimal condition. We guarantee compliance with current regulations.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[
+          { name: 'Basic', desc: 'Essential preventive maintenance.', features: ['Semi-annual filter inspection', 'G1–G4 filter replacement', 'System status report', 'Email technical support'], highlight: false },
+          { name: 'Standard', desc: 'For regular industrial processes.', features: ['Quarterly filter inspection', 'M5–M9 filter replacement included', 'Differential pressure measurement', 'Detailed technical report', 'Priority phone support', 'HEPA filter purchase discount'], highlight: true },
+          { name: 'Premium', desc: 'Full regulatory compliance (ISO, GMP, FDA).', features: ['Monthly full-system inspection', 'HEPA filter replacement included', 'DOP/PAO integrity tests', 'Particle count (ISO 14644)', 'GMP certification & documentation', 'Dedicated assigned engineer', '24 h response time'], highlight: false },
+        ].map((pkg) => (
+          <div class={`relative rounded-2xl border ${pkg.highlight ? 'border-2 border-primary bg-primary/5' : 'border-border bg-background'} p-8 flex flex-col`}>
+            {pkg.highlight && (
+              <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-bold text-white">Most popular</div>
+            )}
+            <h3 class="text-lg font-bold text-foreground">{pkg.name}</h3>
+            <p class="mt-1 text-sm text-muted-foreground">{pkg.desc}</p>
+            <ul class="mt-8 space-y-3 flex-1">
+              {pkg.features.map((f) => (
+                <li class="flex items-start gap-2.5 text-sm text-muted-foreground">
+                  <svg class={`h-4 w-4 mt-0.5 flex-shrink-0 ${pkg.highlight ? 'text-primary' : 'text-green-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <a
+              href="/en/contact"
+              class={`mt-8 inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-semibold transition-colors ${pkg.highlight ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-border text-foreground hover:bg-muted'}`}
+            >
+              Request quote
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-background py-16 border-t border-border">
+    <div class="mx-auto max-w-4xl px-6 text-center">
+      <h2 class="text-2xl font-bold text-foreground">Ready to improve your filtration?</h2>
+      <p class="mt-3 text-muted-foreground">Explore real cases where we solved challenges similar to yours.</p>
+      <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/en/success-cases" class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+          View success cases
+        </a>
+        <a href="/en/filters" class="inline-flex items-center justify-center rounded-md border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors">
+          Go to filter catalog
+        </a>
+      </div>
+    </div>
+  </section>
+</WebsiteLayout>
+
+<script>
+  const tabs = document.querySelectorAll<HTMLButtonElement>('.efficiency-tab');
+  const cards = document.querySelectorAll<HTMLElement>('.product-card');
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const selected = tab.dataset.tab!;
+      tabs.forEach((t) => {
+        t.classList.remove('active', 'bg-primary', 'text-primary-foreground', 'border-primary');
+        t.classList.add('border-border', 'text-foreground');
+      });
+      tab.classList.add('active', 'bg-primary', 'text-primary-foreground', 'border-primary');
+      tab.classList.remove('border-border', 'text-foreground');
+      cards.forEach((card) => {
+        const eff = card.dataset.efficiency!;
+        card.style.display = (selected === 'all' || eff === selected || eff === 'all') ? '' : 'none';
+      });
+    });
+  });
+</script>

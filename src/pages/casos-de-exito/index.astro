@@ -1,0 +1,156 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getActiveCaseStudies } from "@/lib/database";
+import type { CaseStudy } from "@/lib/database";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+
+export const prerender = false;
+
+const cases = await getActiveCaseStudies();
+
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Inicio', url: siteUrl },
+  { name: 'Casos de Éxito', url: `${siteUrl}/casos-de-exito` },
+]);
+
+const getTagsArray = (tags?: string) =>
+  tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+---
+
+<WebsiteLayout
+  title="Casos de Éxito"
+  seoTitle="Casos de Éxito de Filtración Industrial | Star Filters"
+  description="Proyectos reales de cuartos limpios, filtración HEPA y sistemas de aire resueltos por Star Filters en industrias farmacéutica, automotriz, alimentaria y más."
+  keywords={[
+    'casos de éxito filtración',
+    'proyectos cuartos limpios',
+    'filtros industriales México',
+    'Star Filters casos',
+    'industria farmacéutica filtración',
+  ]}
+>
+  <SEO
+    slot="seo"
+    title="Casos de Éxito de Filtración Industrial"
+    description="Proyectos reales de cuartos limpios, filtración HEPA y sistemas de aire resueltos por Star Filters en industrias farmacéutica, automotriz, alimentaria y más."
+    ogType="website"
+    keywords={['casos de éxito filtración', 'proyectos cuartos limpios', 'Star Filters']}
+  />
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+
+  <div class="bg-background py-24 sm:py-32">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <!-- Header -->
+      <div class="mx-auto max-w-2xl text-center">
+        <p class="text-base/7 font-semibold text-primary">Autoridad y Experiencia</p>
+        <h1 class="mt-2 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          Casos de Éxito
+        </h1>
+        <p class="mt-4 text-lg text-muted-foreground">
+          Retos reales resueltos por Star Filters en las industrias más exigentes de México.
+        </p>
+      </div>
+
+      {cases.length > 0 ? (
+        <div class="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
+          {cases.map((c) => {
+            const tags = getTagsArray(c.tags);
+            return (
+              <article class="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                {c.featured_image ? (
+                  <div class="relative h-48 overflow-hidden">
+                    <img
+                      src={c.featured_image}
+                      alt={c.title}
+                      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent"></div>
+                  </div>
+                ) : (
+                  <div class="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <svg class="h-16 w-16 text-primary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                  </div>
+                )}
+                <div class="flex flex-1 flex-col p-6">
+                  <div class="flex items-center gap-2 mb-3">
+                    <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      {c.industry}
+                    </span>
+                    {c.client_name && (
+                      <span class="text-xs text-muted-foreground">{c.client_name}</span>
+                    )}
+                  </div>
+                  <h2 class="text-base font-semibold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
+                    <a href={`/casos-de-exito/${c.slug}`} class="after:absolute after:inset-0">
+                      {c.title}
+                    </a>
+                  </h2>
+                  {c.excerpt && (
+                    <p class="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{c.excerpt}</p>
+                  )}
+                  {tags.length > 0 && (
+                    <div class="mt-4 flex flex-wrap gap-1">
+                      {tags.slice(0, 3).map((tag) => (
+                        <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div class="mt-4">
+                    <a
+                      href={`/casos-de-exito/${c.slug}`}
+                      class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Ver caso completo
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div class="mx-auto mt-16 text-center">
+          <div class="rounded-lg bg-muted p-12">
+            <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-foreground">Próximamente</h3>
+            <p class="mt-1 text-sm text-muted-foreground">Estamos documentando nuestros proyectos más destacados.</p>
+          </div>
+        </div>
+      )}
+
+      <!-- CTA -->
+      <div class="mt-20 rounded-2xl bg-primary/5 border border-primary/10 p-10 text-center">
+        <h2 class="text-2xl font-semibold text-foreground">¿Tienes un reto de filtración?</h2>
+        <p class="mt-3 text-muted-foreground max-w-xl mx-auto">
+          Cuéntanos tu situación y te proponemos la solución técnica más adecuada para tu industria.
+        </p>
+        <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+          <a
+            href="/contacto"
+            class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Hablar con un asesor
+          </a>
+          <a
+            href="/soluciones"
+            class="inline-flex items-center justify-center rounded-md border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+          >
+            Ver soluciones de filtración
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</WebsiteLayout>

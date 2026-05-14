@@ -1,0 +1,193 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect('/en/success-cases');
+
+const caseStudy = await getCaseStudyBySlug(slug);
+if (!caseStudy) return Astro.redirect('/en/success-cases');
+
+const title = caseStudy.title_en || caseStudy.title;
+const excerpt = caseStudy.excerpt_en || caseStudy.excerpt;
+const challenge = caseStudy.challenge_en || caseStudy.challenge;
+const solution = caseStudy.solution_en || caseStudy.solution;
+const results = caseStudy.results_en || caseStudy.results;
+const industry = caseStudy.industry_en || caseStudy.industry;
+
+const related = (await getActiveCaseStudies())
+  .filter((c) => c.slug !== slug && c.industry === caseStudy.industry)
+  .slice(0, 3);
+
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Home', url: siteUrl },
+  { name: 'Success Cases', url: `${siteUrl}/en/success-cases` },
+  { name: title, url: `${siteUrl}/en/success-cases/${caseStudy.slug}` },
+]);
+
+const getTagsArray = (tags?: string) =>
+  tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+const tags = getTagsArray(caseStudy.tags);
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long' }).format(new Date(date));
+---
+
+<WebsiteLayout
+  title={title}
+  seoTitle={`${title} | Success Cases | Star Filters`}
+  description={excerpt || `Star Filters success case in ${industry}: challenge, solution, and results.`}
+  keywords={[...tags, 'Star Filters', industry, 'industrial filtration']}
+  ogImage={caseStudy.featured_image}
+>
+  <SEO
+    slot="seo"
+    title={`${title} | Star Filters`}
+    description={excerpt || `Industrial filtration success case in ${industry}.`}
+    ogType="article"
+    ogImage={caseStudy.featured_image}
+    keywords={[...tags, 'Star Filters', industry]}
+  />
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+
+  <article class="bg-background">
+    <div class="relative">
+      {caseStudy.featured_image ? (
+        <div class="h-72 sm:h-96 overflow-hidden">
+          <img src={caseStudy.featured_image} alt={title} class="h-full w-full object-cover" />
+          <div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+        </div>
+      ) : (
+        <div class="h-40 bg-gradient-to-br from-primary/10 to-primary/5"></div>
+      )}
+      <div class="absolute bottom-0 left-0 right-0 px-6 pb-10 max-w-4xl mx-auto">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+            {industry}
+          </span>
+          {caseStudy.client_name && (
+            <span class="text-sm text-muted-foreground font-medium">{caseStudy.client_name}</span>
+          )}
+          <span class="text-sm text-muted-foreground">{formatDate(caseStudy.created_at)}</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-bold text-foreground leading-tight">{title}</h1>
+        {excerpt && <p class="mt-3 text-lg text-muted-foreground max-w-2xl">{excerpt}</p>}
+      </div>
+    </div>
+
+    <div class="border-b border-border bg-muted/30">
+      <div class="mx-auto max-w-4xl px-6 py-3">
+        <nav class="flex items-center gap-2 text-sm text-muted-foreground">
+          <a href="/en" class="hover:text-foreground transition-colors">Home</a>
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+          <a href="/en/success-cases" class="hover:text-foreground transition-colors">Success Cases</a>
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+          <span class="text-foreground font-medium truncate max-w-[200px]">{title}</span>
+        </nav>
+      </div>
+    </div>
+
+    <div class="mx-auto max-w-4xl px-6 py-16">
+      {tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-10">
+          {tags.map((tag) => (
+            <span class="inline-flex items-center rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      <div class="space-y-14">
+        {challenge && (
+          <section>
+            <div class="flex items-center gap-3 mb-5">
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-700 font-bold text-sm flex-shrink-0">1</span>
+              <h2 class="text-2xl font-semibold text-foreground">The Challenge</h2>
+            </div>
+            <div class="pl-11 prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
+              {challenge}
+            </div>
+          </section>
+        )}
+
+        {solution && (
+          <section>
+            <div class="flex items-center gap-3 mb-5">
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-sm flex-shrink-0">2</span>
+              <h2 class="text-2xl font-semibold text-foreground">The Solution</h2>
+            </div>
+            <div class="pl-11 prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
+              {solution}
+            </div>
+          </section>
+        )}
+
+        {results && (
+          <section>
+            <div class="flex items-center gap-3 mb-5">
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-700 font-bold text-sm flex-shrink-0">3</span>
+              <h2 class="text-2xl font-semibold text-foreground">The Results</h2>
+            </div>
+            <div class="pl-11 prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
+              {results}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <div class="mt-16 rounded-2xl bg-primary/5 border border-primary/10 p-8 text-center">
+        <h3 class="text-xl font-semibold text-foreground">Do you face a similar challenge?</h3>
+        <p class="mt-2 text-muted-foreground">Our engineers are ready to analyze your case and propose the most efficient solution.</p>
+        <div class="mt-5 flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="/en/contact" class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+            Talk to an advisor
+          </a>
+          <a href="/en/solutions" class="inline-flex items-center justify-center rounded-md border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors">
+            View solutions
+          </a>
+        </div>
+      </div>
+
+      {related.length > 0 && (
+        <div class="mt-16">
+          <h3 class="text-lg font-semibold text-foreground mb-6">More cases in {industry}</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {related.map((r) => {
+              const relTitle = r.title_en || r.title;
+              return (
+                <a
+                  href={`/en/success-cases/${r.slug}`}
+                  class="group rounded-xl border border-border bg-background p-4 hover:border-primary/50 hover:shadow-sm transition-all"
+                >
+                  {r.featured_image && (
+                    <div class="h-28 overflow-hidden rounded-md mb-3">
+                      <img src={r.featured_image} alt={relTitle} class="h-full w-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
+                    </div>
+                  )}
+                  <p class="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">{relTitle}</p>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div class="mt-10">
+        <a href="/en/success-cases" class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          View all success cases
+        </a>
+      </div>
+    </div>
+  </article>
+</WebsiteLayout>

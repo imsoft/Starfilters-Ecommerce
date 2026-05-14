@@ -1644,3 +1644,239 @@ export const getNextTestimonialSortOrder = async (): Promise<number> => {
   const rows = await query('SELECT MAX(sort_order) as max_order FROM testimonials') as any[];
   return (rows[0]?.max_order ?? -1) + 1;
 };
+
+// ── Casos de Éxito ───────────────────────────────────────────────────────────
+
+export interface CaseStudy {
+  id: number;
+  uuid: string;
+  slug: string;
+  title: string;
+  title_en?: string;
+  industry: string;
+  industry_en?: string;
+  excerpt?: string;
+  excerpt_en?: string;
+  challenge?: string;
+  challenge_en?: string;
+  solution?: string;
+  solution_en?: string;
+  results?: string;
+  results_en?: string;
+  client_name?: string;
+  featured_image?: string;
+  tags?: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateCaseStudyData {
+  slug: string;
+  title: string;
+  title_en?: string;
+  industry: string;
+  industry_en?: string;
+  excerpt?: string;
+  excerpt_en?: string;
+  challenge?: string;
+  challenge_en?: string;
+  solution?: string;
+  solution_en?: string;
+  results?: string;
+  results_en?: string;
+  client_name?: string;
+  featured_image?: string;
+  tags?: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+export interface UpdateCaseStudyData extends Partial<CreateCaseStudyData> {}
+
+function mapCaseStudyFromDB(row: any): CaseStudy {
+  return {
+    id: row.id,
+    uuid: row.uuid,
+    slug: row.slug,
+    title: row.title,
+    title_en: row.title_en,
+    industry: row.industry,
+    industry_en: row.industry_en,
+    excerpt: row.excerpt,
+    excerpt_en: row.excerpt_en,
+    challenge: row.challenge,
+    challenge_en: row.challenge_en,
+    solution: row.solution,
+    solution_en: row.solution_en,
+    results: row.results,
+    results_en: row.results_en,
+    client_name: row.client_name,
+    featured_image: row.featured_image,
+    tags: row.tags,
+    is_active: Boolean(row.is_active),
+    sort_order: row.sort_order,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+export const initCaseStudiesTable = async (): Promise<void> => {
+  await query(`
+    CREATE TABLE IF NOT EXISTS case_studies (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      uuid VARCHAR(36) NOT NULL UNIQUE,
+      slug VARCHAR(255) NOT NULL UNIQUE,
+      title VARCHAR(500) NOT NULL,
+      title_en VARCHAR(500),
+      industry VARCHAR(255) NOT NULL,
+      industry_en VARCHAR(255),
+      excerpt TEXT,
+      excerpt_en TEXT,
+      challenge TEXT,
+      challenge_en TEXT,
+      solution TEXT,
+      solution_en TEXT,
+      results TEXT,
+      results_en TEXT,
+      client_name VARCHAR(255),
+      featured_image VARCHAR(1000),
+      tags VARCHAR(500),
+      is_active TINYINT(1) DEFAULT 1,
+      sort_order INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+};
+
+export const getAllCaseStudies = async (): Promise<CaseStudy[]> => {
+  await initCaseStudiesTable();
+  const rows = await query('SELECT * FROM case_studies ORDER BY sort_order ASC, created_at DESC') as any[];
+  return rows.map(mapCaseStudyFromDB);
+};
+
+export const getActiveCaseStudies = async (): Promise<CaseStudy[]> => {
+  await initCaseStudiesTable();
+  const rows = await query('SELECT * FROM case_studies WHERE is_active = 1 ORDER BY sort_order ASC, created_at DESC') as any[];
+  return rows.map(mapCaseStudyFromDB);
+};
+
+export const getCaseStudyByUuid = async (uuid: string): Promise<CaseStudy | null> => {
+  await initCaseStudiesTable();
+  const rows = await query('SELECT * FROM case_studies WHERE uuid = ?', [uuid]) as any[];
+  return rows.length > 0 ? mapCaseStudyFromDB(rows[0]) : null;
+};
+
+export const getCaseStudyBySlug = async (slug: string): Promise<CaseStudy | null> => {
+  await initCaseStudiesTable();
+  const rows = await query('SELECT * FROM case_studies WHERE slug = ? AND is_active = 1', [slug]) as any[];
+  return rows.length > 0 ? mapCaseStudyFromDB(rows[0]) : null;
+};
+
+export const createCaseStudy = async (data: CreateCaseStudyData): Promise<CaseStudy | null> => {
+  try {
+    await initCaseStudiesTable();
+    const uuid = generateUUID();
+    await query(
+      `INSERT INTO case_studies
+        (uuid, slug, title, title_en, industry, industry_en, excerpt, excerpt_en,
+         challenge, challenge_en, solution, solution_en, results, results_en,
+         client_name, featured_image, tags, is_active, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        uuid,
+        data.slug,
+        data.title,
+        data.title_en || null,
+        data.industry,
+        data.industry_en || null,
+        data.excerpt || null,
+        data.excerpt_en || null,
+        data.challenge || null,
+        data.challenge_en || null,
+        data.solution || null,
+        data.solution_en || null,
+        data.results || null,
+        data.results_en || null,
+        data.client_name || null,
+        data.featured_image || null,
+        data.tags || null,
+        data.is_active !== false ? 1 : 0,
+        data.sort_order ?? 0,
+      ]
+    );
+    return getCaseStudyByUuid(uuid);
+  } catch (error) {
+    console.error('Error creando caso de éxito:', error);
+    return null;
+  }
+};
+
+export const updateCaseStudy = async (uuid: string, data: UpdateCaseStudyData): Promise<CaseStudy | null> => {
+  try {
+    await query(
+      `UPDATE case_studies SET
+        slug = ?, title = ?, title_en = ?, industry = ?, industry_en = ?,
+        excerpt = ?, excerpt_en = ?, challenge = ?, challenge_en = ?,
+        solution = ?, solution_en = ?, results = ?, results_en = ?,
+        client_name = ?, featured_image = COALESCE(?, featured_image),
+        tags = ?, is_active = ?, sort_order = COALESCE(?, sort_order), updated_at = NOW()
+       WHERE uuid = ?`,
+      [
+        data.slug,
+        data.title,
+        data.title_en || null,
+        data.industry,
+        data.industry_en || null,
+        data.excerpt || null,
+        data.excerpt_en || null,
+        data.challenge || null,
+        data.challenge_en || null,
+        data.solution || null,
+        data.solution_en || null,
+        data.results || null,
+        data.results_en || null,
+        data.client_name || null,
+        data.featured_image || null,
+        data.tags || null,
+        data.is_active !== false ? 1 : 0,
+        data.sort_order ?? null,
+        uuid,
+      ]
+    );
+    return getCaseStudyByUuid(uuid);
+  } catch (error) {
+    console.error('Error actualizando caso de éxito:', error);
+    return null;
+  }
+};
+
+export const deleteCaseStudy = async (uuid: string): Promise<boolean> => {
+  try {
+    const result = await query('DELETE FROM case_studies WHERE uuid = ?', [uuid]) as any;
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Error eliminando caso de éxito:', error);
+    return false;
+  }
+};
+
+export const reorderCaseStudies = async (items: { uuid: string; sort_order: number }[]): Promise<boolean> => {
+  try {
+    for (const item of items) {
+      await query('UPDATE case_studies SET sort_order = ? WHERE uuid = ?', [item.sort_order, item.uuid]);
+    }
+    return true;
+  } catch (error) {
+    console.error('Error reordenando casos de éxito:', error);
+    return false;
+  }
+};
+
+export const getNextCaseStudySortOrder = async (): Promise<number> => {
+  await initCaseStudiesTable();
+  const rows = await query('SELECT MAX(sort_order) as max_order FROM case_studies') as any[];
+  return (rows[0]?.max_order ?? -1) + 1;
+};

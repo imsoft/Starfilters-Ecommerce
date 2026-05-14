@@ -1,0 +1,361 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { Button } from "@/components/ui/button";
+import { createCaseStudy, getNextCaseStudySortOrder } from "@/lib/database";
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+
+  const slug = (formData.get('slug') as string || '').trim().toLowerCase().replace(/\s+/g, '-');
+  const title = formData.get('title') as string;
+  const title_en = formData.get('title_en') as string | null;
+  const industry = formData.get('industry') as string;
+  const industry_en = formData.get('industry_en') as string | null;
+  const excerpt = formData.get('excerpt') as string | null;
+  const excerpt_en = formData.get('excerpt_en') as string | null;
+  const challenge = formData.get('challenge') as string | null;
+  const challenge_en = formData.get('challenge_en') as string | null;
+  const solution = formData.get('solution') as string | null;
+  const solution_en = formData.get('solution_en') as string | null;
+  const results = formData.get('results') as string | null;
+  const results_en = formData.get('results_en') as string | null;
+  const client_name = formData.get('client_name') as string | null;
+  const featured_image = formData.get('featured_image') as string | null;
+  const tags = formData.get('tags') as string | null;
+  const is_active = formData.get('is_active') === '1';
+
+  if (!slug || !title || !industry) {
+    return Astro.redirect('/admin/casos-de-exito/create?error=missing_fields');
+  }
+
+  try {
+    const sort_order = await getNextCaseStudySortOrder();
+    const caseStudy = await createCaseStudy({
+      slug,
+      title,
+      title_en: title_en || undefined,
+      industry,
+      industry_en: industry_en || undefined,
+      excerpt: excerpt || undefined,
+      excerpt_en: excerpt_en || undefined,
+      challenge: challenge || undefined,
+      challenge_en: challenge_en || undefined,
+      solution: solution || undefined,
+      solution_en: solution_en || undefined,
+      results: results || undefined,
+      results_en: results_en || undefined,
+      client_name: client_name || undefined,
+      featured_image: featured_image || undefined,
+      tags: tags || undefined,
+      sort_order,
+      is_active,
+    });
+
+    if (caseStudy) return Astro.redirect('/admin/casos-de-exito?success=created');
+    return Astro.redirect('/admin/casos-de-exito/create?error=creation_failed');
+  } catch (error) {
+    console.error(error);
+    return Astro.redirect('/admin/casos-de-exito/create?error=creation_failed');
+  }
+}
+
+const url = new URL(Astro.request.url);
+const error = url.searchParams.get('error');
+---
+
+<AdminLayout title="Nuevo Caso de Éxito">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <div class="mt-10 mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Nuevo Caso de Éxito</h1>
+        <p class="mt-2 text-muted-foreground">Documenta un reto resuelto por Starfilters</p>
+      </div>
+      <a href="/admin/casos-de-exito">
+        <Button variant="outline" className="border-border text-foreground hover:bg-muted">
+          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Volver
+        </Button>
+      </a>
+    </div>
+
+    {error === 'missing_fields' && (
+      <div class="mb-6 rounded-md bg-yellow-50 p-4">
+        <p class="text-sm font-medium text-yellow-800">Por favor completa todos los campos requeridos (Slug, Título, Industria).</p>
+      </div>
+    )}
+    {error === 'creation_failed' && (
+      <div class="mb-6 rounded-md bg-red-50 p-4">
+        <p class="text-sm font-medium text-red-800">Error al crear el caso. Verifica que el slug sea único e inténtalo de nuevo.</p>
+      </div>
+    )}
+
+    <form method="POST" class="space-y-6">
+      <!-- Imagen destacada -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-4">Imagen Destacada</h2>
+        <div id="image-preview-wrap" class="hidden mb-4">
+          <img id="image-preview" src="" alt="Preview" class="h-48 w-full object-cover rounded-lg" />
+        </div>
+        <div
+          id="drop-zone"
+          class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-10 cursor-pointer hover:border-primary transition-colors"
+        >
+          <svg class="h-10 w-10 text-muted-foreground mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <p class="text-sm text-muted-foreground mb-1">Arrastra una imagen o haz clic para seleccionar</p>
+          <p class="text-xs text-muted-foreground">JPG, PNG, WEBP · Máx. 10MB</p>
+          <input id="image-file-input" type="file" accept="image/*" class="hidden" />
+        </div>
+        <p id="upload-status" class="mt-2 text-xs text-muted-foreground"></p>
+        <input type="hidden" id="featured_image" name="featured_image" />
+      </div>
+
+      <!-- Identificación -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-4">Identificación</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="slug" class="block text-sm font-medium text-foreground mb-1">Slug (URL) *</label>
+            <input type="text" id="slug" name="slug" required
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="farmaceutica-pfizer-2024" />
+            <p class="mt-1 text-xs text-muted-foreground">Solo minúsculas, números y guiones. Ej: <code>farmaceutica-pfizer-iso5</code></p>
+          </div>
+          <div>
+            <label for="client_name" class="block text-sm font-medium text-foreground mb-1">Cliente (opcional)</label>
+            <input type="text" id="client_name" name="client_name"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Pfizer México" />
+          </div>
+          <div>
+            <label for="industry" class="block text-sm font-medium text-foreground mb-1">Industria * 🇲🇽</label>
+            <input type="text" id="industry" name="industry" required
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Farmacéutica" list="industry-suggestions" />
+            <datalist id="industry-suggestions">
+              <option value="Farmacéutica" />
+              <option value="Automotriz" />
+              <option value="Alimentaria" />
+              <option value="Electrónica" />
+              <option value="Aeroespacial" />
+              <option value="Hospitalaria" />
+              <option value="Química" />
+              <option value="Cosmética" />
+            </datalist>
+          </div>
+          <div>
+            <label for="industry_en" class="block text-sm font-medium text-foreground mb-1">Industry 🇺🇸</label>
+            <input type="text" id="industry_en" name="industry_en"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Pharmaceutical" />
+          </div>
+          <div class="sm:col-span-2">
+            <label for="tags" class="block text-sm font-medium text-foreground mb-1">Etiquetas (separadas por coma)</label>
+            <input type="text" id="tags" name="tags"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="HEPA, ISO 5, cuarto limpio, validación" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Título -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-6">Título</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">🇲🇽 Título *</label>
+            <input type="text" name="title" required
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Implementación de Cuarto Limpio ISO 5 para Pfizer México" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">🇺🇸 Title</label>
+            <input type="text" name="title_en"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="ISO 5 Cleanroom Implementation for Pfizer Mexico" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">🇲🇽 Resumen breve</label>
+            <textarea name="excerpt" rows="3"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Breve descripción del caso para las tarjetas de listado..."></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">🇺🇸 Excerpt</label>
+            <textarea name="excerpt_en" rows="3"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Brief description of the case for listing cards..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenido del caso -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-6">Contenido del Caso</h2>
+
+        <!-- El Reto -->
+        <div class="mb-8">
+          <h3 class="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-700 text-xs font-bold">1</span>
+            El Reto
+          </h3>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">🇲🇽 Descripción del reto</label>
+              <textarea name="challenge" rows="5"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Describe el problema o necesidad específica que enfrentaba el cliente..."></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">🇺🇸 Challenge description</label>
+              <textarea name="challenge_en" rows="5"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Describe the specific problem or need the client faced..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- La Solución -->
+        <div class="mb-8">
+          <h3 class="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">2</span>
+            La Solución
+          </h3>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">🇲🇽 Solución implementada</label>
+              <textarea name="solution" rows="5"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Explica cómo Starfilters resolvió el reto..."></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">🇺🇸 Implemented solution</label>
+              <textarea name="solution_en" rows="5"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Explain how Starfilters solved the challenge..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Los Resultados -->
+        <div>
+          <h3 class="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700 text-xs font-bold">3</span>
+            Los Resultados
+          </h3>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">🇲🇽 Resultados obtenidos</label>
+              <textarea name="results" rows="5"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Métricas, certificaciones obtenidas, impacto en el negocio del cliente..."></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">🇺🇸 Results achieved</label>
+              <textarea name="results_en" rows="5"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Metrics, certifications obtained, impact on the client's business..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuración -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-4">Configuración</h2>
+        <div>
+          <label class="block text-sm font-medium text-foreground mb-2">Estado</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="is_active" value="1" checked class="text-primary" />
+              <span class="text-sm text-foreground">Activo (visible en el sitio)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="is_active" value="0" class="text-primary" />
+              <span class="text-sm text-foreground">Inactivo (oculto)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-4">
+        <a href="/admin/casos-de-exito">
+          <Button type="button" variant="outline" className="border-border text-foreground hover:bg-muted">
+            Cancelar
+          </Button>
+        </a>
+        <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+          Guardar Caso de Éxito
+        </Button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  // Auto-slug desde el título
+  const titleInput = document.querySelector('input[name="title"]') as HTMLInputElement;
+  const slugInput = document.getElementById('slug') as HTMLInputElement;
+  let slugEdited = false;
+
+  slugInput.addEventListener('input', () => { slugEdited = true; });
+  titleInput?.addEventListener('input', () => {
+    if (slugEdited) return;
+    slugInput.value = titleInput.value
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, 80);
+  });
+
+  // Upload imagen
+  const dropZone = document.getElementById('drop-zone') as HTMLElement;
+  const fileInput = document.getElementById('image-file-input') as HTMLInputElement;
+  const imageUrlInput = document.getElementById('featured_image') as HTMLInputElement;
+  const statusEl = document.getElementById('upload-status') as HTMLElement;
+  const previewWrap = document.getElementById('image-preview-wrap') as HTMLElement;
+  const previewImg = document.getElementById('image-preview') as HTMLImageElement;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-primary'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-primary'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary');
+    const file = e.dataTransfer?.files[0];
+    if (file) uploadFile(file);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files?.[0]) uploadFile(fileInput.files[0]);
+  });
+
+  async function uploadFile(file: File) {
+    statusEl.textContent = 'Subiendo imagen...';
+    statusEl.style.color = '';
+    const fd = new FormData();
+    fd.append('image', file);
+    try {
+      const res = await fetch('/api/case-studies/upload-image', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        imageUrlInput.value = data.url;
+        previewImg.src = data.url;
+        previewWrap.classList.remove('hidden');
+        dropZone.classList.add('hidden');
+        statusEl.textContent = '✅ Imagen subida correctamente';
+        statusEl.style.color = 'green';
+      } else {
+        statusEl.textContent = '❌ ' + data.message;
+        statusEl.style.color = 'red';
+      }
+    } catch {
+      statusEl.textContent = '❌ Error al subir la imagen';
+      statusEl.style.color = 'red';
+    }
+  }
+</script>

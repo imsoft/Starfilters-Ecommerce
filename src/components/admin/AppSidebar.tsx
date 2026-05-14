@@ -1,15 +1,17 @@
 "use client"
 
-import { 
-  LayoutDashboard, 
-  Package, 
-  FolderTree, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Package,
+  FolderTree,
+  FileText,
   FileEdit,
-  Users, 
+  Users,
   Tag,
   Home,
-  LogOut
+  LogOut,
+  Trophy,
+  Layers
 } from "lucide-react"
 import {
   Sidebar,
@@ -59,6 +61,16 @@ export function AppSidebar({ currentPath = '', adminUser }: AppSidebarProps) {
       title: "Blog",
       url: "/admin/blog",
       icon: FileEdit,
+    },
+    {
+      title: "Casos de Éxito",
+      url: "/admin/casos-de-exito",
+      icon: Trophy,
+    },
+    {
+      title: "Soluciones",
+      url: "/admin/soluciones",
+      icon: Layers,
     },
     {
       title: "Usuarios",
