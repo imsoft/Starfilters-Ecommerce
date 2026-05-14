@@ -3,6 +3,7 @@ import FooterSection from "@/components/shared/FooterSection.astro";
 import WhatsAppButton from "@/components/shared/WhatsAppButton.astro";
 import "../styles/global.css";
 import Navbar from "@/components/shared/Navbar.astro";
+import { ViewTransitions } from "astro:transitions";
 
 export interface Props {
   title: string;
@@ -33,6 +34,7 @@ const {
     {keywords && keywords.length > 0 && <meta name="keywords" content={keywords.join(', ')} />}
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <slot name="seo" />
+    <ViewTransitions />
   </head>
   <body>
     <Navbar />
