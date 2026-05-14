@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
+import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
@@ -143,19 +144,6 @@ const formatDate = (date: Date) =>
         )}
       </div>
 
-      <div class="mt-16 rounded-2xl bg-primary/5 border border-primary/10 p-8 text-center">
-        <h3 class="text-xl font-semibold text-foreground">Do you face a similar challenge?</h3>
-        <p class="mt-2 text-muted-foreground">Our engineers are ready to analyze your case and propose the most efficient solution.</p>
-        <div class="mt-5 flex flex-col sm:flex-row gap-3 justify-center">
-          <a href="/en/contact" class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-            Talk to an advisor
-          </a>
-          <a href="/en/solutions" class="inline-flex items-center justify-center rounded-md border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors">
-            View solutions
-          </a>
-        </div>
-      </div>
-
       {related.length > 0 && (
         <div class="mt-16">
           <h3 class="text-lg font-semibold text-foreground mb-6">More cases in {industry}</h3>
@@ -190,4 +178,16 @@ const formatDate = (date: Date) =>
       </div>
     </div>
   </article>
+
+  <SplitCTA
+    badge="Specialized Engineering"
+    title="Do you face a similar challenge?"
+    description="Our engineers are ready to analyze your case and propose the most efficient filtration solution for your process and industry."
+    primaryButtonText="Talk to an advisor"
+    primaryButtonHref="/en/contact"
+    secondaryButtonText="View solutions"
+    secondaryButtonHref="/en/solutions"
+    image="/images/services/Prueba%20de%20Integridad%20Filtros%20HEPA.png"
+    imageAlt="HEPA filter integrity testing by Star Filters"
+  />
 </WebsiteLayout>

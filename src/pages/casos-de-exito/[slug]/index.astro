@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
+import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 
@@ -158,28 +159,6 @@ const formatDate = (date: Date) =>
         )}
       </div>
 
-      <!-- CTA -->
-      <div class="mt-16 rounded-2xl bg-primary/5 border border-primary/10 p-8 text-center">
-        <h3 class="text-xl font-semibold text-foreground">¿Tienes un reto similar?</h3>
-        <p class="mt-2 text-muted-foreground">
-          Nuestros ingenieros están listos para analizar tu caso y proponer la solución más eficiente.
-        </p>
-        <div class="mt-5 flex flex-col sm:flex-row gap-3 justify-center">
-          <a
-            href="/contacto"
-            class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            Hablar con un asesor
-          </a>
-          <a
-            href="/soluciones"
-            class="inline-flex items-center justify-center rounded-md border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
-          >
-            Ver soluciones
-          </a>
-        </div>
-      </div>
-
       <!-- Casos relacionados -->
       {related.length > 0 && (
         <div class="mt-16">
@@ -213,4 +192,16 @@ const formatDate = (date: Date) =>
       </div>
     </div>
   </article>
+
+  <SplitCTA
+    badge="Ingeniería Especializada"
+    title="¿Tienes un reto similar?"
+    description="Nuestros ingenieros están listos para analizar tu caso y proponer la solución de filtración más eficiente para tu proceso e industria."
+    primaryButtonText="Hablar con un asesor"
+    primaryButtonHref="/contacto"
+    secondaryButtonText="Ver soluciones"
+    secondaryButtonHref="/soluciones"
+    image="/images/services/Prueba%20de%20Integridad%20Filtros%20HEPA.png"
+    imageAlt="Prueba de integridad de filtros HEPA Star Filters"
+  />
 </WebsiteLayout>

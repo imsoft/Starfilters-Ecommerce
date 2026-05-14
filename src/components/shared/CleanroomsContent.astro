@@ -1,6 +1,7 @@
 ---
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import VideoSection from "@/components/shared/VideoSection.astro";
+import SplitCTA from "@/components/shared/SplitCTA.astro";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -139,25 +140,18 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
       />
     </div>
 
-    <!-- CTA Section -->
-    <div class="mt-16 bg-primary/5 rounded-2xl text-center px-6 py-16 sm:px-16 sm:py-24">
-      <h2 class="text-3xl font-semibold tracking-tight text-balance text-gray-900 sm:text-4xl">
-        {t('cleanrooms.cta.title')}
-      </h2>
-      <p class="mx-auto mt-4 max-w-xl text-lg text-gray-600">
-        {t('cleanrooms.cta.subtitle')}
-      </p>
-      <div class="mt-10">
-        <a
-          href={contactUrl}
-          class="inline-flex rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          {t('cleanrooms.cta.button')}
-        </a>
-      </div>
-    </div>
   </div>
 </div>
+
+<SplitCTA
+  badge={t('cleanrooms.badge')}
+  title={t('cleanrooms.cta.title')}
+  description={t('cleanrooms.cta.subtitle')}
+  primaryButtonText={t('cleanrooms.cta.button')}
+  primaryButtonHref={contactUrl}
+  image="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
+  imageAlt={lang === 'en' ? 'Star Filters cleanroom construction' : 'Construcción de cuartos limpios Star Filters'}
+/>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {

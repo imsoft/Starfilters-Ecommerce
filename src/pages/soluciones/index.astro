@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
+import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getProducts } from "@/lib/database";
 import { getActiveCategories } from "@/lib/filter-category-service";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -519,27 +520,17 @@ const formatCurrency = (price: number, currency = 'MXN') =>
     </div>
   </section>
 
-  <!-- ── CTA final ─────────────────────────────────────────────────────────────── -->
-  <section class="bg-background py-16 border-t border-border">
-    <div class="mx-auto max-w-4xl px-6 text-center">
-      <h2 class="text-2xl font-bold text-foreground">¿Listo para mejorar tu filtración?</h2>
-      <p class="mt-3 text-muted-foreground">Explora casos reales donde resolvimos retos similares al tuyo.</p>
-      <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-        <a
-          href="/casos-de-exito"
-          class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          Ver casos de éxito
-        </a>
-        <a
-          href="/filtros"
-          class="inline-flex items-center justify-center rounded-md border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
-        >
-          Ir al catálogo de filtros
-        </a>
-      </div>
-    </div>
-  </section>
+  <SplitCTA
+    badge="Soluciones a tu Medida"
+    title="¿Listo para mejorar tu filtración?"
+    description="Explora casos reales donde resolvimos retos similares al tuyo, o contáctanos para una asesoría técnica personalizada sin costo."
+    primaryButtonText="Ver casos de éxito"
+    primaryButtonHref="/casos-de-exito"
+    secondaryButtonText="Ir al catálogo de filtros"
+    secondaryButtonHref="/filtros"
+    image="/images/services/Cuarto%20Limpio%20ISO%2014644.JPG"
+    imageAlt="Cuarto limpio ISO 14644 Star Filters"
+  />
 </WebsiteLayout>
 
 <script>

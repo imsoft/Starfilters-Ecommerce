@@ -1,5 +1,6 @@
 ---
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import SplitCTA from "@/components/shared/SplitCTA.astro";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -37,22 +38,16 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
         </div>
       </div>
 
-      <div class="mx-auto max-w-2xl text-center">
-        <h2 class="text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl">
-          {t('services.cta.title')}
-        </h2>
-        <p class="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-muted-foreground">
-          {t('services.cta.description')}
-        </p>
-        <div class="mt-10 flex items-center justify-center">
-          <a
-            href={contactUrl}
-            class="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            {t('services.cta.button')}
-          </a>
-        </div>
-      </div>
     </div>
   </div>
 </div>
+
+<SplitCTA
+  badge={lang === 'en' ? 'Start Today' : 'Empieza Hoy'}
+  title={t('services.cta.title')}
+  description={t('services.cta.description')}
+  primaryButtonText={t('services.cta.button')}
+  primaryButtonHref={contactUrl}
+  image="/images/services/Validacion%20Cuartos%20Limpios.jpg"
+  imageAlt={lang === 'en' ? 'Star Filters cleanroom validation services' : 'Servicios de validación de cuartos limpios Star Filters'}
+/>
