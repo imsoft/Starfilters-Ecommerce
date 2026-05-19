@@ -10,13 +10,18 @@ const t = useTranslations(lang);
   <!-- Contenedor redondeado que envuelve TODO: navbar + imagen + tarjeta -->
   <div class="relative min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] flex flex-col rounded-2xl overflow-hidden">
 
-    <!-- Imagen de fondo -->
+    <!-- Video de fondo -->
     <div class="absolute inset-0 z-0">
-      <img
-        src="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"
-        alt="Cuarto limpio sala blanca ISO 14644 Star Filters"
-        class="hero-image h-full w-full object-cover"
-      />
+      <video
+        class="h-full w-full object-cover"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+      >
+        <source src="/videos/VIDEO-2026-05-19-13-33-53.mp4" type="video/mp4" />
+      </video>
       <div class="absolute inset-0 bg-black/20"></div>
     </div>
 
@@ -42,7 +47,7 @@ const t = useTranslations(lang);
             {t('hero.cta')}
           </a>
           <a
-            href={lang === 'en' ? '/en/portfolio' : '/portafolio'}
+            href={lang === 'en' ? '/en/success-cases' : '/casos-de-exito'}
             class="inline-flex items-center gap-2 rounded-full border-2 border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors"
           >
             {t('hero.ctaSecondary')}
