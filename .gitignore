@@ -26,5 +26,7 @@ pnpm-debug.log*
 .vercel/
 
 # local tooling
-.claude/settings.json
+.agents/
+.claude/
+skills-lock.json
 pnpm-workspace.yaml
