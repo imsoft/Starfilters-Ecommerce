@@ -159,6 +159,57 @@ const formatDate = (date: Date) =>
         )}
       </div>
 
+      <!-- Galería de imágenes -->
+      {caseStudy.gallery_images && caseStudy.gallery_images.length > 0 && (
+        <div class="mt-14">
+          <h2 class="text-2xl font-semibold text-foreground mb-6">Galería del Proyecto</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {caseStudy.gallery_images.map((url, i) => (
+              <button
+                type="button"
+                class="gallery-thumb group relative aspect-square overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                data-src={url}
+                data-index={i}
+                aria-label={`Ver imagen ${i + 1}`}
+              >
+                <img
+                  src={url}
+                  alt={`${caseStudy.title} – imagen ${i + 1}`}
+                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <svg class="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                  </svg>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- Lightbox -->
+      <div id="lightbox" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true">
+        <button id="lb-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2" aria-label="Anterior">
+          <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <img id="lb-img" src="" alt="" class="max-h-[90vh] max-w-full rounded-lg object-contain" />
+        <button id="lb-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2" aria-label="Siguiente">
+          <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+        <button id="lb-close" class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2" aria-label="Cerrar">
+          <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <span id="lb-counter" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-white/70"></span>
+      </div>
+
       <!-- Casos relacionados -->
       {related.length > 0 && (
         <div class="mt-16">
@@ -192,6 +243,41 @@ const formatDate = (date: Date) =>
       </div>
     </div>
   </article>
+
+  <script>
+    const thumbs = Array.from(document.querySelectorAll<HTMLButtonElement>('.gallery-thumb'));
+    const lightbox = document.getElementById('lightbox')!;
+    const lbImg = document.getElementById('lb-img') as HTMLImageElement;
+    const lbCounter = document.getElementById('lb-counter')!;
+    let current = 0;
+
+    const srcs = thumbs.map((t) => t.dataset.src!);
+
+    function show(index: number) {
+      current = (index + srcs.length) % srcs.length;
+      lbImg.src = srcs[current];
+      lbCounter.textContent = `${current + 1} / ${srcs.length}`;
+      lightbox.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function close() {
+      lightbox.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    thumbs.forEach((btn, i) => btn.addEventListener('click', () => show(i)));
+    document.getElementById('lb-close')!.addEventListener('click', close);
+    document.getElementById('lb-prev')!.addEventListener('click', () => show(current - 1));
+    document.getElementById('lb-next')!.addEventListener('click', () => show(current + 1));
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) close(); });
+    document.addEventListener('keydown', (e) => {
+      if (lightbox.classList.contains('hidden')) return;
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowLeft') show(current - 1);
+      if (e.key === 'ArrowRight') show(current + 1);
+    });
+  </script>
 
   <SplitCTA
     badge="Ingeniería Especializada"

@@ -21,6 +21,8 @@ if (Astro.request.method === 'POST') {
   const results_en = formData.get('results_en') as string | null;
   const client_name = formData.get('client_name') as string | null;
   const featured_image = formData.get('featured_image') as string | null;
+  const gallery_images_raw = formData.get('gallery_images') as string | null;
+  const gallery_images: string[] = gallery_images_raw ? JSON.parse(gallery_images_raw) : [];
   const tags = formData.get('tags') as string | null;
   const is_active = formData.get('is_active') === '1';
 
@@ -46,6 +48,7 @@ if (Astro.request.method === 'POST') {
       results_en: results_en || undefined,
       client_name: client_name || undefined,
       featured_image: featured_image || undefined,
+      gallery_images: gallery_images.length ? gallery_images : undefined,
       tags: tags || undefined,
       sort_order,
       is_active,
@@ -263,6 +266,28 @@ const error = url.searchParams.get('error');
         </div>
       </div>
 
+      <!-- Galería de imágenes -->
+      <div class="rounded-lg border border-border bg-background p-6">
+        <h2 class="text-lg font-semibold text-foreground mb-1">Galería de Imágenes</h2>
+        <p class="text-sm text-muted-foreground mb-4">Sube varias fotos del proyecto. Se mostrarán como galería en la página pública.</p>
+
+        <div id="gallery-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4"></div>
+
+        <div
+          id="gallery-drop-zone"
+          class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 cursor-pointer hover:border-primary transition-colors"
+        >
+          <svg class="h-8 w-8 text-muted-foreground mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <p class="text-sm text-muted-foreground">Arrastra imágenes o haz clic para agregar</p>
+          <p class="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP · Máx. 10MB por imagen</p>
+          <input id="gallery-file-input" type="file" accept="image/*" multiple class="hidden" />
+        </div>
+        <p id="gallery-status" class="mt-2 text-xs text-muted-foreground"></p>
+        <input type="hidden" id="gallery_images" name="gallery_images" value="[]" />
+      </div>
+
       <!-- Configuración -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-4">Configuración</h2>
@@ -358,4 +383,69 @@ const error = url.searchParams.get('error');
       statusEl.style.color = 'red';
     }
   }
+
+  // ── Galería múltiple ─────────────────────────────────────────────────────────
+  const galleryDropZone = document.getElementById('gallery-drop-zone') as HTMLElement;
+  const galleryFileInput = document.getElementById('gallery-file-input') as HTMLInputElement;
+  const galleryHidden = document.getElementById('gallery_images') as HTMLInputElement;
+  const galleryGrid = document.getElementById('gallery-grid') as HTMLElement;
+  const galleryStatus = document.getElementById('gallery-status') as HTMLElement;
+  let galleryUrls: string[] = [];
+
+  function renderGallery() {
+    galleryGrid.innerHTML = '';
+    galleryUrls.forEach((url, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'relative group aspect-square rounded-lg overflow-hidden border border-border';
+      wrap.innerHTML = `
+        <img src="${url}" alt="Imagen ${i + 1}" class="h-full w-full object-cover" />
+        <button type="button" data-i="${i}" class="gallery-remove absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Eliminar">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>`;
+      galleryGrid.appendChild(wrap);
+    });
+    galleryGrid.querySelectorAll<HTMLButtonElement>('.gallery-remove').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        galleryUrls.splice(Number(btn.dataset.i), 1);
+        galleryHidden.value = JSON.stringify(galleryUrls);
+        renderGallery();
+      });
+    });
+  }
+
+  async function uploadGalleryFile(file: File) {
+    galleryStatus.textContent = `Subiendo ${file.name}...`;
+    const fd = new FormData();
+    fd.append('image', file);
+    try {
+      const res = await fetch('/api/case-studies/upload-image', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        galleryUrls.push(data.url);
+        galleryHidden.value = JSON.stringify(galleryUrls);
+        renderGallery();
+        galleryStatus.textContent = `✅ ${galleryUrls.length} imagen(es) en galería`;
+      } else {
+        galleryStatus.textContent = '❌ ' + data.message;
+      }
+    } catch {
+      galleryStatus.textContent = '❌ Error al subir imagen';
+    }
+  }
+
+  async function uploadGalleryFiles(files: FileList) {
+    for (const file of Array.from(files)) await uploadGalleryFile(file);
+  }
+
+  galleryDropZone.addEventListener('click', () => galleryFileInput.click());
+  galleryDropZone.addEventListener('dragover', (e) => { e.preventDefault(); galleryDropZone.classList.add('border-primary'); });
+  galleryDropZone.addEventListener('dragleave', () => galleryDropZone.classList.remove('border-primary'));
+  galleryDropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    galleryDropZone.classList.remove('border-primary');
+    if (e.dataTransfer?.files.length) uploadGalleryFiles(e.dataTransfer.files);
+  });
+  galleryFileInput.addEventListener('change', () => {
+    if (galleryFileInput.files?.length) uploadGalleryFiles(galleryFileInput.files);
+  });
 </script>

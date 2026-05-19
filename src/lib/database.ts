@@ -1665,6 +1665,7 @@ export interface CaseStudy {
   results_en?: string;
   client_name?: string;
   featured_image?: string;
+  gallery_images?: string[];
   tags?: string;
   is_active: boolean;
   sort_order: number;
@@ -1688,6 +1689,7 @@ export interface CreateCaseStudyData {
   results_en?: string;
   client_name?: string;
   featured_image?: string;
+  gallery_images?: string[];
   tags?: string;
   is_active?: boolean;
   sort_order?: number;
@@ -1714,6 +1716,7 @@ function mapCaseStudyFromDB(row: any): CaseStudy {
     results_en: row.results_en,
     client_name: row.client_name,
     featured_image: row.featured_image,
+    gallery_images: row.gallery_images ? JSON.parse(row.gallery_images) : [],
     tags: row.tags,
     is_active: Boolean(row.is_active),
     sort_order: row.sort_order,
@@ -1783,8 +1786,8 @@ export const createCaseStudy = async (data: CreateCaseStudyData): Promise<CaseSt
       `INSERT INTO case_studies
         (uuid, slug, title, title_en, industry, industry_en, excerpt, excerpt_en,
          challenge, challenge_en, solution, solution_en, results, results_en,
-         client_name, featured_image, tags, is_active, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         client_name, featured_image, gallery_images, tags, is_active, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         uuid,
         data.slug,
@@ -1802,6 +1805,7 @@ export const createCaseStudy = async (data: CreateCaseStudyData): Promise<CaseSt
         data.results_en || null,
         data.client_name || null,
         data.featured_image || null,
+        data.gallery_images?.length ? JSON.stringify(data.gallery_images) : null,
         data.tags || null,
         data.is_active !== false ? 1 : 0,
         data.sort_order ?? 0,
@@ -1822,7 +1826,8 @@ export const updateCaseStudy = async (uuid: string, data: UpdateCaseStudyData): 
         excerpt = ?, excerpt_en = ?, challenge = ?, challenge_en = ?,
         solution = ?, solution_en = ?, results = ?, results_en = ?,
         client_name = ?, featured_image = COALESCE(?, featured_image),
-        tags = ?, is_active = ?, sort_order = COALESCE(?, sort_order), updated_at = NOW()
+        gallery_images = ?, tags = ?, is_active = ?,
+        sort_order = COALESCE(?, sort_order), updated_at = NOW()
        WHERE uuid = ?`,
       [
         data.slug,
@@ -1840,6 +1845,9 @@ export const updateCaseStudy = async (uuid: string, data: UpdateCaseStudyData): 
         data.results_en || null,
         data.client_name || null,
         data.featured_image || null,
+        data.gallery_images !== undefined
+          ? (data.gallery_images.length ? JSON.stringify(data.gallery_images) : null)
+          : undefined,
         data.tags || null,
         data.is_active !== false ? 1 : 0,
         data.sort_order ?? null,
