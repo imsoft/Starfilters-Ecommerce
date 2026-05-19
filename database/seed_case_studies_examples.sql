@@ -1,0 +1,71 @@
+-- Tres casos de éxito de ejemplo para la sección /casos-de-exito
+-- Ejecutar: mysql -u root -p starfilters_ecommerce_db < database/seed_case_studies_examples.sql
+
+INSERT INTO case_studies
+  (uuid, slug, title, title_en, industry, industry_en, excerpt, excerpt_en,
+   challenge, challenge_en, solution, solution_en, results, results_en,
+   client_name, featured_image, tags, sort_order, is_active)
+VALUES
+  (
+    UUID(),
+    'cuarto-limpio-iso7-laboratorio-farmaceutico',
+    'Cuarto Limpio ISO 7 para Laboratorio Farmacéutico',
+    'ISO 7 Cleanroom for Pharmaceutical Laboratory',
+    'Farmacéutica',
+    'Pharmaceutical',
+    'Diseño e instalación completa de un cuarto limpio Clase 10,000 (ISO 7) que redujo la contaminación de lotes en un 98% y permitió al laboratorio obtener la certificación COFEPRIS.',
+    'Complete design and installation of a Class 10,000 (ISO 7) cleanroom that reduced batch contamination by 98% and enabled the laboratory to obtain COFEPRIS certification.',
+    'El laboratorio presentaba niveles de contaminación por partículas que superaban los límites permitidos por la norma ISO 7, poniendo en riesgo la calidad de sus productos farmacéuticos y bloqueando la obtención de la certificación COFEPRIS requerida para operar.',
+    'The laboratory had particulate contamination levels exceeding ISO 7 limits, jeopardizing the quality of pharmaceutical products and blocking the COFEPRIS certification required to operate.',
+    'Star Filters diseñó e instaló un sistema HVAC completo con filtros HEPA H14, control de presión diferencial positiva (+12.5 Pa), 20 cambios de aire por hora y monitoreo continuo de partículas. Se utilizaron materiales GMP-compliant en paredes y techos, y se capacitó al personal en procedimientos de entrada y uso del cuarto limpio.',
+    'Star Filters designed and installed a complete HVAC system with HEPA H14 filters, positive differential pressure control (+12.5 Pa), 20 air changes per hour, and continuous particle monitoring. GMP-compliant materials were used for walls and ceilings, and staff were trained on cleanroom entry procedures.',
+    'Reducción del 98% en contaminación de lotes. Obtención de certificación COFEPRIS en primera auditoría. Nivel de partículas ≥0.5 µm por debajo de 352,000/m³ de forma sostenida. ROI alcanzado en 14 meses por reducción de mermas.',
+    '98% reduction in batch contamination. COFEPRIS certification obtained on first audit. Particles ≥0.5 µm sustained below 352,000/m³. ROI achieved in 14 months through reduced waste.',
+    'Laboratorio Privado – Guadalajara, Jalisco',
+    'https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=800&auto=format&fit=crop',
+    'Cuarto Limpio, HEPA, ISO 7, COFEPRIS, Farmacéutica',
+    1,
+    1
+  ),
+  (
+    UUID(),
+    'sistema-filtracion-hvac-planta-automotriz',
+    'Filtración HVAC en Planta de Pintura Automotriz',
+    'HVAC Filtration in Automotive Paint Plant',
+    'Automotriz',
+    'Automotive',
+    'Suministro e instalación de filtros de media eficiencia y bolsa que redujeron un 40% las partículas suspendidas en la línea de pintura, eliminando defectos de acabado y rechazos de calidad.',
+    'Supply and installation of medium-efficiency and bag filters that reduced suspended particles by 40% in the paint line, eliminating finish defects and quality rejections.',
+    'La línea de pintura electrostática presentaba un índice de rechazo del 12% por defectos de acabado atribuibles a contaminación por partículas en el aire. Los filtros existentes tenían eficiencia MERV-7, insuficiente para el estándar de calidad requerido por el cliente OEM.',
+    'The electrostatic paint line had a 12% rejection rate due to finish defects attributable to airborne particle contamination. Existing filters had MERV-7 efficiency, insufficient for the quality standard required by the OEM customer.',
+    'Se realizó un diagnóstico de flujo de aire y se identificaron zonas críticas de turbulencia. Star Filters instaló filtros de bolsa MERV-11 en las unidades manejadoras de aire y filtros de panel pre-filtrantes G4 en las tomas de aire fresco. Se implementó un calendario de mantenimiento preventivo mensual con registro de caída de presión.',
+    'An airflow diagnostic was conducted and critical turbulence zones were identified. Star Filters installed MERV-11 bag filters in air handling units and G4 pre-filter panels on fresh air intakes. A monthly preventive maintenance schedule with pressure drop logging was implemented.',
+    'Reducción del 40% en partículas suspendidas (0.5–10 µm). Índice de rechazo por acabado bajó de 12% a 1.8%. Ahorro anual estimado de $480,000 MXN en reprocesos. Vida útil de los filtros incrementada 30% vs. configuración anterior.',
+    '40% reduction in suspended particles (0.5–10 µm). Finish rejection rate dropped from 12% to 1.8%. Estimated annual savings of $480,000 MXN in rework. Filter lifespan increased 30% vs. previous configuration.',
+    'Planta de Manufactura Automotriz – Monterrey, Nuevo León',
+    'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=800&auto=format&fit=crop',
+    'HVAC, MERV-11, Automotriz, Pintura, Filtros de Bolsa',
+    2,
+    1
+  ),
+  (
+    UUID(),
+    'control-contaminacion-sala-servidores',
+    'Control de Contaminación en Sala de Servidores Críticos',
+    'Contamination Control in Critical Server Room',
+    'Tecnología',
+    'Technology',
+    'Implementación de filtros electrostáticos y presión positiva que eliminó fallas por polvo en servidores críticos, reduciendo el tiempo de inactividad no planificado de 18 horas anuales a cero en dos años.',
+    'Implementation of electrostatic filters and positive pressure that eliminated dust-related failures in critical servers, reducing unplanned downtime from 18 hours per year to zero over two years.',
+    'Una sala de servidores en un edificio de oficinas en CDMX registraba fallas recurrentes en hardware por acumulación de polvo y humedad relativa elevada (>65% HR). Los apagados no planificados generaban pérdidas estimadas de $1.2M MXN por año en productividad y reparaciones.',
+    'A server room in a Mexico City office building experienced recurring hardware failures due to dust accumulation and high relative humidity (>65% RH). Unplanned shutdowns generated estimated losses of $1.2M MXN per year in productivity and repairs.',
+    'Star Filters instaló un sistema de presión positiva con filtros electrostáticos de dos etapas (pre-filtro G4 + filtro electrostático F7) en las unidades de climatización de precisión. Se añadió un deshumidificador integrado para mantener HR entre 40–55%. Se colocaron sellos perimetrales en puertas y pasos de cableado para evitar infiltración de aire sin filtrar.',
+    'Star Filters installed a positive pressure system with two-stage electrostatic filters (G4 pre-filter + F7 electrostatic filter) in precision cooling units. An integrated dehumidifier was added to maintain RH between 40–55%. Perimeter seals were added to doors and cable pathways to prevent unfiltered air infiltration.',
+    'Cero fallas por contaminación en 24 meses desde la instalación. Humedad relativa estabilizada en 45–52% HR. Vida útil de servidores extendida en estimado 3 años adicionales. ROI en menos de 8 meses vs. costo de fallas anteriores.',
+    'Zero contamination-related failures in 24 months since installation. Relative humidity stabilized at 45–52% RH. Server lifespan extended by an estimated 3 additional years. ROI in less than 8 months vs. previous failure costs.',
+    'Empresa de Servicios Financieros – Ciudad de México',
+    'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop',
+    'Filtros Electrostáticos, Presión Positiva, Data Center, Tecnología, Humedad',
+    3,
+    1
+  );

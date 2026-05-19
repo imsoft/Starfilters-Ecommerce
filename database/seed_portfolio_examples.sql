@@ -1,5 +1,5 @@
 -- Tres proyectos de ejemplo para la Galería de Proyectos
--- Ejecutar: mysql -u root -p starfilters_db < database/seed_portfolio_examples.sql
+-- Ejecutar: mysql -u root -p starfilters_ecommerce_db < database/seed_portfolio_examples.sql
 
 INSERT INTO portfolio_projects
   (uuid, title, title_en, description, description_en, image_url, link_url, sort_order, is_active)

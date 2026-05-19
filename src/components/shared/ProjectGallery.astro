@@ -38,7 +38,7 @@ if (projects.length === 0) return;
       {projects.map((project) => {
         const title = (isEn && project.title_en) ? project.title_en : project.title;
         const description = (isEn && project.description_en) ? project.description_en : project.description;
-        const portfolioHref = isEn ? '/en/portfolio' : '/portafolio';
+        const portfolioHref = isEn ? '/en/success-cases' : '/casos-de-exito';
 
         return (
           <div class="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
