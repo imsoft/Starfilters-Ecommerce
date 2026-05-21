@@ -274,6 +274,13 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
                   </a>
                 )}
               </div>
+
+              <!-- Selector de idioma móvil -->
+              <div class="py-4 flex items-center gap-2">
+                <span class="text-sm text-muted-foreground">{lang === 'en' ? 'Language:' : 'Idioma:'}</span>
+                <LanguageSelector client:load />
+              </div>
+
               <div class="py-6">
                 {user ? (
                   <div class="space-y-2">
