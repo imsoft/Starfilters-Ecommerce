@@ -2,216 +2,261 @@
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
-import { getHeroImage, updateHeroImage } from '@/lib/site-settings-service';
+import {
+  getHeroType, updateHeroType,
+  getHeroImage, updateHeroImage,
+  getHeroVideo, updateHeroVideo,
+} from '@/lib/site-settings-service';
 import { uploadImage, deleteImage, getPublicIdFromUrl } from '@/lib/cloudinary';
 
 export const prerender = false;
 
 const user = getAuthenticatedUser(Astro.cookies);
-
-if (!user) {
-  return Astro.redirect('/login');
-}
+if (!user) return Astro.redirect('/login');
 
 const userIsAdmin = await isUserAdmin(user.id);
+if (!userIsAdmin) return Astro.redirect('/');
 
-if (!userIsAdmin) {
-  return Astro.redirect('/');
-}
-
+let heroType  = await getHeroType();
 let heroImage = await getHeroImage();
+let heroVideo = await getHeroVideo();
 let error: string | null = null;
 let success: string | null = null;
 
-// Procesar formulario
 if (Astro.request.method === "POST") {
   try {
     const formData = await Astro.request.formData();
     const action = formData.get("action") as string;
 
-    if (action === "update_hero_image") {
-      const imageFile = formData.get("hero_image") as File;
+    // ── Cambiar tipo (imagen / video) ─────────────────────────────────
+    if (action === "update_hero_type") {
+      const type = formData.get("hero_type") as 'video' | 'image';
+      if (type === 'video' || type === 'image') {
+        await updateHeroType(type);
+        heroType = type;
+        success = `Tipo de fondo cambiado a: ${type === 'video' ? 'Video' : 'Imagen'}`;
+      }
 
-      if (imageFile && imageFile.size > 0) {
-        // Eliminar imagen anterior de Cloudinary si existe y no es la default
+    // ── Subir imagen ──────────────────────────────────────────────────
+    } else if (action === "upload_image") {
+      const file = formData.get("hero_image") as File;
+      if (!file || file.size === 0) { error = "Selecciona una imagen"; }
+      else {
         if (heroImage && !heroImage.includes('hero-default')) {
           const publicId = getPublicIdFromUrl(heroImage);
-          if (publicId) {
-            await deleteImage(publicId);
-          }
+          if (publicId) await deleteImage(publicId);
         }
-
-        // Subir nueva imagen a Cloudinary
-        const buffer = await imageFile.arrayBuffer();
-        const imageUrl = await uploadImage(
-          Buffer.from(buffer),
-          'starfilters-ecommerce/hero',
-          `hero-${Date.now()}`
-        );
-
-        // Actualizar en base de datos
-        const updated = await updateHeroImage(imageUrl);
-
-        if (updated) {
-          heroImage = imageUrl;
-          success = "Imagen del Hero actualizada exitosamente";
-        } else {
-          error = "Error al actualizar la imagen en la base de datos";
-        }
-      } else {
-        error = "Por favor selecciona una imagen";
+        const buffer = await file.arrayBuffer();
+        const url = await uploadImage(Buffer.from(buffer), { folder: 'starfilters-ecommerce/hero', public_id: `hero-img-${Date.now()}`, resource_type: 'image' });
+        await updateHeroImage(url);
+        await updateHeroType('image');
+        heroImage = url;
+        heroType  = 'image';
+        success = "Imagen del Hero actualizada y activada";
       }
-    } else if (action === "update_hero_url") {
-      const imageUrl = formData.get("hero_image_url") as string;
 
-      if (imageUrl) {
-        const updated = await updateHeroImage(imageUrl);
+    // ── URL de imagen ─────────────────────────────────────────────────
+    } else if (action === "image_url") {
+      const url = formData.get("hero_image_url") as string;
+      if (!url) { error = "Ingresa una URL"; }
+      else {
+        await updateHeroImage(url);
+        await updateHeroType('image');
+        heroImage = url;
+        heroType  = 'image';
+        success = "URL de imagen activada en el Hero";
+      }
 
-        if (updated) {
-          heroImage = imageUrl;
-          success = "URL de imagen del Hero actualizada exitosamente";
-        } else {
-          error = "Error al actualizar la URL en la base de datos";
-        }
-      } else {
-        error = "Por favor ingresa una URL";
+    // ── Subir video ───────────────────────────────────────────────────
+    } else if (action === "upload_video") {
+      const file = formData.get("hero_video") as File;
+      if (!file || file.size === 0) { error = "Selecciona un video"; }
+      else {
+        const buffer = await file.arrayBuffer();
+        const url = await uploadImage(Buffer.from(buffer), { folder: 'starfilters-ecommerce/hero', public_id: `hero-vid-${Date.now()}`, resource_type: 'video' });
+        await updateHeroVideo(url);
+        await updateHeroType('video');
+        heroVideo = url;
+        heroType  = 'video';
+        success = "Video del Hero actualizado y activado";
+      }
+
+    // ── URL de video ──────────────────────────────────────────────────
+    } else if (action === "video_url") {
+      const url = formData.get("hero_video_url") as string;
+      if (!url) { error = "Ingresa una URL"; }
+      else {
+        await updateHeroVideo(url);
+        await updateHeroType('video');
+        heroVideo = url;
+        heroType  = 'video';
+        success = "URL de video activada en el Hero";
       }
     }
   } catch (err) {
-    console.error("Error procesando formulario:", err);
+    console.error("Error en hero settings:", err);
     error = err instanceof Error ? err.message : "Error desconocido";
   }
 }
 ---
 
 <AdminLayout title="Configuración del Hero">
-  <div class="container mx-auto px-4 py-8">
-    <!-- Header -->
+  <div class="container mx-auto max-w-4xl px-4 py-8">
+
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">Configuración del Hero</h1>
-      <p class="mt-2 text-gray-600">Personaliza la imagen principal de la sección Hero de tu sitio web</p>
+      <p class="mt-2 text-gray-600">Elige si el fondo de la portada es un <strong>video</strong> o una <strong>imagen</strong>, y sube el archivo o pega la URL.</p>
     </div>
 
-    <!-- Mensajes -->
     {error && (
-      <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
-        <div class="flex">
-          <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-          </svg>
-          <div class="ml-3">
-            <p class="text-sm font-medium text-red-800">{error}</p>
-          </div>
-        </div>
-      </div>
+      <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm font-medium text-red-800">{error}</div>
+    )}
+    {success && (
+      <div class="mb-6 rounded-lg border border-green-300 bg-green-50 p-4 text-sm font-medium text-green-800">{success}</div>
     )}
 
-    {success && (
-      <div class="mb-6 rounded-lg border border-green-300 bg-green-50 p-4">
-        <div class="flex">
-          <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+    <!-- Estado actual -->
+    <div class="mb-8 rounded-xl border-2 border-primary/30 bg-primary/5 p-5 flex items-center gap-4">
+      <div class={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${heroType === 'video' ? 'bg-blue-100' : 'bg-purple-100'}`}>
+        {heroType === 'video' ? (
+          <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
           </svg>
-          <div class="ml-3">
-            <p class="text-sm font-medium text-green-800">{success}</p>
-          </div>
-        </div>
+        ) : (
+          <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        )}
       </div>
-    )}
+      <div>
+        <p class="font-semibold text-gray-900">Fondo activo: <span class="text-primary">{heroType === 'video' ? 'Video' : 'Imagen'}</span></p>
+        <p class="text-xs text-gray-500 mt-0.5 break-all">{heroType === 'video' ? heroVideo : heroImage}</p>
+      </div>
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <!-- Preview de la imagen actual -->
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 class="mb-4 text-xl font-bold text-gray-900">Vista Previa Actual</h2>
-        <div class="aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
-          <img
-            src={heroImage}
-            alt="Hero Image"
-            class="h-full w-full object-cover"
-            onerror="this.src='/images/placeholder.svg'"
-          />
+
+      <!-- ── Columna VIDEO ─────────────────────────────────────────────── -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+          </svg>
+          <h2 class="text-lg font-bold text-gray-900">Video de fondo</h2>
+          {heroType === 'video' && <span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">Activo</span>}
         </div>
-        <p class="mt-2 text-sm text-gray-500 break-all">
-          {heroImage}
-        </p>
-      </div>
 
-      <!-- Formularios para actualizar -->
-      <div class="space-y-6">
-        <!-- Opción 1: Subir imagen -->
-        <div class="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 class="mb-4 text-xl font-bold text-gray-900">Subir Nueva Imagen</h2>
-          <form method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="action" value="update_hero_image" />
-
-            <div>
-              <label for="hero_image" class="block text-sm font-medium text-gray-700 mb-2">
-                Selecciona una imagen
-              </label>
-              <input
-                type="file"
-                id="hero_image"
-                name="hero_image"
-                accept="image/*"
-                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
-              <p class="mt-2 text-sm text-gray-500">
-                Recomendado: 1920x1080px o mayor. Formatos: JPG, PNG, WebP
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              class="mt-4 w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              Subir y Actualizar
+        <!-- Subir video -->
+        <div class="rounded-lg border border-gray-200 bg-white p-5">
+          <p class="text-sm font-semibold text-gray-700 mb-3">Subir archivo de video</p>
+          <form method="POST" enctype="multipart/form-data" class="space-y-3">
+            <input type="hidden" name="action" value="upload_video" />
+            <input
+              type="file"
+              name="hero_video"
+              accept="video/mp4,video/webm,video/mov"
+              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <p class="text-xs text-gray-400">MP4, WebM o MOV. Recomendado: menos de 20 MB.</p>
+            <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
+              Subir y activar video
             </button>
           </form>
         </div>
 
-        <!-- Opción 2: URL directa -->
-        <div class="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 class="mb-4 text-xl font-bold text-gray-900">O usar una URL</h2>
-          <form method="POST">
-            <input type="hidden" name="action" value="update_hero_url" />
+        <!-- URL de video -->
+        <div class="rounded-lg border border-gray-200 bg-white p-5">
+          <p class="text-sm font-semibold text-gray-700 mb-3">O pegar URL del video</p>
+          <form method="POST" class="space-y-3">
+            <input type="hidden" name="action" value="video_url" />
+            <input
+              type="url"
+              name="hero_video_url"
+              value={heroVideo}
+              placeholder="https://ejemplo.com/video.mp4"
+              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <button type="submit" class="w-full rounded-lg bg-gray-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors">
+              Guardar URL y activar video
+            </button>
+          </form>
+        </div>
+      </div>
 
-            <div>
-              <label for="hero_image_url" class="block text-sm font-medium text-gray-700 mb-2">
-                URL de la imagen
-              </label>
-              <input
-                type="url"
-                id="hero_image_url"
-                name="hero_image_url"
-                placeholder="https://ejemplo.com/imagen-hero.jpg"
-                class="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <p class="mt-2 text-sm text-gray-500">
-                Ingresa la URL completa de una imagen existente
-              </p>
-            </div>
+      <!-- ── Columna IMAGEN ────────────────────────────────────────────── -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <h2 class="text-lg font-bold text-gray-900">Imagen de fondo</h2>
+          {heroType === 'image' && <span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">Activa</span>}
+        </div>
 
-            <button
-              type="submit"
-              class="mt-4 w-full rounded-lg bg-gray-600 px-6 py-3 font-medium text-white transition-colors hover:bg-gray-700"
-            >
-              Actualizar con URL
+        <!-- Preview imagen actual -->
+        {heroType === 'image' && (
+          <div class="rounded-lg overflow-hidden border border-gray-200 aspect-video bg-gray-100">
+            <img src={heroImage} alt="Hero actual" class="h-full w-full object-cover" onerror="this.src='/images/placeholder.svg'" />
+          </div>
+        )}
+
+        <!-- Subir imagen -->
+        <div class="rounded-lg border border-gray-200 bg-white p-5">
+          <p class="text-sm font-semibold text-gray-700 mb-3">Subir archivo de imagen</p>
+          <form method="POST" enctype="multipart/form-data" class="space-y-3">
+            <input type="hidden" name="action" value="upload_image" />
+            <input
+              type="file"
+              name="hero_image"
+              accept="image/*"
+              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+            />
+            <p class="text-xs text-gray-400">JPG, PNG o WebP. Recomendado: 1920×1080 px.</p>
+            <button type="submit" class="w-full rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition-colors">
+              Subir y activar imagen
+            </button>
+          </form>
+        </div>
+
+        <!-- URL de imagen -->
+        <div class="rounded-lg border border-gray-200 bg-white p-5">
+          <p class="text-sm font-semibold text-gray-700 mb-3">O pegar URL de imagen</p>
+          <form method="POST" class="space-y-3">
+            <input type="hidden" name="action" value="image_url" />
+            <input
+              type="url"
+              name="hero_image_url"
+              value={heroType === 'image' ? heroImage : ''}
+              placeholder="https://ejemplo.com/imagen.jpg"
+              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+            <button type="submit" class="w-full rounded-lg bg-gray-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors">
+              Guardar URL y activar imagen
             </button>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- Consejos -->
-    <div class="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-6">
-      <h3 class="mb-2 font-semibold text-blue-900">💡 Consejos para la imagen del Hero:</h3>
-      <ul class="list-disc list-inside space-y-1 text-sm text-blue-800">
-        <li>Usa imágenes de alta calidad con buena resolución</li>
-        <li>Recomendado: 1920x1080px (Full HD) o mayor</li>
-        <li>Asegúrate de que la imagen tenga buen contraste para que el texto sea legible</li>
-        <li>Evita imágenes con demasiados detalles que puedan distraer del contenido</li>
-        <li>Tamaño de archivo recomendado: menos de 500KB para mejor rendimiento</li>
-      </ul>
+    <!-- Cambiar solo el tipo sin subir nada -->
+    <div class="mt-8 rounded-lg border border-gray-200 bg-white p-5">
+      <p class="text-sm font-semibold text-gray-700 mb-3">Cambiar el tipo de fondo sin subir archivo</p>
+      <p class="text-xs text-gray-500 mb-4">Útil si ya tienes imagen y video guardados y solo quieres alternar entre ellos.</p>
+      <form method="POST" class="flex gap-4 flex-wrap">
+        <input type="hidden" name="action" value="update_hero_type" />
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="hero_type" value="video" checked={heroType === 'video'} class="accent-blue-600" />
+          <span class="text-sm font-medium text-gray-700">Video</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="hero_type" value="image" checked={heroType === 'image'} class="accent-purple-600" />
+          <span class="text-sm font-medium text-gray-700">Imagen</span>
+        </label>
+        <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+          Aplicar
+        </button>
+      </form>
     </div>
+
   </div>
 </AdminLayout>

@@ -99,6 +99,24 @@ export const updateHeroImage = async (imageUrl: string): Promise<boolean> => {
   return await updateSetting('hero_image', imageUrl);
 };
 
+export const getHeroType = async (): Promise<'video' | 'image'> => {
+  const type = await getSetting('hero_type');
+  return (type as 'video' | 'image') || 'video';
+};
+
+export const updateHeroType = async (type: 'video' | 'image'): Promise<boolean> => {
+  return await updateSetting('hero_type', type);
+};
+
+export const getHeroVideo = async (): Promise<string> => {
+  const video = await getSetting('hero_video');
+  return video || '/videos/VIDEO-2026-05-19-13-33-53.mp4';
+};
+
+export const updateHeroVideo = async (videoUrl: string): Promise<boolean> => {
+  return await updateSetting('hero_video', videoUrl);
+};
+
 export const getWhatsAppNumber = async (): Promise<string> => {
   const number = await getSetting('whatsapp_number');
   return number || '';
@@ -123,6 +141,10 @@ export default {
   updateSetting,
   getHeroImage,
   updateHeroImage,
+  getHeroType,
+  updateHeroType,
+  getHeroVideo,
+  updateHeroVideo,
   getWhatsAppNumber,
   updateWhatsAppNumber,
   getWhatsAppMessage,
