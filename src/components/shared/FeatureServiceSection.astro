@@ -3,93 +3,157 @@ import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
+
+const services = [
+  {
+    img: '/images/services/Prueba%20de%20Integridad%20Filtros%20HEPA.png',
+    alt: 'Prueba de integridad de filtros HEPA',
+    title: t('services.hepaIntegrity.title'),
+    desc:  t('services.hepaIntegrity.description'),
+    color: 'blue',
+  },
+  {
+    img: '/images/services/Conteo%20Particulas%20Aire%20Cuarto%20Limpio.jpg',
+    alt: 'Conteo de partículas de aire',
+    title: t('services.particleCount.title'),
+    desc:  t('services.particleCount.description'),
+    color: 'primary',
+  },
+  {
+    img: '/images/services/Prueba%20hermeticidad%20ductos%20aire.png',
+    alt: 'Prueba de hermeticidad de ductos',
+    title: t('services.ductLeakage.title'),
+    desc:  t('services.ductLeakage.description'),
+    color: 'slate',
+  },
+  {
+    img: '/images/services/Balanceo%20Aire%20Presion%20Diferencial%20Cuarto%20Limpio.jpg',
+    alt: 'Balanceo y control de presión',
+    title: t('services.airBalancing.title'),
+    desc:  t('services.airBalancing.description'),
+    color: 'green',
+  },
+];
+
+const steps = lang === 'en'
+  ? [
+      { n: '01', title: 'Initial Diagnosis',  desc: 'We visit and evaluate the current state of your cleanroom or HVAC system.' },
+      { n: '02', title: 'Test Planning',       desc: 'We define the scope, applicable standards (ISO 14644, ASHRAE) and timeline.' },
+      { n: '03', title: 'Field Execution',     desc: 'Certified technicians perform all measurements and tests on-site.' },
+      { n: '04', title: 'Technical Report',    desc: 'We deliver a detailed report with results, observations and corrective actions.' },
+    ]
+  : [
+      { n: '01', title: 'Diagnóstico inicial', desc: 'Visitamos y evaluamos el estado actual de tu cuarto limpio o sistema HVAC.' },
+      { n: '02', title: 'Planeación de pruebas', desc: 'Definimos el alcance, normas aplicables (ISO 14644, ASHRAE) y calendario.' },
+      { n: '03', title: 'Ejecución en campo',  desc: 'Técnicos certificados realizan todas las mediciones y pruebas en sitio.' },
+      { n: '04', title: 'Reporte técnico',     desc: 'Entregamos reporte detallado con resultados, observaciones y acciones correctivas.' },
+    ];
 ---
 
+<!-- ── Servicios ─────────────────────────────────────────────────────── -->
 <div class="bg-background pt-24 pb-12 sm:pt-32 sm:pb-16">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <div class="mx-auto max-w-4xl lg:text-center">
+
+    <div class="mx-auto max-w-4xl lg:text-center reveal">
       <h2 class="text-base/7 font-semibold text-primary">{t('services.badge')}</h2>
-      <p
-        class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl lg:text-balance"
-      >
+      <p class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl lg:text-balance">
         {t('services.title')}
       </p>
       <p class="mt-6 text-lg/8 text-muted-foreground whitespace-pre-line">
         {t('services.description')}
       </p>
     </div>
+
+    <!-- Cards de servicios -->
     <div class="mx-auto mt-16 max-w-7xl sm:mt-20 lg:mt-24">
-      <dl
-        class="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8"
-      >
-        <!-- Prueba de integridad de filtros HEPA -->
-        <div class="flex flex-col">
-          <div class="mb-4 overflow-hidden rounded-lg">
-            <img
-              src="/images/services/Prueba de Integridad Filtros HEPA.png"
-              alt="Prueba de integridad de filtros HEPA"
-              class="h-48 w-full object-cover sm:h-56 lg:h-52"
-            />
+      <dl class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
+        {services.map((s, i) => (
+          <div class="reveal service-card group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300"
+               style={`transition-delay: ${i * 80}ms`}>
+            <div class="overflow-hidden">
+              <img
+                src={s.img}
+                alt={s.alt}
+                class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-56 lg:h-52"
+                loading="lazy"
+              />
+            </div>
+            <div class="flex flex-col flex-1 p-5">
+              <dt class="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                {s.title}
+              </dt>
+              <dd class="mt-2 text-sm/6 text-muted-foreground flex-1">
+                {s.desc}
+              </dd>
+              <div class="mt-4 flex items-center gap-1 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <span>{lang === 'en' ? 'Learn more' : 'Saber más'}</span>
+                <svg class="h-3.5 w-3.5 translate-x-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                </svg>
+              </div>
+            </div>
           </div>
-          <dt class="text-base/7 font-semibold text-foreground">
-            {t('services.hepaIntegrity.title')}
-          </dt>
-          <dd class="mt-2 text-base/7 text-muted-foreground">
-            {t('services.hepaIntegrity.description')}
-          </dd>
-        </div>
-
-        <!-- Conteo de partículas de aire -->
-        <div class="flex flex-col">
-          <div class="mb-4 overflow-hidden rounded-lg">
-            <img
-              src="/images/services/Conteo Particulas Aire Cuarto Limpio.jpg"
-              alt="Conteo de partículas de aire en cuarto limpio"
-              class="h-48 w-full object-cover sm:h-56 lg:h-52"
-            />
-          </div>
-          <dt class="text-base/7 font-semibold text-foreground">
-            {t('services.particleCount.title')}
-          </dt>
-          <dd class="mt-2 text-base/7 text-muted-foreground">
-            {t('services.particleCount.description')}
-          </dd>
-        </div>
-
-        <!-- Prueba de hermeticidad de ductos -->
-        <div class="flex flex-col">
-          <div class="mb-4 overflow-hidden rounded-lg">
-            <img
-              src="/images/services/Prueba hermeticidad ductos aire.png"
-              alt="Prueba de hermeticidad de ductos de aire"
-              class="h-48 w-full object-cover sm:h-56 lg:h-52"
-            />
-          </div>
-          <dt class="text-base/7 font-semibold text-foreground">
-            {t('services.ductLeakage.title')}
-          </dt>
-          <dd class="mt-2 text-base/7 text-muted-foreground">
-            {t('services.ductLeakage.description')}
-          </dd>
-        </div>
-
-        <!-- Balanceo y control de presión de áreas -->
-        <div class="flex flex-col">
-          <div class="mb-4 overflow-hidden rounded-lg">
-            <img
-              src="/images/services/Balanceo Aire Presion Diferencial Cuarto Limpio.jpg"
-              alt="Balanceo de aire y presión diferencial"
-              class="h-48 w-full object-cover sm:h-56 lg:h-52"
-            />
-          </div>
-          <dt class="text-base/7 font-semibold text-foreground">
-            {t('services.airBalancing.title')}
-          </dt>
-          <dd class="mt-2 text-base/7 text-muted-foreground">
-            {t('services.airBalancing.description')}
-          </dd>
-        </div>
+        ))}
       </dl>
     </div>
   </div>
 </div>
+
+<!-- ── Proceso de trabajo ──────────────────────────────────────────────── -->
+<div class="bg-muted/30 py-20 border-t border-border">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class="text-center mb-14 reveal">
+      <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
+        {lang === 'en' ? 'How we work' : 'Cómo trabajamos'}
+      </p>
+      <h2 class="text-3xl font-bold text-foreground sm:text-4xl">
+        {lang === 'en' ? 'Our process' : 'Nuestro proceso'}
+      </h2>
+      <p class="mt-4 text-muted-foreground max-w-xl mx-auto">
+        {lang === 'en'
+          ? 'A systematic and certified methodology to ensure every test meets international standards.'
+          : 'Metodología sistemática y certificada para garantizar que cada prueba cumpla con las normas internacionales.'}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      {steps.map((step, i) => (
+        <div class="reveal relative flex flex-col items-center text-center" style={`transition-delay: ${i * 100}ms`}>
+          <!-- conector horizontal (desktop) -->
+          {i < steps.length - 1 && (
+            <div class="hidden lg:block absolute top-7 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-border z-0"></div>
+          )}
+          <div class="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-md mb-4">
+            {step.n}
+          </div>
+          <h3 class="text-base font-bold text-foreground mb-2">{step.title}</h3>
+          <p class="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+<style>
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.reveal').forEach(el => {
+    new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.12 }).observe(el);
+  });
+</script>
