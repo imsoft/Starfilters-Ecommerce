@@ -174,6 +174,7 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
 
     // Campos opcionales básicos
     const optionalFields: { field: keyof Product; dbColumn: string }[] = [
+      { field: 'product_type', dbColumn: 'product_type' },
       { field: 'filter_category_id', dbColumn: 'filter_category_id' },
       { field: 'bind_id', dbColumn: 'bind_id' },
       { field: 'bind_code', dbColumn: 'bind_code' },
@@ -302,7 +303,7 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
 
     await query(
       `UPDATE products SET
-        filter_category_id = ?, name = ?, name_en = ?, description = ?, description_en = ?,
+        product_type = ?, filter_category_id = ?, name = ?, name_en = ?, description = ?, description_en = ?,
         price = ?, currency = ?, price_usd = ?, nominal_size = ?, real_size = ?,
         category = ?, category_en = ?, stock = ?,
         status = ?, tags = ?, dimensions = ?, weight = ?,
@@ -314,6 +315,7 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
         benefits = ?, benefits_en = ?
       WHERE id = ?`,
       [
+        productData.product_type || 'filter',
         productData.filter_category_id || null,
         productData.name,
         productData.name_en || null,
@@ -578,6 +580,18 @@ export const getProductStats = async () => {
       inactive: 0,
       lowStock: 0,
     };
+  }
+};
+
+export const getSpecialProducts = async (): Promise<Product[]> => {
+  try {
+    const products = await query(
+      'SELECT * FROM products WHERE product_type = "special" AND status = "active" ORDER BY created_at DESC'
+    ) as Product[];
+    return products;
+  } catch (error) {
+    console.error('❌ Error obteniendo productos especiales:', error);
+    return [];
   }
 };
 

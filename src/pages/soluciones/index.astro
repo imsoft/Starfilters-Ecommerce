@@ -21,8 +21,8 @@ const whatsappAsesoria = `https://wa.me/${whatsappNumber}?text=${encodeURICompon
 ---
 
 <WebsiteLayout
-  title="Soluciones de Filtración Industrial"
-  seoTitle="Soluciones de Filtración Industrial: Baja, Media y HEPA | Star Filters"
+  title="Filtros de Aire"
+  seoTitle="Filtros de Aire: Baja, Media y HEPA | Star Filters"
   description="Fabricamos filtros de aire industriales de alto rendimiento: baja, media y alta eficiencia HEPA. Normativas EN779, ISO 16890, ASHRAE 52.2 y EN 1822. Stock permanente en Guadalajara y CDMX."
   keywords={[
     'filtros industriales México',
@@ -35,7 +35,7 @@ const whatsappAsesoria = `https://wa.me/${whatsappNumber}?text=${encodeURICompon
 >
   <SEO
     slot="seo"
-    title="Soluciones de Filtración Industrial"
+    title="Filtros de Aire"
     description="Filtros de aire industriales: baja, media y alta eficiencia HEPA. Stock permanente en Guadalajara y CDMX."
     ogType="website"
     keywords={['filtros HEPA', 'filtración industrial', 'Star Filters']}
@@ -345,7 +345,7 @@ const whatsappAsesoria = `https://wa.me/${whatsappNumber}?text=${encodeURICompon
             >
               {cat.main_image ? (
                 <div class="h-32 overflow-hidden">
-                  <img src={cat.main_image} alt={cat.name} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                  <img src={cat.main_image} alt={cat.name} class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105" loading="lazy" />
                 </div>
               ) : (
                 <div class="h-32 bg-muted/40 flex items-center justify-center">

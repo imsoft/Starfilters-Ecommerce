@@ -17,6 +17,7 @@ export const generateUUID = (): string => {
 export interface Product {
   id: number;
   uuid: string;
+  product_type?: 'filter' | 'special';
   filter_category_id?: number | null;
   bind_id?: string | null;
   bind_code?: string | null;

@@ -275,28 +275,135 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
         )}
       </div>
 
-      <!-- Búsqueda -->
-      <div class="mb-8">
-        <label for="search-products" class="block text-sm font-medium text-foreground mb-2">
-          Buscar productos
-        </label>
-        <div class="relative max-w-md">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-          </div>
-          <input
-            type="text"
-            id="search-products"
-            placeholder="Buscar por nombre..."
-            class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
-      </div>
+      <!-- Layout: filtros + grid -->
+      <div class="flex flex-col lg:flex-row gap-8">
 
-      <!-- Grid de productos -->
-      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="products-grid">
+        <!-- ── Panel de filtros ───────────────────────────────────────── -->
+        <aside class="w-full lg:w-64 flex-shrink-0 space-y-6">
+
+          <!-- Búsqueda -->
+          <div>
+            <label for="search-products" class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Buscar</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <input
+                type="text"
+                id="search-products"
+                placeholder="Nombre del filtro..."
+                class="w-full rounded-md border border-border bg-background pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <!-- Eficiencia -->
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Eficiencia</p>
+            <div class="flex flex-col gap-2">
+              {[
+                { label: 'Todos', slug: null },
+                { label: 'Baja (G1–G4)', slug: 'baja-eficiencia' },
+                { label: 'Media (M5–M9)', slug: 'media-eficiencia' },
+                { label: 'Alta / HEPA', slug: 'hepa' },
+              ].map(({ label, slug }) => {
+                const isActive = slug === null ? !categorySlugParam : categorySlugParam === slug;
+                const href = slug ? `/productos?category=${slug}` : '/productos';
+                return (
+                  <a
+                    href={href}
+                    class={`rounded-md px-3 py-1.5 text-sm font-medium border transition-colors ${isActive ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-foreground hover:bg-muted'}`}
+                  >
+                    {label}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+
+          <!-- Tipo de filtro -->
+          {categories.length > 0 && (
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tipo de filtro</p>
+              <div class="flex flex-col gap-2">
+                <button
+                  class="filter-btn rounded-md px-3 py-1.5 text-sm font-medium border border-primary bg-primary text-primary-foreground text-left transition-colors"
+                  data-category="all"
+                >
+                  Todos los tipos
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    class="filter-btn rounded-md px-3 py-1.5 text-sm font-medium border border-border bg-background text-foreground text-left hover:bg-muted transition-colors"
+                    data-category={cat}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <!-- Disponibilidad -->
+          <div>
+            <label for="stock-filter" class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Disponibilidad</label>
+            <select
+              id="stock-filter"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">Todos</option>
+              <option value="in-stock">En stock</option>
+              <option value="out-of-stock">Agotados</option>
+            </select>
+          </div>
+
+          <!-- Ordenar por -->
+          <div>
+            <label for="sort-by" class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Ordenar por</label>
+            <select
+              id="sort-by"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="default">Por defecto</option>
+              <option value="price-asc">Precio: menor a mayor</option>
+              <option value="price-desc">Precio: mayor a menor</option>
+              <option value="name-asc">Nombre: A–Z</option>
+              <option value="name-desc">Nombre: Z–A</option>
+            </select>
+          </div>
+
+          <!-- Precio máximo -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="price-range" class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Precio máx.</label>
+              <span id="price-range-value" class="text-sm font-medium text-foreground">$10,000</span>
+            </div>
+            <input
+              type="range"
+              id="price-range"
+              min="0"
+              max="10000"
+              value="10000"
+              step="500"
+              class="w-full accent-primary"
+            />
+            <div class="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>$0</span>
+              <span>$10,000</span>
+            </div>
+          </div>
+
+          <!-- Resultado -->
+          <p class="text-xs text-muted-foreground">
+            <span id="results-count">{products.length}</span> productos encontrados
+          </p>
+        </aside>
+
+        <!-- ── Grid de productos ──────────────────────────────────────── -->
+        <div class="flex-1">
+      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8" id="products-grid">
         {products.map((product) => (
           <div 
             class="group product-card relative flex flex-col" 
@@ -405,6 +512,8 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
           </p>
         </div>
       )}
+        </div>{/* end flex-1 */}
+      </div>{/* end flex layout */}
     </section>
   </div>
 </WebsiteLayout>

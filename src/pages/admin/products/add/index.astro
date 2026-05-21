@@ -84,6 +84,7 @@ if (Astro.request.method === "POST") {
     
     // Procesar información básica del producto
     const category = formData.get("category") as string || "Filtros de Aire";
+    const productType = (formData.get("product_type") as string || "filter") as "filter" | "special";
     const filterCategoryIdStr = formData.get("filter_category_id") as string;
     const filterCategoryId = filterCategoryIdStr ? parseInt(filterCategoryIdStr) : null;
 
@@ -97,6 +98,7 @@ if (Astro.request.method === "POST") {
         const sizeUuid = generateUUID();
         const sizeProductId = await createProduct({
           uuid: sizeUuid,
+          product_type: productType,
           filter_category_id: filterCategoryId,
           bind_code: size.bind_code || null,
           sku: size.sku || null,
@@ -138,6 +140,7 @@ if (Astro.request.method === "POST") {
       // Crear un solo producto sin tamaño específico
       productId = await createProduct({
         uuid: uuid,
+        product_type: productType,
         filter_category_id: filterCategoryId,
         bind_code: null,
         sku: null,
@@ -518,6 +521,28 @@ if (Astro.request.method === "POST") {
 
       <!-- Formulario -->
       <form method="POST" class="space-y-8">
+
+      <!-- Tipo de Producto -->
+      <div class="rounded-lg border-2 border-primary/30 bg-primary/5 p-6 shadow-sm">
+        <p class="text-sm font-bold text-gray-900 mb-4">Tipo de producto</p>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-3 cursor-pointer rounded-lg border border-border bg-white px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors flex-1">
+            <input type="radio" name="product_type" value="filter" checked class="accent-primary" />
+            <div>
+              <p class="text-sm font-semibold text-gray-900">Filtro de Aire</p>
+              <p class="text-xs text-gray-500">Aparece en /productos con filtros de eficiencia</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer rounded-lg border border-border bg-white px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors flex-1">
+            <input type="radio" name="product_type" value="special" class="accent-primary" />
+            <div>
+              <p class="text-sm font-semibold text-gray-900">Accesorio / Equipo</p>
+              <p class="text-xs text-gray-500">Aparece en /accesorios (manómetros, etc.)</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
       <!-- Información Básica -->
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">

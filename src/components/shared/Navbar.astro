@@ -31,6 +31,10 @@ if (user) {
 
 const baseNavLinks = [
   {
+    href: lang === 'en' ? '/en/accessories' : '/accesorios',
+    label: lang === 'en' ? 'Accessories' : 'Accesorios',
+  },
+  {
     href: lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios',
     label: lang === 'en' ? 'Cleanrooms' : t('nav.cleanrooms'),
   },
@@ -40,7 +44,7 @@ const baseNavLinks = [
   },
   {
     href: lang === 'en' ? '/en/solutions' : '/soluciones',
-    label: lang === 'en' ? 'Solutions' : 'Soluciones',
+    label: lang === 'en' ? 'Air Filters' : 'Filtros de Aire',
   },
   {
     href: lang === 'en' ? '/en/success-cases' : '/casos-de-exito',
@@ -113,9 +117,9 @@ const navLinks = [...baseNavLinks];
             href={lang === 'en' ? '/en/filters' : '/filtros'}
             class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-foreground transition-colors"
           >
-            {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
+            {lang === 'en' ? 'Products' : 'Productos'}
           </a>
-          
+
           {navLinks.map((link) => (
             <a
               href={link.href}
@@ -195,9 +199,9 @@ const navLinks = [...baseNavLinks];
                   href={lang === 'en' ? '/en/filters' : '/filtros'}
                   class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
                 >
-                  {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
+                  {lang === 'en' ? 'Products' : 'Productos'}
                 </a>
-                
+
                 {navLinks.map((link) => (
                   <a
                     href={link.href}
