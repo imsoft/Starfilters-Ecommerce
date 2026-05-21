@@ -36,11 +36,14 @@ const productosLinks = [
 ];
 
 const empresaLinks = [
-  { href: lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios',   label: lang === 'en' ? 'Cleanrooms'        : t('nav.cleanrooms') },
-  { href: lang === 'en' ? '/en/services' : '/servicios',           label: lang === 'en' ? 'Validation Services': t('nav.services') },
-  { href: lang === 'en' ? '/en/success-cases' : '/casos-de-exito', label: lang === 'en' ? 'Success Cases'     : 'Casos de Éxito' },
-  { href: lang === 'en' ? '/en/blog' : '/blog',                    label: lang === 'en' ? 'Blog'              : t('nav.blog') },
+  { href: lang === 'en' ? '/en/success-cases' : '/casos-de-exito', label: lang === 'en' ? 'Success Cases' : 'Casos de Éxito' },
+  { href: lang === 'en' ? '/en/blog' : '/blog',                    label: lang === 'en' ? 'Blog'          : t('nav.blog') },
 ];
+
+const cleanroomsHref  = lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios';
+const cleanroomsLabel = lang === 'en' ? 'Cleanrooms' : t('nav.cleanrooms');
+const serviciosHref   = lang === 'en' ? '/en/services' : '/servicios';
+const serviciosLabel  = lang === 'en' ? 'Validation Services' : t('nav.services');
 
 const contactoHref  = lang === 'en' ? '/en/contact' : '/contacto';
 const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
@@ -114,6 +117,16 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
               </div>
             </div>
           </div>
+
+          <!-- Cuartos Limpios directo -->
+          <a href={cleanroomsHref} class="text-sm/6 font-semibold text-foreground hover:text-primary transition-colors whitespace-nowrap">
+            {cleanroomsLabel}
+          </a>
+
+          <!-- Servicios directo -->
+          <a href={serviciosHref} class="text-sm/6 font-semibold text-foreground hover:text-primary transition-colors whitespace-nowrap">
+            {serviciosLabel}
+          </a>
 
           <!-- Dropdown: Empresa -->
           <div class="relative group">
@@ -222,6 +235,16 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
                     ))}
                   </div>
                 </details>
+
+                <!-- Cuartos Limpios directo -->
+                <a href={cleanroomsHref} class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted">
+                  {cleanroomsLabel}
+                </a>
+
+                <!-- Servicios directo -->
+                <a href={serviciosHref} class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted">
+                  {serviciosLabel}
+                </a>
 
                 <!-- Acordeón: Empresa -->
                 <details class="group/emp">
