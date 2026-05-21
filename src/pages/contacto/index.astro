@@ -20,6 +20,8 @@ type ContactFormValues = {
   email: string;
   phone: string;
   company: string;
+  motivo: string;
+  industria: string;
   message: string;
 };
 
@@ -29,6 +31,8 @@ const initialValues: ContactFormValues = {
   email: "",
   phone: "",
   company: "",
+  motivo: "",
+  industria: "",
   message: "",
 };
 
@@ -50,14 +54,22 @@ if (Astro.request.method === "POST") {
     email: (formData.get("email")?.toString() ?? "").trim(),
     phone: (formData.get("phone")?.toString() ?? "").trim(),
     company: (formData.get("company")?.toString() ?? "").trim(),
+    motivo: (formData.get("motivo")?.toString() ?? "").trim(),
+    industria: (formData.get("industria")?.toString() ?? "").trim(),
     message: (formData.get("message")?.toString() ?? "").trim(),
   };
 
-  const hasEmpty = Object.entries(formValues).some(([key, value]) => key !== "company" && value.length === 0);
+  const privacidad = formData.get("privacidad");
+
+  const optionalFields = ["company"];
+  const hasEmpty = Object.entries(formValues).some(([key, value]) => !optionalFields.includes(key) && value.length === 0);
 
   if (hasEmpty) {
     submissionStatus = "error";
-    submissionMessage = "Por favor completa todos los campos.";
+    submissionMessage = "Por favor completa todos los campos obligatorios.";
+  } else if (!privacidad) {
+    submissionStatus = "error";
+    submissionMessage = "Debes aceptar el aviso de privacidad para continuar.";
   } else {
     try {
       const messageHtml = formValues.message.replace(/\n/g, "<br />");
@@ -72,9 +84,11 @@ if (Astro.request.method === "POST") {
           <p><strong>Correo electrónico:</strong> ${formValues.email}</p>
           <p><strong>Teléfono:</strong> ${formValues.phone}</p>
           <p><strong>Empresa:</strong> ${formValues.company || "N/A"}</p>
+          <p><strong>Motivo de contacto:</strong> ${formValues.motivo}</p>
+          <p><strong>Industria / Sector:</strong> ${formValues.industria}</p>
           <p><strong>Mensaje:</strong><br />${messageHtml}</p>
         `,
-        text: `Nuevo mensaje desde el formulario de contacto (Español)\n\nNombre: ${formValues.name}\nCiudad: ${formValues.city}\nCorreo electrónico: ${formValues.email}\nTeléfono: ${formValues.phone}\nEmpresa: ${formValues.company || "N/A"}\n\nMensaje:\n${formValues.message}`,
+        text: `Nuevo mensaje desde el formulario de contacto (Español)\n\nNombre: ${formValues.name}\nCiudad: ${formValues.city}\nCorreo electrónico: ${formValues.email}\nTeléfono: ${formValues.phone}\nEmpresa: ${formValues.company || "N/A"}\nMotivo: ${formValues.motivo}\nIndustria: ${formValues.industria}\n\nMensaje:\n${formValues.message}`,
       });
 
       if (emailSent) {
@@ -247,27 +261,85 @@ if (Astro.request.method === "POST") {
               </div>
             </div>
 
-            <div>
-              <label for="company" class="block text-sm font-medium text-foreground">Nombre de la empresa</label>
-              <input
-                id="company"
-                name="company"
-                type="text"
-                autocomplete="organization"
-                value={formValues.company}
-                class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-              />
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label for="company" class="block text-sm font-medium text-foreground">Nombre de la empresa <span class="text-muted-foreground font-normal">(opcional)</span></label>
+                <input
+                  id="company"
+                  name="company"
+                  type="text"
+                  autocomplete="organization"
+                  value={formValues.company}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+              <div>
+                <label for="industria" class="block text-sm font-medium text-foreground">Industria / Sector <span class="text-red-500">*</span></label>
+                <select
+                  id="industria"
+                  name="industria"
+                  required
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                >
+                  <option value="" disabled selected={!formValues.industria}>Selecciona tu industria</option>
+                  <option value="Farmacéutica" selected={formValues.industria === 'Farmacéutica'}>Farmacéutica</option>
+                  <option value="Alimentaria" selected={formValues.industria === 'Alimentaria'}>Alimentaria</option>
+                  <option value="Electrónica" selected={formValues.industria === 'Electrónica'}>Electrónica</option>
+                  <option value="Automotriz" selected={formValues.industria === 'Automotriz'}>Automotriz</option>
+                  <option value="Química / Petroquímica" selected={formValues.industria === 'Química / Petroquímica'}>Química / Petroquímica</option>
+                  <option value="Hospitalaria / Salud" selected={formValues.industria === 'Hospitalaria / Salud'}>Hospitalaria / Salud</option>
+                  <option value="HVAC / Construcción" selected={formValues.industria === 'HVAC / Construcción'}>HVAC / Construcción</option>
+                  <option value="Otra" selected={formValues.industria === 'Otra'}>Otra</option>
+                </select>
+              </div>
             </div>
 
             <div>
-              <label for="message" class="block text-sm font-medium text-foreground">Mensaje</label>
+              <label for="motivo" class="block text-sm font-medium text-foreground">Motivo de contacto <span class="text-red-500">*</span></label>
+              <select
+                id="motivo"
+                name="motivo"
+                required
+                class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              >
+                <option value="" disabled selected={!formValues.motivo}>¿En qué podemos ayudarte?</option>
+                <option value="Cotización de producto" selected={formValues.motivo === 'Cotización de producto'}>Cotización de producto</option>
+                <option value="Asesoría técnica" selected={formValues.motivo === 'Asesoría técnica'}>Asesoría técnica</option>
+                <option value="Servicio de validación / cuartos limpios" selected={formValues.motivo === 'Servicio de validación / cuartos limpios'}>Servicio de validación / cuartos limpios</option>
+                <option value="Soporte post-venta" selected={formValues.motivo === 'Soporte post-venta'}>Soporte post-venta</option>
+                <option value="Distribución / revendedores" selected={formValues.motivo === 'Distribución / revendedores'}>Distribución / revendedores</option>
+                <option value="Información general" selected={formValues.motivo === 'Información general'}>Información general</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="message" class="block text-sm font-medium text-foreground">Mensaje <span class="text-red-500">*</span></label>
               <textarea
                 id="message"
                 name="message"
                 required
                 rows={5}
+                placeholder="Cuéntanos más sobre tu proyecto o consulta..."
                 class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
               >{formValues.message}</textarea>
+            </div>
+
+            <!-- Consentimiento de privacidad -->
+            <div class="flex items-start gap-3">
+              <input
+                id="privacidad"
+                name="privacidad"
+                type="checkbox"
+                required
+                class="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer flex-shrink-0"
+              />
+              <label for="privacidad" class="text-sm text-muted-foreground cursor-pointer">
+                He leído y acepto el{" "}
+                <a href="/aviso-de-privacidad" class="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+                  Aviso de Privacidad
+                </a>
+                {" "}y consiento el tratamiento de mis datos personales para recibir respuesta a mi consulta. <span class="text-red-500">*</span>
+              </label>
             </div>
 
             <input
