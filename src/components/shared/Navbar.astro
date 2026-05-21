@@ -29,38 +29,21 @@ if (user) {
   userIsAdmin = await isUserAdmin(user.id);
 }
 
-const baseNavLinks = [
-  {
-    href: lang === 'en' ? '/en/accessories' : '/accesorios',
-    label: lang === 'en' ? 'Accessories' : 'Accesorios',
-  },
-  {
-    href: lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios',
-    label: lang === 'en' ? 'Cleanrooms' : t('nav.cleanrooms'),
-  },
-  {
-    href: lang === 'en' ? '/en/services' : '/servicios',
-    label: lang === 'en' ? 'Validation Services' : t('nav.services'),
-  },
-  {
-    href: lang === 'en' ? '/en/solutions' : '/soluciones',
-    label: lang === 'en' ? 'Air Filters' : 'Filtros de Aire',
-  },
-  {
-    href: lang === 'en' ? '/en/success-cases' : '/casos-de-exito',
-    label: lang === 'en' ? 'Success Cases' : 'Casos de Éxito',
-  },
-  {
-    href: lang === 'en' ? '/en/blog' : '/blog',
-    label: lang === 'en' ? 'Blog' : t('nav.blog'),
-  },
-  {
-    href: lang === 'en' ? '/en/contact' : '/contacto',
-    label: lang === 'en' ? 'Contact' : t('nav.contact'),
-  },
+const productosLinks = [
+  { href: lang === 'en' ? '/en/filters' : '/filtros',      label: lang === 'en' ? 'Air Filters'  : 'Filtros de Aire' },
+  { href: lang === 'en' ? '/en/accessories' : '/accesorios', label: lang === 'en' ? 'Accessories'  : 'Accesorios' },
+  { href: lang === 'en' ? '/en/solutions' : '/soluciones',  label: lang === 'en' ? 'Solutions'    : 'Soluciones' },
 ];
 
-const navLinks = [...baseNavLinks];
+const empresaLinks = [
+  { href: lang === 'en' ? '/en/cleanrooms' : '/cuartos-limpios',   label: lang === 'en' ? 'Cleanrooms'        : t('nav.cleanrooms') },
+  { href: lang === 'en' ? '/en/services' : '/servicios',           label: lang === 'en' ? 'Validation Services': t('nav.services') },
+  { href: lang === 'en' ? '/en/success-cases' : '/casos-de-exito', label: lang === 'en' ? 'Success Cases'     : 'Casos de Éxito' },
+  { href: lang === 'en' ? '/en/blog' : '/blog',                    label: lang === 'en' ? 'Blog'              : t('nav.blog') },
+];
+
+const contactoHref  = lang === 'en' ? '/en/contact' : '/contacto';
+const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
 
 ---
 
@@ -111,23 +94,51 @@ const navLinks = [...baseNavLinks];
         </Button>
 
         <!-- Menú de navegación - centrado -->
-        <div class="hidden lg:flex lg:gap-x-8">
-          <!-- Enlace directo a Filtros de Aire -->
-          <a
-            href={lang === 'en' ? '/en/filters' : '/filtros'}
-            class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-foreground transition-colors"
-          >
-            {lang === 'en' ? 'Products' : 'Productos'}
+        <div class="hidden lg:flex lg:items-center lg:gap-x-8">
+
+          <!-- Dropdown: Productos -->
+          <div class="relative group">
+            <button class="flex items-center gap-1 text-sm/6 font-semibold text-foreground hover:text-primary transition-colors">
+              {lang === 'en' ? 'Products' : 'Productos'}
+              <svg class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
+              <div class="w-48 rounded-xl border border-border bg-white shadow-lg overflow-hidden">
+                {productosLinks.map((link) => (
+                  <a href={link.href} class="block px-4 py-2.5 text-sm text-foreground hover:bg-muted hover:text-primary transition-colors">
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <!-- Dropdown: Empresa -->
+          <div class="relative group">
+            <button class="flex items-center gap-1 text-sm/6 font-semibold text-foreground hover:text-primary transition-colors">
+              {lang === 'en' ? 'Company' : 'Empresa'}
+              <svg class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
+              <div class="w-52 rounded-xl border border-border bg-white shadow-lg overflow-hidden">
+                {empresaLinks.map((link) => (
+                  <a href={link.href} class="block px-4 py-2.5 text-sm text-foreground hover:bg-muted hover:text-primary transition-colors">
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <!-- Contacto directo -->
+          <a href={contactoHref} class="text-sm/6 font-semibold text-foreground hover:text-primary transition-colors">
+            {contactoLabel}
           </a>
 
-          {navLinks.map((link) => (
-            <a
-              href={link.href}
-              class="text-sm/6 font-semibold text-foreground whitespace-nowrap hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
         </div>
 
         <!-- Controles del lado derecho - idioma, carrito, usuario -->
@@ -193,28 +204,49 @@ const navLinks = [...baseNavLinks];
           </div>
           <div class="mt-6 flow-root">
             <div class="-my-6 divide-y divide-border">
-              <div class="space-y-2 py-6">
-                <!-- Enlace directo a Filtros de Aire en móvil -->
-                <a
-                  href={lang === 'en' ? '/en/filters' : '/filtros'}
-                  class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                >
-                  {lang === 'en' ? 'Products' : 'Productos'}
+              <div class="space-y-1 py-6">
+
+                <!-- Acordeón: Productos -->
+                <details class="group/prod">
+                  <summary class="-mx-3 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted list-none">
+                    {lang === 'en' ? 'Products' : 'Productos'}
+                    <svg class="h-4 w-4 transition-transform group-open/prod:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div class="mt-1 ml-3 space-y-1">
+                    {productosLinks.map((link) => (
+                      <a href={link.href} class="-mx-3 block rounded-lg px-6 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </details>
+
+                <!-- Acordeón: Empresa -->
+                <details class="group/emp">
+                  <summary class="-mx-3 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted list-none">
+                    {lang === 'en' ? 'Company' : 'Empresa'}
+                    <svg class="h-4 w-4 transition-transform group-open/emp:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div class="mt-1 ml-3 space-y-1">
+                    {empresaLinks.map((link) => (
+                      <a href={link.href} class="-mx-3 block rounded-lg px-6 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </details>
+
+                <!-- Contacto directo -->
+                <a href={contactoHref} class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted">
+                  {contactoLabel}
                 </a>
 
-                {navLinks.map((link) => (
-                  <a
-                    href={link.href}
-                    class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >
-                    {link.label}
-                  </a>
-                ))}
                 {!user && (
-                  <a
-                    href={lang === 'en' ? '/en/login' : '/login'}
-                    class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted"
-                  >
+                  <a href={lang === 'en' ? '/en/login' : '/login'} class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted">
                     {t('nav.login')}
                   </a>
                 )}
