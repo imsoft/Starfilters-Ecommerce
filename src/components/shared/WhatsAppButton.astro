@@ -65,15 +65,16 @@ const whatsappUrl = `https://wa.me/${finalNumber}?text=${encodeURIComponent(fina
   /* Responsive: hacer el botón más pequeño en móviles */
   @media (max-width: 640px) {
     .whatsapp-button {
-      bottom: 1rem !important;
+      /* safe-area-inset-bottom cubre la barra de home en iPhone */
+      bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)) !important;
       right: 1rem !important;
-      height: 3.5rem !important;
-      width: 3.5rem !important;
+      height: 3.25rem !important;
+      width: 3.25rem !important;
     }
 
     .whatsapp-button svg {
-      height: 2rem !important;
-      width: 2rem !important;
+      height: 1.875rem !important;
+      width: 1.875rem !important;
     }
   }
 </style>

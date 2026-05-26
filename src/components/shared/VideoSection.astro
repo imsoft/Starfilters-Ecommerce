@@ -4,16 +4,19 @@ interface Props {
   title: string;
   isShort?: boolean;
   noPadding?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-const { videoId, title, isShort = false, noPadding = false } = Astro.props;
-const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+const { videoId, title, isShort = false, noPadding = false, size = 'lg' } = Astro.props;
+const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 const uid = `video-${videoId}`;
+
+const sizeClass = isShort ? 'max-w-sm' : noPadding ? '' : size === 'sm' ? 'max-w-xl' : size === 'md' ? 'max-w-2xl' : 'max-w-4xl';
 ---
 
 <div class={noPadding ? '' : 'bg-background py-12 sm:py-16'}>
   <div class={noPadding ? '' : 'mx-auto max-w-7xl px-6 lg:px-8'}>
-    <div class={`mx-auto ${isShort ? 'max-w-sm' : noPadding ? '' : 'max-w-4xl'}`}>
+    <div class={`mx-auto ${sizeClass}`}>
       <div
         id={uid}
         class={`video-container relative overflow-hidden rounded-2xl shadow-xl bg-black cursor-pointer ${isShort ? 'aspect-[9/16]' : 'aspect-video'}`}

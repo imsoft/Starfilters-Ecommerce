@@ -96,16 +96,6 @@ const t = useTranslations(lang);
                   >{t('nav.services')}</a
                 >
               </li>
-              <li>
-                <a href={lang === 'en' ? '/en/solutions' : '/soluciones'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >{lang === 'en' ? 'Solutions' : 'Soluciones'}</a
-                >
-              </li>
-              <li>
-                <a href={lang === 'en' ? '/en/success-cases' : '/casos-de-exito'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >{lang === 'en' ? 'Success Cases' : 'Casos de Éxito'}</a
-                >
-              </li>
             </ul>
           </div>
           <div class="mt-10 md:mt-0">
@@ -114,11 +104,6 @@ const t = useTranslations(lang);
               <li>
                 <a href={lang === 'en' ? '/en/contact' : '/contacto'} class="text-sm/6 text-muted-foreground hover:text-foreground"
                   >{t('nav.contact')}</a
-                >
-              </li>
-              <li>
-                <a href={lang === 'en' ? '/en/blog' : '/blog'} class="text-sm/6 text-muted-foreground hover:text-foreground"
-                  >{t('nav.blog')}</a
                 >
               </li>
               <li>
@@ -136,6 +121,16 @@ const t = useTranslations(lang);
               <li>
                 <a href={lang === 'en' ? '/en/about' : '/acerca-de'} class="text-sm/6 text-muted-foreground hover:text-foreground"
                   >{t('footer.about')}</a
+                >
+              </li>
+              <li>
+                <a href={lang === 'en' ? '/en/blog' : '/blog'} class="text-sm/6 text-muted-foreground hover:text-foreground"
+                  >{t('nav.blog')}</a
+                >
+              </li>
+              <li>
+                <a href={lang === 'en' ? '/en/success-cases' : '/casos-de-exito'} class="text-sm/6 text-muted-foreground hover:text-foreground"
+                  >{lang === 'en' ? 'Success Cases' : 'Casos de Éxito'}</a
                 >
               </li>
             </ul>
