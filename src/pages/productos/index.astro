@@ -28,7 +28,6 @@ let filterCategoryId: number | null = null;
 let categoryInfo: { id: number; name: string; description?: string } | null = null;
 
 if (filterCategoryIdParam) {
-  // Buscar por ID
   filterCategoryId = parseInt(filterCategoryIdParam);
   try {
     const category = await getCategoryById(filterCategoryId);
@@ -43,7 +42,6 @@ if (filterCategoryIdParam) {
     console.error('❌ Error obteniendo información de categoría por ID:', error);
   }
 } else if (categorySlugParam) {
-  // Buscar por slug
   try {
     const category = await getCategoryBySlug(categorySlugParam);
     if (category) {
@@ -59,18 +57,14 @@ if (filterCategoryIdParam) {
   }
 }
 
-// Obtener tasa de cambio actual (necesario antes de procesar productos)
+// Obtener tasa de cambio actual
 const exchangeRate = await getExchangeRate();
 
-// Función para convertir precio USD a MXN
 const convertPriceToMXN = (price: number, currency: string): number => {
-  if (currency === 'USD') {
-    return price * exchangeRate;
-  }
+  if (currency === 'USD') return price * exchangeRate;
   return price;
 };
 
-// Obtener productos desde la base de datos
 let products: Array<{
   id: number;
   uuid: string;
@@ -91,28 +85,21 @@ let products: Array<{
 
 try {
   let allProducts;
-  
-  // Si hay filter_category_id, obtener productos de esa categoría
   if (filterCategoryId) {
     allProducts = await getProductsByFilterCategory(filterCategoryId);
-    console.log(`📦 Página /productos: ${allProducts.length} productos encontrados para categoría ${filterCategoryId}`);
   } else {
-    // Si no, obtener todos los productos activos
     allProducts = await getActiveProducts();
-    console.log(`📦 Página /productos: ${allProducts.length} productos activos encontrados`);
   }
 
-  // Preparar productos con imágenes y contar variantes
   products = await Promise.all(allProducts.map(async (product) => {
     const imgs = await getProductImages(product.id);
     const primary = imgs.find((i) => i.is_primary) ?? imgs[0];
     const imageUrl = primary?.image_url ?? product.image_url ?? getProductPlaceholderImage(product.category || 'productos');
-    
-    // Contar variantes relacionadas si tiene filter_category_id
+
     let variantCount = 0;
     let minPrice = product.price || 0;
     let maxPrice = product.price || 0;
-    
+
     if (product.filter_category_id) {
       try {
         const variants = await getVariantsByCategory(product.filter_category_id);
@@ -128,15 +115,11 @@ try {
         console.error('Error obteniendo variantes para producto', product.id, error);
       }
     }
-    
-    // Obtener precio y moneda según idioma (español = MXN, inglés = USD)
+
     const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCurrency(product, lang);
-    
-    // Si estamos en español y el producto está en USD, convertir a MXN
     let finalPrice = displayPrice;
     let finalCurrency = displayCurrency;
     if (lang === 'es' && displayCurrency === 'USD') {
-      // Convertir USD a MXN usando la tasa de cambio
       finalPrice = convertPriceToMXN(displayPrice, 'USD');
       finalCurrency = 'MXN';
     }
@@ -163,22 +146,18 @@ try {
       maxPrice: maxPrice
     };
   }));
-  
-  console.log(`✅ Página /productos: ${products.length} productos listos para mostrar`);
 } catch (error) {
   console.error('❌ Error en página /productos:', error);
-  console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack available');
 }
 
-// Función para formatear precio según idioma
 const formatPrice = (price: number, currency: 'MXN' | 'USD' = 'MXN'): string => {
   return formatPriceByCurrency(price, currency);
 };
 
-// Obtener categorías únicas de los productos (categoría 2 de BIND — tipo de filtro)
+// Categorías de tipo de filtro (client-side, categoría 2 de BIND)
 const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
 
-// Obtener categorías de BIND (tipo de producto — categoría 1)
+// Categorías de BIND (tipo de producto — categoría 1)
 let bindCategories: any[] = [];
 try {
   bindCategories = await getActiveCategories();
@@ -186,188 +165,105 @@ try {
   bindCategories = [];
 }
 
-// Generar datos SEO
+// SEO
 const siteUrl = Astro.site?.href || Astro.url.origin;
-const pageTitle = categoryInfo ? categoryInfo.name : 'Productos';
-const breadcrumbItems = [
-  { name: 'Inicio', url: siteUrl },
-  { name: 'Filtros de Aire', url: `${siteUrl}/filtros` }
-];
-if (categoryInfo) {
-  breadcrumbItems.push({ name: categoryInfo.name, url: `${siteUrl}/productos?filter_category_id=${categoryInfo.id}` });
-} else {
-  breadcrumbItems.push({ name: 'Productos', url: `${siteUrl}/productos` });
-}
-const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: lang === 'en' ? 'Home' : 'Inicio', url: siteUrl },
+  { name: lang === 'en' ? 'Products' : 'Productos', url: `${siteUrl}/productos` }
+]);
 ---
 
-<WebsiteLayout 
-  title={pageTitle}
-  seoTitle={`${pageTitle} - Catálogo Star Filters`}
-  description={categoryInfo?.description || "Explora nuestro catálogo completo de productos. Productos de alta calidad con envío a toda la República Mexicana."}
-  keywords={[
-    'catálogo productos',
-    'comprar productos',
-    'productos industriales',
-    'tienda productos México'
-  ]}
+<WebsiteLayout
+  title={lang === 'en' ? 'Products' : 'Productos'}
+  seoTitle={lang === 'en' ? 'Products - Star Filters Catalog' : 'Productos - Catálogo Star Filters'}
+  description={lang === 'en' ? 'Explore our full catalog of industrial air filters, cleanroom accessories, UMA units, air showers and laminar flow cabinets.' : 'Explora nuestro catálogo completo de filtros de aire industriales, accesorios para cuarto limpio, unidades UMA, air showers y cabinas de flujo laminar.'}
+  keywords={lang === 'en' ? ['air filters', 'HEPA filters', 'cleanroom', 'UMA', 'air shower'] : ['filtros de aire', 'filtros HEPA', 'cuarto limpio', 'UMA', 'air shower']}
 >
-  <SEO 
+  <SEO
     slot="seo"
-    title="Productos"
-    description="Explora nuestro catálogo completo de productos. Productos de alta calidad con envío a toda la República Mexicana."
+    title={lang === 'en' ? 'Products - Star Filters' : 'Productos - Star Filters'}
+    description={lang === 'en' ? 'Industrial air filter catalog.' : 'Catálogo de filtros de aire industriales.'}
     ogType="website"
-    keywords={[
-      'catálogo productos',
-      'comprar productos',
-      'productos industriales'
-    ]}
+    keywords={lang === 'en' ? ['air filters', 'HEPA filters'] : ['filtros de aire', 'filtros HEPA']}
   />
-  
-  <!-- Breadcrumb Schema -->
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
-  <div class="bg-background py-24">
-    <!-- Breadcrumb -->
-    <div class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-      <nav class="mb-8" aria-label="Breadcrumb">
-        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
-          <li>
-            <a href="/" class="hover:text-foreground transition-colors">Inicio</a>
-          </li>
-          <li>
-            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-            </svg>
-          </li>
-          <li>
-            <a href="/filtros" class="hover:text-foreground transition-colors">Filtros de Aire</a>
-          </li>
-          {categoryInfo && (
-            <>
-              <li>
-                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                </svg>
-              </li>
-              <li class="text-foreground font-medium">{categoryInfo.name}</li>
-            </>
-          )}
-          {!categoryInfo && (
-            <li class="text-foreground font-medium">Productos</li>
-          )}
-        </ol>
-      </nav>
-    </div>
 
-    <section
-      aria-labelledby="collection-heading"
-      class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8"
-    >
-      <div class="mb-12">
-        <h1
-          id="collection-heading"
-          class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-        >
-          {categoryInfo ? categoryInfo.name : 'Productos Star Filters'}
+  <div class="bg-background min-h-screen pt-24 pb-16">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+      <!-- ── Barra superior: búsqueda + contador ──────────────────────── -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-foreground">
+          {categoryInfo ? categoryInfo.name : (lang === 'en' ? 'Products' : 'Productos')}
         </h1>
-        <p class="mt-4 text-lg text-muted-foreground">
-          {categoryInfo?.description || 'Explora nuestro catálogo completo de productos. Calidad garantizada y envío rápido.'}
-        </p>
-        {categoryInfo && (
-          <a 
-            href="/filtros" 
-            class="mt-4 inline-flex items-center text-sm text-primary hover:text-foreground transition-colors"
-          >
-            ← Ver todas las categorías
-          </a>
-        )}
+        <div class="relative w-full sm:w-72">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <input
+            type="text"
+            id="search-products"
+            placeholder={lang === 'en' ? 'Search products...' : 'Buscar producto...'}
+            class="w-full rounded-full border border-border bg-background pl-9 pr-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </div>
       </div>
 
-      <!-- Layout: filtros + grid -->
-      <div class="flex flex-col lg:flex-row gap-8">
+      <!-- ── Chips de categoría (tipo de producto) ────────────────────── -->
+      {bindCategories.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-8">
+          <a
+            href={lang === 'en' ? '/en/products' : '/productos'}
+            class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${!categorySlugParam && !filterCategoryIdParam ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-foreground hover:bg-muted'}`}
+          >
+            {lang === 'en' ? 'All' : 'Todos'}
+          </a>
+          {bindCategories.map((cat) => {
+            const isActive = categorySlugParam === cat.slug || filterCategoryId === cat.id;
+            return (
+              <a
+                href={`${lang === 'en' ? '/en/products' : '/productos'}?category=${cat.slug}`}
+                class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${isActive ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-foreground hover:bg-muted'}`}
+              >
+                {getCategoryName(cat, lang)}
+              </a>
+            );
+          })}
+        </div>
+      )}
 
-        <!-- ── Panel de filtros ───────────────────────────────────────── -->
-        <aside class="w-full lg:w-64 flex-shrink-0 space-y-6">
+      <!-- ── Chips de tipo de filtro (categoría 2, client-side) ──────── -->
+      {categoryInfo && categories.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button
+            class="filter-btn rounded-full px-4 py-1.5 text-sm font-medium border bg-primary text-primary-foreground border-primary transition-colors"
+            data-category="all"
+          >
+            {lang === 'en' ? 'All types' : 'Todos los tipos'}
+          </button>
+          {categories.map((cat) => (
+            <button
+              class="filter-btn rounded-full px-4 py-1.5 text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
+              data-category={cat}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
-          <!-- Búsqueda -->
-          <div>
-            <label for="search-products" class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Buscar</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-              </div>
-              <input
-                type="text"
-                id="search-products"
-                placeholder="Nombre del filtro..."
-                class="w-full rounded-md border border-border bg-background pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-          </div>
+      <!-- ── Contador de resultados ────────────────────────────────────── -->
+      <p class="text-xs text-muted-foreground mb-4">
+        <span id="results-count">{products.length}</span> {lang === 'en' ? 'products found' : 'productos encontrados'}
+      </p>
 
-          <!-- Tipo de producto (categorías de BIND — categoría 1) -->
-          {bindCategories.length > 0 && (
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tipo de producto</p>
-              <div class="flex flex-col gap-2">
-                <a
-                  href="/productos"
-                  class={`rounded-md px-3 py-1.5 text-sm font-medium border transition-colors ${!categorySlugParam && !filterCategoryIdParam ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-foreground hover:bg-muted'}`}
-                >
-                  Todos
-                </a>
-                {bindCategories.map((cat) => {
-                  const isActive = categorySlugParam === cat.slug || filterCategoryId === cat.id;
-                  return (
-                    <a
-                      href={`/productos?category=${cat.slug}`}
-                      class={`rounded-md px-3 py-1.5 text-sm font-medium border transition-colors ${isActive ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-foreground hover:bg-muted'}`}
-                    >
-                      {getCategoryName(cat, lang)}
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <!-- Tipo de filtro (categoría 2 de BIND) — solo visible cuando hay categoría seleccionada -->
-          {categoryInfo && categories.length > 0 && (
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tipo de filtro</p>
-              <div class="flex flex-col gap-2">
-                <button
-                  class="filter-btn rounded-md px-3 py-1.5 text-sm font-medium border border-primary bg-primary text-primary-foreground text-left transition-colors"
-                  data-category="all"
-                >
-                  Todos los tipos
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    class="filter-btn rounded-md px-3 py-1.5 text-sm font-medium border border-border bg-background text-foreground text-left hover:bg-muted transition-colors"
-                    data-category={cat}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <!-- Resultado -->
-          <p class="text-xs text-muted-foreground">
-            <span id="results-count">{products.length}</span> productos encontrados
-          </p>
-        </aside>
-
-        <!-- ── Grid de productos ──────────────────────────────────────── -->
-        <div class="flex-1">
-      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8" id="products-grid">
+      <!-- ── Grid de productos ─────────────────────────────────────────── -->
+      <div class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-6" id="products-grid">
         {products.map((product) => (
-          <div 
-            class="group product-card relative flex flex-col" 
+          <div
+            class="group product-card relative flex flex-col"
             data-product-uuid={product.uuid}
             data-category={product.category}
             data-price={product.price}
@@ -376,86 +272,72 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
             data-price-usd={product.priceUSD || ''}
           >
             <a href={`/product/${product.uuid}`} class="block flex-shrink-0">
-              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
+              <div class="w-full aspect-square overflow-hidden rounded-xl bg-muted">
                 <LazyImage
                   src={product.imageUrl}
                   alt={product.name}
-                  class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
+                  class="h-full w-full object-cover object-center group-hover:opacity-80 transition-opacity duration-300"
                 />
               </div>
-              <h3 class="mt-4 text-sm text-foreground font-medium hover:text-foreground transition-colors line-clamp-2 min-h-[2.5rem]">
+              <h3 class="mt-3 text-sm font-medium text-foreground line-clamp-2 min-h-[2.5rem]">
                 {product.name}
               </h3>
             </a>
-            <p class="mt-1 text-sm text-muted-foreground">{product.category}</p>
-            
-            {/* Mostrar información de variantes si existe */}
+            <p class="mt-0.5 text-xs text-muted-foreground">{product.category}</p>
+
             {product.variantCount > 0 && (
-              <div class="mt-2">
-                <p class="text-xs text-blue-600 font-medium">
-                  {product.variantCount} {product.variantCount === 1 ? 'tamaño disponible' : 'tamaños disponibles'}
+              <div class="mt-1">
+                <p class="text-xs text-primary font-medium">
+                  {product.variantCount} {product.variantCount === 1 ? (lang === 'en' ? 'size available' : 'tamaño disponible') : (lang === 'en' ? 'sizes available' : 'tamaños disponibles')}
                 </p>
                 {product.minPrice !== product.maxPrice ? (
-                  <p class="text-sm font-medium text-foreground mt-1">
-                    {formatPrice(product.minPrice, product.currency || 'MXN')} - {formatPrice(product.maxPrice, product.currency || 'MXN')}
+                  <p class="text-sm font-semibold text-foreground mt-0.5">
+                    {formatPrice(product.minPrice, product.currency || 'MXN')} – {formatPrice(product.maxPrice, product.currency || 'MXN')}
                   </p>
                 ) : (
-                  <p class="text-lg font-medium text-foreground mt-1">
+                  <p class="text-sm font-semibold text-foreground mt-0.5">
                     {formatPrice(product.price, product.currency || 'MXN')}
                   </p>
                 )}
               </div>
             )}
-            
+
             {product.variantCount === 0 && (
-              <div class="mt-2 flex items-center justify-between">
-                <div>
-                  <p class="text-lg font-medium text-foreground">
-                    {formatPrice(product.price, product.currency || 'MXN')}
-                  </p>
-                </div>
+              <div class="mt-1 flex items-center justify-between">
+                <p class="text-sm font-semibold text-foreground">
+                  {formatPrice(product.price, product.currency || 'MXN')}
+                </p>
                 {product.stock > 0 ? (
-                  <span class="text-xs text-green-600 font-medium">
-                    En stock
-                  </span>
+                  <span class="text-xs text-green-600 font-medium">{lang === 'en' ? 'In stock' : 'En stock'}</span>
                 ) : (
-                  <span class="text-xs text-red-600 font-medium">
-                    Agotado
-                  </span>
+                  <span class="text-xs text-red-500 font-medium">{lang === 'en' ? 'Out of stock' : 'Agotado'}</span>
                 )}
               </div>
             )}
-            
-            {/* Mostrar tamaño actual si existe */}
-            {product.nominal_size && (
-              <p class="mt-1 text-xs text-muted-foreground">
-                Tamaño: {product.nominal_size}
-              </p>
-            )}
-            
+
             <div class="mt-auto pt-3">
               {product.variantCount > 0 ? (
                 <a
                   href={`/product/${product.uuid}`}
-                  class="relative z-10 w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  class="w-full inline-flex items-center justify-center rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
-                  Ver Tamaños Disponibles
+                  {lang === 'en' ? 'View sizes' : 'Ver tamaños'}
                 </a>
               ) : product.stock > 0 ? (
                 <button
                   type="button"
-                  class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  class="w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   onclick={`event.stopPropagation(); addToCartQuick('${product.uuid}', ${product.id}, '${product.name}', ${product.price}, '${product.imageUrl}', '${product.category || ''}', '${product.currency || 'MXN'}')`}
                 >
-                  Agregar al Carrito
+                  {lang === 'en' ? 'Add to cart' : 'Agregar al carrito'}
                 </button>
               ) : (
                 <button
                   type="button"
                   disabled
-                  class="relative z-10 w-full rounded-md bg-gray-300 px-3 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed"
+                  class="w-full rounded-lg bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground cursor-not-allowed"
                 >
-                  No Disponible
+                  {lang === 'en' ? 'Unavailable' : 'No disponible'}
                 </button>
               )}
             </div>
@@ -464,143 +346,89 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
       </div>
 
       {products.length === 0 && (
-        <div class="text-center py-12">
-          <h3 class="text-lg font-medium text-foreground">
-            No hay productos disponibles
+        <div class="text-center py-24">
+          <svg class="mx-auto h-12 w-12 text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+          </svg>
+          <h3 class="mt-4 text-lg font-medium text-foreground">
+            {lang === 'en' ? 'No products available' : 'Sin productos disponibles'}
           </h3>
           <p class="mt-2 text-sm text-muted-foreground">
-            Vuelve pronto para ver nuevos productos
+            {lang === 'en' ? 'Check back soon for new arrivals.' : 'Vuelve pronto para ver novedades.'}
           </p>
         </div>
       )}
-        </div>{/* end flex-1 */}
-      </div>{/* end flex layout */}
-    </section>
+
+    </div>
   </div>
 </WebsiteLayout>
 
 <script>
-  // Estado de filtros
   const allProducts = document.querySelectorAll('.product-card');
   let currentCategory = 'all';
   let currentSearchTerm = '';
 
-  // Función principal de filtrado (búsqueda + tipo de filtro)
   function applyFilters(): void {
-    const productCards = Array.from(allProducts);
     let visibleCount = 0;
-
-    productCards.forEach(card => {
-      const element = card as HTMLElement;
-      const productName = element.querySelector('h3')?.textContent?.toLowerCase() || '';
-      const productCategory = element.getAttribute('data-category') || '';
-
-      const matchesSearch = currentSearchTerm === '' || productName.includes(currentSearchTerm.toLowerCase());
-      const matchesCategory = currentCategory === 'all' || productCategory === currentCategory;
-
-      if (matchesSearch && matchesCategory) {
-        element.style.display = '';
-        visibleCount++;
-      } else {
-        element.style.display = 'none';
-      }
+    allProducts.forEach(card => {
+      const el = card as HTMLElement;
+      const name = el.querySelector('h3')?.textContent?.toLowerCase() || '';
+      const cat = el.getAttribute('data-category') || '';
+      const matchSearch = currentSearchTerm === '' || name.includes(currentSearchTerm.toLowerCase());
+      const matchCat = currentCategory === 'all' || cat === currentCategory;
+      if (matchSearch && matchCat) { el.style.display = ''; visibleCount++; }
+      else { el.style.display = 'none'; }
     });
-
-    const resultsCount = document.getElementById('results-count');
-    if (resultsCount) resultsCount.textContent = visibleCount.toString();
+    const counter = document.getElementById('results-count');
+    if (counter) counter.textContent = visibleCount.toString();
   }
 
-  // Filtrar por tipo de filtro (categoría 2 — client-side)
   function filterByCategory(category: string): void {
     currentCategory = category;
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-      const isActive = btn.getAttribute('data-category') === category;
-      btn.classList.toggle('bg-primary', isActive);
-      btn.classList.toggle('text-primary-foreground', isActive);
-      btn.classList.toggle('bg-background', !isActive);
-      btn.classList.toggle('text-foreground', !isActive);
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      const active = btn.getAttribute('data-category') === category;
+      btn.classList.toggle('bg-primary', active);
+      btn.classList.toggle('text-primary-foreground', active);
+      btn.classList.toggle('border-primary', active);
+      btn.classList.toggle('bg-background', !active);
+      btn.classList.toggle('text-foreground', !active);
+      btn.classList.toggle('border-border', !active);
     });
     applyFilters();
   }
 
-  // Función para agregar al carrito desde la grid
   async function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = 'MXN'): Promise<void> {
-    // El precio ya viene en la moneda correcta según el idioma (MXN para español, USD para inglés)
-    const finalPrice = price;
-    const finalCurrency = currency as 'MXN' | 'USD';
-
-    // Obtener carrito actual
     const cartData = localStorage.getItem('starfilters_cart');
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: finalCurrency };
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency };
+    if (!cart.currency) cart.currency = currency;
 
-    // Asegurar que el carrito tenga la moneda correcta
-    if (!cart.currency) {
-      cart.currency = finalCurrency;
-    }
-
-    // Buscar si el producto ya existe
-    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
-
-    if (existingItemIndex >= 0) {
-      cart.items[existingItemIndex].quantity += 1;
-      cart.items[existingItemIndex].price = finalPrice; // Actualizar precio
-      cart.items[existingItemIndex].currency = finalCurrency; // Actualizar moneda
+    const idx = cart.items.findIndex((item: any) => item.uuid === uuid);
+    if (idx >= 0) {
+      cart.items[idx].quantity += 1;
+      cart.items[idx].price = price;
+      cart.items[idx].currency = currency;
     } else {
-      cart.items.push({
-        uuid,
-        product_id,
-        name,
-        price: finalPrice,
-        currency: finalCurrency,
-        quantity: 1,
-        image_url,
-        category
-      });
+      cart.items.push({ uuid, product_id, name, price, currency, quantity: 1, image_url, category });
     }
-
-    // Recalcular totales
-    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
-    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
-
-    // Guardar en localStorage
+    cart.total = cart.items.reduce((t: number, i: any) => t + i.price * i.quantity, 0);
+    cart.itemCount = cart.items.reduce((c: number, i: any) => c + i.quantity, 0);
     localStorage.setItem('starfilters_cart', JSON.stringify(cart));
 
-    // Mostrar notificación
     showNotification(`${name} agregado al carrito`);
-
-    // Disparar evento para actualizar navbar
     window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
   }
 
   function showNotification(message: string): void {
-    // Crear notificación temporal
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
-    notification.innerHTML = `
-      <div class="flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <span>${message}</span>
-      </div>
-    `;
-    document.body.appendChild(notification);
-
-    // Remover después de 3 segundos
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    const n = document.createElement('div');
+    n.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
+    n.innerHTML = `<div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>${message}</span></div>`;
+    document.body.appendChild(n);
+    setTimeout(() => { n.style.opacity = '0'; setTimeout(() => n.remove(), 300); }, 3000);
   }
 
-  // Hacer funciones globales
-  (window as any).filterByCategory = filterByCategory;
   (window as any).addToCartQuick = addToCartQuick;
 
-  // Event listeners
   document.addEventListener('DOMContentLoaded', () => {
-    // Búsqueda
     const searchInput = document.getElementById('search-products');
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
@@ -608,16 +436,10 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
         applyFilters();
       });
     }
-
-    // Botones de tipo de filtro (categoría 2 — client-side)
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const category = btn.getAttribute('data-category') || 'all';
-        filterByCategory(category);
+        filterByCategory(btn.getAttribute('data-category') || 'all');
       });
     });
-
-    console.log('🎯 Filtros de productos inicializados');
   });
 </script>
