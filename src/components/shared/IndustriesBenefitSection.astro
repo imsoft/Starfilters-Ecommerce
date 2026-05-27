@@ -6,6 +6,8 @@ const t = useTranslations(lang);
 
 const industriesBase = '/images/home-page/industries-that-benefit';
 
+const filtersHref = lang === 'en' ? '/en/filters' : '/filtros';
+
 const industries = [
   { image: `${industriesBase}/farmaceutica-y-biotecnologia.jpg`, labelKey: 'industriesBenefit.pharma' },
   { image: `${industriesBase}/dispositivos-medicos.jpg`, labelKey: 'industriesBenefit.medical' },
@@ -23,8 +25,12 @@ const industries = [
     <div class="mx-auto mt-10 max-w-7xl">
       <div class="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 lg:grid-cols-5 items-center justify-items-center">
         {industries.map((item) => (
-          <div class="group flex flex-col items-center justify-center gap-3 w-full cursor-default">
-            <div class="w-52 h-52 shrink-0 overflow-hidden rounded-2xl shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:scale-105">
+          <a
+            href={filtersHref}
+            class="group flex flex-col items-center justify-center gap-3 w-full"
+            aria-label={`${t(item.labelKey)} — ${lang === 'en' ? 'See filters' : 'Ver filtros'}`}
+          >
+            <div class="w-52 h-52 shrink-0 overflow-hidden rounded-2xl shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 relative">
               <img
                 src={item.image}
                 alt=""
@@ -33,11 +39,17 @@ const industries = [
                 height="208"
                 loading="lazy"
               />
+              <!-- Overlay con CTA al hover -->
+              <div class="absolute inset-0 bg-primary/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-2xl">
+                <span class="text-white text-sm font-semibold px-4 text-center">
+                  {lang === 'en' ? 'See filters →' : 'Ver filtros →'}
+                </span>
+              </div>
             </div>
-            <p class="text-center text-sm font-medium text-foreground transition-colors group-hover:text-foreground hover:text-foreground sm:text-base">
+            <p class="text-center text-sm font-medium text-foreground transition-colors group-hover:text-primary sm:text-base">
               {t(item.labelKey)}
             </p>
-          </div>
+          </a>
         ))}
       </div>
     </div>

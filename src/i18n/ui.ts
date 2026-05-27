@@ -37,8 +37,8 @@ export const ui = {
     'hero.badgeLink': 'Conoce nuestra historia.',
     'hero.title': 'Controlamos partículas en el aire.',
     'hero.description': 'Nuestro propósito es proteger procesos de manufactura a exposición de partículas y contaminantes para asegurar productos seguros, de alta calidad y salvaguardar la salud de los usuarios finales.',
-    'hero.cta': 'Explora productos',
-    'hero.ctaSecondary': 'Conocer proyectos',
+    'hero.cta': 'Ver catálogo de filtros',
+    'hero.ctaSecondary': 'Solicitar cotización',
 
     // Stats
     'stats.projects': 'años de experiencia',
@@ -307,8 +307,8 @@ export const ui = {
     'hero.badgeLink': 'Learn more.',
     'hero.title': 'We control particles in the air.',
     'hero.description': 'Our purpose is to protect manufacturing processes from exposure to particles and contaminants to ensure safe, high-quality products and safeguard the health of end users.',
-    'hero.cta': 'Explore products',
-    'hero.ctaSecondary': 'View projects',
+    'hero.cta': 'Browse filter catalog',
+    'hero.ctaSecondary': 'Request a quote',
 
     // Stats
     'stats.projects': 'years of experience',
