@@ -94,10 +94,25 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
         <!-- Menú de navegación - centrado -->
         <div class="hidden lg:flex lg:items-center lg:gap-x-8">
 
-          <!-- Filtros de Aire directo -->
-          <a href={lang === 'en' ? '/en/filters' : '/filtros'} class="text-sm/6 font-semibold text-foreground hover:text-primary transition-colors whitespace-nowrap">
-            {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
-          </a>
+          <!-- Filtros de Aire dropdown -->
+          <div class="relative group">
+            <button class="flex items-center gap-1 text-sm/6 font-semibold text-foreground hover:text-primary transition-colors whitespace-nowrap">
+              {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
+              <svg class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
+              <div class="w-52 rounded-xl border border-border bg-white shadow-lg overflow-hidden">
+                <a href={lang === 'en' ? '/en/filters' : '/filtros'} class="block px-4 py-2.5 text-sm text-foreground hover:bg-muted hover:text-primary transition-colors">
+                  {lang === 'en' ? 'General information' : 'Información general'}
+                </a>
+                <a href={lang === 'en' ? '/en/products' : '/productos'} class="block px-4 py-2.5 text-sm text-foreground hover:bg-muted hover:text-primary transition-colors">
+                  {lang === 'en' ? 'Online store' : 'Tienda en línea'}
+                </a>
+              </div>
+            </div>
+          </div>
 
           <!-- Cuartos Limpios dropdown -->
           <div class="relative group">
@@ -243,10 +258,23 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
             <div class="-my-6 divide-y divide-border">
               <div class="space-y-1 py-6">
 
-                <!-- Filtros de Aire directo -->
-                <a href={lang === 'en' ? '/en/filters' : '/filtros'} class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted">
-                  {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
-                </a>
+                <!-- Filtros de Aire acordeón móvil -->
+                <details class="group/fa">
+                  <summary class="-mx-3 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted list-none">
+                    {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
+                    <svg class="h-4 w-4 transition-transform group-open/fa:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div class="mt-1 ml-3 space-y-1">
+                    <a href={lang === 'en' ? '/en/filters' : '/filtros'} class="-mx-3 block rounded-lg px-6 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                      {lang === 'en' ? 'General information' : 'Información general'}
+                    </a>
+                    <a href={lang === 'en' ? '/en/products' : '/productos'} class="-mx-3 block rounded-lg px-6 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                      {lang === 'en' ? 'Online store' : 'Tienda en línea'}
+                    </a>
+                  </div>
+                </details>
 
                 <!-- Cuartos Limpios acordeón móvil -->
                 <details class="group/cl">
