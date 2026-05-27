@@ -16,11 +16,12 @@ const contactHref = lang === 'en' ? '/en/contact' : '/contacto';
 const filtersHref = lang === 'en' ? '/en/filters' : '/filtros';
 
 const values = [
-  { icon: '🤝', title: t('about.values.integrity.title'),   desc: t('about.values.integrity.description') },
-  { icon: '💪', title: t('about.values.tenacity.title'),    desc: t('about.values.tenacity.description') },
-  { icon: '✅', title: t('about.values.reliability.title'), desc: t('about.values.reliability.description') },
-  { icon: '💡', title: t('about.values.creativity.title'),  desc: t('about.values.creativity.description') },
-  { icon: '🔥', title: t('about.values.attitude.title'),    desc: t('about.values.attitude.description') },
+  { icon: '⚖️', title: t('about.values.integrity.title'),    desc: t('about.values.integrity.description') },
+  { icon: '🤝', title: t('about.values.commitment.title'),   desc: t('about.values.commitment.description') },
+  { icon: '🔍', title: t('about.values.transparency.title'), desc: t('about.values.transparency.description') },
+  { icon: '🙏', title: t('about.values.humility.title'),     desc: t('about.values.humility.description') },
+  { icon: '🌟', title: t('about.values.optimism.title'),     desc: t('about.values.optimism.description') },
+  { icon: '💡', title: t('about.values.talent.title'),       desc: t('about.values.talent.description') },
 ];
 ---
 
@@ -188,7 +189,7 @@ const values = [
         <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">{lang === 'en' ? 'What drives us' : 'Lo que nos mueve'}</p>
         <h2 class="text-3xl font-bold text-foreground sm:text-4xl">{t('about.values.title')}</h2>
       </div>
-      <dl class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+      <dl class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
         {values.map((v, i) => (
           <div
             class="reveal flex flex-col items-center text-center gap-3 rounded-2xl border border-border bg-card p-6 shadow-sm hover:border-primary/40 hover:shadow-md transition-all duration-300"
