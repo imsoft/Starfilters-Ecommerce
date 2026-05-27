@@ -3,7 +3,7 @@ import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import { getActiveProducts, getProductsByFilterCategory, getProductsByFilterCategory as getVariantsByCategory } from "@/lib/product-service";
-import { getCategoryById, getCategoryBySlug } from "@/lib/filter-category-service";
+import { getCategoryById, getCategoryBySlug, getActiveCategories } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { getProductImages } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -175,8 +175,16 @@ const formatPrice = (price: number, currency: 'MXN' | 'USD' = 'MXN'): string => 
   return formatPriceByCurrency(price, currency);
 };
 
-// Obtener categorías únicas (nombres de categorías)
+// Obtener categorías únicas de los productos (categoría 2 de BIND — tipo de filtro)
 const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+
+// Obtener categorías de BIND (tipo de producto — categoría 1)
+let bindCategories: any[] = [];
+try {
+  bindCategories = await getActiveCategories();
+} catch (e) {
+  bindCategories = [];
+}
 
 // Generar datos SEO
 const siteUrl = Astro.site?.href || Astro.url.origin;
@@ -299,32 +307,34 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
             </div>
           </div>
 
-          <!-- Eficiencia -->
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Eficiencia</p>
-            <div class="flex flex-col gap-2">
-              {[
-                { label: 'Todos', slug: null },
-                { label: 'Baja (G1–G4)', slug: 'baja-eficiencia' },
-                { label: 'Media (M5–M9)', slug: 'media-eficiencia' },
-                { label: 'Alta / HEPA', slug: 'hepa' },
-              ].map(({ label, slug }) => {
-                const isActive = slug === null ? !categorySlugParam : categorySlugParam === slug;
-                const href = slug ? `/productos?category=${slug}` : '/productos';
-                return (
-                  <a
-                    href={href}
-                    class={`rounded-md px-3 py-1.5 text-sm font-medium border transition-colors ${isActive ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-foreground hover:bg-muted'}`}
-                  >
-                    {label}
-                  </a>
-                );
-              })}
+          <!-- Tipo de producto (categorías de BIND — categoría 1) -->
+          {bindCategories.length > 0 && (
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tipo de producto</p>
+              <div class="flex flex-col gap-2">
+                <a
+                  href="/productos"
+                  class={`rounded-md px-3 py-1.5 text-sm font-medium border transition-colors ${!categorySlugParam && !filterCategoryIdParam ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-foreground hover:bg-muted'}`}
+                >
+                  Todos
+                </a>
+                {bindCategories.map((cat) => {
+                  const isActive = categorySlugParam === cat.slug || filterCategoryId === cat.id;
+                  return (
+                    <a
+                      href={`/productos?category=${cat.slug}`}
+                      class={`rounded-md px-3 py-1.5 text-sm font-medium border transition-colors ${isActive ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-foreground hover:bg-muted'}`}
+                    >
+                      {getCategoryName(cat, lang)}
+                    </a>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          <!-- Tipo de filtro -->
-          {categories.length > 0 && (
+          <!-- Tipo de filtro (categoría 2 de BIND) — solo visible cuando hay categoría seleccionada -->
+          {categoryInfo && categories.length > 0 && (
             <div>
               <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tipo de filtro</p>
               <div class="flex flex-col gap-2">
@@ -345,55 +355,6 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
               </div>
             </div>
           )}
-
-          <!-- Disponibilidad -->
-          <div>
-            <label for="stock-filter" class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Disponibilidad</label>
-            <select
-              id="stock-filter"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="all">Todos</option>
-              <option value="in-stock">En stock</option>
-              <option value="out-of-stock">Agotados</option>
-            </select>
-          </div>
-
-          <!-- Ordenar por -->
-          <div>
-            <label for="sort-by" class="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Ordenar por</label>
-            <select
-              id="sort-by"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="default">Por defecto</option>
-              <option value="price-asc">Precio: menor a mayor</option>
-              <option value="price-desc">Precio: mayor a menor</option>
-              <option value="name-asc">Nombre: A–Z</option>
-              <option value="name-desc">Nombre: Z–A</option>
-            </select>
-          </div>
-
-          <!-- Precio máximo -->
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <label for="price-range" class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Precio máx.</label>
-              <span id="price-range-value" class="text-sm font-medium text-foreground">$10,000</span>
-            </div>
-            <input
-              type="range"
-              id="price-range"
-              min="0"
-              max="10000"
-              value="10000"
-              step="500"
-              class="w-full accent-primary"
-            />
-            <div class="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>$0</span>
-              <span>$10,000</span>
-            </div>
-          </div>
 
           <!-- Resultado -->
           <p class="text-xs text-muted-foreground">
@@ -519,15 +480,12 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 </WebsiteLayout>
 
 <script>
-  // Datos de productos del servidor
+  // Estado de filtros
   const allProducts = document.querySelectorAll('.product-card');
   let currentCategory = 'all';
-  let currentSortBy = 'default';
-  let currentStockFilter = 'all';
-  let currentMaxPrice = 10000;
   let currentSearchTerm = '';
 
-  // Función principal de filtrado
+  // Función principal de filtrado (búsqueda + tipo de filtro)
   function applyFilters(): void {
     const productCards = Array.from(allProducts);
     let visibleCount = 0;
@@ -536,20 +494,11 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
       const element = card as HTMLElement;
       const productName = element.querySelector('h3')?.textContent?.toLowerCase() || '';
       const productCategory = element.getAttribute('data-category') || '';
-      const priceText = element.querySelector('.text-lg.font-medium')?.textContent || '';
-      const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
-      const stockElement = element.querySelector('.text-xs.text-green-600, .text-xs.text-red-600');
-      const inStock = stockElement?.textContent?.includes('En stock') || false;
 
-      // Aplicar filtros
       const matchesSearch = currentSearchTerm === '' || productName.includes(currentSearchTerm.toLowerCase());
       const matchesCategory = currentCategory === 'all' || productCategory === currentCategory;
-      const matchesPrice = price <= currentMaxPrice;
-      const matchesStock = currentStockFilter === 'all' || 
-        (currentStockFilter === 'in-stock' && inStock) ||
-        (currentStockFilter === 'out-of-stock' && !inStock);
 
-      if (matchesSearch && matchesCategory && matchesPrice && matchesStock) {
+      if (matchesSearch && matchesCategory) {
         element.style.display = '';
         visibleCount++;
       } else {
@@ -557,74 +506,21 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
       }
     });
 
-    // Actualizar contador
     const resultsCount = document.getElementById('results-count');
-    if (resultsCount) {
-      resultsCount.textContent = visibleCount.toString();
-    }
-
-    // Aplicar ordenamiento
-    sortProducts();
+    if (resultsCount) resultsCount.textContent = visibleCount.toString();
   }
 
-  // Función de ordenamiento
-  function sortProducts(): void {
-    const grid = document.getElementById('products-grid');
-    if (!grid) return;
-
-    const visibleCards = Array.from(grid.querySelectorAll('.product-card'))
-      .filter(card => (card as HTMLElement).style.display !== 'none');
-
-    visibleCards.sort((a, b) => {
-      const aElement = a as HTMLElement;
-      const bElement = b as HTMLElement;
-
-      switch (currentSortBy) {
-        case 'price-asc': {
-          const aPrice = parseFloat(aElement.querySelector('.text-lg.font-medium')?.textContent?.replace(/[^0-9.]/g, '') || '0');
-          const bPrice = parseFloat(bElement.querySelector('.text-lg.font-medium')?.textContent?.replace(/[^0-9.]/g, '') || '0');
-          return aPrice - bPrice;
-        }
-        case 'price-desc': {
-          const aPrice = parseFloat(aElement.querySelector('.text-lg.font-medium')?.textContent?.replace(/[^0-9.]/g, '') || '0');
-          const bPrice = parseFloat(bElement.querySelector('.text-lg.font-medium')?.textContent?.replace(/[^0-9.]/g, '') || '0');
-          return bPrice - aPrice;
-        }
-        case 'name-asc': {
-          const aName = aElement.querySelector('h3')?.textContent || '';
-          const bName = bElement.querySelector('h3')?.textContent || '';
-          return aName.localeCompare(bName);
-        }
-        case 'name-desc': {
-          const aName = aElement.querySelector('h3')?.textContent || '';
-          const bName = bElement.querySelector('h3')?.textContent || '';
-          return bName.localeCompare(aName);
-        }
-        default:
-          return 0;
-      }
-    });
-
-    // Reorganizar elementos en el DOM
-    visibleCards.forEach(card => grid.appendChild(card));
-  }
-
-  // Función para filtrar por categoría
+  // Filtrar por tipo de filtro (categoría 2 — client-side)
   function filterByCategory(category: string): void {
     currentCategory = category;
-    
-    // Actualizar botones activos
     const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
-      if (btn.getAttribute('data-category') === category) {
-        btn.classList.add('bg-primary', 'text-primary-foreground');
-        btn.classList.remove('bg-background', 'text-foreground');
-      } else {
-        btn.classList.remove('bg-primary', 'text-primary-foreground');
-        btn.classList.add('bg-background', 'text-foreground');
-      }
+      const isActive = btn.getAttribute('data-category') === category;
+      btn.classList.toggle('bg-primary', isActive);
+      btn.classList.toggle('text-primary-foreground', isActive);
+      btn.classList.toggle('bg-background', !isActive);
+      btn.classList.toggle('text-foreground', !isActive);
     });
-
     applyFilters();
   }
 
@@ -713,41 +609,7 @@ const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
       });
     }
 
-    // Ordenamiento
-    const sortBy = document.getElementById('sort-by');
-    if (sortBy) {
-      sortBy.addEventListener('change', (e) => {
-        currentSortBy = (e.target as HTMLSelectElement).value;
-        applyFilters();
-      });
-    }
-
-    // Filtro de stock
-    const stockFilter = document.getElementById('stock-filter');
-    if (stockFilter) {
-      stockFilter.addEventListener('change', (e) => {
-        currentStockFilter = (e.target as HTMLSelectElement).value;
-        applyFilters();
-      });
-    }
-
-    // Rango de precio
-    const priceRange = document.getElementById('price-range');
-    const priceRangeValue = document.getElementById('price-range-value');
-    if (priceRange && priceRangeValue) {
-      priceRange.addEventListener('input', (e) => {
-        const value = parseInt((e.target as HTMLInputElement).value);
-        currentMaxPrice = value;
-        priceRangeValue.textContent = new Intl.NumberFormat('es-MX', {
-          style: 'currency',
-          currency: 'MXN',
-          minimumFractionDigits: 0
-        }).format(value);
-        applyFilters();
-      });
-    }
-
-    // Botones de categoría
+    // Botones de tipo de filtro (categoría 2 — client-side)
     const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
