@@ -153,6 +153,100 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       )}
     </section>
 
+    <!-- ── SERVICIO DE MANTENIMIENTO ─────────────────────────────────── -->
+    <div class="bg-muted/30 mt-24 py-20 border-t border-b border-border">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        <!-- Encabezado -->
+        <div class="text-center mb-14">
+          <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
+            {lang === 'en' ? 'Maintenance Service' : 'Servicio de mantenimiento'}
+          </p>
+          <h2 class="text-3xl font-bold text-foreground sm:text-4xl">
+            {lang === 'en' ? 'We install and replace your filters' : 'Instalamos y reemplazamos tus filtros'}
+          </h2>
+          <p class="mt-4 text-muted-foreground max-w-2xl mx-auto">
+            {lang === 'en'
+              ? 'Our certified technicians carry out preventive and corrective maintenance of air filters in cleanrooms, UMA units, air showers, and HVAC systems across Mexico.'
+              : 'Nuestros técnicos certificados realizan el mantenimiento preventivo y correctivo de filtros de aire en cuartos limpios, unidades UMA, air showers y sistemas de climatización en toda la República Mexicana.'}
+          </p>
+        </div>
+
+        <!-- Galería de 3 fotos -->
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
+            <img
+              src="/images/services/mantenimiento/mantenimiento-1.jpg"
+              alt={lang === 'en' ? 'Filter installation in laminar flow cabinet' : 'Instalación de filtro en cabina de flujo laminar'}
+              class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          </div>
+          <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
+            <img
+              src="/images/services/mantenimiento/mantenimiento-2.jpg"
+              alt={lang === 'en' ? 'Filter replacement in rooftop UMA unit' : 'Reemplazo de filtros en unidad UMA en azotea'}
+              class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          </div>
+          <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
+            <img
+              src="/images/services/mantenimiento/mantenimiento-3.jpg"
+              alt={lang === 'en' ? 'Air handler filter maintenance' : 'Mantenimiento de filtros en manejadora de aire'}
+              class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        <!-- Puntos clave + CTA -->
+        <div class="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3 lg:grid-cols-3 text-center">
+          <div class="flex flex-col items-center gap-2">
+            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Certified technicians' : 'Técnicos certificados'}</p>
+            <p class="text-xs text-muted-foreground">{lang === 'en' ? 'ISO 14644 and GMP trained personnel' : 'Personal capacitado en ISO 14644 y BPM'}</p>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
+            <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Nationwide coverage' : 'Cobertura nacional'}</p>
+            <p class="text-xs text-muted-foreground">{lang === 'en' ? 'Service throughout Mexico' : 'Servicio en toda la República Mexicana'}</p>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Scheduled or emergency' : 'Programado o urgente'}</p>
+            <p class="text-xs text-muted-foreground">{lang === 'en' ? 'We adapt to your operation schedule' : 'Nos adaptamos a tu horario de operación'}</p>
+          </div>
+        </div>
+
+        <div class="mt-10 text-center">
+          <a
+            href={lang === 'en' ? '/en/contact' : '/contacto'}
+            class="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            {lang === 'en' ? 'Request maintenance service' : 'Solicitar servicio de mantenimiento'}
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ¿Por qué Star Filters? -->
     <div class="mx-auto max-w-6xl px-4 mt-24 sm:px-6 lg:px-8">
       <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl">
