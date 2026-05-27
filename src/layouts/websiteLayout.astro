@@ -14,14 +14,17 @@ export interface Props {
   noindex?: boolean;
 }
 
-const { 
-  title, 
-  seoTitle, 
-  description, 
-  ogImage, 
+const {
+  title,
+  seoTitle,
+  description,
+  ogImage,
   keywords,
-  noindex = false 
+  noindex: noindexProp = false
 } = Astro.props;
+
+// Si la variable PUBLIC_NOINDEX=true está en el entorno (staging), forzar noindex en todo el sitio
+const noindex = noindexProp || import.meta.env.PUBLIC_NOINDEX === 'true';
 ---
 
 <html lang="es">

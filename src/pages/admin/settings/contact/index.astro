@@ -1,0 +1,225 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { getAuthenticatedUser } from '@/lib/auth-utils';
+import { isUserAdmin } from '@/lib/database';
+import {
+  getPhoneNumber,
+  updatePhoneNumber,
+  getPhoneNumberCDMX,
+  updatePhoneNumberCDMX,
+} from '@/lib/site-settings-service';
+
+export const prerender = false;
+
+const user = getAuthenticatedUser(Astro.cookies);
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const userIsAdmin = await isUserAdmin(user.id);
+
+if (!userIsAdmin) {
+  return Astro.redirect('/');
+}
+
+let phoneGDL   = await getPhoneNumber();
+let phoneCDMX  = await getPhoneNumberCDMX();
+let error: string | null = null;
+let success: string | null = null;
+
+// Formatear para mostrar en vista previa
+const formatPhone = (raw: string) => {
+  const d = raw.replace(/\D/g, '');
+  if (d.length === 12 && d.startsWith('52')) {
+    return `+52 ${d.slice(2, 4)} ${d.slice(4, 8)} ${d.slice(8)}`;
+  }
+  if (d.length === 10) {
+    return `+52 ${d.slice(0, 2)} ${d.slice(2, 6)} ${d.slice(6)}`;
+  }
+  return d ? `+${d}` : '';
+};
+
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    const rawGDL  = (formData.get("phone_gdl")  as string || '').replace(/\D/g, '');
+    const rawCDMX = (formData.get("phone_cdmx") as string || '').replace(/\D/g, '');
+
+    if (rawGDL.length < 10) {
+      error = "El número principal (GDL) debe tener al menos 10 dígitos.";
+    } else {
+      const okGDL  = await updatePhoneNumber(rawGDL);
+      const okCDMX = rawCDMX.length >= 10 ? await updatePhoneNumberCDMX(rawCDMX) : true;
+
+      if (okGDL && okCDMX) {
+        phoneGDL  = rawGDL;
+        phoneCDMX = rawCDMX || phoneCDMX;
+        success = "Números de teléfono actualizados correctamente.";
+      } else {
+        error = "Error al guardar. Intenta de nuevo.";
+      }
+    }
+  } catch (err) {
+    console.error("Error procesando formulario de teléfonos:", err);
+    error = "Error inesperado. Revisa la consola.";
+  }
+}
+---
+
+<AdminLayout title="Configuración – Teléfonos de Contacto">
+  <div class="container mx-auto px-4 py-8 max-w-3xl">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Teléfonos de Contacto</h1>
+      <p class="mt-2 text-gray-600">
+        Configura los números que aparecen en la página de contacto y en los formularios del sitio.
+        Incluye el código de país (52 para México).
+      </p>
+    </div>
+
+    <!-- Alertas -->
+    {error && (
+      <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 flex gap-3">
+        <svg class="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-sm font-medium text-red-800">{error}</p>
+      </div>
+    )}
+
+    {success && (
+      <div class="mb-6 rounded-lg border border-green-300 bg-green-50 p-4 flex gap-3">
+        <svg class="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-sm font-medium text-green-800">{success}</p>
+      </div>
+    )}
+
+    <div class="grid gap-8 lg:grid-cols-2">
+
+      <!-- Formulario -->
+      <div class="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 class="mb-6 text-xl font-bold text-gray-900">Editar números</h2>
+
+        <form method="POST" class="space-y-6">
+
+          <!-- Teléfono principal (GDL / Ventas) -->
+          <div>
+            <label for="phone_gdl" class="block text-sm font-semibold text-gray-700 mb-1">
+              Teléfono principal — Ventas (GDL) <span class="text-red-500">*</span>
+            </label>
+            <div class="flex">
+              <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+</span>
+              <input
+                type="tel"
+                id="phone_gdl"
+                name="phone_gdl"
+                value={phoneGDL}
+                required
+                placeholder="523338987991"
+                class="flex-1 block w-full rounded-none rounded-r-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <p class="mt-1.5 text-xs text-gray-500">
+              Solo dígitos, con código de país. Ejemplo: <strong>523338987991</strong>
+            </p>
+          </div>
+
+          <!-- Teléfono secundario (CDMX / Soporte) -->
+          <div>
+            <label for="phone_cdmx" class="block text-sm font-semibold text-gray-700 mb-1">
+              Teléfono secundario — Soporte (CDMX)
+              <span class="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <div class="flex">
+              <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+</span>
+              <input
+                type="tel"
+                id="phone_cdmx"
+                name="phone_cdmx"
+                value={phoneCDMX}
+                placeholder="525550870287"
+                class="flex-1 block w-full rounded-none rounded-r-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <p class="mt-1.5 text-xs text-gray-500">
+              Aparece en formularios de servicios. Dejar vacío si no aplica.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            Guardar números
+          </button>
+        </form>
+      </div>
+
+      <!-- Vista previa + consejos -->
+      <div class="space-y-6">
+
+        <!-- Vista previa -->
+        <div class="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 class="mb-4 text-xl font-bold text-gray-900">Vista previa</h2>
+          <p class="mb-4 text-sm text-gray-500">Así aparecerán en la página de contacto:</p>
+
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Teléfono (GDL)</p>
+                <p class="font-semibold text-gray-900">{phoneGDL ? formatPhone(phoneGDL) : <span class="text-gray-400 italic">No configurado</span>}</p>
+              </div>
+            </div>
+
+            {phoneCDMX && (
+              <div class="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Teléfono (CDMX)</p>
+                  <p class="font-semibold text-gray-900">{formatPhone(phoneCDMX)}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <!-- Nota sobre WhatsApp -->
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-5">
+          <h3 class="mb-2 font-semibold text-amber-900">📱 ¿Y el número de WhatsApp?</h3>
+          <p class="text-sm text-amber-800">
+            El número del botón flotante de WhatsApp se configura por separado en
+            <a href="/admin/settings/whatsapp" class="font-semibold underline underline-offset-2 hover:text-amber-700">
+              Configuración → WhatsApp
+            </a>.
+            Ambos números se muestran de forma independiente en la página de contacto, con su etiqueta correspondiente.
+          </p>
+        </div>
+
+        <!-- Consejos -->
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-5">
+          <h3 class="mb-2 font-semibold text-blue-900">💡 Formato correcto</h3>
+          <ul class="list-disc list-inside space-y-1 text-sm text-blue-800">
+            <li>México GDL: <strong>523338987991</strong></li>
+            <li>México CDMX: <strong>525550870287</strong></li>
+            <li>Solo dígitos, sin espacios ni guiones</li>
+            <li>El sitio formatea automáticamente: +52 33 3898 7991</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</AdminLayout>

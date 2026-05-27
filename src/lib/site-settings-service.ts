@@ -135,6 +135,26 @@ export const updateWhatsAppMessage = async (message: string): Promise<boolean> =
   return await updateSetting('whatsapp_message', message);
 };
 
+// Número de teléfono principal (Guadalajara / ventas)
+export const getPhoneNumber = async (): Promise<string> => {
+  const number = await getSetting('phone_number');
+  return number || '523338987991';
+};
+
+export const updatePhoneNumber = async (number: string): Promise<boolean> => {
+  return await updateSetting('phone_number', number);
+};
+
+// Número de teléfono secundario (CDMX / soporte)
+export const getPhoneNumberCDMX = async (): Promise<string> => {
+  const number = await getSetting('phone_number_cdmx');
+  return number || '525550870287';
+};
+
+export const updatePhoneNumberCDMX = async (number: string): Promise<boolean> => {
+  return await updateSetting('phone_number_cdmx', number);
+};
+
 export default {
   getSetting,
   getAllSettings,
@@ -149,4 +169,8 @@ export default {
   updateWhatsAppNumber,
   getWhatsAppMessage,
   updateWhatsAppMessage,
+  getPhoneNumber,
+  updatePhoneNumber,
+  getPhoneNumberCDMX,
+  updatePhoneNumberCDMX,
 };

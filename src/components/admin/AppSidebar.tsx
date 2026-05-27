@@ -11,7 +11,11 @@ import {
   Home,
   LogOut,
   Trophy,
-  Layers
+  Layers,
+  Settings,
+  MessageCircle,
+  Phone,
+  Image,
 } from "lucide-react"
 import {
   Sidebar,
@@ -19,6 +23,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -84,6 +89,24 @@ export function AppSidebar({ currentPath = '', adminUser }: AppSidebarProps) {
     },
   ]
 
+  const settingsItems = [
+    {
+      title: "Teléfonos",
+      url: "/admin/settings/contact",
+      icon: Phone,
+    },
+    {
+      title: "WhatsApp",
+      url: "/admin/settings/whatsapp",
+      icon: MessageCircle,
+    },
+    {
+      title: "Hero (inicio)",
+      url: "/admin/settings/hero",
+      icon: Image,
+    },
+  ]
+
   const footerItems = [
     {
       title: "Ver Sitio Web",
@@ -120,10 +143,38 @@ export function AppSidebar({ currentPath = '', adminUser }: AppSidebarProps) {
       </SidebarHeader>
       
       <SidebarContent>
+        {/* Menú principal */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
+                const isActive = currentPath.startsWith(item.url)
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                      <a href={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Configuración */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <Settings className="h-3.5 w-3.5" />
+            Configuración
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {settingsItems.map((item) => {
                 const isActive = currentPath.startsWith(item.url)
                 return (
                   <SidebarMenuItem key={item.title}>
