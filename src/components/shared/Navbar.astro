@@ -99,10 +99,25 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
             {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
           </a>
 
-          <!-- Cuartos Limpios directo -->
-          <a href={cleanroomsHref} class="text-sm/6 font-semibold text-foreground hover:text-primary transition-colors whitespace-nowrap">
-            {cleanroomsLabel}
-          </a>
+          <!-- Cuartos Limpios dropdown -->
+          <div class="relative group">
+            <button class="flex items-center gap-1 text-sm/6 font-semibold text-foreground hover:text-primary transition-colors whitespace-nowrap">
+              {cleanroomsLabel}
+              <svg class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
+              <div class="w-52 rounded-xl border border-border bg-white shadow-lg overflow-hidden">
+                <a href={cleanroomsHref} class="block px-4 py-2.5 text-sm text-foreground hover:bg-muted hover:text-primary transition-colors">
+                  {lang === 'en' ? 'General information' : 'Información general'}
+                </a>
+                <a href={lang === 'en' ? '/en/products?category=cleanrooms' : '/productos?category=cuartos-limpios'} class="block px-4 py-2.5 text-sm text-foreground hover:bg-muted hover:text-primary transition-colors">
+                  {lang === 'en' ? 'Products' : 'Productos'}
+                </a>
+              </div>
+            </div>
+          </div>
 
           <!-- Servicios directo -->
           <a href={serviciosHref} class="text-sm/6 font-semibold text-foreground hover:text-primary transition-colors whitespace-nowrap">
@@ -233,10 +248,23 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
                   {lang === 'en' ? 'Air Filters' : 'Filtros de Aire'}
                 </a>
 
-                <!-- Cuartos Limpios directo -->
-                <a href={cleanroomsHref} class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted">
-                  {cleanroomsLabel}
-                </a>
+                <!-- Cuartos Limpios acordeón móvil -->
+                <details class="group/cl">
+                  <summary class="-mx-3 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted list-none">
+                    {cleanroomsLabel}
+                    <svg class="h-4 w-4 transition-transform group-open/cl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div class="mt-1 ml-3 space-y-1">
+                    <a href={cleanroomsHref} class="-mx-3 block rounded-lg px-6 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                      {lang === 'en' ? 'General information' : 'Información general'}
+                    </a>
+                    <a href={lang === 'en' ? '/en/products?category=cleanrooms' : '/productos?category=cuartos-limpios'} class="-mx-3 block rounded-lg px-6 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                      {lang === 'en' ? 'Products' : 'Productos'}
+                    </a>
+                  </div>
+                </details>
 
                 <!-- Servicios directo -->
                 <a href={serviciosHref} class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted">
