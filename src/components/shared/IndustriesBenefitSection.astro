@@ -30,11 +30,11 @@ const industries = [
             class="group flex flex-col items-center justify-center gap-3 w-full"
             aria-label={`${t(item.labelKey)} — ${lang === 'en' ? 'See filters' : 'Ver filtros'}`}
           >
-            <div class="w-52 h-52 shrink-0 overflow-hidden rounded-2xl shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 relative">
+            <div class="w-full aspect-square overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 group-hover:shadow-xl relative">
               <img
                 src={item.image}
                 alt=""
-                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                class="w-full h-full object-cover"
                 width="208"
                 height="208"
                 loading="lazy"
