@@ -77,7 +77,7 @@ if (Astro.request.method === "POST") {
 
   const privacidad = formData.get("privacidad");
 
-  const optionalFields = ["company"];
+  const optionalFields: string[] = [];
   const hasEmpty = Object.entries(formValues).some(([key, value]) => !optionalFields.includes(key) && value.length === 0);
 
   if (hasEmpty) {
@@ -279,11 +279,12 @@ if (Astro.request.method === "POST") {
 
             <div class="grid gap-6 sm:grid-cols-2">
               <div>
-                <label for="company" class="block text-sm font-medium text-foreground">Nombre de la empresa <span class="text-muted-foreground font-normal">(opcional)</span></label>
+                <label for="company" class="block text-sm font-medium text-foreground">Nombre de la empresa <span class="text-red-500">*</span></label>
                 <input
                   id="company"
                   name="company"
                   type="text"
+                  required
                   autocomplete="organization"
                   value={formValues.company}
                   class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
@@ -326,7 +327,8 @@ if (Astro.request.method === "POST") {
                 <option value="" disabled selected={!formValues.motivo}>¿En qué podemos ayudarte?</option>
                 <option value="Cotización de producto" selected={formValues.motivo === 'Cotización de producto'}>Cotización de producto</option>
                 <option value="Asesoría técnica" selected={formValues.motivo === 'Asesoría técnica'}>Asesoría técnica</option>
-                <option value="Servicio de validación / cuartos limpios" selected={formValues.motivo === 'Servicio de validación / cuartos limpios'}>Servicio de validación / cuartos limpios</option>
+                <option value="Servicio de validación" selected={formValues.motivo === 'Servicio de validación'}>Servicio de validación</option>
+                <option value="Cuartos limpios" selected={formValues.motivo === 'Cuartos limpios'}>Cuartos limpios</option>
                 <option value="Soporte post-venta" selected={formValues.motivo === 'Soporte post-venta'}>Soporte post-venta</option>
                 <option value="Distribución / revendedores" selected={formValues.motivo === 'Distribución / revendedores'}>Distribución / revendedores</option>
                 <option value="Información general" selected={formValues.motivo === 'Información general'}>Información general</option>
@@ -356,7 +358,7 @@ if (Astro.request.method === "POST") {
               />
               <label for="privacidad" class="text-sm text-muted-foreground cursor-pointer">
                 He leído y acepto el{" "}
-                <a href="/aviso-de-privacidad" class="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+                <a href="/privacy" class="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
                   Aviso de Privacidad
                 </a>
                 {" "}y consiento el tratamiento de mis datos personales para recibir respuesta a mi consulta. <span class="text-red-500">*</span>
