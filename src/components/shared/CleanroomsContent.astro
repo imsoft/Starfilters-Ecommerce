@@ -161,6 +161,76 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
   </div>
 </div>
 
+<!-- ── PROCESO ─────────────────────────────────────────────────────────── -->
+<div class="bg-muted/30 py-20 border-t border-border">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
+        {lang === 'en' ? 'How we work' : 'Cómo trabajamos'}
+      </p>
+      <h2 class="text-3xl font-bold text-foreground sm:text-4xl">
+        {lang === 'en' ? 'Our process' : 'Nuestro proceso'}
+      </h2>
+      <p class="mt-4 text-muted-foreground max-w-xl mx-auto text-sm">
+        {lang === 'en'
+          ? 'From diagnosis to preventive maintenance — a complete, certified process for your cleanroom.'
+          : 'Del diagnóstico al mantenimiento preventivo — un proceso completo y certificado para tu cuarto limpio.'}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-8">
+      {[
+        {
+          n: '01',
+          title: lang === 'en' ? 'Diagnosis' : 'Diagnóstico',
+          desc: lang === 'en'
+            ? 'We evaluate your project, needs and technical requirements to define the best solution.'
+            : 'Evaluamos tu proyecto, necesidades y requerimientos técnicos para definir la mejor solución.',
+        },
+        {
+          n: '02',
+          title: lang === 'en' ? 'Design, Standards & Engineering' : 'Diseño, normativas e ingeniería',
+          desc: lang === 'en'
+            ? 'We design your cleanroom in compliance with ISO 14644, NOM-059 and GMP standards, adapted to your process.'
+            : 'Diseñamos tu cuarto limpio conforme a ISO 14644, NOM-059 y GMP, adaptado a tu proceso productivo.',
+        },
+        {
+          n: '03',
+          title: lang === 'en' ? 'Fabrication & Construction' : 'Fabricación y construcción',
+          desc: lang === 'en'
+            ? 'We use certified high-quality equipment and materials, ensuring precise installation and regulatory compliance.'
+            : 'Usamos equipos de alta calidad y materiales certificados, garantizando instalaciones precisas y cumplimiento normativo.',
+        },
+        {
+          n: '04',
+          title: lang === 'en' ? 'Validation & Certification' : 'Validación y certificación',
+          desc: lang === 'en'
+            ? 'We perform integrity tests, particle counting, air balancing and hermeticity tests. We deliver a detailed certification report.'
+            : 'Realizamos pruebas de integridad, conteo de partículas, balanceo y hermeticidad. Entregamos informe de certificación detallado.',
+        },
+        {
+          n: '05',
+          title: lang === 'en' ? 'Operation & Preventive Maintenance' : 'Operación y mantenimiento preventivo',
+          desc: lang === 'en'
+            ? 'We inspect, clean and replace air filters to guarantee continuous and optimal performance of your cleanroom.'
+            : 'Inspeccionamos, limpiamos y reemplazamos filtros de aire para garantizar un rendimiento continuo y óptimo de tu área.',
+        },
+      ].map((step, i, arr) => (
+        <div class="relative flex flex-col items-center text-center">
+          {i < arr.length - 1 && (
+            <div class="hidden lg:block absolute top-7 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-border z-0"></div>
+          )}
+          <div class="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-md mb-4">
+            {step.n}
+          </div>
+          <h3 class="text-sm font-bold text-foreground mb-2 leading-snug">{step.title}</h3>
+          <p class="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
 <!-- ── VIDEO (más pequeño, centrado) ─────────────────────────────────── -->
 <div class="bg-white py-16">
   <div class="mx-auto max-w-4xl px-6 lg:px-8">
