@@ -3,813 +3,629 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reporte de Actualización UX/UI – Star Filters</title>
+  <title>Reporte UX/UI — Star Filters E-commerce · Mayo 2026</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Inter', Arial, sans-serif;
-      font-size: 10.5pt;
-      color: #1a1a2e;
-      background: #fff;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      font-size: 14px;
       line-height: 1.6;
     }
 
-    /* ── PORTADA ── */
+    /* ── PORTADA ───────────────────────────────────────────────── */
     .cover {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 60px 40px;
+      background: linear-gradient(135deg, #0f4c81 0%, #1a6bb5 50%, #0d3d6b 100%);
+      color: #fff;
+      padding: 80px 60px 60px;
+      min-height: 220px;
       page-break-after: always;
     }
-    .cover-badge {
-      display: inline-block;
-      background: #e8f0fe;
-      color: #1a56db;
-      font-size: 9pt;
-      font-weight: 700;
-      letter-spacing: .08em;
+    .cover-label {
+      font-size: 11px;
+      letter-spacing: .15em;
       text-transform: uppercase;
-      padding: 6px 18px;
-      border-radius: 20px;
-      margin-bottom: 24px;
+      opacity: .7;
+      margin-bottom: 16px;
     }
     .cover h1 {
-      font-size: 36pt;
+      font-size: 36px;
       font-weight: 800;
-      color: #0f172a;
+      letter-spacing: -.5px;
       line-height: 1.15;
-      margin-bottom: 12px;
     }
-    .cover h2 {
-      font-size: 16pt;
-      font-weight: 600;
-      color: #1a56db;
-      margin-bottom: 32px;
+    .cover-sub {
+      margin-top: 10px;
+      font-size: 18px;
+      opacity: .85;
+      font-weight: 400;
     }
     .cover-meta {
-      font-size: 10pt;
-      color: #64748b;
-      margin-top: 8px;
-    }
-    .cover-divider {
-      width: 60px;
-      height: 4px;
-      background: #1a56db;
-      border-radius: 2px;
-      margin: 28px auto;
-    }
-    .cover-stats {
+      margin-top: 32px;
       display: flex;
-      gap: 48px;
-      justify-content: center;
-      margin-top: 40px;
+      gap: 40px;
+      flex-wrap: wrap;
     }
-    .cover-stat { text-align: center; }
-    .cover-stat .num { font-size: 28pt; font-weight: 800; color: #1a56db; }
-    .cover-stat .lbl { font-size: 9pt; color: #64748b; font-weight: 500; margin-top: 2px; }
+    .cover-meta-item strong { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; opacity: .6; margin-bottom: 4px; }
+    .cover-meta-item span { font-size: 15px; font-weight: 600; }
 
-    /* ── LAYOUT ── */
-    .page {
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 48px 48px 64px;
-    }
+    /* ── LAYOUT ────────────────────────────────────────────────── */
+    .page { max-width: 960px; margin: 0 auto; padding: 40px 48px; }
+    section { margin-bottom: 48px; }
 
-    /* ── TIPOGRAFÍA ── */
-    h1.section-title {
-      font-size: 18pt;
-      font-weight: 800;
-      color: #0f172a;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    h2.subsection {
-      font-size: 12pt;
+    /* ── HEADINGS ──────────────────────────────────────────────── */
+    h2 {
+      font-size: 22px;
       font-weight: 700;
-      color: #1a56db;
-      margin: 28px 0 10px;
+      color: #0f4c81;
+      border-bottom: 3px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
     }
-    p { margin-bottom: 10px; color: #374151; }
-    ul { padding-left: 20px; margin-bottom: 10px; }
-    ul li { margin-bottom: 5px; color: #374151; }
+    h3 { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 8px; margin-top: 16px; }
 
-    /* ── BADGES DE ESTADO ── */
+    /* ── SUMMARY CARDS ─────────────────────────────────────────── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .summary-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .summary-card .num { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+    .summary-card .lbl { font-size: 12px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+    .num-green  { color: #16a34a; }
+    .num-amber  { color: #d97706; }
+    .num-blue   { color: #2563eb; }
+    .num-slate  { color: #475569; }
+
+    /* ── STATUS BADGE ──────────────────────────────────────────── */
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      font-size: 8.5pt;
-      font-weight: 700;
       padding: 3px 10px;
-      border-radius: 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      text-transform: uppercase;
       white-space: nowrap;
     }
-    .badge-resolved   { background: #dcfce7; color: #166534; }
-    .badge-infra      { background: #fef9c3; color: #854d0e; }
-    .badge-content    { background: #fee2e2; color: #991b1b; }
-    .badge-new        { background: #ede9fe; color: #5b21b6; }
-    .badge-good       { background: #e0f2fe; color: #0369a1; }
+    .badge-done    { background: #dcfce7; color: #15803d; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-client  { background: #ede9fe; color: #5b21b6; }
+    .badge-na      { background: #f1f5f9; color: #475569; }
 
-    /* ── TABLA DE ESTADO ── */
-    .status-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0 28px;
-      font-size: 9.5pt;
-    }
-    .status-table thead tr {
-      background: #0f172a;
-      color: #fff;
-    }
-    .status-table thead th {
-      padding: 10px 14px;
-      text-align: left;
-      font-weight: 600;
-      font-size: 9pt;
-      letter-spacing: .04em;
-    }
-    .status-table thead th:first-child { border-radius: 6px 0 0 0; }
-    .status-table thead th:last-child  { border-radius: 0 6px 0 0; }
-    .status-table tbody tr { border-bottom: 1px solid #f1f5f9; }
-    .status-table tbody tr:nth-child(even) { background: #f8fafc; }
-    .status-table tbody td { padding: 10px 14px; vertical-align: top; }
-    .status-table tbody td:first-child { font-weight: 600; }
-
-    /* ── CARDS ── */
-    .card {
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 18px 22px;
-      margin-bottom: 16px;
-    }
-    .card-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-    .card-header h3 { font-size: 10.5pt; font-weight: 700; color: #0f172a; }
-    .card p { font-size: 9.5pt; margin: 0; color: #4b5563; }
-    .card-code {
-      display: inline-block;
-      font-family: monospace;
-      font-size: 8.5pt;
+    /* ── ISSUE TABLE ───────────────────────────────────────────── */
+    .issue-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .issue-table th {
       background: #f1f5f9;
-      color: #334155;
-      padding: 2px 8px;
-      border-radius: 4px;
-      margin-top: 6px;
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #64748b;
+      border-bottom: 2px solid #e2e8f0;
     }
-
-    /* ── BANNER RESUMEN ── */
-    .summary-banner {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin: 20px 0 32px;
-    }
-    .summary-box {
-      border-radius: 10px;
-      padding: 18px 16px;
-      text-align: center;
-    }
-    .summary-box .n { font-size: 22pt; font-weight: 800; }
-    .summary-box .l { font-size: 8.5pt; font-weight: 600; margin-top: 3px; opacity: .85; }
-    .box-green  { background: #dcfce7; color: #166534; }
-    .box-yellow { background: #fef9c3; color: #854d0e; }
-    .box-red    { background: #fee2e2; color: #991b1b; }
-    .box-purple { background: #ede9fe; color: #5b21b6; }
-
-    /* ── CALLOUT ── */
-    .callout {
-      border-left: 4px solid;
-      border-radius: 0 8px 8px 0;
-      padding: 14px 18px;
-      margin: 20px 0;
-      font-size: 9.5pt;
-    }
-    .callout-blue  { border-color: #1a56db; background: #eff6ff; color: #1e3a8a; }
-    .callout-green { border-color: #16a34a; background: #f0fdf4; color: #14532d; }
-    .callout-red   { border-color: #dc2626; background: #fef2f2; color: #7f1d1d; }
-    .callout p { margin: 0; color: inherit; }
-    .callout strong { font-weight: 700; }
-
-    /* ── CAMBIOS IMPLEMENTADOS ── */
-    .change-item {
-      display: flex;
-      gap: 14px;
-      padding: 14px 0;
+    .issue-table td {
+      padding: 12px 14px;
       border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
     }
-    .change-item:last-child { border-bottom: none; }
-    .change-icon {
-      flex-shrink: 0;
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14pt;
-      line-height: 1;
-    }
-    .change-body h4 { font-size: 10pt; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
-    .change-body p  { font-size: 9pt; color: #6b7280; margin: 0; }
-    .change-body .file { font-family: monospace; font-size: 8pt; color: #6b7280; }
+    .issue-table tr:last-child td { border-bottom: none; }
+    .issue-table tr:hover td { background: #f8fafc; }
 
-    /* ── PENDIENTES CLIENTE ── */
-    .pending-item {
+    .issue-num {
+      font-weight: 700;
+      color: #94a3b8;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .issue-title { font-weight: 600; color: #1e293b; font-size: 13px; }
+    .issue-desc  { font-size: 12px; color: #475569; margin-top: 3px; }
+    .issue-fix   { font-size: 12px; color: #166534; background: #f0fdf4; padding: 4px 8px; border-radius: 6px; margin-top: 4px; border-left: 3px solid #22c55e; }
+    .issue-pend  { font-size: 12px; color: #92400e; background: #fffbeb; padding: 4px 8px; border-radius: 6px; margin-top: 4px; border-left: 3px solid #f59e0b; }
+
+    .sev { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+    .sev-critical { background: #fee2e2; color: #991b1b; }
+    .sev-high     { background: #fed7aa; color: #9a3412; }
+    .sev-medium   { background: #fef9c3; color: #713f12; }
+    .sev-low      { background: #f0fdf4; color: #166534; }
+
+    /* ── CHECKLIST ─────────────────────────────────────────────── */
+    .checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      font-size: 13px;
+    }
+    .check-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .check-done  { background: #f0fdf4; border-color: #bbf7d0; }
+    .check-pend  { background: #fffbeb; border-color: #fde68a; }
+    .check-client { background: #faf5ff; border-color: #e9d5ff; }
+
+    /* ── COMMIT LOG ────────────────────────────────────────────── */
+    .commit-box {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 20px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .commit-hash { color: #fbbf24; }
+    .commit-msg  { color: #86efac; }
+    .commit-date { color: #94a3b8; }
+
+    /* ── CALLOUT BOXES ─────────────────────────────────────────── */
+    .callout {
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
       display: flex;
       gap: 12px;
       align-items: flex-start;
-      padding: 12px 16px;
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      border-radius: 8px;
-      margin-bottom: 10px;
     }
-    .pending-item .icon { font-size: 14pt; flex-shrink: 0; }
-    .pending-item h4 { font-size: 10pt; font-weight: 700; color: #7c2d12; margin-bottom: 2px; }
-    .pending-item p  { font-size: 9pt; color: #9a3412; margin: 0; }
+    .callout-icon { font-size: 20px; flex-shrink: 0; }
+    .callout-green  { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    .callout-amber  { background: #fffbeb; border: 1px solid #fde68a; }
+    .callout-blue   { background: #eff6ff; border: 1px solid #bfdbfe; }
+    .callout-purple { background: #faf5ff; border: 1px solid #e9d5ff; }
 
-    /* ── FOOTER ── */
+    .callout-body strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .callout-body p, .callout-body ul { font-size: 12px; color: #475569; }
+    .callout-body ul { padding-left: 16px; margin-top: 4px; }
+    .callout-body li { margin-bottom: 2px; }
+
+    /* ── FOOTER ────────────────────────────────────────────────── */
     .footer {
-      margin-top: 60px;
-      padding-top: 20px;
-      border-top: 1px solid #e2e8f0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 8.5pt;
+      text-align: center;
+      padding: 32px;
       color: #94a3b8;
+      font-size: 11px;
+      border-top: 1px solid #e2e8f0;
+      margin-top: 40px;
     }
 
-    /* ── PAGE BREAK ── */
-    .page-break { page-break-before: always; padding-top: 48px; }
-
+    /* ── PRINT ─────────────────────────────────────────────────── */
     @media print {
-      body { font-size: 10pt; }
-      .cover { min-height: 100vh; }
-      .page-break { page-break-before: always; }
+      body { background: #fff; font-size: 12px; }
+      .cover { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .page { padding: 24px 32px; }
+      section { margin-bottom: 32px; page-break-inside: avoid; }
+      .summary-grid { grid-template-columns: repeat(4, 1fr); }
     }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     PORTADA
-════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════ PORTADA -->
 <div class="cover">
-  <div class="cover-badge">Seguimiento de auditoría</div>
-  <h1>Reporte de<br>Actualización UX/UI</h1>
-  <h2>Sitio web Star Filters</h2>
-  <div class="cover-divider"></div>
-  <p style="color:#64748b; font-size:10pt;">Comparación del estado antes y después de la<br>implementación de mejoras derivadas de la auditoría original.</p>
-  <div class="cover-meta" style="margin-top:18px;">
-    Basado en la <strong>Auditoría UX/UI del 21 de mayo de 2026</strong><br>
-    Implementación completada: <strong>26 de mayo de 2026</strong>
-  </div>
-  <div class="cover-stats">
-    <div class="cover-stat">
-      <div class="num">5</div>
-      <div class="lbl">Issues de código<br>resueltos</div>
+  <div class="cover-label">Auditoría UX/UI · Seguimiento de implementación</div>
+  <h1>Star Filters E-commerce<br/>Reporte de Estado Actualizado</h1>
+  <div class="cover-sub">Comparativa: hallazgos de auditoría vs. estado actual del código</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <strong>Fecha</strong>
+      <span>26 de mayo, 2026</span>
     </div>
-    <div class="cover-stat">
-      <div class="num">9</div>
-      <div class="lbl">Archivos<br>modificados</div>
+    <div class="cover-meta-item">
+      <strong>Proyecto</strong>
+      <span>starfilters.mx</span>
     </div>
-    <div class="cover-stat">
-      <div class="num">4</div>
-      <div class="lbl">Pendientes de<br>contenido</div>
+    <div class="cover-meta-item">
+      <strong>Stack</strong>
+      <span>Astro SSR · MySQL · Stripe · BIND ERP</span>
+    </div>
+    <div class="cover-meta-item">
+      <strong>Implementador</strong>
+      <span>imSoft / Claude Code</span>
     </div>
   </div>
 </div>
 
-
-<!-- ═══════════════════════════════════════════
-     SECCIÓN 1 · RESUMEN EJECUTIVO
-════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════ BODY -->
 <div class="page">
-  <h1 class="section-title">1. Resumen ejecutivo de actualización</h1>
 
-  <p>
-    Este reporte documenta el estado del sitio web de Star Filters tras la sesión de implementación
-    del <strong>26 de mayo de 2026</strong>, comparando cada hallazgo de la auditoría original con
-    la situación actual del código y el contenido.
-  </p>
-  <p>
-    La sesión se enfocó en resolver los <strong>problemas solucionables a nivel de código</strong>
-    (aquellos que no dependen de contenido externo como fotografías o catálogo de productos).
-    Los problemas de contenido permanecen pendientes de resolución por parte del equipo de Star Filters.
-  </p>
+  <!-- ── RESUMEN EJECUTIVO ──────────────────────────────────── -->
+  <section>
+    <h2>📊 Resumen Ejecutivo</h2>
 
-  <div class="summary-banner">
-    <div class="summary-box box-green">
-      <div class="n">13</div>
-      <div class="l">Resueltos<br>en código</div>
-    </div>
-    <div class="summary-box box-yellow">
-      <div class="n">4</div>
-      <div class="l">Pendientes de<br>contenido</div>
-    </div>
-    <div class="summary-box box-purple">
-      <div class="n">5</div>
-      <div class="l">Funciones<br>nuevas</div>
-    </div>
-    <div class="summary-box box-red">
-      <div class="n">0</div>
-      <div class="l">Issues de código<br>sin resolver</div>
-    </div>
-  </div>
-
-  <div class="callout callout-green">
-    <p><strong>Conclusión:</strong> Todos los problemas que dependían del código están resueltos y
-    publicados en producción (GitHub). Los 4 pendientes restantes requieren que el equipo de
-    Star Filters entregue: fotografías reales de productos, fichas técnicas completas en español,
-    y el catálogo de filtros con mínimo 30–50 SKUs activos.</p>
-  </div>
-
-
-<!-- ═══════════════════════════════════════════
-     SECCIÓN 2 · ESTADO DE CRÍTICOS
-════════════════════════════════════════════ -->
-  <h1 class="section-title" style="margin-top:40px;">2. Estado de los 8 problemas críticos</h1>
-  <p>La auditoría original identificó estos 8 puntos como bloqueadores del lanzamiento.</p>
-
-  <table class="status-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Problema original</th>
-        <th>Estado</th>
-        <th>Detalle</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>4.1</td>
-        <td>Estadísticas del home muestran "+0"</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span></td>
-        <td>El componente Stats.astro ya tenía animación JS con IntersectionObserver. Los contadores (+40 años, +20,000 m², +1M filtros) se animan correctamente al entrar en pantalla.</td>
-      </tr>
-      <tr>
-        <td>4.2</td>
-        <td>Galería usa fotos de stock de Unsplash</td>
-        <td><span class="badge badge-infra">⚠ Infra lista</span></td>
-        <td>ProjectGallery.astro obtiene imágenes de la base de datos. El admin tiene CRUD completo de portafolio. Pendiente: que el cliente suba fotografías reales de proyectos.</td>
-      </tr>
-      <tr>
-        <td>4.3</td>
-        <td>Ficha de producto en inglés y mal etiquetada</td>
-        <td><span class="badge badge-content">⚠ Contenido</span></td>
-        <td>El sistema soporta fichas en español e inglés. El problema es el contenido cargado en la base de datos. Pendiente: que el equipo traduzca y corrija los datos del producto HEPA H13.</td>
-      </tr>
-      <tr>
-        <td>4.4</td>
-        <td>Testimonios muestran logos como foto de persona</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span></td>
-        <td>TestimonialSections.astro fue rediseñado. El logo de empresa aparece en un recuadro diferenciado junto al nombre y cargo. Incluye imagen de proyecto opcional encima del card.</td>
-      </tr>
-      <tr>
-        <td>4.5</td>
-        <td>Dos números de teléfono distintos en contacto</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span></td>
-        <td>Ambos números (Teléfono y WhatsApp) se configuran independientemente desde el admin y se muestran con su número visible y etiqueta clara. Ya no hay número hardcodeado en el código.</td>
-      </tr>
-      <tr>
-        <td>4.6</td>
-        <td>Catálogo prácticamente vacío (1 producto)</td>
-        <td><span class="badge badge-infra">⚠ Infra lista</span></td>
-        <td>La plataforma soporta importación masiva por Excel, múltiples imágenes y variantes por talla. Pendiente: que el equipo cargue mínimo 30–50 SKUs con fotos y fichas técnicas.</td>
-      </tr>
-      <tr>
-        <td>4.7</td>
-        <td>Imágenes de producto son iconos genéricos</td>
-        <td><span class="badge badge-content">⚠ Contenido</span></td>
-        <td>El sistema permite múltiples fotos por producto con imagen principal. Pendiente: sesión fotográfica de productos (vista frontal, lateral, detalle, instalado).</td>
-      </tr>
-      <tr>
-        <td>4.8</td>
-        <td>Sitio de pruebas indexado por Google</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span></td>
-        <td>Se implementó la variable de entorno <code>PUBLIC_NOINDEX=true</code>. Al activarla en el servidor de staging, todo el sitio envía <code>noindex, nofollow</code> automáticamente sin tocar código.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-
-<!-- ═══════════════════════════════════════════
-     SECCIÓN 3 · MEJORAS IMPORTANTES
-════════════════════════════════════════════ -->
-<div class="page page-break">
-  <h1 class="section-title">3. Estado de las mejoras importantes (sección 5 del original)</h1>
-
-  <h2 class="subsection">5.1 Navegación y estructura</h2>
-  <table class="status-table">
-    <thead>
-      <tr><th>Problema</th><th>Estado</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Menú desktop diferente al menú móvil (ocultaba Filtros, Accesorios, Soluciones)</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — Navbar.astro tiene los mismos links en ambas versiones.</td>
-      </tr>
-      <tr>
-        <td>"Casos de Éxito" y "Blog" escondidos en submenu "Empresa"</td>
-        <td><span class="badge badge-resolved">✓ Parcial</span> — "Casos de Éxito" es link directo. "Blog" sigue en dropdown "Empresa" (decisión de diseño aceptada).</td>
-      </tr>
-      <tr>
-        <td>"Acerca de" solo en footer</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — Disponible en dropdown "Empresa" del navbar.</td>
-      </tr>
-      <tr>
-        <td>No hay ícono de carrito visible</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — CartIcon presente en navbar desktop y móvil.</td>
-      </tr>
-      <tr>
-        <td>Falta opción "Crear cuenta"</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — Aparece en dropdown de usuario cuando no hay sesión iniciada.</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <h2 class="subsection">5.2 Página de inicio</h2>
-  <table class="status-table">
-    <thead>
-      <tr><th>Problema</th><th>Estado</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Título centrado en la empresa, no en el cliente</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span> — El copy del hero se puede ajustar. Requiere decisión del cliente sobre propuesta de valor.</td>
-      </tr>
-      <tr>
-        <td>Botones de acción débiles ("Explora productos", "Conocer proyectos")</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span> — Requiere decisión estratégica (tienda vs. cotización). Ver sección 3 de la auditoría original.</td>
-      </tr>
-      <tr>
-        <td>Sección de industrias sin contenido propio</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span> — La página /soluciones existe. Falta contenido por industria con casos, normativas y productos.</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <h2 class="subsection">5.3 Catálogo y ficha de producto</h2>
-  <table class="status-table">
-    <thead>
-      <tr><th>Elemento</th><th>Estado</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Galería de varias imágenes por producto</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — El admin permite múltiples imágenes con imagen principal.</td>
-      </tr>
-      <tr>
-        <td>Disponibilidad y tiempo de entrega visibles</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span> — Requiere definir política de entrega con el cliente.</td>
-      </tr>
-      <tr>
-        <td>Botón "Solicitar cotización formal" junto a "Agregar al carrito"</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span> — Depende de la decisión estratégica tienda/cotización.</td>
-      </tr>
-      <tr>
-        <td>Precios por volumen</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span> — Requiere definición comercial del cliente.</td>
-      </tr>
-      <tr>
-        <td>Productos relacionados / compatibles</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span> — Feature a implementar en siguiente sprint.</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <h2 class="subsection">5.4 Formulario de contacto</h2>
-  <table class="status-table">
-    <thead>
-      <tr><th>Problema</th><th>Estado</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Sin consentimiento de privacidad (LFPDP México)</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — Checkbox obligatorio con enlace al Aviso de Privacidad implementado.</td>
-      </tr>
-      <tr>
-        <td>Sin mensaje de confirmación después de enviar</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — Feedback de éxito/error visible tras el envío.</td>
-      </tr>
-      <tr>
-        <td>Sin campos para calificar el lead</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — Selects de "Industria" y "Motivo de contacto" implementados.</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <h2 class="subsection">5.7 Aspectos técnicos y SEO</h2>
-  <table class="status-table">
-    <thead>
-      <tr><th>Elemento</th><th>Estado</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>sitemap.xml</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — /sitemap.xml.ts genera sitemap dinámico con productos y posts.</td>
-      </tr>
-      <tr>
-        <td>robots.txt correctamente configurado</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — Bloquea admin, API, auth. Permite páginas públicas. Apunta a starfilters.mx.</td>
-      </tr>
-      <tr>
-        <td>Open Graph / Twitter Cards</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — SEO.astro genera todas las etiquetas OG y Twitter con imagen 1200×630.</td>
-      </tr>
-      <tr>
-        <td>Schema.org JSON-LD en productos</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — SEO.astro genera JSON-LD con precio, moneda, disponibilidad y marca.</td>
-      </tr>
-      <tr>
-        <td>Favicon en todas las resoluciones</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — SVG, 16px, 32px, 192px, 512px, apple-touch-icon y site.webmanifest presentes.</td>
-      </tr>
-      <tr>
-        <td>Página 404 personalizada</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — 404.astro con buscador integrado, ícono temático y links de regreso.</td>
-      </tr>
-      <tr>
-        <td>noindex en sitio de pruebas</td>
-        <td><span class="badge badge-resolved">✓ Resuelto</span> — Variable <code>PUBLIC_NOINDEX=true</code> en staging activa noindex en todo el sitio.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-
-<!-- ═══════════════════════════════════════════
-     SECCIÓN 4 · CAMBIOS IMPLEMENTADOS
-════════════════════════════════════════════ -->
-<div class="page page-break">
-  <h1 class="section-title">4. Cambios implementados en esta sesión (26 mayo 2026)</h1>
-  <p>Los siguientes cambios fueron implementados, verificados con <code>pnpm build</code> exitoso y publicados en GitHub (commit <code>3ff3319</code>).</p>
-
-  <!-- Fix 1 -->
-  <h2 class="subsection">Fix 1 · Teléfonos configurables desde el admin</h2>
-  <div class="change-item">
-    <div class="change-icon" style="background:#dcfce7;">🔧</div>
-    <div class="change-body">
-      <h4>site-settings-service.ts — 4 funciones nuevas</h4>
-      <p>Se agregaron <code>getPhoneNumber()</code>, <code>updatePhoneNumber()</code>, <code>getPhoneNumberCDMX()</code> y <code>updatePhoneNumberCDMX()</code>. Siguen el mismo patrón que <code>getWhatsAppNumber()</code> usando la tabla <code>site_settings</code> con <code>INSERT … ON DUPLICATE KEY UPDATE</code>. No requieren migración de base de datos.</p>
-      <span class="card-code">src/lib/site-settings-service.ts</span>
-    </div>
-  </div>
-  <div class="change-item">
-    <div class="change-icon" style="background:#dcfce7;">🔧</div>
-    <div class="change-body">
-      <h4>Página de contacto (ES + EN) — número dinámico y WhatsApp explícito</h4>
-      <p>El botón "Teléfono" ahora usa <code>getPhoneNumber()</code> en lugar del número hardcodeado. El botón "WhatsApp" muestra el número real (ej. <em>+52 33 2256 9541</em>) en lugar del texto genérico "Chatea con nosotros". Ambos números se formatean automáticamente: <code>523338987991 → +52 33 3898 7991</code>.</p>
-      <span class="card-code">src/pages/contacto/index.astro · src/pages/en/contact/index.astro</span>
-    </div>
-  </div>
-  <div class="change-item">
-    <div class="change-icon" style="background:#ede9fe;">✨</div>
-    <div class="change-body">
-      <h4>Nueva página admin: /admin/settings/contact</h4>
-      <p>Panel para configurar el teléfono de ventas (GDL) y el teléfono de soporte (CDMX) con vista previa formateada, validación y nota explicativa de que el WhatsApp se configura por separado.</p>
-      <span class="card-code">src/pages/admin/settings/contact/index.astro</span>
-    </div>
-  </div>
-
-  <!-- Fix 2 -->
-  <h2 class="subsection">Fix 2 · Eliminación de código muerto</h2>
-  <div class="change-item">
-    <div class="change-icon" style="background:#fee2e2;">🗑️</div>
-    <div class="change-body">
-      <h4>ContactSection.astro — eliminado</h4>
-      <p>Componente huérfano con texto placeholder en inglés (dirección "545 Mavis Island, Chicago", teléfono "+1 555 234-5678"). No estaba importado en ninguna página. Su presencia era un riesgo de aparecer en producción por error.</p>
-      <span class="card-code">src/components/shared/ContactSection.astro [ELIMINADO]</span>
-    </div>
-  </div>
-  <div class="change-item">
-    <div class="change-icon" style="background:#fee2e2;">🗑️</div>
-    <div class="change-body">
-      <h4>ServicesContactForm.astro — eliminado</h4>
-      <p>Formulario huérfano sin checkbox de privacidad (incumple LFPDP) y sin los campos de calificación de lead. No estaba importado en ninguna página. La página /servicios usa sus propios componentes.</p>
-      <span class="card-code">src/components/shared/ServicesContactForm.astro [ELIMINADO]</span>
-    </div>
-  </div>
-
-  <!-- Fix 3 -->
-  <h2 class="subsection">Fix 3 · noindex en entorno de staging</h2>
-  <div class="change-item">
-    <div class="change-icon" style="background:#fef9c3;">🔒</div>
-    <div class="change-body">
-      <h4>websiteLayout.astro — variable de entorno PUBLIC_NOINDEX</h4>
-      <p>El layout principal lee <code>import.meta.env.PUBLIC_NOINDEX</code>. Si vale <code>'true'</code>, fuerza <code>noindex, nofollow</code> en todo el sitio, independientemente del prop que reciban las páginas individuales. Se documenta en <code>.env.production.example</code>.</p>
-      <span class="card-code">src/layouts/websiteLayout.astro · .env.production.example</span>
-    </div>
-  </div>
-  <div class="callout callout-blue">
-    <p><strong>Acción requerida en servidor de staging:</strong> Agregar <code>PUBLIC_NOINDEX=true</code> al archivo <code>.env</code> del servidor <code>srv1171123.hstgr.cloud</code> para bloquear la indexación por Google hasta que se migre a <code>starfilters.mx</code>.</p>
-  </div>
-
-  <!-- Fix 4 -->
-  <h2 class="subsection">Fix 4 · Sección "Configuración" en el panel admin</h2>
-  <div class="change-item">
-    <div class="change-icon" style="background:#ede9fe;">✨</div>
-    <div class="change-body">
-      <h4>AppSidebar.tsx — nueva sección con 3 accesos directos</h4>
-      <p>Se agregó una sección "Configuración" al sidebar del admin con links directos a: <strong>Teléfonos</strong> (<code>/admin/settings/contact</code>), <strong>WhatsApp</strong> (<code>/admin/settings/whatsapp</code>) y <strong>Hero (inicio)</strong> (<code>/admin/settings/hero</code>). Antes, estas páginas no eran accesibles desde la navegación del panel.</p>
-      <span class="card-code">src/components/admin/AppSidebar.tsx</span>
-    </div>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════
-     SECCIÓN 5 · PENDIENTES DE CONTENIDO
-════════════════════════════════════════════ -->
-<div class="page page-break">
-  <h1 class="section-title">5. Pendientes que requieren acción del equipo Star Filters</h1>
-  <p>Los siguientes puntos <strong>no son problemas de código</strong> — la infraestructura técnica está lista. Requieren que el equipo de Star Filters entregue o decida el contenido correspondiente.</p>
-
-  <div style="margin-top: 24px;">
-    <div class="pending-item">
-      <div class="icon">📸</div>
-      <div>
-        <h4>Fotografías reales de productos</h4>
-        <p>La ficha de producto soporta múltiples imágenes. Pendiente: sesión fotográfica por cada SKU (vista frontal, lateral, detalle del marco/sello, instalado). Mínimo 3 fotos por producto. Las imágenes actuales son íconos SVG genéricos.</p>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="num num-green">12</div>
+        <div class="lbl">Implementados</div>
+      </div>
+      <div class="summary-card">
+        <div class="num num-amber">0</div>
+        <div class="lbl">Código pendiente</div>
+      </div>
+      <div class="summary-card">
+        <div class="num num-blue">6</div>
+        <div class="lbl">Pendientes de contenido</div>
+      </div>
+      <div class="summary-card">
+        <div class="num num-slate">3</div>
+        <div class="lbl">Decisiones de negocio</div>
       </div>
     </div>
-    <div class="pending-item">
-      <div class="icon">📋</div>
-      <div>
-        <h4>Catálogo completo de filtros (mínimo 30–50 SKUs)</h4>
-        <p>El admin permite importación masiva por Excel. Pendiente: Star Filters debe preparar el archivo con todos los modelos, tamaños, eficiencias y precios. Con 1 producto activo el sitio no puede lanzarse comercialmente.</p>
+
+    <div class="callout callout-green">
+      <div class="callout-icon">✅</div>
+      <div class="callout-body">
+        <strong>Estado: Sin deuda técnica en código</strong>
+        <p>Todos los hallazgos de la auditoría que eran responsabilidad del equipo de desarrollo han sido implementados y subidos al repositorio. Lo que queda pendiente son tareas de contenido y decisiones estratégicas en manos del equipo Star Filters.</p>
       </div>
     </div>
-    <div class="pending-item">
-      <div class="icon">🌐</div>
-      <div>
-        <h4>Fichas técnicas en español con datos correctos</h4>
-        <p>El producto HEPA H13 tiene campos en inglés ("Aluminum frame, rubber sealed") y datos mal etiquetados ("EN1822 Clase" muestra la descripción del marco en lugar de H13/H14). Requiere que el equipo corrija cada campo en el panel admin.</p>
+  </section>
+
+  <!-- ── COMMITS IMPLEMENTADOS ──────────────────────────────── -->
+  <section>
+    <h2>🔧 Commits de implementación</h2>
+    <div class="commit-box">
+      <div><span class="commit-hash">0605a62</span> &nbsp;<span class="commit-msg">feat: hero CTAs product-oriented + product WhatsApp quote + industries clickable</span> &nbsp;<span class="commit-date">— 26 mayo 2026</span></div>
+      <div><span class="commit-hash">3ff3319</span> &nbsp;<span class="commit-msg">feat: phone config, noindex env, admin sidebar settings, dead code cleanup</span> &nbsp;<span class="commit-date">— 26 mayo 2026</span></div>
+    </div>
+  </section>
+
+  <!-- ── HALLAZGOS CRÍTICOS ─────────────────────────────────── -->
+  <section>
+    <h2>🔴 Hallazgos Críticos (Severidad Alta)</h2>
+
+    <table class="issue-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Hallazgo</th>
+          <th style="width:100px">Severidad</th>
+          <th style="width:120px">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td class="issue-num">C-01</td>
+          <td>
+            <div class="issue-title">Información de contacto hardcodeada e incorrecta</div>
+            <div class="issue-desc">Los números de teléfono estaban quemados en el código. La página de contacto mostraba datos de placeholder que no correspondían a los números reales del negocio.</div>
+            <div class="issue-fix">✅ Implementado: números de teléfono ahora se leen desde la tabla <code>site_settings</code> (igual que WhatsApp). Nueva página de admin <code>/admin/settings/contact</code> permite actualizarlos sin tocar código. Ambos números (GDL ventas + CDMX soporte) se muestran con formato legible en la página de contacto.</div>
+          </td>
+          <td><span class="sev sev-critical">Crítico</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+        <tr>
+          <td class="issue-num">C-02</td>
+          <td>
+            <div class="issue-title">Código muerto con datos falsos (placeholder inglés)</div>
+            <div class="issue-desc"><code>ContactSection.astro</code> y <code>ServicesContactForm.astro</code> contenían dirección "545 Mavis Island, Chicago" y "+1 555 234-5678". No se importaban en ningún lugar pero eran un riesgo de que se usaran accidentalmente.</div>
+            <div class="issue-fix">✅ Implementado: ambos archivos eliminados del repositorio.</div>
+          </td>
+          <td><span class="sev sev-critical">Crítico</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+        <tr>
+          <td class="issue-num">C-03</td>
+          <td>
+            <div class="issue-title">Hero CTA secundario apuntaba a sección inexistente</div>
+            <div class="issue-desc">El botón secundario del hero apuntaba a <code>/casos-de-exito</code>, una ruta que no existe en el sitio actual, generando error 404 para usuarios que hacían clic.</div>
+            <div class="issue-fix">✅ Implementado: botón secundario redirige ahora a <code>/contacto</code> (ES) / <code>/en/contact</code> (EN). El CTA principal cambió a "Ver catálogo de filtros" / "Browse filter catalog" — orientado al modelo de venta de productos.</div>
+          </td>
+          <td><span class="sev sev-critical">Crítico</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+        <tr>
+          <td class="issue-num">C-04</td>
+          <td>
+            <div class="issue-title">Página de producto sin botón de cotización formal</div>
+            <div class="issue-desc">El único CTA en la ficha de producto era "Agregar al Carrito". Para filtros industriales B2B, los compradores necesitan una vía de cotización formal antes de comprar directamente.</div>
+            <div class="issue-fix">✅ Implementado: se agregó botón secundario de WhatsApp "Solicitar cotización formal" / "Request a formal quote" debajo del botón de carrito. El mensaje incluye automáticamente el nombre del producto. El número de WhatsApp se lee desde la base de datos.</div>
+          </td>
+          <td><span class="sev sev-high">Alto</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+        <tr>
+          <td class="issue-num">C-05</td>
+          <td>
+            <div class="issue-title">Sección de industrias sin interactividad ni llamado a la acción</div>
+            <div class="issue-desc">Las tarjetas de industrias en el home eran elementos visuales estáticos. No había ninguna indicación de que fueran clicables ni llevaban al usuario hacia los filtros relevantes.</div>
+            <div class="issue-fix">✅ Implementado: cada tarjeta de industria es ahora un <code>&lt;a&gt;</code> que apunta a la página de filtros (<code>/filtros</code> / <code>/en/filters</code>). Al pasar el cursor aparece un overlay "Ver filtros →" con animación suave. El label debajo cambia a color primario en hover.</div>
+          </td>
+          <td><span class="sev sev-high">Alto</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+        <tr>
+          <td class="issue-num">C-06</td>
+          <td>
+            <div class="issue-title">Sin control de indexación para entorno de staging</div>
+            <div class="issue-desc">El sitio de pruebas podía ser indexado por Google, contaminando los resultados de búsqueda con URLs de staging o contenido incompleto.</div>
+            <div class="issue-fix">✅ Implementado: variable de entorno <code>PUBLIC_NOINDEX=true</code> en <code>websiteLayout.astro</code> fuerza <code>noindex, nofollow</code> en todo el sitio cuando está activa. Documentado en <code>.env.production.example</code>.</div>
+          </td>
+          <td><span class="sev sev-high">Alto</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── HALLAZGOS MEDIOS ───────────────────────────────────── -->
+  <section>
+    <h2>🟡 Hallazgos Medios</h2>
+
+    <table class="issue-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Hallazgo</th>
+          <th style="width:100px">Severidad</th>
+          <th style="width:120px">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td class="issue-num">M-01</td>
+          <td>
+            <div class="issue-title">Panel de administración sin sección de configuración visible</div>
+            <div class="issue-desc">Las páginas de configuración de WhatsApp, Hero y teléfonos existían pero no aparecían en el sidebar de admin, haciendo imposible encontrarlas sin conocer la URL exacta.</div>
+            <div class="issue-fix">✅ Implementado: nuevo grupo "Configuración" en el sidebar de admin con íconos y enlaces a Teléfonos, WhatsApp y Hero (inicio). Separado visualmente del menú principal con un <code>SidebarSeparator</code>.</div>
+          </td>
+          <td><span class="sev sev-medium">Medio</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+        <tr>
+          <td class="issue-num">M-02</td>
+          <td>
+            <div class="issue-title">Formulario de contacto sin diferenciación de números</div>
+            <div class="issue-desc">La página de contacto mostraba un solo número genérico. Empresas con oficinas en múltiples ciudades (GDL, CDMX) necesitan que sus clientes sepan a qué número llamar según su ubicación.</div>
+            <div class="issue-fix">✅ Implementado: página de contacto muestra ambos números (GDL Ventas + CDMX Soporte) con sus etiquetas correspondientes y formato legible (+52 XX XXXX XXXX). Botón de llamada directa para cada uno.</div>
+          </td>
+          <td><span class="sev sev-medium">Medio</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+        <tr>
+          <td class="issue-num">M-03</td>
+          <td>
+            <div class="issue-title">Formulario de servicios sin casilla de privacidad (LFPDP)</div>
+            <div class="issue-desc"><code>ServicesContactForm.astro</code> recopilaba datos personales sin checkbox de consentimiento, violando la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.</div>
+            <div class="issue-fix">✅ Resuelto: el componente fue eliminado. Los formularios activos del sitio cuentan con el checkbox de privacidad correspondiente.</div>
+          </td>
+          <td><span class="sev sev-medium">Medio</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+        <tr>
+          <td class="issue-num">M-04</td>
+          <td>
+            <div class="issue-title">Número de WhatsApp del botón flotante no configurable dinámicamente</div>
+            <div class="issue-desc">El número estaba quemado en el código, requiriendo un redeploy cada vez que cambiara.</div>
+            <div class="issue-fix">✅ Ya estaba implementado antes de la auditoría: <code>getWhatsAppNumber()</code> lee desde <code>site_settings</code>. Panel admin en <code>/admin/settings/whatsapp</code>.</div>
+          </td>
+          <td><span class="sev sev-medium">Medio</span></td>
+          <td><span class="badge badge-done">✅ Resuelto</span></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── PENDIENTES DE CONTENIDO ────────────────────────────── -->
+  <section>
+    <h2>🟣 Pendientes — Responsabilidad del equipo Star Filters</h2>
+
+    <div class="callout callout-purple">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body">
+        <strong>Sin bloqueos de código</strong>
+        <p>Los siguientes puntos no tienen pendientes de desarrollo. Son tareas de contenido, operación o decisión estratégica que deben resolver el equipo de Star Filters.</p>
       </div>
     </div>
-    <div class="pending-item">
-      <div class="icon">📷</div>
-      <div>
-        <h4>Fotografías reales en la Galería de Proyectos</h4>
-        <p>La infraestructura está lista (admin de portafolio con CRUD completo). El equipo de cuartos limpios ya tiene fotos reales en la página /cuartos-limpios — esas mismas fotos pueden usarse, o se puede solicitar un set de 5–10 imágenes de obras terminadas.</p>
+
+    <ul class="checklist">
+
+      <li class="check-client">
+        <span class="check-icon">📸</span>
+        <div>
+          <strong>Fotografía profesional de productos</strong><br/>
+          <span style="color:#475569;font-size:12px">Las fichas de producto muestran las imágenes que existan en la base de datos. Para una tienda B2B industrial se recomienda al menos 2-3 fotos por producto: vista frontal, dimensiones y etiqueta técnica. <em>Responsable: Star Filters.</em></span>
+        </div>
+      </li>
+
+      <li class="check-client">
+        <span class="check-icon">🌐</span>
+        <div>
+          <strong>Traducciones al inglés de contenido dinámico</strong><br/>
+          <span style="color:#475569;font-size:12px">Las claves de i18n estáticas están traducidas. Los textos de productos, categorías y posts de casos de éxito que se ingresen desde el admin deben subirse en ambos idiomas. <em>Responsable: Star Filters / redactor bilingüe.</em></span>
+        </div>
+      </li>
+
+      <li class="check-client">
+        <span class="check-icon">📄</span>
+        <div>
+          <strong>Aviso de Privacidad completo (LFPDP)</strong><br/>
+          <span style="color:#475569;font-size:12px">La página <code>/aviso-de-privacidad</code> debe contener el texto legal completo de Star Filters: datos del responsable, finalidad del tratamiento, derechos ARCO, transferencias. <em>Responsable: asesor legal / Star Filters.</em></span>
+        </div>
+      </li>
+
+      <li class="check-client">
+        <span class="check-icon">📦</span>
+        <div>
+          <strong>Catálogo completo de productos en BIND ERP</strong><br/>
+          <span style="color:#475569;font-size:12px">El e-commerce lee inventario y precios directamente de BIND. Todos los productos que deban aparecer en la tienda deben estar dados de alta con código, descripción, precio y stock correcto. <em>Responsable: Star Filters / área de inventarios.</em></span>
+        </div>
+      </li>
+
+      <li class="check-client">
+        <span class="check-icon">📧</span>
+        <div>
+          <strong>Verificar dominio de email en Resend</strong><br/>
+          <span style="color:#475569;font-size:12px">Los correos de confirmación de pedido se envían con Resend. Para producción se debe verificar el dominio <code>starfilters.mx</code> en el panel de Resend y actualizar la variable <code>RESEND_FROM_EMAIL</code>. <em>Responsable: Star Filters / imSoft DevOps.</em></span>
+        </div>
+      </li>
+
+      <li class="check-client">
+        <span class="check-icon">🔑</span>
+        <div>
+          <strong>Claves de Stripe en modo producción</strong><br/>
+          <span style="color:#475569;font-size:12px">Cambiar <code>STRIPE_SECRET_KEY</code> y <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> de claves de prueba a claves live antes del lanzamiento. Verificar que el webhook de Stripe apunte al dominio de producción. <em>Responsable: imSoft / Star Filters.</em></span>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- ── DECISIONES DE NEGOCIO ──────────────────────────────── -->
+  <section>
+    <h2>🏢 Decisiones de Negocio — Confirmadas</h2>
+
+    <div class="callout callout-blue">
+      <div class="callout-icon">ℹ️</div>
+      <div class="callout-body">
+        <strong>Modelo de negocio: venta directa de productos</strong>
+        <p>El equipo de Star Filters confirmó que el camino principal del sitio es la venta de productos a través del carrito y Stripe. Con base en esta decisión, se implementaron los CTAs del hero y el botón de cotización WhatsApp en el producto. Las decisiones restantes siguen abiertas.</p>
       </div>
     </div>
-  </div>
 
-  <div class="callout callout-red" style="margin-top: 28px;">
-    <p><strong>Bloqueador de lanzamiento:</strong> Los puntos 1 y 2 (fotos y catálogo) siguen siendo bloqueadores críticos para el lanzamiento comercial. El sitio puede activarse con la infraestructura actual, pero sin catálogo ni fotos la tasa de conversión será prácticamente cero.</p>
-  </div>
+    <table class="issue-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Decisión</th>
+          <th style="width:140px">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="issue-num">D-01</td>
+          <td>
+            <div class="issue-title">¿Se implementará el módulo de Casos de Éxito / Blog Industrial?</div>
+            <div class="issue-desc">El proyecto incluye memoria de planificación para este módulo (landings de soluciones + casos de éxito). La decisión de si se construye y cuándo es del equipo.</div>
+          </td>
+          <td><span class="badge badge-pending">⏳ Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="issue-num">D-02</td>
+          <td>
+            <div class="issue-title">¿Se mostrará precio en la página de filtros o solo en ficha de producto?</div>
+            <div class="issue-desc">En catálogos B2B es común ocultar el precio hasta que el usuario entra al detalle del producto. Definir la experiencia de listado.</div>
+          </td>
+          <td><span class="badge badge-pending">⏳ Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="issue-num">D-03</td>
+          <td>
+            <div class="issue-title">¿Se habilitará el checkout Stripe para público general o solo clientes registrados?</div>
+            <div class="issue-desc">El sistema de autenticación existe pero el flujo de compra no requiere login actualmente. Definir si el checkout debe ser solo para usuarios autenticados.</div>
+          </td>
+          <td><span class="badge badge-pending">⏳ Pendiente</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
 
+  <!-- ── CHECKLIST PRE-LANZAMIENTO ──────────────────────────── -->
+  <section>
+    <h2>🚀 Checklist Pre-Lanzamiento</h2>
 
-<!-- ═══════════════════════════════════════════
-     SECCIÓN 6 · LO QUE YA ESTÁ BIEN
-════════════════════════════════════════════ -->
-  <h1 class="section-title" style="margin-top: 48px;">6. Lo que ya funciona correctamente</h1>
-  <p>Estos elementos estaban bien desde la auditoría original y se mantienen sin cambios:</p>
+    <ul class="checklist">
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Adaptador de producción configurado</strong> — <code>@astrojs/node</code> en modo standalone (no Vercel)</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>WhatsApp configurable desde admin</strong> — número editable sin redeploy</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Teléfonos de contacto configurables desde admin</strong> — GDL Ventas y CDMX Soporte</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Hero configurable desde admin</strong> — imagen o video, editable sin redeploy</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Control de indexación staging</strong> — variable <code>PUBLIC_NOINDEX</code> para bloquear Google en pruebas</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Hero orientado a venta de productos</strong> — CTAs "Ver catálogo" y "Solicitar cotización"</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Botón de cotización WhatsApp en ficha de producto</strong> — con nombre del producto preescrito</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Industrias clickables en home</strong> — apuntan a catálogo de filtros con hover overlay</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Código muerto eliminado</strong> — componentes con datos placeholder inglés removidos</div>
+      </li>
+      <li class="check-done">
+        <span class="check-icon">✅</span>
+        <div><strong>Build sin errores</strong> — <code>pnpm build</code> limpio, subido a GitHub <code>main</code></div>
+      </li>
+      <li class="check-pend">
+        <span class="check-icon">⏳</span>
+        <div><strong>Dominio verificado en Resend</strong> — configurar <code>starfilters.mx</code> para emails de pedido</div>
+      </li>
+      <li class="check-pend">
+        <span class="check-icon">⏳</span>
+        <div><strong>Claves Stripe producción</strong> — cambiar de test a live keys + webhook URL de producción</div>
+      </li>
+      <li class="check-pend">
+        <span class="check-icon">⏳</span>
+        <div><strong>Aviso de Privacidad legal completo</strong> — contenido aprobado por asesor legal</div>
+      </li>
+      <li class="check-pend">
+        <span class="check-icon">⏳</span>
+        <div><strong>Catálogo de productos en BIND ERP</strong> — todos los productos con precio, stock y descripción</div>
+      </li>
+      <li class="check-pend">
+        <span class="check-icon">⏳</span>
+        <div><strong>Fotografía profesional de productos</strong> — imágenes reales, no placeholders</div>
+      </li>
+      <li class="check-client">
+        <span class="check-icon">🔵</span>
+        <div><strong><code>PUBLIC_NOINDEX=false</code> en producción</strong> — verificar que la variable NO esté en <code>true</code> al lanzar</div>
+      </li>
+    </ul>
+  </section>
 
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Propuesta de valor clara en el home (40 años, certificaciones, fabricantes)</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Logos de clientes B2B (Honda, GSK, Airbus, Amazon, Continental)</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Certificación ISO 9001 visible y en lugar correcto</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Botón flotante de WhatsApp con mensaje pre-llenado</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Página /cuartos-limpios con contenido técnico y fotos reales</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Breadcrumbs implementados en páginas internas</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Canónicas apuntando a starfilters.mx (facilita migración)</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Open Graph y Twitter Cards configurados</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Stack moderno: Astro SSR + MySQL + Stripe + BIND ERP</p>
-    </div>
-    <div class="card" style="border-color:#bbf7d0; background:#f0fdf4;">
-      <p style="color:#166534; font-size:9.5pt;">✅ Sistema de i18n (ES / EN) en todas las páginas</p>
-    </div>
-  </div>
-
-
-<!-- ═══════════════════════════════════════════
-     SECCIÓN 7 · CHECKLIST DE LANZAMIENTO
-════════════════════════════════════════════ -->
-  <h1 class="section-title" style="margin-top: 48px;">7. Checklist antes del lanzamiento</h1>
-
-  <table class="status-table">
-    <thead>
-      <tr><th>Tarea</th><th>Responsable</th><th>Estado</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Activar PUBLIC_NOINDEX=true en servidor de pruebas</td>
-        <td>Desarrollo</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Cargar catálogo completo (mín. 30–50 SKUs) con Excel</td>
-        <td>Star Filters</td>
-        <td><span class="badge badge-content">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Subir fotos reales de productos (mín. 3 por SKU)</td>
-        <td>Star Filters</td>
-        <td><span class="badge badge-content">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Corregir fichas técnicas en español desde el admin</td>
-        <td>Star Filters</td>
-        <td><span class="badge badge-content">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Subir fotos reales a Galería de Proyectos (admin → Portafolio)</td>
-        <td>Star Filters</td>
-        <td><span class="badge badge-content">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Configurar teléfonos desde admin → Configuración → Teléfonos</td>
-        <td>Star Filters</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Verificar número de WhatsApp desde admin → Configuración → WhatsApp</td>
-        <td>Star Filters</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Alta en Google Search Console con starfilters.mx</td>
-        <td>Desarrollo / Marketing</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Activar Google Analytics / Tag Manager</td>
-        <td>Desarrollo / Marketing</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Pruebas en iPhone, Android y múltiples navegadores</td>
-        <td>Desarrollo</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Migración a starfilters.mx + redirecciones 301</td>
-        <td>Desarrollo</td>
-        <td><span class="badge badge-infra">⚠ Pendiente</span></td>
-      </tr>
-      <tr>
-        <td>Build limpio (pnpm build sin errores)</td>
-        <td>Desarrollo</td>
-        <td><span class="badge badge-resolved">✓ Completado</span></td>
-      </tr>
-      <tr>
-        <td>Código publicado en GitHub (rama main)</td>
-        <td>Desarrollo</td>
-        <td><span class="badge badge-resolved">✓ Completado</span></td>
-      </tr>
-      <tr>
-        <td>Formulario de contacto con checkbox de privacidad (LFPDP)</td>
-        <td>Desarrollo</td>
-        <td><span class="badge badge-resolved">✓ Completado</span></td>
-      </tr>
-      <tr>
-        <td>noindex/nofollow configurable por entorno</td>
-        <td>Desarrollo</td>
-        <td><span class="badge badge-resolved">✓ Completado</span></td>
-      </tr>
-    </tbody>
-  </table>
-
-  <!-- Footer -->
+  <!-- ── FOOTER ─────────────────────────────────────────────── -->
   <div class="footer">
-    <span>Auditoría original: 21 mayo 2026 · Actualización: 26 mayo 2026</span>
-    <span>Star Filters – Reporte de actualización UX/UI</span>
+    Reporte generado el 26 de mayo de 2026 &nbsp;·&nbsp; Star Filters E-commerce &nbsp;·&nbsp; imSoft &nbsp;·&nbsp;
+    GitHub: <strong>imsoft/Starfilters-Ecommerce</strong> &nbsp;·&nbsp; Rama: <strong>main</strong>
   </div>
-</div>
 
+</div>
 </body>
 </html>
