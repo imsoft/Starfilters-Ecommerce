@@ -31,6 +31,15 @@ if (projects.length === 0) return;
           ? 'A glimpse of the cleanrooms, HVAC systems, and filtration projects we have built.'
           : 'Una muestra de los cuartos limpios, sistemas HVAC y proyectos de filtración que hemos construido.'}
       </p>
+      <a
+        href={isEn ? '/en/about' : '/acerca-de'}
+        class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+      >
+        {isEn ? 'Learn more about Star Filters' : 'Conocer más sobre Star Filters'}
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+        </svg>
+      </a>
     </div>
 
     <!-- Grid de proyectos -->
