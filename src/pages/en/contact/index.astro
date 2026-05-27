@@ -34,6 +34,7 @@ type ContactFormValues = {
   email: string;
   phone: string;
   company: string;
+  industry: string;
   message: string;
 };
 
@@ -43,6 +44,7 @@ const initialValues: ContactFormValues = {
   email: "",
   phone: "",
   company: "",
+  industry: "",
   message: "",
 };
 
@@ -64,6 +66,7 @@ if (Astro.request.method === "POST") {
     email: (formData.get("email")?.toString() ?? "").trim(),
     phone: (formData.get("phone")?.toString() ?? "").trim(),
     company: (formData.get("company")?.toString() ?? "").trim(),
+    industry: (formData.get("industry")?.toString() ?? "").trim(),
     message: (formData.get("message")?.toString() ?? "").trim(),
   };
 
@@ -86,9 +89,10 @@ if (Astro.request.method === "POST") {
           <p><strong>Email:</strong> ${formValues.email}</p>
           <p><strong>Phone:</strong> ${formValues.phone}</p>
           <p><strong>Company:</strong> ${formValues.company || "N/A"}</p>
+          <p><strong>Industry:</strong> ${formValues.industry}</p>
           <p><strong>Message:</strong><br />${messageHtml}</p>
         `,
-        text: `New message from the contact form (English)\n\nName: ${formValues.name}\nCity: ${formValues.city}\nEmail: ${formValues.email}\nPhone: ${formValues.phone}\nCompany: ${formValues.company || "N/A"}\n\nMessage:\n${formValues.message}`,
+        text: `New message from the contact form (English)\n\nName: ${formValues.name}\nCity: ${formValues.city}\nEmail: ${formValues.email}\nPhone: ${formValues.phone}\nCompany: ${formValues.company || "N/A"}\nIndustry: ${formValues.industry}\n\nMessage:\n${formValues.message}`,
       });
 
       if (emailSent) {
@@ -271,6 +275,31 @@ if (Astro.request.method === "POST") {
                 value={formValues.company}
                 class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
               />
+            </div>
+
+            <div>
+              <label for="industry" class="block text-sm font-medium text-foreground">Industry / Sector <span class="text-red-500">*</span></label>
+              <select
+                id="industry"
+                name="industry"
+                required
+                class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              >
+                <option value="" disabled selected={!formValues.industry}>Select your industry</option>
+                <option value="Alimentos y envases" selected={formValues.industry === 'Alimentos y envases'}>Food &amp; Packaging</option>
+                <option value="Automotriz" selected={formValues.industry === 'Automotriz'}>Automotive</option>
+                <option value="Celdulas" selected={formValues.industry === 'Celdulas'}>Cells</option>
+                <option value="Centro de mezcla" selected={formValues.industry === 'Centro de mezcla'}>Mixing Center</option>
+                <option value="Constructora" selected={formValues.industry === 'Constructora'}>Construction</option>
+                <option value="Contract manufacturing" selected={formValues.industry === 'Contract manufacturing'}>Contract Manufacturing</option>
+                <option value="Dispositivos médicos" selected={formValues.industry === 'Dispositivos médicos'}>Medical Devices</option>
+                <option value="Farmacéutico" selected={formValues.industry === 'Farmacéutico'}>Pharmaceutical</option>
+                <option value="Hospital" selected={formValues.industry === 'Hospital'}>Hospital</option>
+                <option value="HVAC" selected={formValues.industry === 'HVAC'}>HVAC</option>
+                <option value="Microelectrónica" selected={formValues.industry === 'Microelectrónica'}>Microelectronics</option>
+                <option value="Pintura especializada" selected={formValues.industry === 'Pintura especializada'}>Specialized Painting</option>
+                <option value="Otra" selected={formValues.industry === 'Otra'}>Other</option>
+              </select>
             </div>
 
             <div>
