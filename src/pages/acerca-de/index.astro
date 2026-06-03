@@ -189,14 +189,11 @@ const values = [
         <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">{lang === 'en' ? 'What drives us' : 'Lo que nos mueve'}</p>
         <h2 class="text-3xl font-bold text-foreground sm:text-4xl">{t('about.values.title')}</h2>
       </div>
-      <dl class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
-        {values.map((v, i) => (
-          <div
-            class="reveal flex flex-col items-center text-center gap-3 rounded-2xl border border-border bg-card p-6 shadow-sm hover:border-primary/40 hover:shadow-md transition-all duration-300"
-            style={`transition-delay:${i * 80}ms`}
-          >
-            <img src={v.img} alt={v.title} class="h-12 w-12 object-contain" width="48" height="48" loading="lazy" />
-            <dt class="text-sm font-bold text-foreground">{v.title}</dt>
+      <dl class="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-6 reveal">
+        {values.map((v) => (
+          <div class="flex flex-col items-center text-center">
+            <img src={v.img} alt={v.title} class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+            <dt class="mt-4 text-sm font-semibold text-foreground">{v.title}</dt>
           </div>
         ))}
       </dl>
