@@ -310,7 +310,7 @@ if (Astro.request.method === "POST") {
           <form method="post" class="mt-8 space-y-6">
             <div class="grid gap-6 sm:grid-cols-2">
               <div>
-                <label for="name" class="block text-sm font-medium text-foreground">Nombre</label>
+                <label for="name" class="block text-sm font-medium text-foreground">Nombre <span class="text-red-500">*</span></label>
                 <input
                   id="name"
                   name="name"
@@ -322,7 +322,7 @@ if (Astro.request.method === "POST") {
                 />
               </div>
               <div>
-                <label for="city" class="block text-sm font-medium text-foreground">Ciudad</label>
+                <label for="city" class="block text-sm font-medium text-foreground">Ciudad <span class="text-red-500">*</span></label>
                 <input
                   id="city"
                   name="city"
@@ -337,7 +337,7 @@ if (Astro.request.method === "POST") {
 
             <div class="grid gap-6 sm:grid-cols-2">
               <div>
-                <label for="email" class="block text-sm font-medium text-foreground">Correo electrónico</label>
+                <label for="email" class="block text-sm font-medium text-foreground">Correo electrónico <span class="text-red-500">*</span></label>
                 <input
                   id="email"
                   name="email"
@@ -349,7 +349,7 @@ if (Astro.request.method === "POST") {
                 />
               </div>
               <div>
-                <label for="phone" class="block text-sm font-medium text-foreground">Teléfono</label>
+                <label for="phone" class="block text-sm font-medium text-foreground">Teléfono <span class="text-red-500">*</span></label>
                 <input
                   id="phone"
                   name="phone"
