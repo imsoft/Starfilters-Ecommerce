@@ -69,40 +69,31 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   <!-- Breadcrumb Schema -->
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   
-  <div class="bg-background pt-24 pb-8">
-    <!-- Breadcrumb -->
-    <div class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-      <nav class="mb-8" aria-label="Breadcrumb">
-        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
-          <li>
-            <a href="/" class="hover:text-foreground transition-colors">Inicio</a>
-          </li>
-          <li>
-            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-            </svg>
-          </li>
-          <li class="text-foreground font-medium">Filtros de Aire</li>
-        </ol>
-      </nav>
-    </div>
-
-    <section
-      aria-labelledby="collection-heading"
-      class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8"
-    >
-      <div class="mb-12">
-        <h1
-          id="collection-heading"
-          class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-        >
-          Filtros de Aire
+  <!-- ── HERO ──────────────────────────────────────────────────────────── -->
+  <div class="bg-background pt-24 pb-0 sm:pt-32">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="mx-auto max-w-3xl text-center reveal">
+        <p class="text-base/7 font-semibold text-primary">
+          {lang === 'en' ? 'Star Filters' : 'Star Filters'}
+        </p>
+        <h1 class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl lg:text-balance">
+          {lang === 'en' ? 'Industrial Air Filters' : 'Filtros de Aire Industriales'}
         </h1>
-        <p class="mt-4 text-lg text-muted-foreground">
-          En Star Filters fabricamos filtros de aire diseñados para cumplir con los estándares más exigentes de la industria farmacéutica, electrónica y de manufactura avanzada. Cada tipo de filtro ofrece un nivel de protección y eficiencia adaptado a tu proceso productivo:
+        <p class="mt-6 text-lg text-muted-foreground leading-relaxed">
+          {lang === 'en'
+            ? 'We manufacture air filters designed to meet the most demanding standards in pharmaceutical, electronics, and advanced manufacturing industries. Each filter type offers the right level of protection and efficiency for your process.'
+            : 'Fabricamos filtros de aire diseñados para cumplir con los estándares más exigentes de la industria farmacéutica, electrónica y de manufactura avanzada. Cada tipo de filtro ofrece un nivel de protección y eficiencia adaptado a tu proceso productivo.'}
         </p>
       </div>
+    </div>
+  </div>
 
+  <!-- ── CATEGORÍAS ────────────────────────────────────────────────────── -->
+  <div class="bg-background py-16">
+    <section
+      aria-labelledby="collection-heading"
+      class="mx-auto max-w-7xl px-6 lg:px-8"
+    >
       <!-- Grid de categorías -->
       <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="categories-grid">
         {filterCategories.map((category) => {
@@ -152,13 +143,14 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         </div>
       )}
     </section>
+  </div>
 
     <!-- ── SERVICIO DE MANTENIMIENTO ─────────────────────────────────── -->
-    <div class="bg-muted/30 mt-24 py-20 border-t border-b border-border">
+    <div class="bg-muted/30 py-20 border-t border-border">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         <!-- Encabezado -->
-        <div class="text-center mb-14">
+        <div class="text-center mb-14 reveal">
           <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
             {lang === 'en' ? 'Maintenance Service' : 'Servicio de mantenimiento'}
           </p>
@@ -173,7 +165,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         </div>
 
         <!-- Galería de 3 fotos -->
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 reveal">
           <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
             <img
               src="/images/services/mantenimiento/mantenimiento-1.png"
@@ -248,11 +240,12 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     </div>
 
     <!-- ¿Por qué Star Filters? -->
-    <div class="mx-auto max-w-6xl px-4 mt-24 sm:px-6 lg:px-8">
-      <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl">
+    <div class="bg-background py-20 border-t border-border">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl reveal">
         {t('filters.whyStarFilters.title')}
       </h2>
-      <div class="mb-16 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 lg:gap-x-4">
+      <div class="mb-16 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 lg:gap-x-4 reveal">
         <div class="group flex cursor-default flex-col items-center text-center transition-colors">
           <img src="/images/category-filters/iconos filtros-01.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
           <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit1')}</span>
@@ -283,6 +276,26 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         </div>
       </div>
     </div>
-  </div>
+    </div>
 </WebsiteLayout>
+
+<style>
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.reveal').forEach(el => {
+    new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 }).observe(el);
+  });
+</script>
 

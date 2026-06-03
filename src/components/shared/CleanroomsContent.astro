@@ -10,17 +10,17 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 ---
 
 <!-- ── HERO: Título + Galería lado a lado ─────────────────────────────── -->
-<div class="bg-white pt-16 pb-0 overflow-hidden">
+<div class="bg-background pt-24 pb-0 sm:pt-32 overflow-hidden">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
     <div class="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-2 lg:items-center">
 
       <!-- Columna izquierda: texto + CTA -->
-      <div class="max-w-xl">
+      <div class="max-w-xl reveal">
         <p class="text-sm font-semibold text-primary uppercase tracking-widest">{t('cleanrooms.badge')}</p>
-        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl leading-[1.1]">
+        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl leading-[1.1]">
           {t('cleanrooms.title')}
         </h1>
-        <p class="mt-5 text-lg text-gray-600 leading-relaxed [&_strong]:font-semibold [&_strong]:text-gray-900" set:html={t('cleanrooms.description')} />
+        <p class="mt-5 text-lg text-muted-foreground leading-relaxed [&_strong]:font-semibold [&_strong]:text-foreground" set:html={t('cleanrooms.description')} />
         <div class="mt-8 flex flex-wrap gap-3">
           <a
             href={contactUrl}
@@ -30,7 +30,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
           </a>
           <a
             href={lang === 'en' ? '/en/success-cases' : '/casos-de-exito'}
-            class="inline-flex items-center gap-2 rounded-full border-2 border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors"
+            class="inline-flex items-center gap-2 rounded-full border-2 border-border px-6 py-3 text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
           >
             {lang === 'en' ? 'See projects' : 'Ver proyectos'}
           </a>
@@ -38,7 +38,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
       </div>
 
       <!-- Columna derecha: galería -->
-      <div class="relative">
+      <div class="relative reveal" style="transition-delay:100ms">
         <div class="grid grid-cols-2 gap-3 sm:gap-4">
           <figure class="space-y-2">
             <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
@@ -48,7 +48,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
                 class="block size-full object-cover"
               />
             </div>
-            <figcaption class="text-center text-xs text-gray-500 whitespace-pre-line">{t('cleanrooms.gallery.caption2')}</figcaption>
+            <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption2')}</figcaption>
           </figure>
           <figure class="mt-8 space-y-2">
             <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
@@ -58,7 +58,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
                 class="block size-full object-cover"
               />
             </div>
-            <figcaption class="text-center text-xs text-gray-500 whitespace-pre-line">{t('cleanrooms.gallery.caption1')}</figcaption>
+            <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption1')}</figcaption>
           </figure>
           <figure class="space-y-2">
             <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
@@ -68,7 +68,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
                 class="block size-full object-cover"
               />
             </div>
-            <figcaption class="text-center text-xs text-gray-500 whitespace-pre-line">{t('cleanrooms.gallery.caption4')}</figcaption>
+            <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption4')}</figcaption>
           </figure>
           <figure class="mt-8 space-y-2">
             <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
@@ -78,7 +78,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
                 class="block size-full object-cover"
               />
             </div>
-            <figcaption class="text-center text-xs text-gray-500 whitespace-pre-line">{t('cleanrooms.gallery.caption3')}</figcaption>
+            <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption3')}</figcaption>
           </figure>
         </div>
       </div>
@@ -88,71 +88,71 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 </div>
 
 <!-- ── STATS ──────────────────────────────────────────────────────────── -->
-<div class="bg-white py-14">
+<div class="bg-background py-14 border-t border-border">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <dl class="grid grid-cols-3 gap-x-6 gap-y-8 border-t border-gray-100 pt-10 text-center">
+    <dl class="grid grid-cols-3 gap-x-6 gap-y-8 text-center reveal">
       <div class="flex flex-col gap-y-1">
-        <dd class="text-5xl font-semibold tracking-tight text-gray-900">
+        <dd class="text-5xl font-semibold tracking-tight text-primary">
           <span class="counter-number" data-target="120">0</span>
         </dd>
-        <dt class="text-sm text-gray-500 mt-1">{t('cleanrooms.numbers.installations')}</dt>
+        <dt class="text-sm text-muted-foreground mt-1">{t('cleanrooms.numbers.installations')}</dt>
       </div>
       <div class="flex flex-col gap-y-1">
-        <dd class="text-5xl font-semibold tracking-tight text-gray-900">
+        <dd class="text-5xl font-semibold tracking-tight text-primary">
           <span class="counter-number" data-target="40">0</span>
         </dd>
-        <dt class="text-sm text-gray-500 mt-1">{t('cleanrooms.numbers.experience')}</dt>
+        <dt class="text-sm text-muted-foreground mt-1">{t('cleanrooms.numbers.experience')}</dt>
       </div>
       <div class="flex flex-col gap-y-1">
-        <dd class="text-5xl font-semibold tracking-tight text-gray-900">
+        <dd class="text-5xl font-semibold tracking-tight text-primary">
           <span class="counter-number" data-target="20">0</span>{t('cleanrooms.numbers.areaSuffix')}
         </dd>
-        <dt class="text-sm text-gray-500 mt-1">{t('cleanrooms.numbers.area')}</dt>
+        <dt class="text-sm text-muted-foreground mt-1">{t('cleanrooms.numbers.area')}</dt>
       </div>
     </dl>
   </div>
 </div>
 
 <!-- ── TEXTO + BENEFICIOS ─────────────────────────────────────────────── -->
-<div class="bg-gray-50 py-16">
+<div class="bg-muted/30 py-20 border-t border-border">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
     <div class="grid grid-cols-1 gap-x-12 gap-y-12 lg:grid-cols-2 lg:items-start">
 
-      <!-- Texto (2 párrafos clave) -->
-      <div>
-        <h2 class="text-2xl font-semibold text-gray-900 mb-6">{lang === 'en' ? 'What is a cleanroom?' : '¿Qué es un cuarto limpio?'}</h2>
-        <p class="text-base text-gray-600 leading-relaxed">{t('cleanrooms.experience.p2')}</p>
-        <p class="mt-5 text-base text-gray-600 leading-relaxed">{t('cleanrooms.experience.p3')}</p>
-        <p class="mt-5 text-sm text-gray-500 leading-relaxed [&_a]:text-primary [&_a]:hover:text-primary/80 [&_a]:font-medium" set:html={t('cleanrooms.experience.p4')} />
+      <!-- Texto -->
+      <div class="reveal">
+        <h2 class="text-2xl font-semibold text-foreground mb-6">{lang === 'en' ? 'What is a cleanroom?' : '¿Qué es un cuarto limpio?'}</h2>
+        <p class="text-base text-muted-foreground leading-relaxed">{t('cleanrooms.experience.p2')}</p>
+        <p class="mt-5 text-base text-muted-foreground leading-relaxed">{t('cleanrooms.experience.p3')}</p>
+        <p class="mt-5 text-sm text-muted-foreground leading-relaxed [&_a]:text-primary [&_a]:hover:text-primary/80 [&_a]:font-medium" set:html={t('cleanrooms.experience.p4')} />
       </div>
 
       <!-- Beneficios -->
-      <div>
-        <h2 class="text-2xl font-semibold text-gray-900 mb-8">{t('cleanrooms.cta.benefitsTitle')}</h2>
+      <div class="reveal" style="transition-delay:100ms">
+        <h2 class="text-2xl font-semibold text-foreground mb-8">{t('cleanrooms.cta.benefitsTitle')}</h2>
         <div class="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
           <div class="flex flex-col items-center text-center">
             <img src="/images/cleanrooms-page/Cuartos Limpios-01.png" alt="" class="h-12 w-12 object-contain" width="48" height="48" loading="lazy" />
-            <span class="mt-3 text-xs font-medium text-gray-700 leading-snug">{t('cleanrooms.cta.benefit1')}</span>
+            <span class="mt-3 text-xs font-medium text-foreground leading-snug">{t('cleanrooms.cta.benefit1')}</span>
           </div>
           <div class="flex flex-col items-center text-center">
             <img src="/images/cleanrooms-page/Cuartos Limpios-02.png" alt="" class="h-12 w-12 object-contain" width="48" height="48" loading="lazy" />
-            <span class="mt-3 text-xs font-medium text-gray-700 leading-snug">{t('cleanrooms.cta.benefit2')}</span>
+            <span class="mt-3 text-xs font-medium text-foreground leading-snug">{t('cleanrooms.cta.benefit2')}</span>
           </div>
           <div class="flex flex-col items-center text-center">
             <img src="/images/cleanrooms-page/Cuartos Limpios-03.png" alt="" class="h-12 w-12 object-contain" width="48" height="48" loading="lazy" />
-            <span class="mt-3 text-xs font-medium text-gray-700 leading-snug">{t('cleanrooms.cta.benefit3')}</span>
+            <span class="mt-3 text-xs font-medium text-foreground leading-snug">{t('cleanrooms.cta.benefit3')}</span>
           </div>
           <div class="flex flex-col items-center text-center">
             <img src="/images/cleanrooms-page/Cuartos Limpios-04.png" alt="" class="h-12 w-12 object-contain" width="48" height="48" loading="lazy" />
-            <span class="mt-3 text-xs font-medium text-gray-700 leading-snug">{t('cleanrooms.cta.benefit4')}</span>
+            <span class="mt-3 text-xs font-medium text-foreground leading-snug">{t('cleanrooms.cta.benefit4')}</span>
           </div>
           <div class="flex flex-col items-center text-center">
             <img src="/images/cleanrooms-page/Cuartos Limpios-05.png" alt="" class="h-12 w-12 object-contain" width="48" height="48" loading="lazy" />
-            <span class="mt-3 text-xs font-medium text-gray-700 leading-snug">{t('cleanrooms.cta.benefit5')}</span>
+            <span class="mt-3 text-xs font-medium text-foreground leading-snug">{t('cleanrooms.cta.benefit5')}</span>
           </div>
           <div class="flex flex-col items-center text-center">
             <img src="/images/cleanrooms-page/Cuartos Limpios-06.png" alt="" class="h-12 w-12 object-contain" width="48" height="48" loading="lazy" />
-            <span class="mt-3 text-xs font-medium text-gray-700 leading-snug">{t('cleanrooms.cta.benefit6')}</span>
+            <span class="mt-3 text-xs font-medium text-foreground leading-snug">{t('cleanrooms.cta.benefit6')}</span>
           </div>
         </div>
       </div>
@@ -162,9 +162,9 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 </div>
 
 <!-- ── PROCESO ─────────────────────────────────────────────────────────── -->
-<div class="bg-muted/30 py-20 border-t border-border">
+<div class="bg-background py-20 border-t border-border">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <div class="text-center mb-14">
+    <div class="text-center mb-14 reveal">
       <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
         {lang === 'en' ? 'How we work' : 'Cómo trabajamos'}
       </p>
@@ -216,7 +216,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
             : 'Inspeccionamos, limpiamos y reemplazamos filtros de aire para garantizar un rendimiento continuo y óptimo de tu área.',
         },
       ].map((step, i, arr) => (
-        <div class="relative flex flex-col items-center text-center">
+        <div class="reveal relative flex flex-col items-center text-center" style={`transition-delay: ${i * 80}ms`}>
           {i < arr.length - 1 && (
             <div class="hidden lg:block absolute top-7 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-border z-0"></div>
           )}
@@ -231,10 +231,10 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
   </div>
 </div>
 
-<!-- ── VIDEO (más pequeño, centrado) ─────────────────────────────────── -->
-<div class="bg-white py-16">
-  <div class="mx-auto max-w-4xl px-6 lg:px-8">
-    <h2 class="text-center text-2xl font-semibold text-gray-900 mb-8">
+<!-- ── VIDEO ──────────────────────────────────────────────────────────── -->
+<div class="bg-muted/30 py-16 border-t border-border">
+  <div class="mx-auto max-w-4xl px-6 lg:px-8 reveal">
+    <h2 class="text-center text-2xl font-semibold text-foreground mb-8">
       {lang === 'en' ? 'See our work' : 'Conoce nuestros proyectos'}
     </h2>
     <div class="rounded-2xl overflow-hidden shadow-lg">
@@ -254,29 +254,39 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
   whatsappMessage={lang === 'en' ? 'Hello, I would like more information about your cleanroom construction and installation services.' : 'Hola, me gustaría obtener más información sobre sus servicios de construcción e instalación de cuartos limpios.'}
 />
 
+<style>
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
 <script>
+  document.querySelectorAll('.reveal').forEach(el => {
+    new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 }).observe(el);
+  });
+
   document.addEventListener('DOMContentLoaded', () => {
     const counters = document.querySelectorAll('.counter-number');
     const duration = 1200;
 
-    const animateCounter = (el) => {
+    const animateCounter = (el: HTMLElement) => {
       const target = parseInt(el.getAttribute('data-target') || '0', 10);
       const startTime = performance.now();
-
-      const update = (currentTime) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+      const update = (now: number) => {
+        const progress = Math.min((now - startTime) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 2.5);
-        const current = Math.round(target * eased);
-        el.textContent = String(current);
-
-        if (progress < 1) {
-          requestAnimationFrame(update);
-        } else {
-          el.textContent = String(target);
-        }
+        el.textContent = String(Math.round(target * eased));
+        if (progress < 1) requestAnimationFrame(update);
+        else el.textContent = String(target);
       };
-
       requestAnimationFrame(update);
     };
 
@@ -284,7 +294,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const el = entry.target;
+            const el = entry.target as HTMLElement;
             if (!el.hasAttribute('data-animated')) {
               el.setAttribute('data-animated', 'true');
               animateCounter(el);
@@ -293,7 +303,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
           }
         });
       },
-      { threshold: 0.3, rootMargin: '0px 0px -50px 0px' }
+      { threshold: 0.3 }
     );
 
     counters.forEach((counter) => observer.observe(counter));
