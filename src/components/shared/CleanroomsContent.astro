@@ -273,39 +273,37 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
     }, { threshold: 0.1 }).observe(el);
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const counters = document.querySelectorAll('.counter-number');
-    const duration = 1200;
+  const counters = document.querySelectorAll('.counter-number');
+  const duration = 1200;
 
-    const animateCounter = (el: HTMLElement) => {
-      const target = parseInt(el.getAttribute('data-target') || '0', 10);
-      const startTime = performance.now();
-      const update = (now: number) => {
-        const progress = Math.min((now - startTime) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 2.5);
-        el.textContent = String(Math.round(target * eased));
-        if (progress < 1) requestAnimationFrame(update);
-        else el.textContent = String(target);
-      };
-      requestAnimationFrame(update);
+  const animateCounter = (el: HTMLElement) => {
+    const target = parseInt(el.getAttribute('data-target') || '0', 10);
+    const startTime = performance.now();
+    const update = (now: number) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 2.5);
+      el.textContent = String(Math.round(target * eased));
+      if (progress < 1) requestAnimationFrame(update);
+      else el.textContent = String(target);
     };
+    requestAnimationFrame(update);
+  };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            if (!el.hasAttribute('data-animated')) {
-              el.setAttribute('data-animated', 'true');
-              animateCounter(el);
-            }
-            observer.unobserve(el);
+  const counterObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          if (!el.hasAttribute('data-animated')) {
+            el.setAttribute('data-animated', 'true');
+            animateCounter(el);
           }
-        });
-      },
-      { threshold: 0.3 }
-    );
+          counterObserver.unobserve(el);
+        }
+      });
+    },
+    { threshold: 0.3 }
+  );
 
-    counters.forEach((counter) => observer.observe(counter));
-  });
+  counters.forEach((counter) => counterObserver.observe(counter));
 </script>
