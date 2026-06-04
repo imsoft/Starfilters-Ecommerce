@@ -73,8 +73,8 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   <div class="bg-background pt-24 pb-0 sm:pt-32">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
       <div class="mx-auto max-w-3xl text-center reveal">
-        <p class="text-base/7 font-semibold text-primary">
-          {lang === 'en' ? 'Star Filters' : 'Star Filters'}
+        <p class="text-sm font-semibold text-primary uppercase tracking-widest">
+          Star Filters
         </p>
         <h1 class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl lg:text-balance">
           {lang === 'en' ? 'Industrial Air Filters' : 'Filtros de Aire Industriales'}
@@ -101,31 +101,31 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           return (
             <a
               href={`${productsRoute}?category=${category.slug}`}
-              class="group category-card relative flex flex-col cursor-pointer transition-transform hover:scale-105"
+              class="group category-card flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300"
               data-name={category.name.toLowerCase()}
             >
-              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted shadow-md">
+              <div class="h-56 w-full overflow-hidden bg-muted">
                 <LazyImage
                   src={imageUrl}
                   alt={category.name}
-                  class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
+                  class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                 />
               </div>
-              <h3 class="mt-4 text-lg text-foreground font-semibold group-hover:text-foreground transition-colors">
-                {getCategoryName(category, lang)}
-              </h3>
-              {getCategoryDescription(category, lang) && (
-                <p class="mt-2 text-sm text-muted-foreground line-clamp-3">
-                  {getCategoryDescription(category, lang)}
-                </p>
-              )}
-              <div class="mt-auto pt-4">
-                <span class="inline-flex items-center text-sm font-medium text-primary group-hover:text-foreground transition-colors">
-                  Ver productos
-                  <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              <div class="flex flex-col flex-1 p-5">
+                <h3 class="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {getCategoryName(category, lang)}
+                </h3>
+                {getCategoryDescription(category, lang) && (
+                  <p class="mt-2 text-sm/6 text-muted-foreground line-clamp-3 flex-1">
+                    {getCategoryDescription(category, lang)}
+                  </p>
+                )}
+                <div class="mt-4 flex items-center gap-1 text-sm font-semibold text-primary">
+                  <span>{lang === 'en' ? 'View products' : 'Ver productos'}</span>
+                  <svg class="h-4 w-4 translate-x-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                   </svg>
-                </span>
+                </div>
               </div>
             </a>
           );
