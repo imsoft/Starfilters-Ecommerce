@@ -30,7 +30,7 @@ const industries = [
             class="group flex flex-col items-center justify-center gap-3 w-full"
             aria-label={`${t(item.labelKey)} — ${lang === 'en' ? 'See filters' : 'Ver filtros'}`}
           >
-            <div class="w-full aspect-square overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 group-hover:shadow-xl relative">
+            <div class="w-full aspect-square overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 group-hover:shadow-xl">
               <img
                 src={item.image}
                 alt=""
@@ -39,12 +39,6 @@ const industries = [
                 height="208"
                 loading="lazy"
               />
-              <!-- Overlay con CTA al hover -->
-              <div class="absolute inset-0 bg-primary/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-2xl">
-                <span class="text-white text-sm font-semibold px-4 text-center">
-                  {lang === 'en' ? 'See filters →' : 'Ver filtros →'}
-                </span>
-              </div>
             </div>
             <p class="text-center text-sm font-medium text-foreground transition-colors group-hover:text-primary sm:text-base">
               {t(item.labelKey)}
