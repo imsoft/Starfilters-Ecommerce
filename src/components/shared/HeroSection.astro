@@ -22,14 +22,13 @@ const youtubeId = heroType === 'video' ? getYouTubeId(heroVideo) : null;
     <!-- Fondo: video o imagen según configuración del admin -->
     <div class="absolute inset-0 z-0">
       {heroType === 'video' && youtubeId ? (
-        <iframe
-          class="pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2"
-          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&rel=0&disablekb=1`}
-          title="Hero video"
-          frameborder="0"
-          allow="autoplay; encrypted-media"
-          allowfullscreen
-        ></iframe>
+        <div class="absolute inset-0 overflow-hidden">
+          <div
+            id="hero-youtube"
+            data-video-id={youtubeId}
+            class="pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2"
+          ></div>
+        </div>
       ) : heroType === 'video' ? (
         <video
           class="h-full w-full object-cover"
@@ -51,6 +50,49 @@ const youtubeId = heroType === 'video' ? getYouTubeId(heroVideo) : null;
       )}
       <div class="absolute inset-0 bg-black/20"></div>
     </div>
+
+    {heroType === 'video' && youtubeId && (
+      <script is:inline>
+        (function () {
+          var el = document.getElementById('hero-youtube');
+          if (!el) return;
+          var videoId = el.getAttribute('data-video-id');
+          if (!videoId) return;
+
+          function createPlayer() {
+            new YT.Player('hero-youtube', {
+              videoId: videoId,
+              width: '100%',
+              height: '100%',
+              playerVars: {
+                autoplay: 1, mute: 1, controls: 0, modestbranding: 1,
+                playsinline: 1, rel: 0, disablekb: 1, fs: 0,
+                iv_load_policy: 3, showinfo: 0
+              },
+              events: {
+                onReady: function (e) { e.target.mute(); e.target.playVideo(); },
+                onStateChange: function (e) {
+                  if (e.data === YT.PlayerState.ENDED) { e.target.seekTo(0); e.target.playVideo(); }
+                }
+              }
+            });
+          }
+
+          if (window.YT && window.YT.Player) {
+            createPlayer();
+          } else {
+            var prev = window.onYouTubeIframeAPIReady;
+            window.onYouTubeIframeAPIReady = function () { if (prev) prev(); createPlayer(); };
+            if (!document.getElementById('youtube-iframe-api')) {
+              var tag = document.createElement('script');
+              tag.id = 'youtube-iframe-api';
+              tag.src = 'https://www.youtube.com/iframe_api';
+              document.head.appendChild(tag);
+            }
+          }
+        })();
+      </script>
+    )}
 
     <!-- Navbar encima de la imagen -->
     <div class="relative z-20">

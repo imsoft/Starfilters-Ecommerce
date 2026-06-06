@@ -8,7 +8,7 @@ import {
   getHeroVideo, updateHeroVideo,
 } from '@/lib/site-settings-service';
 import { uploadImage, deleteImage, getPublicIdFromUrl } from '@/lib/cloudinary';
-import { getYouTubeId, getYouTubeThumbnail } from '@/lib/video-utils';
+import { getYouTubeId } from '@/lib/video-utils';
 
 export const prerender = false;
 
@@ -141,14 +141,14 @@ const isVideoYouTube = !!heroVideoYouTubeId;
           {heroType === 'image' ? (
             <img src={heroImage} alt="Fondo actual" class="h-full w-full object-cover" onerror="this.src='/images/placeholder.svg'" />
           ) : isVideoYouTube ? (
-            <Fragment>
-              <img src={getYouTubeThumbnail(heroVideoYouTubeId!)} alt="Miniatura del video de YouTube" class="h-full w-full object-cover" />
-              <div class="absolute inset-0 flex items-center justify-center bg-black/30">
-                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow-lg">
-                  <svg class="h-6 w-6 translate-x-0.5 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                </div>
-              </div>
-            </Fragment>
+            <iframe
+              src={`https://www.youtube.com/embed/${heroVideoYouTubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideoYouTubeId}&modestbranding=1&rel=0&playsinline=1`}
+              title="Vista previa del video"
+              class="h-full w-full"
+              frameborder="0"
+              allow="autoplay; encrypted-media"
+              allowfullscreen
+            ></iframe>
           ) : (
             <video src={heroVideo} class="h-full w-full object-cover" muted loop autoplay playsinline></video>
           )}
