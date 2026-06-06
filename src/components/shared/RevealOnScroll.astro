@@ -1,0 +1,40 @@
+---
+// Activa la animación de entrada (.reveal) en todo el sitio.
+// El CSS de .reveal vive en global.css. Este script observa los elementos
+// con clase .reveal y les añade .visible cuando entran en pantalla.
+// Funciona en la carga inicial y en las transiciones de vista (ClientRouter).
+---
+
+<!-- Si el usuario no tiene JS, mostramos el contenido sin animación -->
+<noscript>
+  <style>
+    .reveal { opacity: 1 !important; transform: none !important; }
+  </style>
+</noscript>
+
+<script is:inline>
+  (function () {
+    function initReveal() {
+      var els = document.querySelectorAll('.reveal:not(.visible)');
+      if (!('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('visible'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function (entries, obs) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0, rootMargin: '0px 0px -10% 0px' });
+      els.forEach(function (el) { observer.observe(el); });
+    }
+
+    document.addEventListener('DOMContentLoaded', initReveal);
+    // Astro View Transitions (ClientRouter)
+    document.addEventListener('astro:page-load', initReveal);
+    // Por si el script se evalúa después de que el DOM ya cargó
+    if (document.readyState !== 'loading') initReveal();
+  })();
+</script>

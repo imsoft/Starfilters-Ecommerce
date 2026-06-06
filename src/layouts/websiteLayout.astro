@@ -3,6 +3,7 @@ import FooterSection from "@/components/shared/FooterSection.astro";
 import WhatsAppButton from "@/components/shared/WhatsAppButton.astro";
 import "../styles/global.css";
 import Navbar from "@/components/shared/Navbar.astro";
+import RevealOnScroll from "@/components/shared/RevealOnScroll.astro";
 import { ClientRouter } from "astro:transitions";
 
 export interface Props {
@@ -52,6 +53,7 @@ const noindex = noindexProp || import.meta.env.PUBLIC_NOINDEX === 'true';
     </main>
     <FooterSection />
     <WhatsAppButton />
+    <RevealOnScroll />
     <script
       src="https://api.leadwaycrm.com/js/external-tracking.js"
       data-tracking-id="tk_bb313237f99845bf8bd6ee7ad62f8806"

@@ -210,3 +210,24 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Animación de entrada uniforme en todo el sitio (aparición al hacer scroll) */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Accesibilidad: sin animación si el usuario lo prefiere */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
