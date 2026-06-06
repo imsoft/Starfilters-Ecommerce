@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
+import PageHero from "@/components/shared/PageHero.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import { getActiveCategories } from "@/lib/filter-category-service";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
@@ -70,23 +71,16 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   
   <!-- ── HERO ──────────────────────────────────────────────────────────── -->
-  <div class="bg-background pt-24 pb-0 sm:pt-32">
-    <div class="mx-auto max-w-7xl px-6 lg:px-8">
-      <div class="mx-auto max-w-3xl text-center reveal">
-        <p class="text-sm font-semibold text-primary uppercase tracking-widest">
-          Star Filters
-        </p>
-        <h1 class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl lg:text-balance">
-          {lang === 'en' ? 'Industrial Air Filters' : 'Filtros de Aire Industriales'}
-        </h1>
-        <p class="mt-6 text-lg text-muted-foreground leading-relaxed">
-          {lang === 'en'
-            ? 'We manufacture air filters designed to meet the most demanding standards in pharmaceutical, electronics, and advanced manufacturing industries. Each filter type offers the right level of protection and efficiency for your process.'
-            : 'Fabricamos filtros de aire diseñados para cumplir con los estándares más exigentes de la industria farmacéutica, electrónica y de manufactura avanzada. Cada tipo de filtro ofrece un nivel de protección y eficiencia adaptado a tu proceso productivo.'}
-        </p>
-      </div>
-    </div>
-  </div>
+  <PageHero
+    badge="Star Filters"
+    title={lang === 'en' ? 'Industrial Air Filters' : 'Filtros de Aire Industriales'}
+    description={lang === 'en'
+      ? 'We manufacture air filters designed to meet the most demanding standards in pharmaceutical, electronics, and advanced manufacturing industries. Each filter type offers the right level of protection and efficiency for your process.'
+      : 'Fabricamos filtros de aire diseñados para cumplir con los estándares más exigentes de la industria farmacéutica, electrónica y de manufactura avanzada. Cada tipo de filtro ofrece un nivel de protección y eficiencia adaptado a tu proceso productivo.'}
+    image="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
+    primaryCta={{ label: lang === 'en' ? 'View products' : 'Ver productos', href: productsRoute }}
+    secondaryCta={{ label: lang === 'en' ? 'Request a quote' : 'Solicitar cotización', href: lang === 'en' ? '/en/contact' : '/contacto' }}
+  />
 
   <!-- ── CATEGORÍAS ────────────────────────────────────────────────────── -->
   <div class="bg-background py-16">

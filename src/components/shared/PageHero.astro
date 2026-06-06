@@ -1,0 +1,87 @@
+---
+// Hero impactante y uniforme para las páginas internas:
+// foto a sangre completa + overlay azul de marca + título grande, badge y CTAs.
+// El navbar (absolute, semitransparente) flota encima.
+
+interface CTA {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  badge?: string;
+  title: string;
+  description?: string;
+  image: string;
+  imagePosition?: string;
+  primaryCta?: CTA;
+  secondaryCta?: CTA;
+}
+
+const {
+  badge,
+  title,
+  description,
+  image,
+  imagePosition = 'center',
+  primaryCta,
+  secondaryCta,
+} = Astro.props;
+---
+
+<section class="relative isolate overflow-hidden -mt-16">
+  <!-- Foto de fondo -->
+  <img
+    src={image}
+    alt=""
+    aria-hidden="true"
+    class="absolute inset-0 -z-10 h-full w-full object-cover"
+    style={`object-position: ${imagePosition};`}
+  />
+  <!-- Overlay azul de marca (duotono) -->
+  <div class="absolute inset-0 -z-10 bg-primary/80 mix-blend-multiply"></div>
+  <!-- Contraste para el texto (más oscuro a la izquierda) -->
+  <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/55 via-black/25 to-transparent"></div>
+
+  <div class="mx-auto max-w-7xl px-6 lg:px-8 pt-32 pb-20 sm:pt-40 sm:pb-28 lg:pt-44 lg:pb-32">
+    <div class="max-w-2xl reveal">
+      {badge && (
+        <p class="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white ring-1 ring-inset ring-white/30 backdrop-blur-sm">
+          {badge}
+        </p>
+      )}
+      <h1 class="mt-5 text-4xl font-bold tracking-tight text-balance text-white sm:text-5xl lg:text-6xl leading-[1.05]">
+        {title}
+      </h1>
+      {description && (
+        <p
+          class="mt-6 max-w-xl text-lg leading-relaxed text-white/90 whitespace-pre-line [&_strong]:font-semibold [&_strong]:text-white"
+          set:html={description}
+        />
+      )}
+      {(primaryCta || secondaryCta) && (
+        <div class="mt-9 flex flex-wrap gap-4">
+          {primaryCta && (
+            <a
+              href={primaryCta.href}
+              class="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-primary shadow-lg hover:bg-white/90 transition-colors"
+            >
+              {primaryCta.label}
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </a>
+          )}
+          {secondaryCta && (
+            <a
+              href={secondaryCta.href}
+              class="inline-flex items-center gap-2 rounded-full border-2 border-white/70 px-7 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            >
+              {secondaryCta.label}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+</section>

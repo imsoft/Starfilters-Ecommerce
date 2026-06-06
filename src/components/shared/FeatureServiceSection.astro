@@ -1,5 +1,6 @@
 ---
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import PageHero from "@/components/shared/PageHero.astro";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -50,22 +51,22 @@ const steps = lang === 'en'
     ];
 ---
 
+<!-- ── HERO ──────────────────────────────────────────────────────────── -->
+<PageHero
+  badge={t('services.badge')}
+  title={t('services.title')}
+  description={t('services.description')}
+  image="/images/home-page/Validacion%20Cuartos%20Limpios.jpg"
+  primaryCta={{ label: lang === 'en' ? 'Request a quote' : 'Solicitar cotización', href: lang === 'en' ? '/en/contact' : '/contacto' }}
+  secondaryCta={{ label: lang === 'en' ? 'See projects' : 'Ver proyectos', href: lang === 'en' ? '/en/success-cases' : '/casos-de-exito' }}
+/>
+
 <!-- ── Servicios ─────────────────────────────────────────────────────── -->
-<div class="bg-background pt-24 pb-12 sm:pt-32 sm:pb-16">
+<div class="bg-background py-20 sm:py-24">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
 
-    <div class="mx-auto max-w-4xl lg:text-center reveal">
-      <h2 class="text-sm font-semibold text-primary uppercase tracking-widest">{t('services.badge')}</h2>
-      <p class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl lg:text-balance">
-        {t('services.title')}
-      </p>
-      <p class="mt-6 text-lg/8 text-muted-foreground whitespace-pre-line">
-        {t('services.description')}
-      </p>
-    </div>
-
     <!-- Cards de servicios -->
-    <div class="mx-auto mt-16 max-w-7xl sm:mt-20 lg:mt-24">
+    <div class="mx-auto max-w-7xl">
       <dl class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
         {services.map((s, i) => (
           <div class="reveal service-card group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300"

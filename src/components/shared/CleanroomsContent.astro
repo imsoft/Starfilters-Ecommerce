@@ -2,6 +2,7 @@
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import VideoSection from "@/components/shared/VideoSection.astro";
 import SplitCTA from "@/components/shared/SplitCTA.astro";
+import PageHero from "@/components/shared/PageHero.astro";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -9,80 +10,64 @@ const t = useTranslations(lang);
 const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 ---
 
-<!-- ── HERO: Título + Galería lado a lado ─────────────────────────────── -->
-<div class="bg-background pt-24 pb-0 sm:pt-32 overflow-hidden">
+<!-- ── HERO ──────────────────────────────────────────────────────────── -->
+<PageHero
+  badge={t('cleanrooms.badge')}
+  title={t('cleanrooms.title')}
+  description={t('cleanrooms.description')}
+  image="/images/home-page/Cuarto%20Limpio%20Sala%20Blanca%20ISO%2014644.JPG"
+  primaryCta={{ label: lang === 'en' ? 'Request a quote' : 'Solicitar cotización', href: contactUrl }}
+  secondaryCta={{ label: lang === 'en' ? 'See projects' : 'Ver proyectos', href: lang === 'en' ? '/en/success-cases' : '/casos-de-exito' }}
+/>
+
+<!-- ── GALERÍA ────────────────────────────────────────────────────────── -->
+<div class="bg-background py-16 sm:py-20">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <div class="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-2 lg:items-center">
-
-      <!-- Columna izquierda: texto + CTA -->
-      <div class="max-w-xl reveal">
-        <p class="text-sm font-semibold text-primary uppercase tracking-widest">{t('cleanrooms.badge')}</p>
-        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl leading-[1.1]">
-          {t('cleanrooms.title')}
-        </h1>
-        <p class="mt-5 text-lg text-muted-foreground leading-relaxed [&_strong]:font-semibold [&_strong]:text-foreground" set:html={t('cleanrooms.description')} />
-        <div class="mt-8 flex flex-wrap gap-3">
-          <a
-            href={contactUrl}
-            class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
-          >
-            {lang === 'en' ? 'Request a quote' : 'Solicitar cotización'}
-          </a>
-          <a
-            href={lang === 'en' ? '/en/success-cases' : '/casos-de-exito'}
-            class="inline-flex items-center gap-2 rounded-full border-2 border-border px-6 py-3 text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
-          >
-            {lang === 'en' ? 'See projects' : 'Ver proyectos'}
-          </a>
+    <div class="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+      <figure class="reveal space-y-2">
+        <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
+          <img
+            src="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
+            alt={lang === 'en' ? 'Star Filters cleanroom construction' : 'Construcción de cuartos limpios Star Filters'}
+            class="block size-full object-cover transition-transform duration-500 hover:scale-105"
+            loading="lazy"
+          />
         </div>
-      </div>
-
-      <!-- Columna derecha: galería -->
-      <div class="relative reveal" style="transition-delay:100ms">
-        <div class="grid grid-cols-2 gap-3 sm:gap-4">
-          <figure class="space-y-2">
-            <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
-              <img
-                src="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
-                alt={lang === 'en' ? 'Star Filters cleanroom construction' : 'Construcción de cuartos limpios Star Filters'}
-                class="block size-full object-cover"
-              />
-            </div>
-            <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption2')}</figcaption>
-          </figure>
-          <figure class="mt-8 space-y-2">
-            <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
-              <img
-                src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
-                alt={lang === 'en' ? 'Star Filters HEPA filtration system' : 'Filtros Star en cuarto limpio'}
-                class="block size-full object-cover"
-              />
-            </div>
-            <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption1')}</figcaption>
-          </figure>
-          <figure class="space-y-2">
-            <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
-              <img
-                src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
-                alt={lang === 'en' ? 'ISO 14644 certification' : 'Certificación ISO 14644 para cuartos limpios'}
-                class="block size-full object-cover"
-              />
-            </div>
-            <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption4')}</figcaption>
-          </figure>
-          <figure class="mt-8 space-y-2">
-            <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
-              <img
-                src="/images/cleanrooms-page/Puerta%20Giratoria%20Star%20Filters.JPG"
-                alt={lang === 'en' ? 'Star Filters revolving airlock door' : 'Puerta giratoria para cuartos limpios Star Filters'}
-                class="block size-full object-cover"
-              />
-            </div>
-            <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption3')}</figcaption>
-          </figure>
+        <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption2')}</figcaption>
+      </figure>
+      <figure class="reveal space-y-2" style="transition-delay:80ms">
+        <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
+          <img
+            src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
+            alt={lang === 'en' ? 'Star Filters HEPA filtration system' : 'Filtros Star en cuarto limpio'}
+            class="block size-full object-cover transition-transform duration-500 hover:scale-105"
+            loading="lazy"
+          />
         </div>
-      </div>
-
+        <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption1')}</figcaption>
+      </figure>
+      <figure class="reveal space-y-2" style="transition-delay:160ms">
+        <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
+          <img
+            src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
+            alt={lang === 'en' ? 'ISO 14644 certification' : 'Certificación ISO 14644 para cuartos limpios'}
+            class="block size-full object-cover transition-transform duration-500 hover:scale-105"
+            loading="lazy"
+          />
+        </div>
+        <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption4')}</figcaption>
+      </figure>
+      <figure class="reveal space-y-2" style="transition-delay:240ms">
+        <div class="aspect-square overflow-hidden rounded-xl shadow-lg outline-1 -outline-offset-1 outline-black/10">
+          <img
+            src="/images/cleanrooms-page/Puerta%20Giratoria%20Star%20Filters.JPG"
+            alt={lang === 'en' ? 'Star Filters revolving airlock door' : 'Puerta giratoria para cuartos limpios Star Filters'}
+            class="block size-full object-cover transition-transform duration-500 hover:scale-105"
+            loading="lazy"
+          />
+        </div>
+        <figcaption class="text-center text-xs text-muted-foreground whitespace-pre-line">{t('cleanrooms.gallery.caption3')}</figcaption>
+      </figure>
     </div>
   </div>
 </div>
