@@ -71,6 +71,7 @@ const currentPath = Astro.url.pathname;
           <!-- Navigation -->
           <nav class="flex flex-1 flex-col">
             <ul role="list" class="flex flex-1 flex-col gap-y-7">
+              <!-- General -->
               <li>
                 <div class="px-2 mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">General</div>
                 <ul role="list" class="-mx-2 space-y-1">
@@ -79,8 +80,8 @@ const currentPath = Astro.url.pathname;
                       href="/admin/dashboard"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/dashboard')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,11 +92,33 @@ const currentPath = Astro.url.pathname;
                   </li>
                   <li>
                     <a
+                      href="/admin/users"
+                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                        currentPath.startsWith('/admin/users')
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                      }`}
+                    >
+                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                      </svg>
+                      Usuarios
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <!-- Tienda -->
+              <li>
+                <div class="px-2 mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Tienda</div>
+                <ul role="list" class="-mx-2 space-y-1">
+                  <li>
+                    <a
                       href="/admin/products"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/products')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,8 +132,8 @@ const currentPath = Astro.url.pathname;
                       href="/admin/filter-categories"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/filter-categories')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,8 +147,8 @@ const currentPath = Astro.url.pathname;
                       href="/admin/orders"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/orders')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,11 +159,33 @@ const currentPath = Astro.url.pathname;
                   </li>
                   <li>
                     <a
+                      href="/admin/discount-codes"
+                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                        currentPath.startsWith('/admin/discount-codes')
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                      }`}
+                    >
+                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                      </svg>
+                      Códigos Descuento
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <!-- Contenido -->
+              <li>
+                <div class="px-2 mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Contenido</div>
+                <ul role="list" class="-mx-2 space-y-1">
+                  <li>
+                    <a
                       href="/admin/blog"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/blog')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,56 +196,11 @@ const currentPath = Astro.url.pathname;
                   </li>
                   <li>
                     <a
-                      href="/admin/users"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/users')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                      </svg>
-                      Usuarios
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/admin/discount-codes"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/discount-codes')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                      </svg>
-                      Códigos Descuento
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/admin/benefits"
-                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                        currentPath.startsWith('/admin/benefits')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                      </svg>
-                      Beneficios Banner
-                    </a>
-                  </li>
-                  <li>
-                    <a
                       href="/admin/portfolio"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/portfolio')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,14 +214,29 @@ const currentPath = Astro.url.pathname;
                       href="/admin/testimonials"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/testimonials')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"></path>
                       </svg>
                       Testimonios
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/admin/benefits"
+                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                        currentPath.startsWith('/admin/benefits')
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                      }`}
+                    >
+                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                      </svg>
+                      Beneficios Banner
                     </a>
                   </li>
                 </ul>
@@ -236,8 +251,8 @@ const currentPath = Astro.url.pathname;
                       href="/admin/settings/contact"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/settings/contact')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,8 +266,8 @@ const currentPath = Astro.url.pathname;
                       href="/admin/settings/whatsapp"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/settings/whatsapp')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,8 +281,8 @@ const currentPath = Astro.url.pathname;
                       href="/admin/settings/hero"
                       class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                         currentPath.startsWith('/admin/settings/hero')
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                       }`}
                     >
                       <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,7 +301,7 @@ const currentPath = Astro.url.pathname;
                     <li>
                       <a
                         href="/"
-                        class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-muted-foreground hover:bg-primary/10 hover:text-primary"
                       >
                         <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -297,7 +312,7 @@ const currentPath = Astro.url.pathname;
                     <li>
                       <a
                         href="/logout"
-                        class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-muted-foreground hover:bg-primary/10 hover:text-primary"
                       >
                         <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
@@ -347,18 +362,29 @@ const currentPath = Astro.url.pathname;
                     href="/admin/dashboard"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/dashboard')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Dashboard
                   </a>
                   <a
+                    href="/admin/users"
+                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
+                      currentPath.startsWith('/admin/users')
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
+                    }`}
+                  >
+                    Usuarios
+                  </a>
+                  <div class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Tienda</div>
+                  <a
                     href="/admin/products"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/products')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Productos
@@ -367,8 +393,8 @@ const currentPath = Astro.url.pathname;
                     href="/admin/filter-categories"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/filter-categories')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Categorías Filtros
@@ -377,58 +403,39 @@ const currentPath = Astro.url.pathname;
                     href="/admin/orders"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/orders')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Órdenes
                   </a>
                   <a
+                    href="/admin/discount-codes"
+                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
+                      currentPath.startsWith('/admin/discount-codes')
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
+                    }`}
+                  >
+                    Códigos Descuento
+                  </a>
+                  <div class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Contenido</div>
+                  <a
                     href="/admin/blog"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/blog')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Blog
                   </a>
                   <a
-                    href="/admin/users"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/users')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Usuarios
-                  </a>
-                  <a
-                    href="/admin/discount-codes"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/discount-codes')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Códigos Descuento
-                  </a>
-                  <a
-                    href="/admin/benefits"
-                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
-                      currentPath.startsWith('/admin/benefits')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    Beneficios Banner
-                  </a>
-                  <a
                     href="/admin/portfolio"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/portfolio')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Galería Proyectos
@@ -437,19 +444,29 @@ const currentPath = Astro.url.pathname;
                     href="/admin/testimonials"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/testimonials')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Testimonios
+                  </a>
+                  <a
+                    href="/admin/benefits"
+                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
+                      currentPath.startsWith('/admin/benefits')
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
+                    }`}
+                  >
+                    Beneficios Banner
                   </a>
                   <div class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Configuración</div>
                   <a
                     href="/admin/settings/contact"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/settings/contact')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Teléfonos
@@ -458,8 +475,8 @@ const currentPath = Astro.url.pathname;
                     href="/admin/settings/whatsapp"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/settings/whatsapp')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     WhatsApp
@@ -468,8 +485,8 @@ const currentPath = Astro.url.pathname;
                     href="/admin/settings/hero"
                     class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
                       currentPath.startsWith('/admin/settings/hero')
-                        ? 'bg-muted'
-                        : 'hover:bg-muted'
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
                     }`}
                   >
                     Hero (inicio)
@@ -478,13 +495,13 @@ const currentPath = Astro.url.pathname;
                 <div class="py-6">
                   <a
                     href="/"
-                    class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground hover:bg-muted"
+                    class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground hover:bg-primary/10"
                   >
                     Ver Sitio Web
                   </a>
                   <a
                     href="/logout"
-                    class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground hover:bg-muted"
+                    class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground hover:bg-primary/10"
                   >
                     Cerrar Sesión
                   </a>
@@ -559,7 +576,7 @@ const currentPath = Astro.url.pathname;
                 >
                   <a
                     href="/admin/profile"
-                    class="block px-3 py-1 text-sm leading-6 text-foreground hover:bg-muted"
+                    class="block px-3 py-1 text-sm leading-6 text-foreground hover:bg-primary/10"
                     role="menuitem"
                     tabindex="-1"
                   >
@@ -567,7 +584,7 @@ const currentPath = Astro.url.pathname;
                   </a>
                   <a
                     href="/logout"
-                    class="block px-3 py-1 text-sm leading-6 text-foreground hover:bg-muted"
+                    class="block px-3 py-1 text-sm leading-6 text-foreground hover:bg-primary/10"
                     role="menuitem"
                     tabindex="-1"
                   >
