@@ -98,19 +98,6 @@ const isVideoYouTube = !!heroVideoYouTubeId;
 
     <!-- ── Vista previa del fondo activo ──────────────────────────────── -->
     <div class="mb-8 rounded-2xl border-2 border-primary/30 bg-primary/5 overflow-hidden">
-      <div class="flex items-center justify-between gap-3 px-5 py-3 border-b border-primary/20 bg-primary/10">
-        <div class="flex items-center gap-2">
-          <span class="relative flex h-2.5 w-2.5">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500"></span>
-          </span>
-          <p class="font-semibold text-gray-900">
-            Esto es lo que se ve ahora en la portada:
-            <span class="text-primary">{heroType === 'video' ? (isVideoYouTube ? 'Video de YouTube' : 'Video') : 'Imagen'}</span>
-          </p>
-        </div>
-      </div>
-
       <div class="p-5">
         <!-- Preview visual 16:9 -->
         <div class="relative mx-auto aspect-video w-full max-w-xl overflow-hidden rounded-xl border border-gray-200 bg-gray-900 shadow-sm">
@@ -129,7 +116,6 @@ const isVideoYouTube = !!heroVideoYouTubeId;
             <video src={heroVideo} class="h-full w-full object-cover" muted loop autoplay playsinline></video>
           )}
         </div>
-        <p class="mt-3 text-center text-xs text-gray-500 break-all">{heroType === 'video' ? heroVideo : heroImage}</p>
       </div>
     </div>
 
