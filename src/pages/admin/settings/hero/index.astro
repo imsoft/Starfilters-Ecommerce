@@ -56,18 +56,6 @@ if (Astro.request.method === "POST") {
         success = "Imagen del Hero actualizada y activada";
       }
 
-    // ── URL de imagen ─────────────────────────────────────────────────
-    } else if (action === "image_url") {
-      const url = formData.get("hero_image_url") as string;
-      if (!url) { error = "Ingresa una URL"; }
-      else {
-        await updateHeroImage(url);
-        await updateHeroType('image');
-        heroImage = url;
-        heroType  = 'image';
-        success = "URL de imagen activada en el Hero";
-      }
-
     // ── Subir video ───────────────────────────────────────────────────
     } else if (action === "upload_video") {
       const file = formData.get("hero_video") as File;
@@ -80,18 +68,6 @@ if (Astro.request.method === "POST") {
         heroVideo = url;
         heroType  = 'video';
         success = "Video del Hero actualizado y activado";
-      }
-
-    // ── URL de video ──────────────────────────────────────────────────
-    } else if (action === "video_url") {
-      const url = formData.get("hero_video_url") as string;
-      if (!url) { error = "Ingresa una URL"; }
-      else {
-        await updateHeroVideo(url);
-        await updateHeroType('video');
-        heroVideo = url;
-        heroType  = 'video';
-        success = "URL de video activada en el Hero";
       }
     }
   } catch (err) {
@@ -110,7 +86,7 @@ const isVideoYouTube = !!heroVideoYouTubeId;
 
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">Configuración del Hero</h1>
-      <p class="mt-2 text-gray-600">Elige si el fondo de la portada es un <strong>video</strong> o una <strong>imagen</strong>, y sube el archivo o pega la URL.</p>
+      <p class="mt-2 text-gray-600">Elige si el fondo de la portada es un <strong>video</strong> o una <strong>imagen</strong> y sube el archivo desde tu computadora.</p>
     </div>
 
     {error && (
@@ -186,25 +162,6 @@ const isVideoYouTube = !!heroVideoYouTubeId;
             </button>
           </form>
         </div>
-
-        <!-- URL de video -->
-        <div class="rounded-lg border border-gray-200 bg-white p-5">
-          <p class="text-sm font-semibold text-gray-700 mb-1">O pegar un enlace de YouTube</p>
-          <p class="text-xs text-gray-400 mb-3">Pega el enlace de un video de YouTube (ej. https://youtu.be/ABC123) o la URL de un archivo .mp4.</p>
-          <form method="POST" class="space-y-3">
-            <input type="hidden" name="action" value="video_url" />
-            <input
-              type="url"
-              name="hero_video_url"
-              value={heroVideo}
-              placeholder="https://youtu.be/tu-video"
-              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <button type="submit" class="w-full rounded-lg bg-gray-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors">
-              Guardar enlace y activar video
-            </button>
-          </form>
-        </div>
       </div>
 
       <!-- ── Columna IMAGEN ────────────────────────────────────────────── -->
@@ -238,25 +195,6 @@ const isVideoYouTube = !!heroVideoYouTubeId;
             <p class="text-xs text-gray-400">JPG, PNG o WebP. Recomendado: 1920×1080 px.</p>
             <button type="submit" class="w-full rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition-colors">
               Subir y activar imagen
-            </button>
-          </form>
-        </div>
-
-        <!-- URL de imagen -->
-        <div class="rounded-lg border border-gray-200 bg-white p-5">
-          <p class="text-sm font-semibold text-gray-700 mb-1">O pegar URL de imagen</p>
-          <p class="text-xs text-gray-400 mb-3">Debe ser un enlace directo a la imagen (termina en .jpg, .png o .webp). No sirven enlaces de Google Imágenes ni de Drive. Si la abres en el navegador, debe verse solo la imagen.</p>
-          <form method="POST" class="space-y-3">
-            <input type="hidden" name="action" value="image_url" />
-            <input
-              type="url"
-              name="hero_image_url"
-              value={heroType === 'image' ? heroImage : ''}
-              placeholder="https://ejemplo.com/imagen.jpg"
-              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-            />
-            <button type="submit" class="w-full rounded-lg bg-gray-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors">
-              Guardar URL y activar imagen
             </button>
           </form>
         </div>
