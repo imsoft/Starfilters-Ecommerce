@@ -2,6 +2,7 @@
 import Navbar from "./Navbar.astro";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import { getHeroType, getHeroImage, getHeroVideo } from "@/lib/site-settings-service";
+import { getYouTubeId } from "@/lib/video-utils";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -9,6 +10,9 @@ const t = useTranslations(lang);
 const heroType  = await getHeroType();
 const heroImage = await getHeroImage();
 const heroVideo = await getHeroVideo();
+
+// Si el video es de YouTube, lo mostramos con un iframe de fondo; si no, como <video> (.mp4)
+const youtubeId = heroType === 'video' ? getYouTubeId(heroVideo) : null;
 ---
 
 <div class="bg-background p-3 sm:p-4 min-h-screen">
@@ -17,7 +21,16 @@ const heroVideo = await getHeroVideo();
 
     <!-- Fondo: video o imagen según configuración del admin -->
     <div class="absolute inset-0 z-0">
-      {heroType === 'video' ? (
+      {heroType === 'video' && youtubeId ? (
+        <iframe
+          class="pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2"
+          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&rel=0&disablekb=1`}
+          title="Hero video"
+          frameborder="0"
+          allow="autoplay; encrypted-media"
+          allowfullscreen
+        ></iframe>
+      ) : heroType === 'video' ? (
         <video
           class="h-full w-full object-cover"
           autoplay
