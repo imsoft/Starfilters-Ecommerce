@@ -138,7 +138,9 @@ const isVideoYouTube = !!heroVideoYouTubeId;
               allowfullscreen
             ></iframe>
           ) : (
-            <video src={heroVideo} class="h-full w-full object-cover" muted loop autoplay playsinline></video>
+            <video class="h-full w-full object-cover" muted loop autoplay playsinline preload="auto" poster="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg">
+              <source src={heroVideo} type="video/mp4" />
+            </video>
           )}
         </div>
       </div>
@@ -325,7 +327,7 @@ const isVideoYouTube = !!heroVideoYouTubeId;
             // Actualizar la vista previa del fondo activo con el nuevo video
             if (data.heroVideo && activePreview) {
               activePreview.innerHTML =
-                '<video src="' + data.heroVideo + '" class="h-full w-full object-cover" muted loop autoplay playsinline></video>';
+                '<video class="h-full w-full object-cover" muted loop autoplay playsinline preload="auto" poster="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"><source src="' + data.heroVideo + '" type="video/mp4"></video>';
             }
             spinner.classList.add("hidden");
             label.textContent = "Subir y activar video";
