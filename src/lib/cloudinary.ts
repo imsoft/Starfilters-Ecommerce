@@ -1,5 +1,8 @@
 import { v2 as cloudinary } from 'cloudinary';
 import type { UploadApiResponse } from 'cloudinary';
+import { writeFile, unlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 // Configurar Cloudinary
 const cloudName = import.meta.env.CLOUDINARY_CLOUD_NAME;
@@ -89,6 +92,76 @@ export async function uploadImage(
       throw new Error(`Error al subir la imagen: ${error.message}`);
     }
     throw new Error('Error al subir la imagen');
+  }
+}
+
+/**
+ * Sube un VIDEO a Cloudinary usando subida por chunks (upload_large).
+ *
+ * A diferencia de uploadImage (que usa un data-URI en base64, limitado a ~10 MB),
+ * esta función escribe el buffer a un archivo temporal y lo sube en partes,
+ * lo que permite manejar videos grandes de forma confiable.
+ *
+ * @param file - Buffer del video
+ * @param options - Carpeta y public_id de destino
+ * @returns URL segura del video subido
+ */
+export async function uploadVideo(
+  file: Buffer,
+  options: { folder: string; public_id?: string; overwrite?: boolean }
+): Promise<string> {
+  // Validar credenciales antes de intentar subir
+  const cloudName = import.meta.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = import.meta.env.CLOUDINARY_API_KEY;
+  const apiSecret = import.meta.env.CLOUDINARY_API_SECRET;
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    const missing = [];
+    if (!cloudName) missing.push('CLOUDINARY_CLOUD_NAME');
+    if (!apiKey) missing.push('CLOUDINARY_API_KEY');
+    if (!apiSecret) missing.push('CLOUDINARY_API_SECRET');
+    throw new Error(`Credenciales de Cloudinary faltantes: ${missing.join(', ')}`);
+  }
+
+  // Escribir a un archivo temporal para poder subir por chunks
+  const tmpPath = join(tmpdir(), `hero-vid-${Date.now()}.tmp`);
+  await writeFile(tmpPath, file);
+
+  console.log('📤 Subiendo video a Cloudinary (chunked):', {
+    folder: options.folder,
+    public_id: options.public_id,
+    cloud_name: cloudName,
+    size_mb: (file.length / (1024 * 1024)).toFixed(1),
+  });
+
+  try {
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      cloudinary.uploader.upload_large(
+        tmpPath,
+        {
+          folder: options.folder,
+          public_id: options.public_id,
+          overwrite: options.overwrite ?? true,
+          resource_type: 'video',
+          chunk_size: 6_000_000, // 6 MB por chunk (mínimo permitido: 5 MB)
+        },
+        (err, res) => {
+          if (err) return reject(err);
+          if (!res?.secure_url) return reject(new Error('Cloudinary no devolvió una URL'));
+          resolve(res as UploadApiResponse);
+        }
+      );
+    });
+
+    console.log('✅ Video subido exitosamente:', result.secure_url);
+    return result.secure_url;
+  } catch (error: any) {
+    console.error('❌ Error subiendo video a Cloudinary:', error?.message || error);
+    if (error?.http_code) console.error('   HTTP Code:', error.http_code);
+    throw new Error(`Error al subir el video: ${error?.message || 'desconocido'}`);
+  } finally {
+    // Limpiar el archivo temporal sin importar el resultado
+    await unlink(tmpPath).catch(() => {});
   }
 }
 
