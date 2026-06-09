@@ -24,6 +24,9 @@ let heroVideo = await getHeroVideo();
 let error: string | null = null;
 let success: string | null = null;
 
+// ¿La petición viene por AJAX (subida con barra de progreso)? -> responder JSON
+const wantsJson = Astro.request.headers.get("x-requested-with") === "XMLHttpRequest";
+
 if (Astro.request.method === "POST") {
   try {
     const formData = await Astro.request.formData();
@@ -79,6 +82,23 @@ if (Astro.request.method === "POST") {
     console.error("Error en hero settings:", err);
     error = err instanceof Error ? err.message : "Error desconocido";
   }
+
+  // Respuesta JSON para subidas AJAX (no recargamos la página completa)
+  if (wantsJson) {
+    return new Response(
+      JSON.stringify({
+        ok: !error,
+        message: error || success || "",
+        heroType,
+        heroVideo,
+        heroImage,
+      }),
+      {
+        status: error ? 400 : 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 }
 
 // ── Datos para la vista previa del fondo activo ──────────────────────
@@ -105,7 +125,7 @@ const isVideoYouTube = !!heroVideoYouTubeId;
     <div class="mb-8 rounded-2xl border-2 border-primary/30 bg-primary/5 overflow-hidden">
       <div class="p-5">
         <!-- Preview visual 16:9 -->
-        <div class="relative mx-auto aspect-video w-full max-w-xl overflow-hidden rounded-xl border border-gray-200 bg-gray-900 shadow-sm">
+        <div id="active-preview" class="relative mx-auto aspect-video w-full max-w-xl overflow-hidden rounded-xl border border-gray-200 bg-gray-900 shadow-sm">
           {heroType === 'image' ? (
             <img src={heroImage} alt="Fondo actual" class="h-full w-full object-cover" onerror="this.src='/images/placeholder.svg'" />
           ) : isVideoYouTube ? (
@@ -145,9 +165,10 @@ const isVideoYouTube = !!heroVideoYouTubeId;
         <!-- Subir video -->
         <div class="rounded-lg border border-gray-200 bg-white p-5">
           <p class="text-sm font-semibold text-gray-700 mb-3">Subir archivo de video</p>
-          <form method="POST" enctype="multipart/form-data" class="space-y-3">
+          <form id="video-upload-form" method="POST" enctype="multipart/form-data" class="space-y-3">
             <input type="hidden" name="action" value="upload_video" />
             <input
+              id="video-input"
               type="file"
               name="hero_video"
               required
@@ -155,8 +176,27 @@ const isVideoYouTube = !!heroVideoYouTubeId;
               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
             <p class="text-xs text-gray-400">MP4, WebM o MOV. Máximo 100 MB (recomendado: menos de 20 MB para que cargue rápido).</p>
-            <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
-              Subir y activar video
+
+            <!-- Vista previa del archivo seleccionado -->
+            <div id="video-preview-box" class="hidden rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <video id="video-preview" class="w-full rounded-md bg-black aspect-video object-contain" muted controls playsinline></video>
+              <p id="video-file-info" class="mt-2 text-xs text-gray-500"></p>
+            </div>
+
+            <!-- Estado de subida (barra de progreso + mensaje) -->
+            <div id="video-status" class="hidden space-y-2">
+              <div class="h-2.5 w-full overflow-hidden rounded-full bg-gray-200">
+                <div id="video-progress-bar" class="h-full w-0 rounded-full bg-blue-600 transition-all duration-200"></div>
+              </div>
+              <p id="video-status-text" class="text-xs font-medium text-blue-700"></p>
+            </div>
+
+            <button id="video-submit-btn" type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+              <svg id="video-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path>
+              </svg>
+              <span id="video-submit-label">Subir y activar video</span>
             </button>
           </form>
         </div>
@@ -195,4 +235,123 @@ const isVideoYouTube = !!heroVideoYouTubeId;
     </div>
 
   </div>
+
+  <script is:inline>
+    (function () {
+      const MAX = 100 * 1024 * 1024; // 100 MB
+
+      const form     = document.getElementById("video-upload-form");
+      const input    = document.getElementById("video-input");
+      const previewBox = document.getElementById("video-preview-box");
+      const preview  = document.getElementById("video-preview");
+      const fileInfo = document.getElementById("video-file-info");
+      const status   = document.getElementById("video-status");
+      const bar      = document.getElementById("video-progress-bar");
+      const statusTxt= document.getElementById("video-status-text");
+      const btn      = document.getElementById("video-submit-btn");
+      const spinner  = document.getElementById("video-spinner");
+      const label    = document.getElementById("video-submit-label");
+      const activePreview = document.getElementById("active-preview");
+
+      if (!form || !input) return;
+
+      function fmtMB(bytes) {
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+      }
+
+      // 1) Vista previa inmediata al seleccionar el archivo
+      input.addEventListener("change", function () {
+        status.classList.add("hidden");
+        const file = input.files && input.files[0];
+        if (!file) {
+          previewBox.classList.add("hidden");
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+        previewBox.classList.remove("hidden");
+        const tooBig = file.size > MAX;
+        fileInfo.textContent =
+          file.name + " · " + fmtMB(file.size) +
+          (tooBig ? "  ⚠️ Supera 100 MB, no se podrá subir." : "");
+        fileInfo.className = "mt-2 text-xs " + (tooBig ? "text-red-600 font-semibold" : "text-gray-500");
+      });
+
+      // 2) Subida por AJAX con barra de progreso real
+      form.addEventListener("submit", function (e) {
+        const file = input.files && input.files[0];
+        if (!file) return; // deja que el navegador muestre "selecciona un archivo"
+        if (file.size > MAX) {
+          e.preventDefault();
+          alert("El video supera los 100 MB. Comprímelo o usa uno más liviano.");
+          return;
+        }
+
+        e.preventDefault();
+
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+        label.textContent = "Subiendo...";
+        status.classList.remove("hidden");
+        bar.style.width = "0%";
+        bar.className = "h-full w-0 rounded-full bg-blue-600 transition-all duration-200";
+        statusTxt.className = "text-xs font-medium text-blue-700";
+        statusTxt.textContent = "Preparando subida...";
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", window.location.pathname, true);
+        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+        // Progreso de la subida (navegador -> servidor)
+        xhr.upload.addEventListener("progress", function (ev) {
+          if (!ev.lengthComputable) return;
+          const pct = Math.round((ev.loaded / ev.total) * 100);
+          bar.style.width = pct + "%";
+          statusTxt.textContent = "Subiendo video... " + pct + "%";
+          if (pct >= 100) {
+            statusTxt.textContent = "Procesando en el servidor... no cierres esta página.";
+          }
+        });
+
+        xhr.onload = function () {
+          let data = {};
+          try { data = JSON.parse(xhr.responseText); } catch (_) {}
+
+          if (xhr.status >= 200 && xhr.status < 300 && data.ok) {
+            bar.style.width = "100%";
+            bar.className = "h-full w-full rounded-full bg-green-600 transition-all duration-200";
+            statusTxt.className = "text-xs font-medium text-green-700";
+            statusTxt.textContent = "✓ " + (data.message || "Video subido y activado");
+            // Actualizar la vista previa del fondo activo con el nuevo video
+            if (data.heroVideo && activePreview) {
+              activePreview.innerHTML =
+                '<video src="' + data.heroVideo + '" class="h-full w-full object-cover" muted loop autoplay playsinline></video>';
+            }
+            spinner.classList.add("hidden");
+            label.textContent = "Subir y activar video";
+            btn.disabled = false;
+          } else {
+            onError(data.message || "No se pudo subir el video. Intenta de nuevo.");
+          }
+        };
+
+        xhr.onerror = function () {
+          onError("Error de conexión al subir el video.");
+        };
+
+        function onError(msg) {
+          bar.className = "h-full w-full rounded-full bg-red-500 transition-all duration-200";
+          bar.style.width = "100%";
+          statusTxt.className = "text-xs font-medium text-red-700";
+          statusTxt.textContent = "✗ " + msg;
+          spinner.classList.add("hidden");
+          label.textContent = "Reintentar subida";
+          btn.disabled = false;
+        }
+
+        const fd = new FormData(form);
+        xhr.send(fd);
+      });
+    })();
+  </script>
 </AdminLayout>
