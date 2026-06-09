@@ -32,13 +32,21 @@ if (Astro.request.method === "POST") {
     const formData = await Astro.request.formData();
     const action = formData.get("action") as string;
 
+    // Mensaje de error cuando la BD no guarda (conexión caída, etc.)
+    const DB_ERROR = "No se pudo guardar la configuración en la base de datos. " +
+      "Reinicia el servidor (la conexión a la base de datos pudo haberse caído) e intenta de nuevo.";
+
     // ── Cambiar tipo (imagen / video) ─────────────────────────────────
     if (action === "update_hero_type") {
       const type = formData.get("hero_type") as 'video' | 'image';
       if (type === 'video' || type === 'image') {
-        await updateHeroType(type);
-        heroType = type;
-        success = `Tipo de fondo cambiado a: ${type === 'video' ? 'Video' : 'Imagen'}`;
+        const saved = await updateHeroType(type);
+        if (!saved) {
+          error = DB_ERROR;
+        } else {
+          heroType = type;
+          success = `Tipo de fondo cambiado a: ${type === 'video' ? 'Video' : 'Imagen'}`;
+        }
       }
 
     // ── Subir imagen ──────────────────────────────────────────────────
@@ -52,11 +60,15 @@ if (Astro.request.method === "POST") {
         }
         const buffer = await file.arrayBuffer();
         const url = await uploadImage(Buffer.from(buffer), { folder: 'starfilters-ecommerce/hero', public_id: `hero-img-${Date.now()}`, resource_type: 'image' });
-        await updateHeroImage(url);
-        await updateHeroType('image');
-        heroImage = url;
-        heroType  = 'image';
-        success = "Imagen del Hero actualizada y activada";
+        const okImage = await updateHeroImage(url);
+        const okType = await updateHeroType('image');
+        if (!okImage || !okType) {
+          error = `La imagen se subió a Cloudinary, pero ${DB_ERROR.toLowerCase()}`;
+        } else {
+          heroImage = url;
+          heroType  = 'image';
+          success = "Imagen del Hero actualizada y activada";
+        }
       }
 
     // ── Subir video ───────────────────────────────────────────────────
@@ -71,11 +83,15 @@ if (Astro.request.method === "POST") {
       } else {
         const buffer = await file.arrayBuffer();
         const url = await uploadVideo(Buffer.from(buffer), { folder: 'starfilters-ecommerce/hero', public_id: `hero-vid-${Date.now()}` });
-        await updateHeroVideo(url);
-        await updateHeroType('video');
-        heroVideo = url;
-        heroType  = 'video';
-        success = "Video del Hero actualizado y activado";
+        const okVideo = await updateHeroVideo(url);
+        const okType = await updateHeroType('video');
+        if (!okVideo || !okType) {
+          error = `El video se subió a Cloudinary, pero ${DB_ERROR.toLowerCase()}`;
+        } else {
+          heroVideo = url;
+          heroType  = 'video';
+          success = "Video del Hero actualizado y activado";
+        }
       }
     }
   } catch (err) {
