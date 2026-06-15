@@ -443,10 +443,13 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
  * Si no hay productos directos, busca variantes de la categoría y las convierte en productos
  */
 export const getProductsByFilterCategory = async (filterCategoryId: number): Promise<Product[]> => {
-  try {
-    console.log('🔍 Obteniendo productos de filter_category_id:', filterCategoryId);
+  console.log('🔍 Obteniendo productos de filter_category_id:', filterCategoryId);
 
-    // Primero buscar productos directos con filter_category_id
+  // Primero buscar productos directos con filter_category_id.
+  // Se aísla en su propio try porque la columna filter_category_id puede no
+  // existir en algunos entornos; si falla, seguimos con las variantes en vez
+  // de abortar y devolver una lista vacía.
+  try {
     const products = await query(
       'SELECT * FROM products WHERE filter_category_id = ? AND status = "active" ORDER BY created_at DESC',
       [filterCategoryId]
@@ -456,8 +459,14 @@ export const getProductsByFilterCategory = async (filterCategoryId: number): Pro
       console.log(`✅ ${products.length} productos encontrados para categoría ${filterCategoryId}`);
       return products;
     }
+  } catch (error: any) {
+    if (error?.code !== 'ER_BAD_FIELD_ERROR') {
+      console.error('❌ Error consultando productos directos:', error);
+    }
+  }
 
-    // Si no hay productos, buscar variantes de la categoría y convertirlas en productos
+  // Si no hay productos, buscar variantes de la categoría y convertirlas en productos
+  try {
     console.log('⚠️ No hay productos directos, buscando variantes de categoría...');
 
     const variantsAsProducts = await query(

@@ -1,40 +1,11 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
-import LazyImage from "@/components/shared/LazyImage.astro";
-import { getActiveCategories } from "@/lib/filter-category-service";
-import { getProductPlaceholderImage } from "@/lib/image-utils";
+import FiltersContent from "@/components/shared/FiltersContent.astro";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
-import { getLangFromUrl, useTranslations } from "@/i18n/utils";
-import { getCategoryName, getCategoryDescription } from "@/lib/i18n-helpers";
 
 export const prerender = false;
 
-// Detect current language
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
-// Use /en/products for English
-const productsRoute = '/en/products';
-
-// Get active categories
-let filterCategories: any[] = [];
-
-try {
-  filterCategories = await getActiveCategories();
-  console.log(`📦 Page /en/filters: ${filterCategories.length} active categories found`);
-  
-  // Log for debugging
-  if (filterCategories.length === 0) {
-    console.warn('⚠️ No active categories found. Verify that categories with status="active" or status IS NULL exist in the database.');
-  } else {
-    console.log('✅ Categories found:', filterCategories.map(c => ({ id: c.id, name: c.name, status: c.status })));
-  }
-} catch (error) {
-  console.error('❌ Error in page /en/filters:', error);
-  filterCategories = [];
-}
-
-// Generate SEO data
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: `${siteUrl}/en` },
@@ -42,7 +13,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 ]);
 ---
 
-<WebsiteLayout 
+<WebsiteLayout
   title="Air Filters"
   seoTitle="Air Filters - Star Filters Catalog"
   description="Browse our complete catalog of air filters. High-quality products with shipping throughout Mexico."
@@ -53,7 +24,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     'filter store Mexico'
   ]}
 >
-  <SEO 
+  <SEO
     slot="seo"
     title="Air Filters"
     description="Browse our complete catalog of air filters. High-quality products with shipping throughout Mexico."
@@ -64,190 +35,9 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       'industrial filters'
     ]}
   />
-  
+
   <!-- Breadcrumb Schema -->
-  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
-  
-  <div class="bg-background pt-24 pb-8">
-    <!-- Breadcrumb -->
-    <div class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-      <nav class="mb-8" aria-label="Breadcrumb">
-        <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
-          <li>
-            <a href="/en" class="hover:text-foreground transition-colors">Home</a>
-          </li>
-          <li>
-            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-            </svg>
-          </li>
-          <li class="text-foreground font-medium">Air Filters</li>
-        </ol>
-      </nav>
-    </div>
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
 
-    <section
-      aria-labelledby="collection-heading"
-      class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8"
-    >
-      <div class="mb-12">
-        <h1
-          id="collection-heading"
-          class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-        >
-          Air Filter Categories
-        </h1>
-        <p class="mt-4 text-lg text-muted-foreground">
-          Select a category to view all available products.
-        </p>
-      </div>
-
-      <!-- Search -->
-      <div class="mb-8">
-        <label for="search-categories" class="block text-sm font-medium text-foreground mb-2">
-          Search categories
-        </label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-          </div>
-          <input
-            type="text"
-            id="search-categories"
-            placeholder="Search by name..."
-            class="w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      <!-- Results counter -->
-      <div class="mb-6 text-sm text-muted-foreground">
-        Showing <span id="results-count" class="font-medium text-foreground">{filterCategories.length}</span> of {filterCategories.length} categories
-      </div>
-
-      <!-- Categories grid -->
-      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="categories-grid">
-        {filterCategories.map((category) => {
-          const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
-          return (
-            <a
-              href={`${productsRoute}?filter_category_id=${category.id}`}
-              class="group category-card relative flex flex-col cursor-pointer transition-transform hover:scale-105"
-              data-name={category.name.toLowerCase()}
-            >
-              <div class="w-full h-80 overflow-hidden rounded-lg bg-muted shadow-md">
-                <LazyImage
-                  src={imageUrl}
-                  alt={category.name}
-                  class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity"
-                />
-              </div>
-              <h3 class="mt-4 text-lg text-foreground font-semibold group-hover:text-foreground transition-colors">
-                {getCategoryName(category, lang)}
-              </h3>
-              {getCategoryDescription(category, lang) && (
-                <p class="mt-2 text-sm text-muted-foreground line-clamp-3">
-                  {getCategoryDescription(category, lang)}
-                </p>
-              )}
-              <div class="mt-auto pt-4">
-                <span class="inline-flex items-center text-sm font-medium text-primary group-hover:text-foreground transition-colors">
-                  View products
-                  <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                  </svg>
-                </span>
-              </div>
-            </a>
-          );
-        })}
-      </div>
-
-      {filterCategories.length === 0 && (
-        <div class="text-center py-12">
-          <h3 class="text-lg font-medium text-foreground">
-            No categories available
-          </h3>
-          <p class="mt-2 text-sm text-muted-foreground">
-            Check back soon to see new filter categories
-          </p>
-        </div>
-      )}
-    </section>
-
-    <!-- Why Star Filters? -->
-    <div class="mx-auto max-w-6xl px-4 mt-24 sm:px-6 lg:px-8">
-      <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl">
-        {t('filters.whyStarFilters.title')}
-      </h2>
-      <div class="mb-16 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 lg:gap-x-4">
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-01.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit1')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-02.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit2')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-03.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit3')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-04.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit4')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-05.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit5')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-06.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit6')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-07.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit7')}</span>
-        </div>
-      </div>
-    </div>
-  </div>
+  <FiltersContent />
 </WebsiteLayout>
-
-<script>
-  // Search function
-  function applySearch(): void {
-    const searchInput = document.getElementById('search-categories') as HTMLInputElement;
-    const searchTerm = searchInput?.value.toLowerCase() || '';
-    const categoryCards = document.querySelectorAll('.category-card');
-    let visibleCount = 0;
-
-    categoryCards.forEach(card => {
-      const element = card as HTMLElement;
-      const categoryName = element.getAttribute('data-name') || '';
-
-      if (categoryName.includes(searchTerm)) {
-        element.style.display = '';
-        visibleCount++;
-      } else {
-        element.style.display = 'none';
-      }
-    });
-
-    // Update counter
-    const resultsCount = document.getElementById('results-count');
-    if (resultsCount) {
-      resultsCount.textContent = visibleCount.toString();
-    }
-  }
-
-  // Event listener for search
-  document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('search-categories');
-    if (searchInput) {
-      searchInput.addEventListener('input', applySearch);
-    }
-  });
-</script>

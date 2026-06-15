@@ -14,6 +14,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
  */
 export interface FilterCategory {
   id: number;
+  parent_id?: number | null;
   name: string;
   name_en?: string;
   slug: string;
@@ -98,6 +99,43 @@ export const getActiveCategories = async (): Promise<FilterCategory[]> => {
 };
 
 /**
+ * Obtener categorías de primer nivel (tipo de producto / categoría 1 de BIND).
+ * Son las que no tienen padre (parent_id NULL).
+ */
+export const getParentCategories = async (): Promise<FilterCategory[]> => {
+  try {
+    const categories = await query(
+      `SELECT * FROM filter_categories
+       WHERE (status = "active" OR status IS NULL) AND parent_id IS NULL
+       ORDER BY created_at DESC`
+    ) as FilterCategory[];
+    return categories;
+  } catch (error) {
+    console.error('❌ Error obteniendo categorías padre:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtener categorías hijas de una categoría padre
+ * (tipo de filtro / categoría 2 de BIND).
+ */
+export const getChildCategories = async (parentId: number): Promise<FilterCategory[]> => {
+  try {
+    const categories = await query(
+      `SELECT * FROM filter_categories
+       WHERE (status = "active" OR status IS NULL) AND parent_id = ?
+       ORDER BY created_at DESC`,
+      [parentId]
+    ) as FilterCategory[];
+    return categories;
+  } catch (error) {
+    console.error('❌ Error obteniendo categorías hijas:', error);
+    return [];
+  }
+};
+
+/**
  * Obtener ID de categoría por nombre
  */
 export const getFilterCategoryIdByName = async (name: string): Promise<number | null> => {
@@ -173,9 +211,10 @@ export const createCategory = async (categoryData: Partial<FilterCategory>): Pro
 
     const result = await query(
       `INSERT INTO filter_categories (
-        name, name_en, slug, description, description_en, main_image, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        parent_id, name, name_en, slug, description, description_en, main_image, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        categoryData.parent_id ?? null,
         categoryData.name,
         categoryData.name_en || null,
         categoryData.slug,
@@ -205,6 +244,10 @@ export const updateCategory = async (id: number, categoryData: Partial<FilterCat
     const updates: string[] = [];
     const values: any[] = [];
 
+    if (categoryData.parent_id !== undefined) {
+      updates.push('parent_id = ?');
+      values.push(categoryData.parent_id ?? null);
+    }
     if (categoryData.name !== undefined) {
       updates.push('name = ?');
       values.push(categoryData.name);
@@ -623,6 +666,8 @@ export default {
   // Categorías
   getAllCategories,
   getActiveCategories,
+  getParentCategories,
+  getChildCategories,
   getCategoryById,
   getCategoryBySlug,
   createCategory,

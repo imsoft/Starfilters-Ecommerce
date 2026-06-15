@@ -1557,8 +1557,15 @@ export const getAllTestimonials = async (): Promise<Testimonial[]> => {
 };
 
 export const getActiveTestimonials = async (): Promise<Testimonial[]> => {
-  const rows = await query('SELECT * FROM testimonials WHERE is_active = 1 ORDER BY sort_order ASC, created_at ASC') as any[];
-  return rows.map(mapTestimonialFromDB);
+  try {
+    const rows = await query('SELECT * FROM testimonials WHERE is_active = 1 ORDER BY sort_order ASC, created_at ASC') as any[];
+    return rows.map(mapTestimonialFromDB);
+  } catch (error) {
+    // La sección de testimonios es opcional: ante un error (p. ej. tabla
+    // inexistente) devolver vacío en vez de abortar el render del home.
+    console.error('Error obteniendo testimonios activos:', error);
+    return [];
+  }
 };
 
 export const getTestimonialByUuid = async (uuid: string): Promise<Testimonial | null> => {

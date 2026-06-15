@@ -1,6 +1,8 @@
 ---
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import PageHero from "@/components/shared/PageHero.astro";
+import SectionVideo from "@/components/shared/SectionVideo.astro";
+import SplitCTA from "@/components/shared/SplitCTA.astro";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -100,8 +102,39 @@ const steps = lang === 'en'
   </div>
 </div>
 
-<!-- ── Proceso de trabajo ──────────────────────────────────────────────── -->
+<!-- ── ¿Por qué contratarnos? ──────────────────────────────────────────── -->
 <div class="bg-primary/10 py-20 border-t border-border">
+  <div class="mx-auto max-w-4xl px-6 lg:px-8">
+    <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl reveal">
+      {t('services.cta.benefitsTitle')}
+    </h2>
+    <div class="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-4 reveal">
+      <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+        <img src="/images/services/Servicios de validacion 2-01.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+        <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit1')}</span>
+      </div>
+      <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+        <img src="/images/services/Servicios de validacion 2-02.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+        <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit2')}</span>
+      </div>
+      <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+        <img src="/images/services/Servicios de validacion 2-03.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+        <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit3')}</span>
+      </div>
+      <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+        <img src="/images/services/Servicios de validacion 2-04.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+        <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit4')}</span>
+      </div>
+      <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+        <img src="/images/services/Servicios de validacion 2-05.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+        <span class="mt-3 text-sm font-medium text-foreground">{t('services.cta.benefit5')}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Proceso de trabajo ──────────────────────────────────────────────── -->
+<div class="bg-background py-20 border-t border-border">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
     <div class="text-center mb-14 reveal">
       <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
@@ -134,6 +167,20 @@ const steps = lang === 'en'
     </div>
   </div>
 </div>
+
+<!-- ── VIDEO ──────────────────────────────────────────────────────────── -->
+<SectionVideo
+  videoId="7TH3CgAz3fk"
+  videoTitle={lang === 'en' ? 'Validation Services - Star Filters' : 'Servicios de Validación - Star Filters'}
+/>
+
+<!-- ── CTA ────────────────────────────────────────────────────────────── -->
+<SplitCTA
+  badge={lang === 'en' ? 'Start Today' : 'Empieza Hoy'}
+  title={t('services.cta.title')}
+  description={t('services.cta.description')}
+  whatsappMessage={lang === 'en' ? 'Hello, I would like more information about your industrial filtration services.' : 'Hola, me gustaría obtener más información sobre sus servicios de filtración industrial.'}
+/>
 
 <style>
   .reveal {

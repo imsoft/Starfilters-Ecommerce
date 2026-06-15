@@ -37,6 +37,6 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     ]}
   />
 
-  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
   <CleanroomsContent />
 </WebsiteLayout>

@@ -6,6 +6,7 @@ import {
   getCategoryImages,
   addCategoryImage,
   deleteCategoryImage,
+  getParentCategories,
 } from "@/lib/filter-category-service";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
@@ -34,6 +35,9 @@ if (!category) {
 }
 
 let images = await getCategoryImages(categoryId);
+
+// Tipos de producto disponibles como categoría padre (excluyendo la propia categoría).
+const parentCategories = (await getParentCategories()).filter((p) => p.id !== categoryId);
 
 // Log para diagnóstico
 console.log('🔍 [Edit Category] Categoría cargada:', {
@@ -92,7 +96,12 @@ if (Astro.request.method === "POST") {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
 
+      // Categoría padre (tipo de producto). Vacío = es un tipo de producto.
+      const parentIdRaw = formData.get("parent_id") as string;
+      const parentId = parentIdRaw ? parseInt(parentIdRaw) : null;
+
       const updated = await updateCategory(categoryId, {
+        parent_id: parentId,
         name: formData.get("name") as string,
         name_en: (formData.get("name_en") as string) || null,
         slug: slug,
@@ -222,6 +231,26 @@ if (Astro.request.method === "POST") {
                 Nombre y descripción del filtro en español e inglés
               </p>
             </div>
+          </div>
+
+          <div class="mb-6">
+            <label for="parent_id" class="mb-2 block text-sm font-semibold text-gray-700">
+              Tipo de producto (categoría padre)
+            </label>
+            <select
+              id="parent_id"
+              name="parent_id"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="" selected={!category.parent_id}>— Es un tipo de producto (nivel principal) —</option>
+              {parentCategories.map((p) => (
+                <option value={p.id} selected={category.parent_id === p.id}>{p.name}</option>
+              ))}
+            </select>
+            <p class="mt-1.5 text-xs text-gray-500">
+              Déjalo en blanco si es un <strong>tipo de producto</strong> (botón principal del webshop).
+              Elige un padre si es un <strong>tipo de filtro</strong> dentro de ese producto.
+            </p>
           </div>
 
           <div class="grid gap-6 md:grid-cols-2">

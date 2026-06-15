@@ -1,0 +1,309 @@
+---
+import PageHero from "@/components/shared/PageHero.astro";
+import LazyImage from "@/components/shared/LazyImage.astro";
+import SectionVideo from "@/components/shared/SectionVideo.astro";
+import SplitCTA from "@/components/shared/SplitCTA.astro";
+import { getActiveCategories, getCategoryBySlug, getChildCategories } from "@/lib/filter-category-service";
+import { getProductPlaceholderImage } from "@/lib/image-utils";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { getCategoryName, getCategoryDescription } from "@/lib/i18n-helpers";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const productsRoute = lang === 'en' ? '/en/products' : '/productos';
+const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
+
+// Mostrar los tipos de filtro (categoría 2) que cuelgan de "Filtros de aire".
+// Si no existe esa familia o aún no tiene hijos, caer en todas las categorías activas.
+let filterCategories: any[] = [];
+try {
+  const airFilters = await getCategoryBySlug('filtros-de-aire');
+  if (airFilters) {
+    filterCategories = await getChildCategories(airFilters.id);
+  }
+  if (filterCategories.length === 0) {
+    filterCategories = await getActiveCategories();
+  }
+} catch (error) {
+  console.error('❌ Error cargando categorías de filtros:', error);
+  filterCategories = [];
+}
+
+const steps = lang === 'en'
+  ? [
+      { n: '01', title: 'Technical Advice',        desc: 'We analyze your application, airflow and required efficiency to recommend the right filter for your process.' },
+      { n: '02', title: 'Quote',                   desc: 'You receive a clear quote with delivery times. We manufacture standard and special sizes.' },
+      { n: '03', title: 'Manufacturing',           desc: 'We manufacture your filters with certified materials and quality control at every stage.' },
+      { n: '04', title: 'Delivery & Installation', desc: 'We ship throughout Mexico and, if you need it, our certified technicians install them.' },
+      { n: '05', title: 'Maintenance & Replacement', desc: 'We schedule periodic replacement to keep your air systems running at peak efficiency.' },
+    ]
+  : [
+      { n: '01', title: 'Asesoría técnica',         desc: 'Analizamos tu aplicación, caudal y eficiencia requerida para recomendarte el filtro adecuado a tu proceso.' },
+      { n: '02', title: 'Cotización',               desc: 'Recibes una cotización clara con tiempos de entrega. Fabricamos medidas estándar y especiales.' },
+      { n: '03', title: 'Fabricación',              desc: 'Fabricamos tus filtros con materiales certificados y control de calidad en cada etapa.' },
+      { n: '04', title: 'Entrega e instalación',    desc: 'Enviamos a toda la República Mexicana y, si lo necesitas, nuestros técnicos certificados los instalan.' },
+      { n: '05', title: 'Mantenimiento y reemplazo', desc: 'Programamos el reemplazo periódico para mantener tus sistemas de aire en máxima eficiencia.' },
+    ];
+---
+
+<!-- ── HERO ──────────────────────────────────────────────────────────── -->
+<PageHero
+  badge="Star Filters"
+  title={lang === 'en' ? 'Industrial Air Filters' : 'Filtros de Aire Industriales'}
+  description={lang === 'en'
+    ? 'We manufacture air filters designed to meet the most demanding standards in pharmaceutical, electronics, and advanced manufacturing industries. Each filter type offers the right level of protection and efficiency for your process.'
+    : 'Fabricamos filtros de aire diseñados para cumplir con los estándares más exigentes de la industria farmacéutica, electrónica y de manufactura avanzada. Cada tipo de filtro ofrece un nivel de protección y eficiencia adaptado a tu proceso productivo.'}
+  image="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
+  primaryCta={{ label: lang === 'en' ? 'View products' : 'Ver productos', href: productsRoute }}
+  secondaryCta={{ label: lang === 'en' ? 'Request a quote' : 'Solicitar cotización', href: contactUrl }}
+/>
+
+<!-- ── CATEGORÍAS ────────────────────────────────────────────────────── -->
+<div class="bg-background py-16">
+  <section
+    aria-labelledby="collection-heading"
+    class="mx-auto max-w-7xl px-6 lg:px-8"
+  >
+    <!-- Grid de categorías -->
+    <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="categories-grid">
+      {filterCategories.map((category) => {
+        const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
+        const categoryHref = lang === 'en'
+          ? `${productsRoute}?filter_category_id=${category.id}`
+          : `${productsRoute}?category=${category.slug}`;
+        return (
+          <a
+            href={categoryHref}
+            class="group category-card flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300"
+            data-name={category.name.toLowerCase()}
+          >
+            <div class="h-56 w-full overflow-hidden bg-muted">
+              <LazyImage
+                src={imageUrl}
+                alt={category.name}
+                class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+              />
+            </div>
+            <div class="flex flex-col flex-1 p-5">
+              <h3 class="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                {getCategoryName(category, lang)}
+              </h3>
+              {getCategoryDescription(category, lang) && (
+                <p class="mt-2 text-sm/6 text-muted-foreground line-clamp-3 flex-1">
+                  {getCategoryDescription(category, lang)}
+                </p>
+              )}
+              <div class="mt-4 flex items-center gap-1 text-sm font-semibold text-primary">
+                <span>{lang === 'en' ? 'View products' : 'Ver productos'}</span>
+                <svg class="h-4 w-4 translate-x-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                </svg>
+              </div>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+
+    {filterCategories.length === 0 && (
+      <div class="text-center py-12">
+        <h3 class="text-lg font-medium text-foreground">
+          {lang === 'en' ? 'No categories available' : 'No hay categorías disponibles'}
+        </h3>
+        <p class="mt-2 text-sm text-muted-foreground">
+          {lang === 'en' ? 'Check back soon to see new filter categories' : 'Vuelve pronto para ver nuevas categorías de filtros'}
+        </p>
+      </div>
+    )}
+  </section>
+</div>
+
+<!-- ── ¿POR QUÉ STAR FILTERS? ────────────────────────────────────────── -->
+<div class="bg-primary/10 py-20 border-t border-border">
+  <div class="mx-auto max-w-6xl px-6 lg:px-8">
+    <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl reveal">
+      {t('filters.whyStarFilters.title')}
+    </h2>
+    <div class="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 lg:gap-x-4 reveal">
+      {([
+        t('filters.whyStarFilters.benefit1'),
+        t('filters.whyStarFilters.benefit2'),
+        t('filters.whyStarFilters.benefit3'),
+        t('filters.whyStarFilters.benefit4'),
+        t('filters.whyStarFilters.benefit5'),
+        t('filters.whyStarFilters.benefit6'),
+        t('filters.whyStarFilters.benefit7'),
+      ]).map((label, i) => (
+        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
+          <img src={`/images/category-filters/iconos filtros-0${i + 1}.png`} alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+          <span class="mt-3 text-sm font-medium text-foreground">{label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+<!-- ── PROCESO ───────────────────────────────────────────────────────── -->
+<div class="bg-background py-20 border-t border-border">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class="text-center mb-14 reveal">
+      <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
+        {lang === 'en' ? 'How we work' : 'Cómo trabajamos'}
+      </p>
+      <h2 class="text-3xl font-bold text-foreground sm:text-4xl">
+        {lang === 'en' ? 'Our process' : 'Nuestro proceso'}
+      </h2>
+      <p class="mt-4 text-muted-foreground max-w-xl mx-auto text-sm">
+        {lang === 'en'
+          ? 'From technical advice to preventive replacement — we take care of the entire life cycle of your filters.'
+          : 'De la asesoría técnica al reemplazo preventivo — nos encargamos de todo el ciclo de vida de tus filtros.'}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-8">
+      {steps.map((step, i, arr) => (
+        <div class="reveal relative flex flex-col items-center text-center" style={`transition-delay: ${i * 80}ms`}>
+          {i < arr.length - 1 && (
+            <div class="hidden lg:block absolute top-7 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-border z-0"></div>
+          )}
+          <div class="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-md mb-4">
+            {step.n}
+          </div>
+          <h3 class="text-sm font-bold text-foreground mb-2 leading-snug">{step.title}</h3>
+          <p class="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+<!-- ── VIDEO ─────────────────────────────────────────────────────────── -->
+<SectionVideo
+  videoId="EziLQznVOZ0"
+  videoTitle={lang === 'en' ? 'Air Filters - Star Filters' : 'Filtros de Aire - Star Filters'}
+/>
+
+<!-- ── SERVICIO DE MANTENIMIENTO ─────────────────────────────────────── -->
+<div class="bg-background py-20 border-t border-border">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+
+    <!-- Encabezado -->
+    <div class="text-center mb-14 reveal">
+      <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
+        {lang === 'en' ? 'Maintenance Service' : 'Servicio de mantenimiento'}
+      </p>
+      <h2 class="text-3xl font-bold text-foreground sm:text-4xl">
+        {lang === 'en' ? 'We install and replace your filters' : 'Instalamos y reemplazamos tus filtros'}
+      </h2>
+      <p class="mt-4 text-muted-foreground max-w-2xl mx-auto">
+        {lang === 'en'
+          ? 'Our certified technicians carry out preventive and corrective maintenance of air filters in cleanrooms, UMA units, air showers, and HVAC systems across Mexico.'
+          : 'Nuestros técnicos certificados realizan el mantenimiento preventivo y correctivo de filtros de aire en cuartos limpios, unidades UMA, air showers y sistemas de climatización en toda la República Mexicana.'}
+      </p>
+    </div>
+
+    <!-- Galería de 3 fotos -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 reveal">
+      <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
+        <img
+          src="/images/services/mantenimiento/mantenimiento-1.png"
+          alt={lang === 'en' ? 'Filter installation in laminar flow cabinet' : 'Instalación de filtro en cabina de flujo laminar'}
+          class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+        />
+      </div>
+      <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
+        <img
+          src="/images/services/mantenimiento/mantenimiento-2.png"
+          alt={lang === 'en' ? 'Filter replacement in rooftop UMA unit' : 'Reemplazo de filtros en unidad UMA en azotea'}
+          class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+        />
+      </div>
+      <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
+        <img
+          src="/images/services/mantenimiento/mantenimiento-3.png"
+          alt={lang === 'en' ? 'Air handler filter maintenance' : 'Mantenimiento de filtros en manejadora de aire'}
+          class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+        />
+      </div>
+    </div>
+
+    <!-- Puntos clave + CTA -->
+    <div class="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3 lg:grid-cols-3 text-center">
+      <div class="flex flex-col items-center gap-2">
+        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Certified technicians' : 'Técnicos certificados'}</p>
+        <p class="text-xs text-muted-foreground">{lang === 'en' ? 'ISO 14644 and GMP trained personnel' : 'Personal capacitado en ISO 14644 y BPM'}</p>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Nationwide coverage' : 'Cobertura nacional'}</p>
+        <p class="text-xs text-muted-foreground">{lang === 'en' ? 'Service throughout Mexico' : 'Servicio en toda la República Mexicana'}</p>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Scheduled or emergency' : 'Programado o urgente'}</p>
+        <p class="text-xs text-muted-foreground">{lang === 'en' ? 'We adapt to your operation schedule' : 'Nos adaptamos a tu horario de operación'}</p>
+      </div>
+    </div>
+
+    <div class="mt-10 text-center">
+      <a
+        href={contactUrl}
+        class="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
+      >
+        {lang === 'en' ? 'Request maintenance service' : 'Solicitar servicio de mantenimiento'}
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── CTA ───────────────────────────────────────────────────────────── -->
+<SplitCTA
+  badge="Star Filters"
+  title={lang === 'en' ? 'Request Your Air Filter Quote' : 'Solicita tu Cotización de Filtros'}
+  description={lang === 'en'
+    ? 'Tell us which filters you need and we will prepare a quote with clear delivery times. We manufacture standard and special sizes, with shipping throughout Mexico.'
+    : 'Cuéntanos qué filtros necesitas y te preparamos una cotización con tiempos de entrega claros. Fabricamos medidas estándar y especiales, con envío a toda la República Mexicana.'}
+  whatsappMessage={lang === 'en' ? 'Hello, I would like a quote for air filters for my company.' : 'Hola, me gustaría cotizar filtros de aire para mi empresa.'}
+/>
+
+<style>
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.reveal').forEach(el => {
+    new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 }).observe(el);
+  });
+</script>

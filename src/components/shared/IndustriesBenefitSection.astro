@@ -6,7 +6,7 @@ const t = useTranslations(lang);
 
 const industriesBase = '/images/home-page/industries-that-benefit';
 
-const filtersHref = lang === 'en' ? '/en/filters' : '/filtros';
+const galleryHref = lang === 'en' ? '/en/#project-gallery' : '/#galeria-de-proyectos';
 
 const industries = [
   { image: `${industriesBase}/farmaceutica-y-biotecnologia.jpg`, labelKey: 'industriesBenefit.pharma' },
@@ -26,9 +26,9 @@ const industries = [
       <div class="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 lg:grid-cols-5 items-center justify-items-center">
         {industries.map((item) => (
           <a
-            href={filtersHref}
+            href={galleryHref}
             class="group flex flex-col items-center justify-center gap-3 w-full"
-            aria-label={`${t(item.labelKey)} — ${lang === 'en' ? 'See filters' : 'Ver filtros'}`}
+            aria-label={`${t(item.labelKey)} — ${lang === 'en' ? 'See project gallery' : 'Ver galería de proyectos'}`}
           >
             <div class="w-full aspect-square overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 group-hover:shadow-xl">
               <img

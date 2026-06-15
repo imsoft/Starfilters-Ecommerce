@@ -12,9 +12,16 @@ export interface Benefit extends RowDataPacket {
 }
 
 export async function getActiveBenefits(): Promise<Benefit[]> {
-  return query(
-    'SELECT * FROM benefits WHERE is_active = 1 ORDER BY sort_order ASC, id ASC'
-  ) as Promise<Benefit[]>;
+  try {
+    return await (query(
+      'SELECT * FROM benefits WHERE is_active = 1 ORDER BY sort_order ASC, id ASC'
+    ) as Promise<Benefit[]>);
+  } catch (error) {
+    // Si la tabla no existe o falla la consulta, degradar a vacío en vez de
+    // romper la página (el banner de beneficios es opcional).
+    console.error('Error obteniendo beneficios activos:', error);
+    return [];
+  }
 }
 
 export async function getAllBenefits(): Promise<Benefit[]> {

@@ -1,42 +1,11 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
-import PageHero from "@/components/shared/PageHero.astro";
-import LazyImage from "@/components/shared/LazyImage.astro";
-import { getActiveCategories } from "@/lib/filter-category-service";
-import { getProductPlaceholderImage } from "@/lib/image-utils";
+import FiltersContent from "@/components/shared/FiltersContent.astro";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
-import { getLangFromUrl, useTranslations } from "@/i18n/utils";
-import { getCategoryName, getCategoryDescription } from "@/lib/i18n-helpers";
 
 export const prerender = false;
 
-// Detectar idioma actual
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
-// Por ahora usar /productos para ambos idiomas hasta que se cree /en/products
-// El parámetro filter_category_id funcionará igual en ambos casos
-const productsRoute = '/productos';
-
-// Obtener categorías activas
-let filterCategories: any[] = [];
-
-try {
-  filterCategories = await getActiveCategories();
-  console.log(`📦 Página /filtros: ${filterCategories.length} categorías activas encontradas`);
-  
-  // Log para debugging
-  if (filterCategories.length === 0) {
-    console.warn('⚠️ No se encontraron categorías activas. Verifica que existan categorías con status="active" o status IS NULL en la base de datos.');
-  } else {
-    console.log('✅ Categorías encontradas:', filterCategories.map(c => ({ id: c.id, name: c.name, status: c.status })));
-  }
-} catch (error) {
-  console.error('❌ Error en página /filtros:', error);
-  filterCategories = [];
-}
-
-// Generar datos SEO
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Inicio', url: siteUrl },
@@ -44,7 +13,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 ]);
 ---
 
-<WebsiteLayout 
+<WebsiteLayout
   title="Filtros de Aire"
   seoTitle="Filtros de Aire - Catálogo Star Filters"
   description="Explora nuestro catálogo completo de filtros de aire. Productos de alta calidad con envío a toda la República Mexicana."
@@ -55,7 +24,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     'tienda filtros México'
   ]}
 >
-  <SEO 
+  <SEO
     slot="seo"
     title="Filtros de Aire"
     description="Explora nuestro catálogo completo de filtros de aire. Productos de alta calidad con envío a toda la República Mexicana."
@@ -66,230 +35,9 @@ const breadcrumbSchema = generateBreadcrumbSchema([
       'filtros industriales'
     ]}
   />
-  
+
   <!-- Breadcrumb Schema -->
-  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
-  
-  <!-- ── HERO ──────────────────────────────────────────────────────────── -->
-  <PageHero
-    badge="Star Filters"
-    title={lang === 'en' ? 'Industrial Air Filters' : 'Filtros de Aire Industriales'}
-    description={lang === 'en'
-      ? 'We manufacture air filters designed to meet the most demanding standards in pharmaceutical, electronics, and advanced manufacturing industries. Each filter type offers the right level of protection and efficiency for your process.'
-      : 'Fabricamos filtros de aire diseñados para cumplir con los estándares más exigentes de la industria farmacéutica, electrónica y de manufactura avanzada. Cada tipo de filtro ofrece un nivel de protección y eficiencia adaptado a tu proceso productivo.'}
-    image="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
-    primaryCta={{ label: lang === 'en' ? 'View products' : 'Ver productos', href: productsRoute }}
-    secondaryCta={{ label: lang === 'en' ? 'Request a quote' : 'Solicitar cotización', href: lang === 'en' ? '/en/contact' : '/contacto' }}
-  />
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
 
-  <!-- ── CATEGORÍAS ────────────────────────────────────────────────────── -->
-  <div class="bg-background py-16">
-    <section
-      aria-labelledby="collection-heading"
-      class="mx-auto max-w-7xl px-6 lg:px-8"
-    >
-      <!-- Grid de categorías -->
-      <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="categories-grid">
-        {filterCategories.map((category) => {
-          const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
-          return (
-            <a
-              href={`${productsRoute}?category=${category.slug}`}
-              class="group category-card flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300"
-              data-name={category.name.toLowerCase()}
-            >
-              <div class="h-56 w-full overflow-hidden bg-muted">
-                <LazyImage
-                  src={imageUrl}
-                  alt={category.name}
-                  class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div class="flex flex-col flex-1 p-5">
-                <h3 class="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {getCategoryName(category, lang)}
-                </h3>
-                {getCategoryDescription(category, lang) && (
-                  <p class="mt-2 text-sm/6 text-muted-foreground line-clamp-3 flex-1">
-                    {getCategoryDescription(category, lang)}
-                  </p>
-                )}
-                <div class="mt-4 flex items-center gap-1 text-sm font-semibold text-primary">
-                  <span>{lang === 'en' ? 'View products' : 'Ver productos'}</span>
-                  <svg class="h-4 w-4 translate-x-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                  </svg>
-                </div>
-              </div>
-            </a>
-          );
-        })}
-      </div>
-
-      {filterCategories.length === 0 && (
-        <div class="text-center py-12">
-          <h3 class="text-lg font-medium text-foreground">
-            No hay categorías disponibles
-          </h3>
-          <p class="mt-2 text-sm text-muted-foreground">
-            Vuelve pronto para ver nuevas categorías de filtros
-          </p>
-        </div>
-      )}
-    </section>
-  </div>
-
-    <!-- ── SERVICIO DE MANTENIMIENTO ─────────────────────────────────── -->
-    <div class="bg-primary/10 py-20 border-t border-border">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
-        <!-- Encabezado -->
-        <div class="text-center mb-14 reveal">
-          <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">
-            {lang === 'en' ? 'Maintenance Service' : 'Servicio de mantenimiento'}
-          </p>
-          <h2 class="text-3xl font-bold text-foreground sm:text-4xl">
-            {lang === 'en' ? 'We install and replace your filters' : 'Instalamos y reemplazamos tus filtros'}
-          </h2>
-          <p class="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            {lang === 'en'
-              ? 'Our certified technicians carry out preventive and corrective maintenance of air filters in cleanrooms, UMA units, air showers, and HVAC systems across Mexico.'
-              : 'Nuestros técnicos certificados realizan el mantenimiento preventivo y correctivo de filtros de aire en cuartos limpios, unidades UMA, air showers y sistemas de climatización en toda la República Mexicana.'}
-          </p>
-        </div>
-
-        <!-- Galería de 3 fotos -->
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 reveal">
-          <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
-            <img
-              src="/images/services/mantenimiento/mantenimiento-1.png"
-              alt={lang === 'en' ? 'Filter installation in laminar flow cabinet' : 'Instalación de filtro en cabina de flujo laminar'}
-              class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-          </div>
-          <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
-            <img
-              src="/images/services/mantenimiento/mantenimiento-2.png"
-              alt={lang === 'en' ? 'Filter replacement in rooftop UMA unit' : 'Reemplazo de filtros en unidad UMA en azotea'}
-              class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-          </div>
-          <div class="overflow-hidden rounded-2xl shadow-md aspect-[4/3]">
-            <img
-              src="/images/services/mantenimiento/mantenimiento-3.png"
-              alt={lang === 'en' ? 'Air handler filter maintenance' : 'Mantenimiento de filtros en manejadora de aire'}
-              class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-          </div>
-        </div>
-
-        <!-- Puntos clave + CTA -->
-        <div class="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3 lg:grid-cols-3 text-center">
-          <div class="flex flex-col items-center gap-2">
-            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Certified technicians' : 'Técnicos certificados'}</p>
-            <p class="text-xs text-muted-foreground">{lang === 'en' ? 'ISO 14644 and GMP trained personnel' : 'Personal capacitado en ISO 14644 y BPM'}</p>
-          </div>
-          <div class="flex flex-col items-center gap-2">
-            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-            </div>
-            <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Nationwide coverage' : 'Cobertura nacional'}</p>
-            <p class="text-xs text-muted-foreground">{lang === 'en' ? 'Service throughout Mexico' : 'Servicio en toda la República Mexicana'}</p>
-          </div>
-          <div class="flex flex-col items-center gap-2">
-            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <p class="text-sm font-semibold text-foreground">{lang === 'en' ? 'Scheduled or emergency' : 'Programado o urgente'}</p>
-            <p class="text-xs text-muted-foreground">{lang === 'en' ? 'We adapt to your operation schedule' : 'Nos adaptamos a tu horario de operación'}</p>
-          </div>
-        </div>
-
-        <div class="mt-10 text-center">
-          <a
-            href={lang === 'en' ? '/en/contact' : '/contacto'}
-            class="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
-          >
-            {lang === 'en' ? 'Request maintenance service' : 'Solicitar servicio de mantenimiento'}
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-            </svg>
-          </a>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ¿Por qué Star Filters? -->
-    <div class="bg-background py-20 border-t border-border">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-      <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl reveal">
-        {t('filters.whyStarFilters.title')}
-      </h2>
-      <div class="mb-16 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 lg:gap-x-4 reveal">
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-01.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit1')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-02.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit2')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-03.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit3')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-04.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit4')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-05.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit5')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-06.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit6')}</span>
-        </div>
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src="/images/category-filters/iconos filtros-07.png" alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-foreground">{t('filters.whyStarFilters.benefit7')}</span>
-        </div>
-      </div>
-    </div>
-    </div>
+  <FiltersContent />
 </WebsiteLayout>
-
-<style>
-  .reveal {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  .reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-</style>
-
-<script>
-  document.querySelectorAll('.reveal').forEach(el => {
-    new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.1 }).observe(el);
-  });
-</script>
-

@@ -1,0 +1,28 @@
+---
+import { getLangFromUrl } from "@/i18n/utils";
+import VideoSection from "@/components/shared/VideoSection.astro";
+
+interface Props {
+  videoId: string;
+  videoTitle: string;
+  heading?: string;
+}
+
+const lang = getLangFromUrl(Astro.url);
+const {
+  videoId,
+  videoTitle,
+  heading = lang === 'en' ? 'See our work' : 'Conoce nuestros proyectos',
+} = Astro.props;
+---
+
+<div class="bg-primary/10 py-16 border-t border-border">
+  <div class="mx-auto max-w-4xl px-6 lg:px-8">
+    <h2 class="text-center text-2xl font-semibold text-foreground mb-8">
+      {heading}
+    </h2>
+    <div class="rounded-2xl overflow-hidden shadow-lg">
+      <VideoSection videoId={videoId} title={videoTitle} noPadding={true} />
+    </div>
+  </div>
+</div>

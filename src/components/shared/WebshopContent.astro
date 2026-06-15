@@ -1,0 +1,410 @@
+---
+import { getLangFromUrl } from "@/i18n/utils";
+import LazyImage from "@/components/shared/LazyImage.astro";
+import {
+  getParentCategories,
+  getChildCategories,
+  getCategoryBySlug,
+  getCategoryById,
+} from "@/lib/filter-category-service";
+import { getProductsByFilterCategory } from "@/lib/product-service";
+import { getProductImages } from "@/lib/database";
+import { getProductPlaceholderImage } from "@/lib/image-utils";
+import { getExchangeRate } from "@/lib/currency-service";
+import {
+  getProductPriceAndCurrency,
+  formatPriceByCurrency,
+  getProductName,
+  getCategoryName,
+  getCategoryDescription,
+} from "@/lib/i18n-helpers";
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === "en";
+
+const productsRoute = isEn ? "/en/products" : "/productos";
+const productDetailRoute = (uuid: string) =>
+  isEn ? `/en/product/${uuid}` : `/product/${uuid}`;
+
+// Parámetro de categoría: slug (preferido) o filter_category_id (compat EN)
+const slugParam = Astro.url.searchParams.get("category");
+const idParam = Astro.url.searchParams.get("filter_category_id");
+
+// Resolver la categoría seleccionada (puede ser tipo de producto o tipo de filtro)
+let selected = null;
+try {
+  if (slugParam) selected = await getCategoryBySlug(slugParam);
+  else if (idParam) selected = await getCategoryById(parseInt(idParam));
+} catch (e) {
+  console.error("Error resolviendo categoría seleccionada:", e);
+}
+
+// Tipos de producto (categoría 1) — chips superiores
+const parentCats = await getParentCategories();
+
+// Familia activa y sus tipos de filtro (categoría 2)
+let activeParent = null;
+let childCats: any[] = [];
+if (selected) {
+  if (selected.parent_id) {
+    activeParent =
+      parentCats.find((p) => p.id === selected.parent_id) ||
+      (await getCategoryById(selected.parent_id));
+  } else {
+    activeParent = selected;
+  }
+  if (activeParent) childCats = await getChildCategories(activeParent.id);
+}
+
+// Construir las variantes/productos a mostrar
+const exchangeRate = await getExchangeRate();
+
+let rawProducts: any[] = [];
+if (selected) {
+  if (selected.parent_id) {
+    // Tipo de filtro seleccionado: sus variantes
+    rawProducts = await getProductsByFilterCategory(selected.id);
+  } else {
+    // Tipo de producto seleccionado: variantes propias + de todos sus tipos de filtro
+    const own = await getProductsByFilterCategory(selected.id);
+    const childLists = await Promise.all(
+      childCats.map((c) => getProductsByFilterCategory(c.id))
+    );
+    rawProducts = [...own, ...childLists.flat()];
+  }
+}
+
+const products = await Promise.all(
+  rawProducts.map(async (product) => {
+    let imageUrl =
+      product.image_url || getProductPlaceholderImage(product.category || "productos");
+    try {
+      const imgs = await getProductImages(product.id);
+      const primary = imgs.find((i) => i.is_primary) ?? imgs[0];
+      if (primary?.image_url) imageUrl = primary.image_url;
+    } catch {
+      /* la imagen de la categoría ya viene en product.image_url */
+    }
+
+    const { price: displayPrice, currency: displayCurrency } =
+      getProductPriceAndCurrency(product, lang);
+    let finalPrice = displayPrice;
+    let finalCurrency = displayCurrency;
+    if (lang === "es" && displayCurrency === "USD") {
+      finalPrice = displayPrice * exchangeRate;
+      finalCurrency = "MXN";
+    } else if (lang === "en" && displayCurrency === "MXN") {
+      finalPrice = displayPrice / exchangeRate;
+      finalCurrency = "USD";
+    }
+
+    return {
+      id: product.id,
+      uuid: product.uuid,
+      name: getProductName(product, lang),
+      category: product.category || "",
+      price: finalPrice,
+      currency: finalCurrency,
+      stock: product.stock || 0,
+      imageUrl,
+      nominal_size: product.nominal_size || undefined,
+    };
+  })
+);
+
+const formatPrice = (price: number, currency: "MXN" | "USD") =>
+  formatPriceByCurrency(price, currency);
+
+const t = {
+  all: isEn ? "All" : "Todos",
+  searchPh: isEn ? "Search products..." : "Buscar producto...",
+  productType: isEn ? "Product type" : "Tipo de producto",
+  filterType: isEn ? "Filter type" : "Tipo de filtro",
+  allTypes: isEn ? "All types" : "Todos los tipos",
+  resultsFound: isEn ? "products found" : "productos encontrados",
+  inStock: isEn ? "In stock" : "En stock",
+  outOfStock: isEn ? "Out of stock" : "Agotado",
+  addToCart: isEn ? "Add to cart" : "Agregar al carrito",
+  unavailable: isEn ? "Unavailable" : "No disponible",
+  pickType: isEn
+    ? "Choose a filter type to see available products."
+    : "Elige un tipo de filtro para ver los productos disponibles.",
+  emptyTitle: isEn ? "Coming soon" : "Próximamente",
+  emptyText: isEn
+    ? "We are loading products for this category. Check back soon."
+    : "Estamos cargando productos para esta categoría. Vuelve pronto.",
+  browseTitle: isEn ? "Browse by product type" : "Explora por tipo de producto",
+  viewProducts: isEn ? "View products" : "Ver productos",
+};
+
+const heading = selected ? getCategoryName(selected, lang) : isEn ? "Online store" : "Tienda en línea";
+const subheading = selected
+  ? getCategoryDescription(selected, lang) || ""
+  : isEn
+    ? "Browse our full catalog of air filters and cleanroom equipment."
+    : "Explora nuestro catálogo completo de filtros de aire y equipo para cuarto limpio.";
+---
+
+<div class="bg-background min-h-screen pt-24 pb-16">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+    <!-- ── Encabezado + búsqueda ─────────────────────────────────────── -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-foreground sm:text-3xl">{heading}</h1>
+        {subheading && <p class="mt-1 text-sm text-muted-foreground max-w-2xl">{subheading}</p>}
+      </div>
+      <div class="relative w-full sm:w-72 shrink-0">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="search-products"
+          placeholder={t.searchPh}
+          class="w-full rounded-full border border-border bg-background pl-9 pr-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        />
+      </div>
+    </div>
+
+    <!-- ── Filtro 1: Tipo de producto (categoría 1) ──────────────────── -->
+    {parentCats.length > 0 && (
+      <div class="mb-4">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t.productType}</p>
+        <div class="flex flex-wrap gap-2">
+          <a
+            href={productsRoute}
+            class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${!selected ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background text-foreground hover:bg-muted"}`}
+          >
+            {t.all}
+          </a>
+          {parentCats.map((cat) => {
+            const active = activeParent && activeParent.id === cat.id;
+            return (
+              <a
+                href={`${productsRoute}?category=${cat.slug}`}
+                class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background text-foreground hover:bg-muted"}`}
+              >
+                {getCategoryName(cat, lang)}
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    )}
+
+    <!-- ── Filtro 2: Tipo de filtro (categoría 2), al elegir un tipo de producto ── -->
+    {activeParent && childCats.length > 0 && (
+      <div class="mb-6">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t.filterType}</p>
+        <div class="flex flex-wrap gap-2">
+          <a
+            href={`${productsRoute}?category=${activeParent.slug}`}
+            class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${selected && !selected.parent_id ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background text-foreground hover:bg-muted"}`}
+          >
+            {t.allTypes}
+          </a>
+          {childCats.map((cat) => {
+            const active = selected && selected.id === cat.id;
+            return (
+              <a
+                href={`${productsRoute}?category=${cat.slug}`}
+                class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background text-foreground hover:bg-muted"}`}
+              >
+                {getCategoryName(cat, lang)}
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    )}
+
+    <!-- ── Contenido ─────────────────────────────────────────────────── -->
+    {!selected ? (
+      <!-- Sin selección: explorar por tipo de producto -->
+      <div>
+        <h2 class="sr-only">{t.browseTitle}</h2>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-6">
+          {parentCats.map((cat) => (
+            <a
+              href={`${productsRoute}?category=${cat.slug}`}
+              class="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300"
+            >
+              <div class="w-full aspect-square overflow-hidden bg-muted">
+                <LazyImage
+                  src={cat.main_image || getProductPlaceholderImage("productos")}
+                  alt={getCategoryName(cat, lang)}
+                  class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+              <div class="flex flex-col flex-1 p-4">
+                <h3 class="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {getCategoryName(cat, lang)}
+                </h3>
+                <div class="mt-2 flex items-center gap-1 text-xs font-semibold text-primary">
+                  <span>{t.viewProducts}</span>
+                  <svg class="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                  </svg>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    ) : products.length > 0 ? (
+      <!-- Con productos: grid de variantes -->
+      <>
+        <p class="text-xs text-muted-foreground mb-4">
+          <span id="results-count">{products.length}</span> {t.resultsFound}
+        </p>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-6" id="products-grid">
+          {products.map((product) => (
+            <div
+              class="group product-card relative flex flex-col"
+              data-name={product.name.toLowerCase()}
+            >
+              <a href={productDetailRoute(product.uuid)} class="block flex-shrink-0">
+                <div class="w-full aspect-square overflow-hidden rounded-xl bg-muted">
+                  <LazyImage
+                    src={product.imageUrl}
+                    alt={product.name}
+                    class="h-full w-full object-cover object-center group-hover:opacity-80 transition-opacity duration-300"
+                  />
+                </div>
+                <h3 class="mt-3 text-sm font-medium text-foreground line-clamp-2 min-h-[2.5rem]">
+                  {product.name}
+                </h3>
+              </a>
+              <div class="mt-1 flex items-center justify-between">
+                <p class="text-sm font-semibold text-foreground">
+                  {formatPrice(product.price, product.currency)}
+                </p>
+                {product.stock > 0 ? (
+                  <span class="text-xs text-green-600 font-medium">{t.inStock}</span>
+                ) : (
+                  <span class="text-xs text-red-500 font-medium">{t.outOfStock}</span>
+                )}
+              </div>
+              <div class="mt-auto pt-3">
+                {product.stock > 0 ? (
+                  <button
+                    type="button"
+                    class="add-to-cart-btn w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    data-uuid={product.uuid}
+                    data-id={product.id}
+                    data-name={product.name}
+                    data-price={product.price}
+                    data-image={product.imageUrl}
+                    data-category={product.category || ""}
+                    data-currency={product.currency}
+                  >
+                    {t.addToCart}
+                  </button>
+                ) : (
+                  <button type="button" disabled class="w-full rounded-lg bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground cursor-not-allowed">
+                    {t.unavailable}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <!-- Estado vacío de búsqueda (oculto por defecto) -->
+        <div id="no-results" class="hidden text-center py-16">
+          <p class="text-sm text-muted-foreground">{isEn ? "No products match your search." : "Ningún producto coincide con tu búsqueda."}</p>
+        </div>
+      </>
+    ) : activeParent && childCats.length > 0 ? (
+      <!-- Familia con tipos de filtro pero sin selección de variante directa -->
+      <div class="text-center py-16">
+        <p class="text-sm text-muted-foreground">{t.pickType}</p>
+      </div>
+    ) : (
+      <!-- Categoría sin productos todavía -->
+      <div class="text-center py-20">
+        <svg class="mx-auto h-12 w-12 text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-foreground">{t.emptyTitle}</h3>
+        <p class="mt-2 text-sm text-muted-foreground">{t.emptyText}</p>
+      </div>
+    )}
+
+  </div>
+</div>
+
+<script>
+  // Búsqueda client-side sobre las tarjetas ya renderizadas
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(".product-card"));
+  const counter = document.getElementById("results-count");
+  const noResults = document.getElementById("no-results");
+  const grid = document.getElementById("products-grid");
+  const searchInput = document.getElementById("search-products") as HTMLInputElement | null;
+
+  function applySearch() {
+    const term = (searchInput?.value || "").trim().toLowerCase();
+    let visible = 0;
+    cards.forEach((card) => {
+      const name = card.getAttribute("data-name") || "";
+      const match = term === "" || name.includes(term);
+      card.style.display = match ? "" : "none";
+      if (match) visible++;
+    });
+    if (counter) counter.textContent = String(visible);
+    if (noResults && grid) {
+      noResults.classList.toggle("hidden", visible !== 0);
+      grid.classList.toggle("hidden", visible === 0);
+    }
+  }
+
+  searchInput?.addEventListener("input", applySearch);
+
+  // Agregar al carrito vía data-attributes (evita problemas de escape con
+  // comillas en los nombres, p. ej. medidas en pulgadas 9.125").
+  document.querySelectorAll<HTMLElement>(".add-to-cart-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const d = btn.dataset;
+      addToCartQuick(
+        d.uuid || "",
+        Number(d.id),
+        d.name || "",
+        Number(d.price),
+        d.image || "",
+        d.category || "",
+        d.currency || "MXN"
+      );
+    });
+  });
+
+  async function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = "MXN") {
+    const cartData = localStorage.getItem("starfilters_cart");
+    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency };
+    if (!cart.currency) cart.currency = currency;
+
+    const idx = cart.items.findIndex((item: any) => item.uuid === uuid);
+    if (idx >= 0) {
+      cart.items[idx].quantity += 1;
+      cart.items[idx].price = price;
+      cart.items[idx].currency = currency;
+    } else {
+      cart.items.push({ uuid, product_id, name, price, currency, quantity: 1, image_url, category });
+    }
+    cart.total = cart.items.reduce((tt: number, i: any) => tt + i.price * i.quantity, 0);
+    cart.itemCount = cart.items.reduce((c: number, i: any) => c + i.quantity, 0);
+    localStorage.setItem("starfilters_cart", JSON.stringify(cart));
+
+    showNotification(`${name} ✓`);
+    window.dispatchEvent(new CustomEvent("cartUpdated", { detail: cart }));
+  }
+
+  function showNotification(message: string) {
+    const n = document.createElement("div");
+    n.className = "fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300";
+    n.innerHTML = `<div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>${message}</span></div>`;
+    document.body.appendChild(n);
+    setTimeout(() => { n.style.opacity = "0"; setTimeout(() => n.remove(), 300); }, 2500);
+  }
+</script>

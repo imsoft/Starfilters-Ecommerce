@@ -32,7 +32,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     ogType="website"
     keywords={['cuartos limpios', 'salas limpias', 'cuartos limpios industriales']}
   />
-  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
 
   <CleanroomsContent />
 </WebsiteLayout>

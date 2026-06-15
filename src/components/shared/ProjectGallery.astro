@@ -16,7 +16,7 @@ try {
 if (projects.length === 0) return;
 ---
 
-<section class="bg-background py-12 sm:py-16">
+<section id={isEn ? 'project-gallery' : 'galeria-de-proyectos'} class="bg-background py-12 sm:py-16 scroll-mt-24">
   <div class="mx-auto max-w-7xl px-4 lg:px-6">
     <!-- Header -->
     <div class="mx-auto max-w-2xl text-center mb-12">
@@ -47,7 +47,10 @@ if (projects.length === 0) return;
       {projects.map((project) => {
         const title = (isEn && project.title_en) ? project.title_en : project.title;
         const description = (isEn && project.description_en) ? project.description_en : project.description;
-        const portfolioHref = isEn ? '/en/success-cases' : '/casos-de-exito';
+        let portfolioHref = project.link_url || (isEn ? '/en/success-cases' : '/casos-de-exito');
+        if (isEn && portfolioHref.startsWith('/casos-de-exito')) {
+          portfolioHref = portfolioHref.replace('/casos-de-exito', '/en/success-cases');
+        }
 
         return (
           <div class="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">

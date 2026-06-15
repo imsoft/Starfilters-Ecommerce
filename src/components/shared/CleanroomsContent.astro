@@ -1,6 +1,6 @@
 ---
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
-import VideoSection from "@/components/shared/VideoSection.astro";
+import SectionVideo from "@/components/shared/SectionVideo.astro";
 import SplitCTA from "@/components/shared/SplitCTA.astro";
 import PageHero from "@/components/shared/PageHero.astro";
 
@@ -217,20 +217,10 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 </div>
 
 <!-- ── VIDEO ──────────────────────────────────────────────────────────── -->
-<div class="bg-primary/10 py-16 border-t border-border">
-  <div class="mx-auto max-w-4xl px-6 lg:px-8 reveal">
-    <h2 class="text-center text-2xl font-semibold text-foreground mb-8">
-      {lang === 'en' ? 'See our work' : 'Conoce nuestros proyectos'}
-    </h2>
-    <div class="rounded-2xl overflow-hidden shadow-lg">
-      <VideoSection
-        videoId="_Lc71ZZN6ow"
-        title={lang === 'en' ? 'Cleanrooms - Star Filters' : 'Cuartos Limpios - Star Filters'}
-        noPadding={true}
-      />
-    </div>
-  </div>
-</div>
+<SectionVideo
+  videoId="_Lc71ZZN6ow"
+  videoTitle={lang === 'en' ? 'Cleanrooms - Star Filters' : 'Cuartos Limpios - Star Filters'}
+/>
 
 <SplitCTA
   badge={t('cleanrooms.badge')}
