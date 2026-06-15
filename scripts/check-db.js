@@ -63,16 +63,22 @@ async function main() {
     const rows = await q('SELECT id FROM filter_categories WHERE slug = ?', [slug]);
     line(rows.length > 0, `categoría "${slug}"`);
   }
-  const miniPleat = await q(
-    `SELECT c.parent_id, p.slug AS parent_slug FROM filter_categories c
-     LEFT JOIN filter_categories p ON c.parent_id = p.id
-     WHERE c.slug = 'mini-pleat-sello-gel-downstream'`
-  );
-  line(
-    miniPleat.length > 0 && miniPleat[0].parent_slug === 'filtros-de-aire',
-    '"Mini pleat" cuelga de "Filtros de aire"',
-    miniPleat.length > 0 ? `padre: ${miniPleat[0].parent_slug || 'NINGUNO'}` : 'no existe'
-  );
+  // Solo verificar la jerarquía si la columna parent_id ya existe (si no, la
+  // consulta con JOIN sobre parent_id fallaría).
+  if (await columnExists('filter_categories', 'parent_id')) {
+    const miniPleat = await q(
+      `SELECT c.parent_id, p.slug AS parent_slug FROM filter_categories c
+       LEFT JOIN filter_categories p ON c.parent_id = p.id
+       WHERE c.slug = 'mini-pleat-sello-gel-downstream'`
+    );
+    line(
+      miniPleat.length > 0 && miniPleat[0].parent_slug === 'filtros-de-aire',
+      '"Mini pleat" cuelga de "Filtros de aire"',
+      miniPleat.length > 0 ? `padre: ${miniPleat[0].parent_slug || 'NINGUNO'}` : 'no existe'
+    );
+  } else {
+    line(false, '"Mini pleat" cuelga de "Filtros de aire"', 'falta la columna parent_id');
+  }
 
   console.log('\n── Tablas del home ────────────────────────────────────');
   for (const t of ['benefits', 'testimonials']) {
