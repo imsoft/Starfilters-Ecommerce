@@ -123,9 +123,9 @@ const { id } = Astro.props;
         modal.style.display = "none";
         document.body.style.overflow = "";
         // Remover listeners clonando los elementos
-        const newConfirmBtn = confirmBtn.cloneNode(true) as HTMLButtonElement;
-        const newCancelBtn = cancelBtn.cloneNode(true) as HTMLButtonElement;
-        const newOverlay = overlay?.cloneNode(true) as HTMLDivElement;
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        const newOverlay = overlay?.cloneNode(true);
         
         confirmBtn.replaceWith(newConfirmBtn);
         cancelBtn.replaceWith(newCancelBtn);
