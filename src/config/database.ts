@@ -44,9 +44,14 @@ export const getConnection = async () => {
 };
 
 // Función para ejecutar consultas
+//
+// Usamos pool.query (no pool.execute) a propósito: con sentencias preparadas
+// (execute), MySQL rechaza `LIMIT ?` con ER_WRONG_ARGUMENTS ("Incorrect
+// arguments to mysqld_stmt_execute"). pool.query escapa los parámetros igual de
+// seguro y maneja correctamente LIMIT/OFFSET parametrizados.
 export const query = async (sql: string, params?: any[]) => {
   try {
-    const [rows] = await pool.execute(sql, params || []);
+    const [rows] = await pool.query(sql, params || []);
     return rows;
   } catch (error) {
     console.error('Error al ejecutar consulta:', error);
