@@ -1054,21 +1054,21 @@ console.log('📦 Tamaños preparados:', productSizes.length);
           // Asegurar que el JSON de tamaños esté actualizado antes de enviar
           const sizesTable = document.querySelector('[data-sizes-table]');
           if (sizesTable) {
-            const jsonInput = sizesTable.querySelector('[data-sizes-json]') as HTMLInputElement;
+            const jsonInput = sizesTable.querySelector('[data-sizes-json]');
             const tbody = sizesTable.querySelector('[data-sizes-tbody]');
             if (jsonInput && tbody) {
               // Forzar actualización del JSON
               const rows = tbody.querySelectorAll('tr[data-row-index]');
-              const sizes: any[] = [];
+              const sizes = [];
               
               rows.forEach(function(row) {
-                const nominalInput = row.querySelector('[data-field="nominal_size"]') as HTMLInputElement;
-                const realInput = row.querySelector('[data-field="real_size"]') as HTMLInputElement;
-                const priceInput = row.querySelector('[data-field="price"]') as HTMLInputElement;
-                const currencySelect = row.querySelector('[data-field="currency"]') as HTMLSelectElement;
-                const bindCodeInput = row.querySelector('[data-field="bind_code"]') as HTMLInputElement;
-                const productCodeInput = row.querySelector('[data-field="product_code"]') as HTMLInputElement;
-                const airFlowInput = row.querySelector('[data-field="air_flow"]') as HTMLInputElement;
+                const nominalInput = row.querySelector('[data-field="nominal_size"]');
+                const realInput = row.querySelector('[data-field="real_size"]');
+                const priceInput = row.querySelector('[data-field="price"]');
+                const currencySelect = row.querySelector('[data-field="currency"]');
+                const bindCodeInput = row.querySelector('[data-field="bind_code"]');
+                const productCodeInput = row.querySelector('[data-field="product_code"]');
+                const airFlowInput = row.querySelector('[data-field="air_flow"]');
 
                 if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
                   sizes.push({
@@ -1114,20 +1114,20 @@ console.log('📦 Tamaños preparados:', productSizes.length);
         // Asegurar que el JSON de tamaños esté actualizado antes de enviar
         const sizesTable = document.querySelector('[data-sizes-table]');
         if (sizesTable) {
-          const jsonInput = sizesTable.querySelector('[data-sizes-json]') as HTMLInputElement;
+          const jsonInput = sizesTable.querySelector('[data-sizes-json]');
           const tbody = sizesTable.querySelector('[data-sizes-tbody]');
           if (jsonInput && tbody) {
             // Forzar actualización del JSON
             const rows = tbody.querySelectorAll('tr[data-row-index]');
-            const sizes: any[] = [];
+            const sizes = [];
 
             rows.forEach(function(row) {
-              const nominalInput = row.querySelector('[data-field="nominal_size"]') as HTMLInputElement;
-              const realInput = row.querySelector('[data-field="real_size"]') as HTMLInputElement;
-              const priceInput = row.querySelector('[data-field="price"]') as HTMLInputElement;
-              const currencySelect = row.querySelector('[data-field="currency"]') as HTMLSelectElement;
-              const bindCodeInput = row.querySelector('[data-field="bind_code"]') as HTMLInputElement;
-              const productCodeInput = row.querySelector('[data-field="product_code"]') as HTMLInputElement;
+              const nominalInput = row.querySelector('[data-field="nominal_size"]');
+              const realInput = row.querySelector('[data-field="real_size"]');
+              const priceInput = row.querySelector('[data-field="price"]');
+              const currencySelect = row.querySelector('[data-field="currency"]');
+              const bindCodeInput = row.querySelector('[data-field="bind_code"]');
+              const productCodeInput = row.querySelector('[data-field="product_code"]');
 
               if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
                 sizes.push({
