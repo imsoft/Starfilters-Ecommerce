@@ -52,6 +52,8 @@ export interface Product {
   max_temperature?: string | null;
   typical_installation?: string | null;
   typical_installation_en?: string | null;
+  initial_pressure_drop?: string | null;
+  recommended_final_pressure_drop?: string | null;
   applications?: string | null;
   applications_en?: string | null;
   benefits?: string | null;
@@ -105,6 +107,7 @@ export interface User {
   password_hash: string;
   first_name: string;
   last_name: string;
+  company?: string;
   profile_image?: string | null;
   phone?: string;
   address?: string;
@@ -545,8 +548,8 @@ export const getUserByUuid = async (uuid: string): Promise<User | null> => {
 export const createUser = async (user: Omit<User, 'id' | 'uuid' | 'created_at' | 'updated_at'>): Promise<number> => {
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO users (uuid, email, password_hash, first_name, last_name, phone, address, city, postal_code, country, status, email_verified, verification_token) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (uuid, email, password_hash, first_name, last_name, company, phone, address, city, postal_code, country, status, email_verified, verification_token)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -554,6 +557,7 @@ export const createUser = async (user: Omit<User, 'id' | 'uuid' | 'created_at' |
     user.password_hash,
     user.first_name,
     user.last_name,
+    user.company || null,
     user.phone || null,
     user.address || null,
     user.city || null,

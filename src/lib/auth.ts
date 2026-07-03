@@ -13,6 +13,7 @@ export interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
+  company: string;
   phone?: string;
   address?: string;
   city?: string;
@@ -141,6 +142,11 @@ export const validateRegisterData = (data: RegisterData): { isValid: boolean; er
   
   if (!data.lastName || data.lastName.trim().length < 2) {
     errors.push('El apellido debe tener al menos 2 caracteres');
+  }
+
+  // Validar empresa (obligatoria)
+  if (!data.company || data.company.trim().length < 2) {
+    errors.push('La empresa debe tener al menos 2 caracteres');
   }
   
   // Validar teléfono si se proporciona
