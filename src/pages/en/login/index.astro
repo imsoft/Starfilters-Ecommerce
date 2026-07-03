@@ -83,11 +83,13 @@ const message = url.searchParams.get('message');
 <AuthLayout title={t('auth.login.title')}>
   <div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-      <img
-        class="mx-auto h-12 w-auto"
-        src="/images/home-page/Logo%20de%20Star%20Filters.png"
-        alt="Starfilters"
-      />
+      <a href="/en" aria-label="Go to homepage">
+        <img
+          class="mx-auto h-12 w-auto"
+          src="/images/home-page/Logo%20de%20Star%20Filters.png"
+          alt="Starfilters"
+        />
+      </a>
       <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-foreground">
         {t('auth.login.title')}
       </h2>

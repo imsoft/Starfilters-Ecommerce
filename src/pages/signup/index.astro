@@ -79,11 +79,13 @@ const error = url.searchParams.get('error');
 <AuthLayout title={t('auth.register.title')}>
   <div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-      <img
-        class="mx-auto h-12 w-auto"
-        src="/images/home-page/Logo%20de%20Star%20Filters.png"
-        alt="Starfilters"
-      />
+      <a href="/" aria-label="Ir a la página principal">
+        <img
+          class="mx-auto h-12 w-auto"
+          src="/images/home-page/Logo%20de%20Star%20Filters.png"
+          alt="Starfilters"
+        />
+      </a>
       <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-foreground">
         {t('auth.register.title')}
       </h2>
