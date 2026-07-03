@@ -120,6 +120,8 @@ if (Astro.request.method === "POST") {
         typical_installation: formData.get("typical_installation") as string || null,
         typical_installation_en: formData.get("typical_installation_en") as string || null,
         air_flow: (formData.get("air_flow") as string)?.trim() || null,
+        initial_pressure_drop: (formData.get("initial_pressure_drop") as string)?.trim() || null,
+        recommended_final_pressure_drop: (formData.get("recommended_final_pressure_drop") as string)?.trim() || null,
         applications: processListField(formData.get("applications")),
         applications_en: processListField(formData.get("applications_en")),
         benefits: processListField(formData.get("benefits")),
@@ -740,6 +742,36 @@ console.log('📦 Tamaños preparados:', productSizes.length);
             placeholder="Ej: 850 CFM"
             class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
+        </div>
+
+        <div class="mt-6 grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="initial_pressure_drop" class="mb-2 block text-sm font-semibold text-gray-700">
+              ΔP Inicial
+            </label>
+            <input
+              type="text"
+              id="initial_pressure_drop"
+              name="initial_pressure_drop"
+              value={(product as any).initial_pressure_drop || ""}
+              placeholder="Ej: 125 Pa"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="recommended_final_pressure_drop" class="mb-2 block text-sm font-semibold text-gray-700">
+              ΔP Final Recomendada
+            </label>
+            <input
+              type="text"
+              id="recommended_final_pressure_drop"
+              name="recommended_final_pressure_drop"
+              value={(product as any).recommended_final_pressure_drop || ""}
+              placeholder="Ej: 450 Pa"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
         </div>
       </div>
 

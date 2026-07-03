@@ -117,7 +117,6 @@ const formatPrice = (price: number, currency: "MXN" | "USD") =>
 
 const t = {
   all: isEn ? "All" : "Todos",
-  searchPh: isEn ? "Search products..." : "Buscar producto...",
   productType: isEn ? "Product type" : "Tipo de producto",
   filterType: isEn ? "Filter type" : "Tipo de filtro",
   allTypes: isEn ? "All types" : "Todos los tipos",
@@ -148,76 +147,56 @@ const subheading = selected
 <div class="bg-background min-h-screen pt-24 pb-16">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-    <!-- ── Encabezado + búsqueda ─────────────────────────────────────── -->
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-foreground sm:text-3xl">{heading}</h1>
-        {subheading && <p class="mt-1 text-sm text-muted-foreground max-w-2xl">{subheading}</p>}
-      </div>
-      <div class="relative w-full sm:w-72 shrink-0">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-        </div>
-        <input
-          type="text"
-          id="search-products"
-          placeholder={t.searchPh}
-          class="w-full rounded-full border border-border bg-background pl-9 pr-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-        />
-      </div>
+    <!-- ── Encabezado ────────────────────────────────────────────────── -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-foreground sm:text-3xl">{heading}</h1>
+      {subheading && <p class="mt-1 text-sm text-muted-foreground max-w-2xl">{subheading}</p>}
     </div>
 
-    <!-- ── Filtro 1: Tipo de producto (categoría 1) ──────────────────── -->
-    {parentCats.length > 0 && (
-      <div class="mb-4">
-        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t.productType}</p>
-        <div class="flex flex-wrap gap-2">
-          <a
-            href={productsRoute}
-            class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${!selected ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background text-foreground hover:bg-muted"}`}
+    <!-- ── Filtros (dropdowns a la izquierda, visibles dentro de una categoría) ── -->
+    {selected && parentCats.length > 0 && (
+      <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+        <!-- Tipo de producto (categorías de Bind) -->
+        <div class="w-full sm:w-64">
+          <label for="filter-product-type" class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t.productType}</label>
+          <select
+            id="filter-product-type"
+            data-filter-nav
+            class="w-full rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
           >
-            {t.all}
-          </a>
-          {parentCats.map((cat) => {
-            const active = activeParent && activeParent.id === cat.id;
-            return (
-              <a
-                href={`${productsRoute}?category=${cat.slug}`}
-                class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background text-foreground hover:bg-muted"}`}
+            <option value={productsRoute}>{t.all}</option>
+            {parentCats.map((cat) => (
+              <option
+                value={`${productsRoute}?category=${cat.slug}`}
+                selected={activeParent && activeParent.id === cat.id}
               >
                 {getCategoryName(cat, lang)}
-              </a>
-            );
-          })}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-    )}
 
-    <!-- ── Filtro 2: Tipo de filtro (categoría 2), al elegir un tipo de producto ── -->
-    {activeParent && childCats.length > 0 && (
-      <div class="mb-6">
-        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t.filterType}</p>
-        <div class="flex flex-wrap gap-2">
-          <a
-            href={`${productsRoute}?category=${activeParent.slug}`}
-            class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${selected && !selected.parent_id ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background text-foreground hover:bg-muted"}`}
-          >
-            {t.allTypes}
-          </a>
-          {childCats.map((cat) => {
-            const active = selected && selected.id === cat.id;
-            return (
-              <a
-                href={`${productsRoute}?category=${cat.slug}`}
-                class={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background text-foreground hover:bg-muted"}`}
-              >
-                {getCategoryName(cat, lang)}
-              </a>
-            );
-          })}
-        </div>
+        <!-- Tipo de filtro (categoría 2 de Bind), al elegir una familia con subtipos -->
+        {activeParent && childCats.length > 0 && (
+          <div class="w-full sm:w-64">
+            <label for="filter-filter-type" class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t.filterType}</label>
+            <select
+              id="filter-filter-type"
+              data-filter-nav
+              class="w-full rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+            >
+              <option value={`${productsRoute}?category=${activeParent.slug}`}>{t.allTypes}</option>
+              {childCats.map((cat) => (
+                <option
+                  value={`${productsRoute}?category=${cat.slug}`}
+                  selected={selected && selected.id === cat.id}
+                >
+                  {getCategoryName(cat, lang)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
     )}
 
@@ -312,10 +291,6 @@ const subheading = selected
             </div>
           ))}
         </div>
-        <!-- Estado vacío de búsqueda (oculto por defecto) -->
-        <div id="no-results" class="hidden text-center py-16">
-          <p class="text-sm text-muted-foreground">{isEn ? "No products match your search." : "Ningún producto coincide con tu búsqueda."}</p>
-        </div>
       </>
     ) : activeParent && childCats.length > 0 ? (
       <!-- Familia con tipos de filtro pero sin selección de variante directa -->
@@ -337,30 +312,14 @@ const subheading = selected
 </div>
 
 <script>
-  // Búsqueda client-side sobre las tarjetas ya renderizadas
-  const cards = Array.from(document.querySelectorAll<HTMLElement>(".product-card"));
-  const counter = document.getElementById("results-count");
-  const noResults = document.getElementById("no-results");
-  const grid = document.getElementById("products-grid");
-  const searchInput = document.getElementById("search-products") as HTMLInputElement | null;
-
-  function applySearch() {
-    const term = (searchInput?.value || "").trim().toLowerCase();
-    let visible = 0;
-    cards.forEach((card) => {
-      const name = card.getAttribute("data-name") || "";
-      const match = term === "" || name.includes(term);
-      card.style.display = match ? "" : "none";
-      if (match) visible++;
-    });
-    if (counter) counter.textContent = String(visible);
-    if (noResults && grid) {
-      noResults.classList.toggle("hidden", visible !== 0);
-      grid.classList.toggle("hidden", visible === 0);
+  // Dropdowns de filtro: navegar a la categoría elegida. Listener delegado en
+  // document para que siga funcionando tras las transiciones de ClientRouter.
+  document.addEventListener("change", (e) => {
+    const target = e.target as HTMLElement | null;
+    if (target instanceof HTMLSelectElement && target.hasAttribute("data-filter-nav")) {
+      window.location.href = target.value;
     }
-  }
-
-  searchInput?.addEventListener("input", applySearch);
+  });
 
   // Agregar al carrito vía data-attributes (evita problemas de escape con
   // comillas en los nombres, p. ej. medidas en pulgadas 9.125").

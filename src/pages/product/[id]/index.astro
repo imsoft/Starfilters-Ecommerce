@@ -531,6 +531,22 @@ const benefitsList = parseListField(product.benefits);
                 <dd class="mt-2 text-sm text-muted-foreground" id="air-flow-display">{currentProductAirFlow}</dd>
               </div>
             )}
+
+            {/* ΔP Inicial */}
+            {product.initial_pressure_drop && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">ΔP Inicial</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">{product.initial_pressure_drop}</dd>
+              </div>
+            )}
+
+            {/* ΔP Final Recomendada */}
+            {product.recommended_final_pressure_drop && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">ΔP Final Recomendada</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">{product.recommended_final_pressure_drop}</dd>
+              </div>
+            )}
           </dl>
 
           <!-- Formulario de compra -->
@@ -541,7 +557,7 @@ const benefitsList = parseListField(product.benefits);
               {sizeOptions.length > 0 && (
                 <div>
                   <label for="size-select" class="block text-sm font-medium text-foreground mb-2">
-                    Tamaño:
+                    Tamaño nominal / Tamaño real:
                   </label>
                   <select
                     id="size-select"

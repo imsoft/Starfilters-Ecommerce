@@ -66,6 +66,8 @@ if (Astro.request.method === "POST") {
     const typicalInstallation = formData.get("typical_installation") as string || null;
     const typicalInstallationEn = formData.get("typical_installation_en") as string || null;
     const airFlow = (formData.get("air_flow") as string)?.trim() || null;
+    const initialPressureDrop = (formData.get("initial_pressure_drop") as string)?.trim() || null;
+    const recommendedFinalPressureDrop = (formData.get("recommended_final_pressure_drop") as string)?.trim() || null;
     const applications = processListField(formData.get("applications"));
     const applicationsEn = processListField(formData.get("applications_en"));
     const benefits = processListField(formData.get("benefits"));
@@ -125,6 +127,8 @@ if (Astro.request.method === "POST") {
           typical_installation: typicalInstallation,
           typical_installation_en: typicalInstallationEn,
           air_flow: airFlow,
+          initial_pressure_drop: initialPressureDrop,
+          recommended_final_pressure_drop: recommendedFinalPressureDrop,
           applications: applications,
           applications_en: applicationsEn,
           benefits: benefits,
@@ -167,6 +171,8 @@ if (Astro.request.method === "POST") {
         typical_installation: typicalInstallation,
         typical_installation_en: typicalInstallationEn,
         air_flow: airFlow,
+        initial_pressure_drop: initialPressureDrop,
+        recommended_final_pressure_drop: recommendedFinalPressureDrop,
         applications: applications,
         applications_en: applicationsEn,
         benefits: benefits,
@@ -800,6 +806,34 @@ if (Astro.request.method === "POST") {
             placeholder="Ej: 850 CFM"
             class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
+        </div>
+
+        <div class="mt-6 grid gap-6 md:grid-cols-2">
+          <div>
+            <label for="initial_pressure_drop" class="mb-2 block text-sm font-semibold text-gray-700">
+              ΔP Inicial
+            </label>
+            <input
+              type="text"
+              id="initial_pressure_drop"
+              name="initial_pressure_drop"
+              placeholder="Ej: 125 Pa"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label for="recommended_final_pressure_drop" class="mb-2 block text-sm font-semibold text-gray-700">
+              ΔP Final Recomendada
+            </label>
+            <input
+              type="text"
+              id="recommended_final_pressure_drop"
+              name="recommended_final_pressure_drop"
+              placeholder="Ej: 450 Pa"
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
         </div>
       </div>
 

@@ -304,6 +304,27 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 </div>
               )}
 
+              {(product.nominal_size || product.real_size) && (
+                <div>
+                  <h3 class="text-sm font-medium text-foreground">Nominal size / Actual size</h3>
+                  <p class="mt-2 text-sm text-muted-foreground">{product.nominal_size || '—'} / {product.real_size || '—'}</p>
+                </div>
+              )}
+
+              {product.initial_pressure_drop && (
+                <div>
+                  <h3 class="text-sm font-medium text-foreground">Initial ΔP</h3>
+                  <p class="mt-2 text-sm text-muted-foreground">{product.initial_pressure_drop}</p>
+                </div>
+              )}
+
+              {product.recommended_final_pressure_drop && (
+                <div>
+                  <h3 class="text-sm font-medium text-foreground">Recommended Final ΔP</h3>
+                  <p class="mt-2 text-sm text-muted-foreground">{product.recommended_final_pressure_drop}</p>
+                </div>
+              )}
+
               <div>
                 <h3 class="text-sm font-medium text-foreground">Features</h3>
                 <div class="mt-2">
