@@ -13,7 +13,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 ]);
 
 const contactHref = lang === 'en' ? '/en/contact' : '/contacto';
-const filtersHref = lang === 'en' ? '/en/filters' : '/filtros';
+const catalogHref = lang === 'en' ? '/en/products' : '/productos';
 
 const values = [
   { img: '/images/valores/integridad.svg',    title: t('about.values.integrity.title'),    desc: t('about.values.integrity.description') },
@@ -137,15 +137,6 @@ const values = [
             <p>{t('about.history.paragraph2')}</p>
             <p>{t('about.history.paragraph3')}</p>
           </div>
-          <a
-            href={filtersHref}
-            class="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
-          >
-            {lang === 'en' ? 'Explore our products' : 'Explorar nuestros productos'}
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-            </svg>
-          </a>
         </div>
 
       </div>
@@ -192,7 +183,7 @@ const values = [
       <dl class="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-6 reveal">
         {values.map((v) => (
           <div class="flex flex-col items-center text-center">
-            <img src={v.img} alt={v.title} class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+            <img src={v.img} alt={v.title} class="value-icon h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
             <dt class="mt-4 text-sm font-semibold text-foreground">{v.title}</dt>
           </div>
         ))}
@@ -201,12 +192,12 @@ const values = [
   </div>
 
   <!-- ── CTA FINAL ──────────────────────────────────────────────────────── -->
-  <div class="bg-primary py-20">
+  <div class="bg-primary/10 py-20 border-t border-border">
     <div class="mx-auto max-w-3xl px-6 text-center reveal">
-      <h2 class="text-3xl font-bold text-white sm:text-4xl">
+      <h2 class="text-3xl font-bold text-foreground sm:text-4xl">
         {lang === 'en' ? 'Ready to work together?' : '¿Listo para trabajar juntos?'}
       </h2>
-      <p class="mt-4 text-primary-foreground/80 text-lg">
+      <p class="mt-4 text-muted-foreground text-lg">
         {lang === 'en'
           ? 'Contact us and discover how Star Filters can protect your critical processes.'
           : 'Contáctanos y descubre cómo Star Filters puede proteger tus procesos críticos.'}
@@ -214,13 +205,13 @@ const values = [
       <div class="mt-8 flex flex-wrap justify-center gap-4">
         <a
           href={contactHref}
-          class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-semibold text-primary hover:bg-white/90 transition-colors shadow-sm"
+          class="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
         >
           {lang === 'en' ? 'Contact us' : 'Contáctanos'}
         </a>
         <a
-          href={filtersHref}
-          class="inline-flex items-center gap-2 rounded-full border-2 border-white/60 px-8 py-3 text-sm font-semibold text-white hover:border-white hover:bg-white/10 transition-colors"
+          href={catalogHref}
+          class="inline-flex items-center gap-2 rounded-full border-2 border-primary/40 px-8 py-3 text-sm font-semibold text-primary hover:border-primary hover:bg-primary/10 transition-colors"
         >
           {lang === 'en' ? 'View catalog' : 'Ver catálogo'}
         </a>
@@ -231,6 +222,12 @@ const values = [
 </WebsiteLayout>
 
 <style>
+  /* Lleva los iconos de valores (SVG con bitmap azul oscuro embebido) al azul
+     primario del sitio (#3b82f6), el mismo de "Lo que nos mueve". */
+  .value-icon {
+    filter: brightness(0) saturate(100%) invert(54%) sepia(62%) saturate(4857%) hue-rotate(201deg) brightness(97%) contrast(98%);
+  }
+
   .reveal {
     opacity: 0;
     transform: translateY(24px);
@@ -243,35 +240,40 @@ const values = [
 </style>
 
 <script>
-  // Reveal on scroll
-  document.querySelectorAll('.reveal').forEach(el => {
-    new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.1 }).observe(el);
-  });
+  // Con ClientRouter este módulo solo se evalúa una vez por sesión: hay que
+  // volver a inicializar en cada astro:page-load (también cubre la carga inicial).
+  function initAboutCounters() {
+    const counters = document.querySelectorAll<HTMLElement>('.counter-number:not([data-counter-init])');
+    if (counters.length === 0) return;
 
-  // Counter animation
-  const counters = document.querySelectorAll('.counter-number');
-  const counterObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const el = entry.target as HTMLElement;
-        if (el.hasAttribute('data-animated')) return;
-        el.setAttribute('data-animated', 'true');
-        const target = parseInt(el.getAttribute('data-target') || '0', 10);
-        const duration = 1200;
-        const start = performance.now();
-        const update = (now: number) => {
-          const progress = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 2.5);
-          el.textContent = String(Math.round(target * eased));
-          if (progress < 1) requestAnimationFrame(update);
-          else el.textContent = String(target);
-        };
-        requestAnimationFrame(update);
-        counterObserver.unobserve(el);
-      }
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          if (el.hasAttribute('data-animated')) return;
+          el.setAttribute('data-animated', 'true');
+          const target = parseInt(el.getAttribute('data-target') || '0', 10);
+          const duration = 1200;
+          const start = performance.now();
+          const update = (now: number) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 2.5);
+            el.textContent = String(Math.round(target * eased));
+            if (progress < 1) requestAnimationFrame(update);
+            else el.textContent = String(target);
+          };
+          requestAnimationFrame(update);
+          counterObserver.unobserve(el);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    counters.forEach(c => {
+      c.setAttribute('data-counter-init', 'true');
+      counterObserver.observe(c);
     });
-  }, { threshold: 0.3 });
-  counters.forEach(c => counterObserver.observe(c));
+  }
+
+  initAboutCounters();
+  document.addEventListener('astro:page-load', initAboutCounters);
 </script>

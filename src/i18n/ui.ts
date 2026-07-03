@@ -84,6 +84,7 @@ export const ui = {
     'cleanrooms.gallery.caption2': 'Sistema de ductos',
     'cleanrooms.gallery.caption3': 'Puertas giratorias',
     'cleanrooms.gallery.caption4': 'Industria microelectrónica:\nISO 5, 1200 m²',
+    'cleanrooms.gallery.caption5': 'Industria farmacéutica:\nFlujo laminar para planta de inyectables Clase A',
     'cleanrooms.cta.benefitsTitle': '¿Por qué contratarnos?',
     'cleanrooms.cta.benefit1': 'Normativa y cumplimiento (clasificación ISO)',
     'cleanrooms.cta.benefit2': 'Calidad certificada (ISO 9001)',
@@ -97,8 +98,8 @@ export const ui = {
 
     // Services
     'services.badge': 'Servicios de Pruebas y Validación',
-    'services.title': 'Servicios de Pruebas y Validación de Desempeño en Cuartos Limpios',
-    'services.description': 'En Star Filters, realizamos pruebas de desempeño para asegurar que cada cuarto limpio y área controlada opere con condiciones óptimas. Nuestros procedimientos están basados en los más altos estándares de la industria, asegurando condiciones óptimas para sus procesos.\n\nNuestro objetivo es verificar que los sistemas de aire y filtración mantengan la máxima eficiencia, seguridad y pureza del aire, protegiendo el proceso y la calidad del producto.',
+    'services.title': 'Pruebas de Validación y de Desempeño en Cuartos Limpios',
+    'services.description': 'En Star Filters, ofrecemos servicios especializados de validación para garantizar el correcto funcionamiento y desempeño de los sistemas de filtración y control de partículas en cuartos limpios y áreas críticas. De esta manera se asegura el cumplimiento con las normas y estándares vigentes.\n\nNuestros procedimientos están basados en los más altos estándares de la industria, asegurando condiciones óptimas para sus procesos. Contamos con personal certificado.\n\nLas normas aplicables son: ISO 14644, NOM-059-SSA1-2015, NOM-241-SSA1-2021, NOM-249-SSA1-2010, Federal Standard 209E.',
     'services.hepaIntegrity.title': 'Prueba de Integridad de Filtros HEPA',
     'services.hepaIntegrity.description': 'Confirma que los filtros HEPA instalados estén libres de fugas y conserven una barrera efectiva contra contaminantes, asegurando la protección del proceso y del producto final.',
     'services.particleCount.title': 'Conteo de Partículas de Aire',
@@ -238,7 +239,7 @@ export const ui = {
     'faq.a7': '<ul><li><strong>Stock disponible:</strong> 3000 m² de almacén para entregas inmediatas.</li><li><strong>Medidas especiales:</strong> 1-3 semanas según complejidad y disponibilidad.</li><li><strong>UMAs y air shower:</strong> 2-6 semanas.</li></ul><a href="/contacto">Contáctanos</a> para consultar tiempos de entrega específicos.',
 
     // Auth
-    'auth.login.title': 'Iniciar sesión en tu cuenta',
+    'auth.login.title': 'Iniciar sesión',
     'auth.login.email': 'Dirección de correo electrónico',
     'auth.login.password': 'Contraseña',
     'auth.login.forgotPassword': '¿Olvidaste tu contraseña?',
@@ -247,7 +248,8 @@ export const ui = {
     'auth.login.createAccount': 'Crear una cuenta',
     'auth.login.error': 'Email o contraseña incorrectos',
     'auth.login.inactive': 'Tu cuenta no está activa. Verifica tu email o contacta al administrador',
-    'auth.register.title': 'Regístrate en tu cuenta',
+    'auth.register.title': 'Crear una cuenta',
+    'auth.register.company': 'Empresa',
     'auth.register.firstName': 'Nombre',
     'auth.register.lastName': 'Apellido',
     'auth.register.email': 'Correo electrónico',
@@ -356,6 +358,7 @@ export const ui = {
     'cleanrooms.gallery.caption2': 'Duct system',
     'cleanrooms.gallery.caption3': 'Revolving doors',
     'cleanrooms.gallery.caption4': 'Microelectronics industry:\nISO 5, 1,200 m²',
+    'cleanrooms.gallery.caption5': 'Pharmaceutical industry:\nLaminar flow for Class A injectables plant',
     'cleanrooms.cta.benefitsTitle': 'Why choose us?',
     'cleanrooms.cta.benefit1': 'Regulatory compliance (ISO classification)',
     'cleanrooms.cta.benefit2': 'Certified quality (ISO 9001)',
@@ -369,8 +372,8 @@ export const ui = {
 
     // Services
     'services.badge': 'Testing and Validation Services',
-    'services.title': 'Cleanroom Certification and Performance Testing Services',
-    'services.description': 'At Star Filters, we provide cleanroom performance testing to ensure every controlled area operates under optimal conditions. Our procedures are based on the highest industry standards, ensuring optimal conditions for your processes.\n\nOur goal is to verify that your air and filtration systems maintain maximum efficiency, safety, and air purity — protecting your process and product quality.',
+    'services.title': 'Cleanroom Validation and Performance Testing',
+    'services.description': 'At Star Filters, we offer specialized validation services to guarantee the correct operation and performance of filtration and particle control systems in cleanrooms and critical areas, ensuring compliance with current norms and standards.\n\nOur procedures are based on the highest industry standards, ensuring optimal conditions for your processes. We have certified personnel.\n\nApplicable standards: ISO 14644, NOM-059-SSA1-2015, NOM-241-SSA1-2021, NOM-249-SSA1-2010, Federal Standard 209E.',
     'services.hepaIntegrity.title': 'HEPA Filter Leak Test',
     'services.hepaIntegrity.description': 'Confirms that installed HEPA filters are free from leaks and maintain an effective barrier against contaminants, ensuring protection of the process and final product.',
     'services.particleCount.title': 'Airborne Particle Count Test',
@@ -510,7 +513,7 @@ export const ui = {
     'faq.a7': '<ul><li><strong>Stock available:</strong> 3000 m² warehouse for immediate delivery.</li><li><strong>Special sizes:</strong> 1-3 weeks depending on complexity and availability.</li><li><strong>AHUs and air shower:</strong> 2-6 weeks.</li></ul><a href="/en/contact">Contact us</a> to check specific delivery times.',
 
     // Auth
-    'auth.login.title': 'Sign in to your account',
+    'auth.login.title': 'Sign in',
     'auth.login.email': 'Email address',
     'auth.login.password': 'Password',
     'auth.login.forgotPassword': 'Forgot your password?',
@@ -519,7 +522,8 @@ export const ui = {
     'auth.login.createAccount': 'Create an account',
     'auth.login.error': 'Incorrect email or password',
     'auth.login.inactive': 'Your account is not active. Verify your email or contact the administrator',
-    'auth.register.title': 'Create your account',
+    'auth.register.title': 'Create an account',
+    'auth.register.company': 'Company',
     'auth.register.firstName': 'First name',
     'auth.register.lastName': 'Last name',
     'auth.register.email': 'Email',

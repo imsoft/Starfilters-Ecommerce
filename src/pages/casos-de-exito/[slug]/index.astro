@@ -66,14 +66,14 @@ const formatDate = (date: Date) =>
         <div class="h-40 bg-gradient-to-br from-primary/10 to-primary/5"></div>
       )}
       <div class="absolute bottom-0 left-0 right-0 px-6 pb-10 max-w-4xl mx-auto">
-        <div class="flex items-center gap-3 mb-3">
+        <div class="flex flex-wrap items-center gap-3 mb-3">
           <span class="inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
             {caseStudy.industry}
           </span>
           {caseStudy.client_name && (
-            <span class="text-sm text-muted-foreground font-medium">{caseStudy.client_name}</span>
+            <span class="inline-flex items-center rounded-full bg-background/85 backdrop-blur px-3 py-1 text-xs font-medium text-foreground">{caseStudy.client_name}</span>
           )}
-          <span class="text-sm text-muted-foreground">{formatDate(caseStudy.created_at)}</span>
+          <span class="inline-flex items-center rounded-full bg-background/85 backdrop-blur px-3 py-1 text-xs font-medium text-foreground">{formatDate(caseStudy.created_at)}</span>
         </div>
         <h1 class="text-3xl sm:text-4xl font-bold text-foreground leading-tight">
           {caseStudy.title}
@@ -87,16 +87,16 @@ const formatDate = (date: Date) =>
     <!-- Breadcrumb -->
     <div class="border-b border-border bg-primary/10">
       <div class="mx-auto max-w-4xl px-6 py-3">
-        <nav class="flex items-center gap-2 text-sm text-muted-foreground">
+        <nav class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <a href="/" class="hover:text-foreground transition-colors">Inicio</a>
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
           </svg>
           <a href="/casos-de-exito" class="hover:text-foreground transition-colors">Casos de Éxito</a>
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
           </svg>
-          <span class="text-foreground font-medium truncate max-w-[200px]">{caseStudy.title}</span>
+          <span class="text-foreground font-medium">{caseStudy.title}</span>
         </nav>
       </div>
     </div>
