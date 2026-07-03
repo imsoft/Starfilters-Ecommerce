@@ -1,12 +1,7 @@
 ---
 import PageHero from "@/components/shared/PageHero.astro";
-import LazyImage from "@/components/shared/LazyImage.astro";
 import SectionVideo from "@/components/shared/SectionVideo.astro";
-import SplitCTA from "@/components/shared/SplitCTA.astro";
-import { getActiveCategories, getCategoryBySlug, getChildCategories } from "@/lib/filter-category-service";
-import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
-import { getCategoryName, getCategoryDescription } from "@/lib/i18n-helpers";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -14,21 +9,34 @@ const t = useTranslations(lang);
 const productsRoute = lang === 'en' ? '/en/products' : '/productos';
 const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 
-// Mostrar los tipos de filtro (categoría 2) que cuelgan de "Filtros de aire".
-// Si no existe esa familia o aún no tiene hijos, caer en todas las categorías activas.
-let filterCategories: any[] = [];
-try {
-  const airFilters = await getCategoryBySlug('filtros-de-aire');
-  if (airFilters) {
-    filterCategories = await getChildCategories(airFilters.id);
-  }
-  if (filterCategories.length === 0) {
-    filterCategories = await getActiveCategories();
-  }
-} catch (error) {
-  console.error('❌ Error cargando categorías de filtros:', error);
-  filterCategories = [];
-}
+// Tipos de filtros industriales (estructura definida por el cliente):
+// tres bloques con foto, lista y botón a su sección del webshop.
+const filterTypes = [
+  {
+    title: lang === 'en' ? 'Low efficiency' : 'Baja eficiencia',
+    image: '/images/filters-page/filtros-baja-eficiencia.jpg',
+    href: `${productsRoute}?category=filtros-de-baja-eficiencia`,
+    items: lang === 'en'
+      ? ['Pleat filters (coarse particle prefiltration)', 'Metallic filters', 'Activated carbon filters (odor and gas control)']
+      : ['Filtros pleat (prefiltración de partículas gruesas)', 'Filtros metálicos', 'Filtros de carbón activado (control de olores y gases)'],
+  },
+  {
+    title: lang === 'en' ? 'Medium efficiency' : 'Media eficiencia',
+    image: '/images/filters-page/filtros-media-eficiencia.jpg',
+    href: `${productsRoute}?category=filtros-de-mediana-eficiencia`,
+    items: lang === 'en'
+      ? ['Bag filters (for high air volumes)', 'W filters (V-bank)']
+      : ['Filtros de bolsa (para altos volúmenes de aire)', 'Filtros W (V-bank)'],
+  },
+  {
+    title: 'HEPA',
+    image: '/images/filters-page/filtros-hepa.jpg',
+    href: `${productsRoute}?category=filtros-hepa-de-alta-eficiencia`,
+    items: lang === 'en'
+      ? ['Gel seal', 'Neoprene', 'High capacity', 'High temperature', 'Dust collector']
+      : ['Sello gel', 'Neopreno', 'Alta capacidad', 'Alta temperatura', 'Colector de polvo'],
+  },
+];
 
 const steps = lang === 'en'
   ? [
@@ -49,97 +57,129 @@ const steps = lang === 'en'
 
 <!-- ── HERO ──────────────────────────────────────────────────────────── -->
 <PageHero
-  badge="Star Filters"
   title={lang === 'en' ? 'Industrial Air Filters' : 'Filtros de Aire Industriales'}
   description={lang === 'en'
-    ? 'We manufacture air filters designed to meet the most demanding standards in pharmaceutical, electronics, and advanced manufacturing industries. Each filter type offers the right level of protection and efficiency for your process.'
-    : 'Fabricamos filtros de aire diseñados para cumplir con los estándares más exigentes de la industria farmacéutica, electrónica y de manufactura avanzada. Cada tipo de filtro ofrece un nivel de protección y eficiencia adaptado a tu proceso productivo.'}
+    ? 'We manufacture high-performance industrial air filters for demanding environments. Our solutions guarantee efficient filtration, long service life, and adaptation to every industrial process. Our air filters comply with EN779, ISO 16890, ASHRAE 52.2 (low and medium efficiency filters) and EN 1822 (HEPA and ULPA filters) standards.'
+    : 'Fabricamos filtros de aire industriales de alto rendimiento para entornos exigentes. Nuestras soluciones garantizan una filtración eficiente, larga vida útil y adaptación a cada proceso industrial. Nuestros filtros de aire cumplen con las normativas EN779, ISO 16890, ASHRAE 52.2 (filtros de baja y mediana eficiencia) y EN 1822 (filtros HEPA y ULPA).'}
   image="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
   primaryCta={{ label: lang === 'en' ? 'View products' : 'Ver productos', href: productsRoute }}
   secondaryCta={{ label: lang === 'en' ? 'Request a quote' : 'Solicitar cotización', href: contactUrl }}
 />
 
-<!-- ── CATEGORÍAS ────────────────────────────────────────────────────── -->
+<!-- ── TIPOS DE FILTROS INDUSTRIALES ─────────────────────────────────── -->
 <div class="bg-background py-16">
   <section
-    aria-labelledby="collection-heading"
+    aria-labelledby="filter-types-heading"
     class="mx-auto max-w-7xl px-6 lg:px-8"
   >
-    <!-- Grid de categorías -->
-    <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8" id="categories-grid">
-      {filterCategories.map((category) => {
-        const imageUrl = category.main_image || getProductPlaceholderImage('filtros');
-        const categoryHref = lang === 'en'
-          ? `${productsRoute}?filter_category_id=${category.id}`
-          : `${productsRoute}?category=${category.slug}`;
-        return (
-          <a
-            href={categoryHref}
-            class="group category-card flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300"
-            data-name={category.name.toLowerCase()}
-          >
-            <div class="h-56 w-full overflow-hidden bg-muted">
-              <LazyImage
-                src={imageUrl}
-                alt={category.name}
-                class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
-            <div class="flex flex-col flex-1 p-5">
-              <h3 class="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
-                {getCategoryName(category, lang)}
-              </h3>
-              {getCategoryDescription(category, lang) && (
-                <p class="mt-2 text-sm/6 text-muted-foreground line-clamp-3 flex-1">
-                  {getCategoryDescription(category, lang)}
-                </p>
-              )}
-              <div class="mt-4 flex items-center gap-1 text-sm font-semibold text-primary">
-                <span>{lang === 'en' ? 'View products' : 'Ver productos'}</span>
-                <svg class="h-4 w-4 translate-x-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                </svg>
-              </div>
-            </div>
-          </a>
-        );
-      })}
+    <h2 id="filter-types-heading" class="mb-10 text-center text-3xl font-bold text-foreground sm:text-4xl reveal">
+      {lang === 'en' ? 'Industrial Filter Types' : 'Tipos de Filtros Industriales'}
+    </h2>
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {filterTypes.map((type) => (
+        <div class="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300">
+          <div class="h-56 w-full overflow-hidden bg-muted">
+            <img
+              src={type.image}
+              alt={type.title}
+              class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+          </div>
+          <div class="flex flex-col flex-1 p-5">
+            <h3 class="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+              {type.title}
+            </h3>
+            <ul class="mt-3 space-y-2 flex-1">
+              {type.items.map((item) => (
+                <li class="flex items-start gap-2 text-sm/6 text-muted-foreground">
+                  <svg class="mt-1 h-4 w-4 flex-shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <a
+              href={type.href}
+              class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              {lang === 'en' ? 'View products' : 'Ver productos'}
+              <svg class="h-4 w-4 translate-x-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+      ))}
     </div>
-
-    {filterCategories.length === 0 && (
-      <div class="text-center py-12">
-        <h3 class="text-lg font-medium text-foreground">
-          {lang === 'en' ? 'No categories available' : 'No hay categorías disponibles'}
-        </h3>
-        <p class="mt-2 text-sm text-muted-foreground">
-          {lang === 'en' ? 'Check back soon to see new filter categories' : 'Vuelve pronto para ver nuevas categorías de filtros'}
-        </p>
-      </div>
-    )}
   </section>
 </div>
 
-<!-- ── ¿POR QUÉ STAR FILTERS? ────────────────────────────────────────── -->
+<!-- ── FABRICACIÓN PROPIA + DISPONIBILIDAD Y LOGÍSTICA ───────────────── -->
 <div class="bg-primary/10 py-20 border-t border-border">
   <div class="mx-auto max-w-6xl px-6 lg:px-8">
-    <h2 class="mb-10 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl reveal">
-      {t('filters.whyStarFilters.title')}
-    </h2>
-    <div class="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 lg:gap-x-4 reveal">
-      {([
-        t('filters.whyStarFilters.benefit1'),
-        t('filters.whyStarFilters.benefit2'),
-        t('filters.whyStarFilters.benefit3'),
-        t('filters.whyStarFilters.benefit4'),
-        t('filters.whyStarFilters.benefit5'),
-        t('filters.whyStarFilters.benefit6'),
-        t('filters.whyStarFilters.benefit7'),
-      ]).map((label, i) => (
-        <div class="group flex cursor-default flex-col items-center text-center transition-colors">
-          <img src={`/images/category-filters/iconos filtros-0${i + 1}.png`} alt="" class="h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
-          <span class="mt-3 text-sm font-medium text-foreground">{label}</span>
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
+
+      <!-- Fabricación propia -->
+      <div class="reveal flex flex-col rounded-2xl bg-white border border-border shadow-sm p-8 sm:p-10">
+        <div class="flex items-center gap-4">
+          <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 21V8.25l5.25 3V8.25l5.25 3V4.5A1.5 1.5 0 0116.5 3h1.5a1.5 1.5 0 011.5 1.5V21M7.5 15h.008v.008H7.5V15zm3.75 0h.008v.008h-.008V15zm3.75 0h.008v.008H15V15z"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-foreground">
+            {lang === 'en' ? 'In-house manufacturing of industrial filters' : 'Fabricación propia de filtros industriales'}
+          </h2>
         </div>
-      ))}
+        <ul class="mt-8 space-y-4 flex-1">
+          {(lang === 'en'
+            ? ['In-house production with total quality control', 'Made-to-measure filters for each installation', 'Fast and flexible deliveries', 'Specialized technical advice']
+            : ['Producción propia con control total de calidad', 'Filtros a medida según instalación', 'Entregas rápidas y flexibles', 'Asesoramiento técnico especializado']
+          ).map((item) => (
+            <li class="flex items-start gap-3">
+              <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="text-base text-muted-foreground">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Disponibilidad y logística -->
+      <div class="reveal flex flex-col rounded-2xl bg-white border border-border shadow-sm p-8 sm:p-10" style="transition-delay:100ms">
+        <div class="flex items-center gap-4">
+          <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-foreground">
+            {lang === 'en' ? 'Availability and logistics' : 'Disponibilidad y logística'}
+          </h2>
+        </div>
+        <ul class="mt-8 space-y-4">
+          {(lang === 'en'
+            ? ['Large warehouse in Guadalajara', 'Strategic warehouse in Mexico City (CDMX)', 'Permanent stock of industrial filters', 'Fast nationwide deliveries']
+            : ['Amplio almacén en Guadalajara', 'Almacén estratégico en Ciudad de México (CDMX)', 'Stock permanente de filtros industriales', 'Entregas rápidas a nivel nacional']
+          ).map((item) => (
+            <li class="flex items-start gap-3">
+              <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="text-base text-muted-foreground">{item}</span>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-6 border-t border-border pt-5 text-sm/6 text-muted-foreground">
+          {lang === 'en'
+            ? 'This allows us to offer fast response times and high availability for our industrial customers.'
+            : 'Esto nos permite ofrecer tiempos de respuesta rápidos y alta disponibilidad para nuestros clientes industriales.'}
+        </p>
+      </div>
+
     </div>
   </div>
 </div>
@@ -182,6 +222,7 @@ const steps = lang === 'en'
 <SectionVideo
   videoId="EziLQznVOZ0"
   videoTitle={lang === 'en' ? 'Air Filters - Star Filters' : 'Filtros de Aire - Star Filters'}
+  heading={lang === 'en' ? 'Get to know our filters' : 'Conoce nuestros filtros'}
 />
 
 <!-- ── SERVICIO DE MANTENIMIENTO ─────────────────────────────────────── -->
@@ -278,15 +319,63 @@ const steps = lang === 'en'
   </div>
 </div>
 
-<!-- ── CTA ───────────────────────────────────────────────────────────── -->
-<SplitCTA
-  badge="Star Filters"
-  title={lang === 'en' ? 'Request Your Air Filter Quote' : 'Solicita tu Cotización de Filtros'}
-  description={lang === 'en'
-    ? 'Tell us which filters you need and we will prepare a quote with clear delivery times. We manufacture standard and special sizes, with shipping throughout Mexico.'
-    : 'Cuéntanos qué filtros necesitas y te preparamos una cotización con tiempos de entrega claros. Fabricamos medidas estándar y especiales, con envío a toda la República Mexicana.'}
-  whatsappMessage={lang === 'en' ? 'Hello, I would like a quote for air filters for my company.' : 'Hola, me gustaría cotizar filtros de aire para mi empresa.'}
-/>
+<!-- ── ¿POR QUÉ STAR FILTERS? + CTA ──────────────────────────────────── -->
+<div class="bg-white py-16 sm:py-20 lg:py-24 border-t border-border">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class="grid grid-cols-1 gap-14 lg:grid-cols-2 lg:gap-12 items-center">
+
+      <!-- ¿Por qué Star Filters? -->
+      <div class="reveal">
+        <h2 class="mb-8 text-center lg:text-left text-3xl font-bold text-foreground sm:text-4xl">
+          {t('filters.whyStarFilters.title')}
+        </h2>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-6">
+          {([
+            t('filters.whyStarFilters.benefit1'),
+            t('filters.whyStarFilters.benefit2'),
+            t('filters.whyStarFilters.benefit3'),
+            t('filters.whyStarFilters.benefit4'),
+            t('filters.whyStarFilters.benefit5'),
+            t('filters.whyStarFilters.benefit6'),
+            t('filters.whyStarFilters.benefit7'),
+          ]).map((label, i) => (
+            <div class="flex items-center gap-3">
+              <img src={`/images/category-filters/iconos filtros-0${i + 1}.png`} alt="" class="h-12 w-12 flex-shrink-0 object-contain" width="48" height="48" loading="lazy" />
+              <span class="text-sm font-medium text-foreground">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- CTA de cotización -->
+      <div class="text-center reveal" style="transition-delay:100ms">
+        <p class="text-sm font-semibold uppercase tracking-widest text-primary">Star Filters</p>
+        <h2 class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          {lang === 'en' ? 'Request Your Air Filter Quote' : 'Solicita tu Cotización de Filtros'}
+        </h2>
+        <p class="mt-5 text-base/7 text-gray-600">
+          {lang === 'en'
+            ? 'Tell us which filters you need and we will prepare a quote with clear delivery times. We manufacture standard and special sizes, with shipping throughout Mexico.'
+            : 'Cuéntanos qué filtros necesitas y te preparamos una cotización con tiempos de entrega claros. Fabricamos medidas estándar y especiales, con envío a toda la República Mexicana.'}
+        </p>
+        <div class="mt-8 flex justify-center">
+          <a
+            href={`https://wa.me/523322569541?text=${encodeURIComponent(lang === 'en' ? 'Hello, I would like a quote for air filters for my company.' : 'Hola, me gustaría cotizar filtros de aire para mi empresa.')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2.5 rounded-md bg-[#25D366] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1ebe5d]"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5 flex-shrink-0">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            {lang === 'en' ? 'Contact via WhatsApp' : 'Contactar por WhatsApp'}
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <style>
   .reveal {
