@@ -9,6 +9,12 @@ export const prerender = false;
 
 const cases = await getActiveCaseStudies();
 
+// Carrusel infinito (como los logos): la mitad del track debe ser más ancha
+// que el viewport, así que con pocos casos se repite la lista.
+const repeats = cases.length > 0 ? Math.max(1, Math.ceil(6 / cases.length)) : 0;
+const loopCases = Array.from({ length: repeats }, () => cases).flat();
+const scrollDuration = `${loopCases.length * 6}s`;
+
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: siteUrl },
@@ -52,15 +58,19 @@ const getTagsArray = (tags?: string) =>
         </p>
       </div>
 
+    </div>
+
       {cases.length > 0 ? (
-        <div class="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {cases.map((c) => {
+        <!-- Carrusel infinito de casos (gira como los logos, se pausa con el mouse) -->
+        <div class="mt-16 overflow-hidden">
+        <div class="case-track flex items-stretch" style={`animation-duration: ${scrollDuration}`}>
+          {[...loopCases, ...loopCases].map((c) => {
             const title = c.title_en || c.title;
             const excerpt = c.excerpt_en || c.excerpt;
             const industry = c.industry_en || c.industry;
             const tags = getTagsArray(c.tags);
             return (
-              <article class="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <article class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                 {c.featured_image ? (
                   <div class="relative h-48 overflow-hidden">
                     <img
@@ -115,16 +125,15 @@ const getTagsArray = (tags?: string) =>
             );
           })}
         </div>
+        </div>
       ) : (
-        <div class="mx-auto mt-16 text-center">
+        <div class="mx-auto mt-16 max-w-7xl px-6 text-center">
           <div class="rounded-lg bg-muted p-12">
             <h3 class="text-sm font-medium text-foreground">Coming soon</h3>
             <p class="mt-1 text-sm text-muted-foreground">We are documenting our most outstanding projects.</p>
           </div>
         </div>
       )}
-
-    </div>
   </div>
 
   <SplitCTA
@@ -134,3 +143,31 @@ const getTagsArray = (tags?: string) =>
     whatsappMessage="Hello, I saw your success cases and I would like to discuss a filtration challenge in my company."
   />
 </WebsiteLayout>
+
+<style>
+  .case-track {
+    animation-name: scroll-cases;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    width: max-content;
+  }
+
+  .case-track:hover {
+    animation-play-state: paused;
+  }
+
+  @keyframes scroll-cases {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .case-track {
+      animation: none;
+    }
+  }
+</style>
