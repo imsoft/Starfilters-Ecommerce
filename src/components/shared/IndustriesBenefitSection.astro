@@ -6,7 +6,7 @@ const t = useTranslations(lang);
 
 const industriesBase = '/images/home-page/industries-that-benefit';
 
-const galleryHref = lang === 'en' ? '/en/#project-gallery' : '/#galeria-de-proyectos';
+const galleryHref = lang === 'en' ? '/en/success-cases' : '/casos-de-exito';
 
 const industries = [
   { image: `${industriesBase}/farmaceutica-y-biotecnologia.jpg`, labelKey: 'industriesBenefit.pharma' },
@@ -28,7 +28,7 @@ const industries = [
           <a
             href={galleryHref}
             class="group flex flex-col items-center justify-center gap-3 w-full"
-            aria-label={`${t(item.labelKey)} — ${lang === 'en' ? 'See project gallery' : 'Ver galería de proyectos'}`}
+            aria-label={`${t(item.labelKey)} — ${lang === 'en' ? 'See success cases' : 'Ver casos de éxito'}`}
           >
             <div class="w-full aspect-square overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 group-hover:shadow-xl">
               <img

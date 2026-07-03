@@ -119,17 +119,24 @@ const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
 <script>
   // Video autoplay on scroll
-  document.querySelectorAll<HTMLElement>('.video-container').forEach((container) => {
+  function initVideos() {
+    document.querySelectorAll<HTMLElement>('.video-container:not([data-video-init])').forEach((container) => {
+    container.setAttribute('data-video-init', 'true');
     const videoId = container.dataset.videoId!;
     const title = container.dataset.title!;
 
+    let loaded = false;
+
     function loadVideo() {
+      if (loaded) return;
+      loaded = true;
+      container.classList.remove('cursor-pointer');
       const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&playsinline=1`;
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&rel=0&playsinline=1&modestbranding=1`;
       iframe.title = title;
       iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
       iframe.allowFullscreen = true;
-      iframe.className = 'absolute inset-0 h-full w-full';
+      iframe.className = 'absolute inset-0 h-full w-full pointer-events-none';
       iframe.setAttribute('frameborder', '0');
       container.innerHTML = '';
       container.appendChild(iframe);
@@ -145,7 +152,8 @@ const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
     );
     obs.observe(container);
     container.addEventListener('click', () => { loadVideo(); obs.disconnect(); });
-  });
+    });
+  }
 
   // Counters
   function formatCounterValue(current: number, format: string): string {
@@ -178,15 +186,30 @@ const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
     requestAnimationFrame(animate);
   }
 
-  const counterObserver = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) { initCounters(); counterObserver.disconnect(); break; }
-      }
-    },
-    { threshold: 0.2, rootMargin: '0px 0px -50px 0px' }
-  );
+  function initStatsSection() {
+    const section = document.getElementById('stats-section');
+    if (!section || section.hasAttribute('data-counters-init')) return;
+    section.setAttribute('data-counters-init', 'true');
 
-  const section = document.getElementById('stats-section');
-  if (section) counterObserver.observe(section);
+    const counterObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) { initCounters(); counterObserver.disconnect(); break; }
+        }
+      },
+      { threshold: 0.2, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    counterObserver.observe(section);
+  }
+
+  // Con ClientRouter este módulo solo se evalúa una vez por sesión: hay que
+  // volver a inicializar en cada astro:page-load (también cubre la carga inicial).
+  function initAll() {
+    initVideos();
+    initStatsSection();
+  }
+
+  initAll();
+  document.addEventListener('astro:page-load', initAll);
 </script>

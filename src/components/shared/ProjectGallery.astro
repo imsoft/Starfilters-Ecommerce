@@ -14,6 +14,13 @@ try {
 }
 
 if (projects.length === 0) return;
+
+// Para que el carrusel infinito no muestre huecos en pantallas anchas,
+// la mitad del track debe ser más ancha que el viewport: con pocos
+// proyectos se repite la lista hasta tener al menos 6 tarjetas.
+const repeats = Math.max(1, Math.ceil(6 / projects.length));
+const loopProjects = Array.from({ length: repeats }, () => projects).flat();
+const scrollDuration = `${loopProjects.length * 6}s`;
 ---
 
 <section id={isEn ? 'project-gallery' : 'galeria-de-proyectos'} class="bg-background py-12 sm:py-16 scroll-mt-24">
@@ -28,23 +35,17 @@ if (projects.length === 0) return;
       </p>
       <p class="mt-4 text-lg text-muted-foreground">
         {isEn
-          ? 'A glimpse of the cleanrooms, HVAC systems, and filtration projects we have built.'
-          : 'Una muestra de los cuartos limpios, sistemas HVAC y proyectos de filtración que hemos construido.'}
+          ? 'A showcase of the cleanrooms and air systems we have designed, built, and validated.'
+          : 'Una muestra de nuestros cuartos limpios y sistemas de aire que hemos diseñado, construido y validado.'}
       </p>
-      <a
-        href={isEn ? '/en/about' : '/acerca-de'}
-        class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-      >
-        {isEn ? 'Learn more about Star Filters' : 'Conocer más sobre Star Filters'}
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-        </svg>
-      </a>
     </div>
 
-    <!-- Grid de proyectos -->
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {projects.map((project) => {
+  </div>
+
+  <!-- Carrusel de proyectos (gira como los logos) -->
+  <div class="overflow-hidden">
+    <div class="project-track flex items-stretch" style={`animation-duration: ${scrollDuration}`}>
+      {[...loopProjects, ...loopProjects].map((project) => {
         const title = (isEn && project.title_en) ? project.title_en : project.title;
         const description = (isEn && project.description_en) ? project.description_en : project.description;
         let portfolioHref = project.link_url || (isEn ? '/en/success-cases' : '/casos-de-exito');
@@ -53,7 +54,7 @@ if (projects.length === 0) return;
         }
 
         return (
-          <div class="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <!-- Imagen -->
             <div class="relative h-56 overflow-hidden">
               <img
@@ -85,3 +86,31 @@ if (projects.length === 0) return;
     </div>
   </div>
 </section>
+
+<style>
+  .project-track {
+    animation-name: scroll-projects;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    width: max-content;
+  }
+
+  .project-track:hover {
+    animation-play-state: paused;
+  }
+
+  @keyframes scroll-projects {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-track {
+      animation: none;
+    }
+  }
+</style>

@@ -43,3 +43,34 @@ export function isYouTubeUrl(url: string | null | undefined): boolean {
 export function getYouTubeThumbnail(id: string): string {
   return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
 }
+
+/** Indica si la URL es un video servido por Cloudinary. */
+export function isCloudinaryVideo(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes('res.cloudinary.com') && url.includes('/video/upload/');
+}
+
+/**
+ * Devuelve la URL del video optimizada por Cloudinary (calidad automática) para
+ * que cargue más rápido como fondo. Si no es de Cloudinary, la devuelve tal cual.
+ */
+export function getOptimizedHeroVideo(url: string | null | undefined): string {
+  if (!url) return '';
+  if (!isCloudinaryVideo(url)) return url;
+  // Evitar duplicar la transformación si ya la tiene.
+  if (url.includes('/video/upload/q_auto')) return url;
+  return url.replace('/video/upload/', '/video/upload/q_auto/');
+}
+
+/**
+ * Genera un poster (primer fotograma) del propio video de Cloudinary, para que
+ * mientras carga se vea una imagen del video y no una genérica.
+ * Si no es de Cloudinary, devuelve el `fallback`.
+ */
+export function getHeroVideoPoster(url: string | null | undefined, fallback: string): string {
+  if (!url || !isCloudinaryVideo(url)) return fallback;
+  let poster = url.replace('/video/upload/', '/video/upload/so_0/');
+  poster = poster.replace(/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i, '.jpg');
+  if (!/\.jpg($|\?)/i.test(poster)) poster += '.jpg';
+  return poster;
+}
