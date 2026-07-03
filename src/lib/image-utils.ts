@@ -11,14 +11,17 @@ export function getHighQualityImageUrl(
   if (!url.includes('res.cloudinary.com')) return url;
 
   const width = options?.width ?? 1200;
-  const quality = options?.quality ?? 'auto:good';
+  const quality = options?.quality ?? 'auto:best';
 
   // Cloudinary: insertar transformaciones después de /upload/
   const uploadIndex = url.indexOf('/upload/') + '/upload/'.length;
   const before = url.slice(0, uploadIndex);
   const after = url.slice(uploadIndex);
 
-  const transformations = `c_fill,w_${width},q_${quality},f_auto`;
+  // c_limit en vez de c_fill: nunca escala la imagen por encima de su tamaño
+  // original (estirar una fuente pequeña la vuelve borrosa y encima Cloudinary
+  // la recomprime). Si la fuente es menor al ancho pedido, se sirve tal cual.
+  const transformations = `c_limit,w_${width},q_${quality},f_auto`;
   return `${before}${transformations}/${after}`;
 }
 
