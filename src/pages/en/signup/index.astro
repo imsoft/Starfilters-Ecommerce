@@ -3,6 +3,7 @@ import AuthLayout from "@/layouts/authLayout.astro";
 import PasswordInput from "@/components/ui/PasswordInput.astro";
 import { createUser, getUserByEmail } from "@/lib/database";
 import { hashPassword, generateVerificationToken, validateRegisterData } from "@/lib/auth";
+import { sendEmail, createVerificationEmail } from "@/lib/email";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
 const lang = getLangFromUrl(Astro.url);
@@ -61,6 +62,17 @@ if (Astro.request.method === "POST") {
       email_verified: false,
       verification_token: verificationToken
     });
+
+    // Send the verification email (if it fails, the user can resend it from
+    // the success page)
+    try {
+      const verifyUrl = `${Astro.url.origin}/en/verify-email?token=${verificationToken}`;
+      const emailData = createVerificationEmail(registerData.firstName, verifyUrl, 'en');
+      emailData.to = registerData.email;
+      await sendEmail(emailData);
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+    }
 
     // Redirigir a página de éxito
     return Astro.redirect(`/en/signup/success?email=${encodeURIComponent(registerData.email)}`);

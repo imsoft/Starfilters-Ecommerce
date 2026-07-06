@@ -339,6 +339,111 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
   };
 };
 
+// Template para el correo de verificación de cuenta (registro)
+export const createVerificationEmail = (
+  userFirstName: string,
+  verifyUrl: string,
+  lang: 'es' | 'en' = 'es'
+): EmailData => {
+  const color50 = '#EFF6FF';
+  const color600 = '#155DFC';
+  const color700 = '#1447E6';
+
+  const isEn = lang === 'en';
+  const subject = isEn ? 'Verify your account - Star Filters' : 'Verifica tu cuenta - Star Filters';
+  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
+
+  const heading = isEn ? 'Verify your account' : 'Verifica tu cuenta';
+  const hello = isEn ? `Hello ${userFirstName},` : `Hola ${userFirstName},`;
+  const intro = isEn
+    ? 'Thanks for creating your account at Star Filters. To activate it, click the button below:'
+    : 'Gracias por crear tu cuenta en Star Filters. Para activarla, haz clic en el siguiente botón:';
+  const buttonLabel = isEn ? 'Verify my account' : 'Verificar mi cuenta';
+  const copyLink = isEn ? 'Or copy and paste this link into your browser:' : 'O copia y pega este enlace en tu navegador:';
+  const ignore = isEn
+    ? 'If you did not create this account, you can ignore this email.'
+    : 'Si tú no creaste esta cuenta, puedes ignorar este correo.';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>${subject}</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
+        .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
+        .button {
+          display: inline-block;
+          background-color: ${color600};
+          color: white !important;
+          padding: 12px 24px;
+          text-decoration: none;
+          border-radius: 6px;
+          font-weight: bold;
+          margin: 20px 0;
+          text-align: center;
+        }
+        .button:hover {
+          background-color: ${color700};
+        }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <img src="${logoUrl}" alt="Star Filters" class="header-logo" />
+          <h1>${heading}</h1>
+        </div>
+        <div class="content">
+          <h2>${hello}</h2>
+          <p>${intro}</p>
+
+          <div style="text-align: center;">
+            <a href="${verifyUrl}" class="button">${buttonLabel}</a>
+          </div>
+
+          <p>${copyLink}</p>
+          <p style="word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px;">
+            ${verifyUrl}
+          </p>
+
+          <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">${ignore}</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} Star Filters. ${isEn ? 'All rights reserved.' : 'Todos los derechos reservados.'}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+    ${hello}
+
+    ${intro}
+
+    ${verifyUrl}
+
+    ${ignore}
+
+    © ${new Date().getFullYear()} Star Filters
+  `;
+
+  return {
+    to: '',
+    subject,
+    html,
+    text
+  };
+};
+
 // Template para email al vendedor cuando se crea una nueva orden
 export const createNewOrderNotificationEmail = (
   orderNumber: string,
