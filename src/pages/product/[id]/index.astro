@@ -788,11 +788,22 @@ const benefitsList = parseListField(product.benefits);
     bind_code: undefined as string | undefined
   };
 
-  // Inicializar con los datos del producto actual
-  document.addEventListener('DOMContentLoaded', () => {
+  // Con ClientRouter este módulo solo se evalúa una vez por sesión: la
+  // inicialización debe repetirse en cada astro:page-load (cubre la carga
+  // inicial y el DOM nuevo tras cada navegación). Antes se usaba
+  // DOMContentLoaded y el botón de carrito quedaba sin listener al llegar
+  // navegando desde la tienda.
+  let exchangeRateTimerStarted = false;
+
+  function initProductPage() {
     const sizeSelect = document.getElementById('size-select') as HTMLSelectElement;
     const quantityInput = document.getElementById('quantity') as HTMLInputElement;
     const addToCartBtn = document.getElementById('add-to-cart-btn');
+
+    // Evitar doble inicialización sobre el mismo DOM (el atributo desaparece
+    // junto con el DOM viejo en cada navegación).
+    if (!addToCartBtn || addToCartBtn.hasAttribute('data-cart-init')) return;
+    addToCartBtn.setAttribute('data-cart-init', 'true');
 
     // Inicializar producto actual
     if (sizeSelect) {
@@ -857,17 +868,21 @@ const benefitsList = parseListField(product.benefits);
     }
 
     // Agregar evento al botón de agregar al carrito
-    if (addToCartBtn) {
-      addToCartBtn.addEventListener('click', handleAddToCart);
-    }
+    addToCartBtn.addEventListener('click', handleAddToCart);
 
     // Actualizar precios si estamos en español y hay USD
     const currentLang = window.location.pathname.startsWith('/en') ? 'en' : 'es';
     if (currentLang === 'es') {
       updatePricesWithExchangeRate();
-      setInterval(updatePricesWithExchangeRate, 60 * 60 * 1000);
+      if (!exchangeRateTimerStarted) {
+        exchangeRateTimerStarted = true;
+        setInterval(updatePricesWithExchangeRate, 60 * 60 * 1000);
+      }
     }
-  });
+  }
+
+  initProductPage();
+  document.addEventListener('astro:page-load', initProductPage);
 
   async function updateCurrentProduct(sizeSelect: HTMLSelectElement) {
     const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];

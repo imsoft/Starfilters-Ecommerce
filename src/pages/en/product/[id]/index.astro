@@ -412,21 +412,25 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     });
   }
 
-  // Validate quantity input
-  document.addEventListener('DOMContentLoaded', () => {
+  // Validate quantity input (re-init on every astro:page-load: with
+  // ClientRouter this module only evaluates once per session)
+  function initQuantityValidation() {
     const quantityInput = document.getElementById('quantity') as HTMLInputElement;
-    if (quantityInput) {
-      quantityInput.addEventListener('input', () => {
-        const qty = parseInt(quantityInput.value) || 1;
-        const maxStock = parseInt(quantityInput.max) || 999;
-        if (qty < 1) quantityInput.value = '1';
-        if (qty > maxStock && maxStock > 0) {
-          quantityInput.value = String(maxStock);
-          showErrorNotification(`Only ${maxStock} units available`);
-        }
-      });
-    }
-  });
+    if (!quantityInput || quantityInput.hasAttribute('data-qty-init')) return;
+    quantityInput.setAttribute('data-qty-init', 'true');
+    quantityInput.addEventListener('input', () => {
+      const qty = parseInt(quantityInput.value) || 1;
+      const maxStock = parseInt(quantityInput.max) || 999;
+      if (qty < 1) quantityInput.value = '1';
+      if (qty > maxStock && maxStock > 0) {
+        quantityInput.value = String(maxStock);
+        showErrorNotification(`Only ${maxStock} units available`);
+      }
+    });
+  }
+
+  initQuantityValidation();
+  document.addEventListener('astro:page-load', initQuantityValidation);
 
   function showErrorNotification(message: string): void {
     const notification = document.createElement('div');
