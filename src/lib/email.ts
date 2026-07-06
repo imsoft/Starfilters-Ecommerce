@@ -116,7 +116,7 @@ export const createOrderConfirmationEmail = (
     </tr>
   `).join('');
   
-  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const siteUrl = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
   const html = `
@@ -245,7 +245,7 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
   const color700 = '#1447E6';
   
   const subject = 'Recuperar contraseña - Star Filters';
-  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const siteUrl = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
   const html = `
@@ -351,7 +351,7 @@ export const createVerificationEmail = (
 
   const isEn = lang === 'en';
   const subject = isEn ? 'Verify your account - Star Filters' : 'Verifica tu cuenta - Star Filters';
-  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const siteUrl = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
 
   const heading = isEn ? 'Verify your account' : 'Verifica tu cuenta';
@@ -474,7 +474,7 @@ export const createNewOrderNotificationEmail = (
     </tr>
   `).join('');
   
-  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const siteUrl = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
   const html = `
@@ -662,7 +662,7 @@ export const createOrderStatusUpdateEmail = (
     </tr>
   `).join('');
   
-  const siteUrl = import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
+  const siteUrl = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
   const html = `
