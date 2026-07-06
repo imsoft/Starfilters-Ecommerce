@@ -5,6 +5,7 @@ import { createUser, getUserByEmail } from "@/lib/database";
 import { hashPassword, generateVerificationToken, validateRegisterData } from "@/lib/auth";
 import { sendEmail, createVerificationEmail } from "@/lib/email";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { getPublicOrigin } from "@/lib/public-url";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -66,7 +67,7 @@ if (Astro.request.method === "POST") {
     // Enviar el correo de verificación (si falla, el usuario puede reenviarlo
     // desde la página de éxito)
     try {
-      const verifyUrl = `${Astro.url.origin}/verify-email?token=${verificationToken}`;
+      const verifyUrl = `${getPublicOrigin(Astro.request)}/verify-email?token=${verificationToken}`;
       const emailData = createVerificationEmail(registerData.firstName, verifyUrl, 'es');
       emailData.to = registerData.email;
       await sendEmail(emailData);

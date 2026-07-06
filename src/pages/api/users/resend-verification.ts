@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getUserByEmail, updateUser } from '@/lib/database';
 import { generateVerificationToken, validateEmail } from '@/lib/auth';
 import { sendEmail, createVerificationEmail } from '@/lib/email';
+import { getPublicOrigin } from '@/lib/public-url';
 
 export const prerender = false;
 
@@ -11,7 +12,7 @@ export const prerender = false;
  * Responde de forma genérica (success: true) aunque el correo no exista,
  * para no revelar qué direcciones están registradas.
  */
-export const POST: APIRoute = async ({ request, url }) => {
+export const POST: APIRoute = async ({ request }) => {
   const json = (body: object, status = 200) =>
     new Response(JSON.stringify(body), {
       status,
@@ -45,7 +46,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       await updateUser(user.id, { verification_token: token });
     }
 
-    const verifyUrl = `${url.origin}${lang === 'en' ? '/en' : ''}/verify-email?token=${token}`;
+    const verifyUrl = `${getPublicOrigin(request)}${lang === 'en' ? '/en' : ''}/verify-email?token=${token}`;
     const emailData = createVerificationEmail(user.first_name, verifyUrl, lang);
     emailData.to = user.email;
 

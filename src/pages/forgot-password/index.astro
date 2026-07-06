@@ -4,6 +4,7 @@ import { getUserByEmail, setPasswordResetToken } from "@/lib/database";
 import { generateResetToken, validateEmail } from "@/lib/auth";
 import { sendEmail, createPasswordResetEmail } from "@/lib/email";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { getPublicOrigin } from "@/lib/public-url";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -36,7 +37,7 @@ if (Astro.request.method === "POST") {
         
         if (tokenSaved) {
           // Crear enlace de reset
-          const resetUrl = `${Astro.url.origin}/reset-password?token=${resetToken}`;
+          const resetUrl = `${getPublicOrigin(Astro.request)}/reset-password?token=${resetToken}`;
           
           // Crear email
           const emailData = createPasswordResetEmail(user.first_name, resetUrl);
