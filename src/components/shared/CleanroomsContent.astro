@@ -190,16 +190,23 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
 />
 
 <!-- ── ¿POR QUÉ CONTRATARNOS? + CTA ──────────────────────────────────── -->
-<div class="bg-white py-16 sm:py-20 lg:py-24 border-t border-border">
+<div class="bg-primary/10 py-16 sm:py-20 border-t border-border">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <div class="grid grid-cols-1 gap-14 lg:grid-cols-2 lg:gap-12 items-center">
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-2 items-stretch">
 
       <!-- ¿Por qué contratarnos? -->
-      <div class="reveal">
-        <h2 class="mb-8 text-center lg:text-left text-3xl font-bold text-foreground sm:text-4xl">
-          {t('cleanrooms.cta.benefitsTitle')}
-        </h2>
-        <div class="grid grid-cols-2 gap-x-6 gap-y-6">
+      <div class="reveal flex flex-col rounded-2xl bg-white border border-border shadow-sm p-8 sm:p-10">
+        <div class="flex items-center gap-4">
+          <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-foreground">
+            {t('cleanrooms.cta.benefitsTitle')}
+          </h2>
+        </div>
+        <div class="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 flex-1">
           {([
             t('cleanrooms.cta.benefit1'),
             t('cleanrooms.cta.benefit2'),
@@ -217,7 +224,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
       </div>
 
       <!-- CTA -->
-      <div class="text-center reveal" style="transition-delay:100ms">
+      <div class="reveal flex flex-col items-center justify-center text-center rounded-2xl bg-white border border-border shadow-sm p-8 sm:p-10" style="transition-delay:100ms">
         <p class="text-sm font-semibold uppercase tracking-widest text-primary">{t('cleanrooms.badge')}</p>
         <h2 class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
           {t('cleanrooms.cta.title')}
