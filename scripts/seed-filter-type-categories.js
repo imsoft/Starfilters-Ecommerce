@@ -90,6 +90,41 @@ async function seed() {
     }
   }
 
+  // Migración de la categoría legada "Mini pleat sello gel downstream":
+  // sus variantes son los productos reales de la tienda; se mueven a la nueva
+  // "Mini Pleat" para que no desaparezcan del webshop al desactivarla.
+  const [legacyRows] = await connection.execute(
+    "SELECT * FROM filter_categories WHERE slug = 'mini-pleat-sello-gel-downstream' LIMIT 1"
+  );
+  if (legacyRows.length > 0) {
+    const legacy = legacyRows[0];
+    const [newRows] = await connection.execute(
+      "SELECT * FROM filter_categories WHERE slug = 'mini-pleat' LIMIT 1"
+    );
+    if (newRows.length > 0 && newRows[0].id !== legacy.id) {
+      const nuevo = newRows[0];
+      const [vRes] = await connection.execute(
+        'UPDATE filter_category_variants SET category_id = ? WHERE category_id = ?',
+        [nuevo.id, legacy.id]
+      );
+      const [pRes] = await connection.execute(
+        'UPDATE products SET filter_category_id = ? WHERE filter_category_id = ?',
+        [nuevo.id, legacy.id]
+      );
+      // Conservar imagen y textos de la categoría legada si la nueva no tiene
+      const copyFields = ['main_image', 'description', 'description_en', 'efficiency', 'efficiency_en', 'characteristics', 'characteristics_en', 'applications', 'applications_en', 'benefits', 'benefits_en', 'typical_installation', 'typical_installation_en'];
+      for (const f of copyFields) {
+        if (legacy[f] != null && nuevo[f] == null) {
+          await connection.execute(
+            `UPDATE filter_categories SET ${f} = ? WHERE id = ?`,
+            [legacy[f], nuevo.id]
+          );
+        }
+      }
+      console.log(`🔀 Migradas ${vRes.affectedRows} variantes y ${pRes.affectedRows} productos de "${legacy.name}" → "Mini Pleat"`);
+    }
+  }
+
   // Desactivar hijas de Filtros de aire que no estén en la lista del cliente
   const [children] = await connection.execute(
     'SELECT id, name, slug FROM filter_categories WHERE parent_id = ?',
