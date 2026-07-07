@@ -422,17 +422,26 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
 </header>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const modal = document.getElementById("mobile-menu");
-    const openBtn = document.querySelector('[data-action="show-modal"]');
-    const closeBtn = document.querySelector('[data-action="close"]');
+  // Con ClientRouter este módulo solo se evalúa una vez por sesión. Se usa
+  // delegación en document para que el menú móvil funcione en todas las
+  // páginas y tras cada navegación (antes se enganchaba en DOMContentLoaded
+  // y el botón hamburguesa dejaba de abrir el menú al navegar).
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
 
-    openBtn?.addEventListener("click", () => {
-      (modal as HTMLDialogElement)?.showModal();
-    });
+    const modal = document.getElementById("mobile-menu") as HTMLDialogElement | null;
+    if (!modal) return;
 
-    closeBtn?.addEventListener("click", () => {
-      (modal as HTMLDialogElement)?.close();
-    });
+    if (target.closest('[data-action="show-modal"]')) {
+      modal.showModal();
+    } else if (target.closest('[data-action="close"]')) {
+      modal.close();
+    }
+  });
+
+  // Cerrar el menú móvil al navegar (si quedó abierto al tocar un enlace)
+  document.addEventListener("astro:before-swap", () => {
+    (document.getElementById("mobile-menu") as HTMLDialogElement | null)?.close();
   });
 </script>
