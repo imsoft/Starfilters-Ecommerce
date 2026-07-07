@@ -125,19 +125,44 @@ async function seed() {
     }
   }
 
-  // Desactivar hijas de Filtros de aire que no estén en la lista del cliente
+  // Desactivar hijas de Filtros de aire que no estén en la lista del cliente,
+  // PERO solo si están vacías. Si una categoría legada todavía tiene productos
+  // o variantes (p. ej. "hepa" con el Filtro HEPA H13 en producción),
+  // desactivarla los ocultaría del webshop. En ese caso se conserva activa y
+  // se avisa para migrarla a mano desde el admin.
   const [children] = await connection.execute(
     'SELECT id, name, slug FROM filter_categories WHERE parent_id = ?',
     [parentId]
   );
+  const needsManualMigration = [];
   for (const child of children) {
-    if (!wantedSlugs.includes(child.slug)) {
+    if (wantedSlugs.includes(child.slug)) continue;
+
+    const [[{ nVar }]] = await connection.execute(
+      'SELECT COUNT(*) AS nVar FROM filter_category_variants WHERE category_id = ?',
+      [child.id]
+    );
+    const [[{ nProd }]] = await connection.execute(
+      'SELECT COUNT(*) AS nProd FROM products WHERE filter_category_id = ?',
+      [child.id]
+    );
+
+    if (nVar > 0 || nProd > 0) {
+      needsManualMigration.push({ name: child.name, slug: child.slug, nVar, nProd });
+      console.log(`⏭️  Conservada activa (tiene ${nVar} variantes y ${nProd} productos): ${child.name} (${child.slug})`);
+    } else {
       await connection.execute(
         "UPDATE filter_categories SET status = 'inactive' WHERE id = ?",
         [child.id]
       );
-      console.log(`🚫 Desactivada (no está en la lista): ${child.name} (${child.slug})`);
+      console.log(`🚫 Desactivada (vacía y fuera de la lista): ${child.name} (${child.slug})`);
     }
+  }
+
+  if (needsManualMigration.length > 0) {
+    console.log('\n⚠️  Estas categorías legadas siguen ACTIVAS porque tienen productos.');
+    console.log('    Migra sus productos a la nueva categoría desde el admin y luego desactívalas:');
+    needsManualMigration.forEach((c) => console.log(`      · ${c.name} (${c.slug}): ${c.nVar} variantes, ${c.nProd} productos`));
   }
 
   const [finales] = await connection.execute(
