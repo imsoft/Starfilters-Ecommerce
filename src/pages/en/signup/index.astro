@@ -10,11 +10,27 @@ import { getPublicOrigin } from "@/lib/public-url";
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
+// Error message and captured values: on error we do NOT redirect — the page
+// re-renders with the fields preserved (except the password, for security).
+const url = new URL(Astro.request.url);
+let error: string | null = url.searchParams.get('error');
+let values = {
+  firstName: '',
+  lastName: '',
+  company: '',
+  email: '',
+  phone: '',
+  address: '',
+  city: '',
+  postalCode: '',
+  country: 'United States',
+};
+
 // Manejar el formulario de registro
 if (Astro.request.method === "POST") {
   try {
     const formData = await Astro.request.formData();
-    
+
     const registerData = {
       email: formData.get("email") as string,
       password: formData.get("password") as string,
@@ -28,65 +44,71 @@ if (Astro.request.method === "POST") {
       country: formData.get("country") as string || "United States"
     };
 
+    values = {
+      firstName: registerData.firstName || '',
+      lastName: registerData.lastName || '',
+      company: registerData.company || '',
+      email: registerData.email || '',
+      phone: registerData.phone || '',
+      address: registerData.address || '',
+      city: registerData.city || '',
+      postalCode: registerData.postalCode || '',
+      country: registerData.country,
+    };
+
     // Validar datos
     const validation = validateRegisterData(registerData);
     if (!validation.isValid) {
       Astro.response.status = 400;
-      return Astro.redirect(`/en/signup?error=${encodeURIComponent(validation.errors.join(', '))}`);
+      error = validation.errors.join(', ');
+    } else if (await getUserByEmail(registerData.email)) {
+      // Verificar si el usuario ya existe
+      Astro.response.status = 400;
+      error = t('auth.register.emailExists');
+    } else {
+      // Hash de la contraseña
+      const passwordHash = await hashPassword(registerData.password);
+
+      // Generar token de verificación
+      const verificationToken = generateVerificationToken();
+
+      // Crear usuario en la base de datos
+      await createUser({
+        email: registerData.email,
+        password_hash: passwordHash,
+        first_name: registerData.firstName,
+        last_name: registerData.lastName,
+        company: registerData.company,
+        phone: registerData.phone,
+        address: registerData.address,
+        city: registerData.city,
+        postal_code: registerData.postalCode,
+        country: registerData.country,
+        status: 'pending',
+        email_verified: false,
+        verification_token: verificationToken
+      });
+
+      // Send the verification email (if it fails, the user can resend it
+      // from the success page)
+      try {
+        const verifyUrl = `${getPublicOrigin(Astro.request)}/en/verify-email?token=${verificationToken}`;
+        const emailData = createVerificationEmail(registerData.firstName, verifyUrl, 'en');
+        emailData.to = registerData.email;
+        await sendEmail(emailData);
+      } catch (emailError) {
+        console.error('Error sending verification email:', emailError);
+      }
+
+      // Redirigir a página de éxito
+      return Astro.redirect(`/en/signup/success?email=${encodeURIComponent(registerData.email)}`);
     }
-
-    // Verificar si el usuario ya existe
-    const existingUser = await getUserByEmail(registerData.email);
-    if (existingUser) {
-      return Astro.redirect(`/en/signup?error=${encodeURIComponent(t('auth.register.emailExists'))}`);
-    }
-
-    // Hash de la contraseña
-    const passwordHash = await hashPassword(registerData.password);
-    
-    // Generar token de verificación
-    const verificationToken = generateVerificationToken();
-
-    // Crear usuario en la base de datos
-    const userId = await createUser({
-      email: registerData.email,
-      password_hash: passwordHash,
-      first_name: registerData.firstName,
-      last_name: registerData.lastName,
-      company: registerData.company,
-      phone: registerData.phone,
-      address: registerData.address,
-      city: registerData.city,
-      postal_code: registerData.postalCode,
-      country: registerData.country,
-      status: 'pending',
-      email_verified: false,
-      verification_token: verificationToken
-    });
-
-    // Send the verification email (if it fails, the user can resend it from
-    // the success page)
-    try {
-      const verifyUrl = `${getPublicOrigin(Astro.request)}/en/verify-email?token=${verificationToken}`;
-      const emailData = createVerificationEmail(registerData.firstName, verifyUrl, 'en');
-      emailData.to = registerData.email;
-      await sendEmail(emailData);
-    } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
-    }
-
-    // Redirigir a página de éxito
-    return Astro.redirect(`/en/signup/success?email=${encodeURIComponent(registerData.email)}`);
-    
-  } catch (error) {
-    console.error('Error en registro:', error);
-    return Astro.redirect(`/en/signup?error=${encodeURIComponent('Internal server error')}`);
+  } catch (err) {
+    console.error('Error en registro:', err);
+    Astro.response.status = 500;
+    error = 'Internal server error';
   }
 }
-
-// Obtener mensaje de error de la URL
-const url = new URL(Astro.request.url);
-const error = url.searchParams.get('error');
 ---
 
 <AuthLayout title={t('auth.register.title')}>
@@ -123,6 +145,7 @@ const error = url.searchParams.get('error');
                 id="firstName"
                 type="text"
                 name="firstName"
+                value={values.firstName}
                 required
                 autocomplete="given-name"
                 class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
@@ -139,6 +162,7 @@ const error = url.searchParams.get('error');
                 id="lastName"
                 type="text"
                 name="lastName"
+                value={values.lastName}
                 required
                 autocomplete="family-name"
                 class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
@@ -157,6 +181,7 @@ const error = url.searchParams.get('error');
               id="company"
               type="text"
               name="company"
+                value={values.company}
               required
               autocomplete="organization"
               class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
@@ -174,6 +199,7 @@ const error = url.searchParams.get('error');
               id="email"
               type="email"
               name="email"
+                value={values.email}
               required
               autocomplete="email"
               class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
@@ -191,6 +217,7 @@ const error = url.searchParams.get('error');
               id="phone"
               type="tel"
               name="phone"
+                value={values.phone}
               autocomplete="tel"
               class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
             />
@@ -225,6 +252,7 @@ const error = url.searchParams.get('error');
               id="address"
               type="text"
               name="address"
+                value={values.address}
               autocomplete="street-address"
               class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
             />
@@ -242,6 +270,7 @@ const error = url.searchParams.get('error');
                 id="city"
                 type="text"
                 name="city"
+                value={values.city}
                 autocomplete="address-level2"
                 class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
               />
@@ -257,6 +286,7 @@ const error = url.searchParams.get('error');
                 id="postalCode"
                 type="text"
                 name="postalCode"
+                value={values.postalCode}
                 autocomplete="postal-code"
                 class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
               />
@@ -276,14 +306,14 @@ const error = url.searchParams.get('error');
               autocomplete="country"
               class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
             >
-              <option value="United States">United States</option>
-              <option value="México">México</option>
-              <option value="Canadá">Canadá</option>
-              <option value="España">España</option>
-              <option value="Argentina">Argentina</option>
-              <option value="Colombia">Colombia</option>
-              <option value="Chile">Chile</option>
-              <option value="Perú">Perú</option>
+              <option value="United States" selected={values.country === "United States"}>United States</option>
+              <option value="México" selected={values.country === "México"}>México</option>
+              <option value="Canadá" selected={values.country === "Canadá"}>Canadá</option>
+              <option value="España" selected={values.country === "España"}>España</option>
+              <option value="Argentina" selected={values.country === "Argentina"}>Argentina</option>
+              <option value="Colombia" selected={values.country === "Colombia"}>Colombia</option>
+              <option value="Chile" selected={values.country === "Chile"}>Chile</option>
+              <option value="Perú" selected={values.country === "Perú"}>Perú</option>
             </select>
           </div>
         </div>
