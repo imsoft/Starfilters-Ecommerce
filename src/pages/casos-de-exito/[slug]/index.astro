@@ -52,35 +52,36 @@ const formatDate = (date: Date) =>
 
   <article class="bg-background">
     <!-- Hero -->
-    <div class="relative">
+    <div>
       {caseStudy.featured_image ? (
-        <div class="h-72 sm:h-96 overflow-hidden">
+        <div class="h-56 sm:h-96 overflow-hidden">
           <img
             src={caseStudy.featured_image}
             alt={caseStudy.title}
             class="h-full w-full object-cover"
           />
-          <div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
         </div>
       ) : (
         <div class="h-40 bg-gradient-to-br from-primary/10 to-primary/5"></div>
       )}
-      <div class="absolute bottom-0 left-0 right-0 px-6 pb-10 max-w-4xl mx-auto">
-        <div class="flex flex-wrap items-center gap-3 mb-3">
-          <span class="inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-            {caseStudy.industry}
-          </span>
-          {caseStudy.client_name && (
-            <span class="inline-flex items-center rounded-full bg-background/85 backdrop-blur px-3 py-1 text-xs font-medium text-foreground">{caseStudy.client_name}</span>
+      <div class="bg-primary/5 border-b border-border">
+        <div class="max-w-4xl mx-auto px-6 py-8">
+          <div class="flex flex-wrap items-center gap-3 mb-3">
+            <span class="inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+              {caseStudy.industry}
+            </span>
+            {caseStudy.client_name && (
+              <span class="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground">{caseStudy.client_name}</span>
+            )}
+            <span class="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground">{formatDate(caseStudy.created_at)}</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-bold text-foreground leading-tight">
+            {caseStudy.title}
+          </h1>
+          {caseStudy.excerpt && (
+            <p class="mt-3 text-lg text-muted-foreground max-w-2xl">{caseStudy.excerpt}</p>
           )}
-          <span class="inline-flex items-center rounded-full bg-background/85 backdrop-blur px-3 py-1 text-xs font-medium text-foreground">{formatDate(caseStudy.created_at)}</span>
         </div>
-        <h1 class="text-3xl sm:text-4xl font-bold text-foreground leading-tight">
-          {caseStudy.title}
-        </h1>
-        {caseStudy.excerpt && (
-          <p class="mt-3 text-lg text-muted-foreground max-w-2xl">{caseStudy.excerpt}</p>
-        )}
       </div>
     </div>
 
