@@ -57,8 +57,10 @@
     }
   }
 
-  // Actualizar contador al cargar la página
-  document.addEventListener('DOMContentLoaded', updateCartCount);
+  // Actualizar contador al cargar la página y tras cada navegación de
+  // ClientRouter (el badge #cart-count se reemplaza en cada swap).
+  updateCartCount();
+  document.addEventListener('astro:page-load', updateCartCount);
 
   // Escuchar eventos de actualización del carrito
   window.addEventListener('cartUpdated', updateCartCount);

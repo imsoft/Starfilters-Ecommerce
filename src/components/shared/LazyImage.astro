@@ -172,17 +172,14 @@ const imageId = `lazy-image-${Math.random().toString(36).substr(2, 9)}`;
     }
   }
 
-  // Inicializar cuando el DOM esté listo
-  document.addEventListener('DOMContentLoaded', () => {
-    window.lazyImageLoader = new LazyImageLoader();
-  });
-
-  // También inicializar si el script se ejecuta después del DOMContentLoaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      window.lazyImageLoader = new LazyImageLoader();
-    });
-  } else {
+  // Inicializar al cargar y tras cada navegación de ClientRouter (cada página
+  // trae imágenes lazy nuevas que hay que observar; antes con DOMContentLoaded
+  // las imágenes de las páginas siguientes no se cargaban al navegar).
+  function initLazyImages() {
+    window.lazyImageLoader?.destroy();
     window.lazyImageLoader = new LazyImageLoader();
   }
+
+  initLazyImages();
+  document.addEventListener('astro:page-load', initLazyImages);
 </script>

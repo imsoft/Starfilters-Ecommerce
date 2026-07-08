@@ -777,25 +777,13 @@ const formatPrice = (price: number): string => {
   (window as any).updateMeasurementsFromInputs = updateMeasurementsFromInputs;
 
   // Inicializar carrito
-  document.addEventListener("DOMContentLoaded", async () => {
-    await renderCart();
-    
-    // Verificar que el modal esté en el DOM
-    const modal = document.getElementById("confirm-dialog");
-    console.log('🔍 Modal en DOM después de renderCart:', !!modal);
-    if (modal) {
-      console.log('✅ Modal encontrado:', modal);
-      console.log('Modal classes:', modal.className);
-      console.log('Modal style:', modal.style.cssText);
-    } else {
-      console.error('❌ Modal NO encontrado en el DOM');
-      // Buscar todos los elementos con id que contenga "confirm"
-      const allWithConfirm = document.querySelectorAll('[id*="confirm"]');
-      console.log('Elementos con "confirm" en ID:', Array.from(allWithConfirm).map(el => ({
-        id: el.id,
-        tag: el.tagName,
-        classes: el.className
-      })));
-    }
-  });
+  // Renderizar al cargar y tras cada navegación de ClientRouter (antes con
+  // DOMContentLoaded el carrito no se renderizaba al llegar navegando).
+  function initCartPage() {
+    if (!document.getElementById("cart-content")) return;
+    renderCart();
+  }
+
+  initCartPage();
+  document.addEventListener("astro:page-load", initCartPage);
 </script>

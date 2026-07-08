@@ -59,22 +59,26 @@ const { id } = Astro.props;
 </div>
 
 <script is:inline>
-  // Función global para mostrar el modal personalizado (solo se define una vez)
+  // Función global para mostrar el modal personalizado (solo se define una vez).
+  // OJO: is:inline NO se transpila; este script debe ser JS plano (sin
+  // TypeScript). Antes tenía anotaciones de tipo y no parseaba en el
+  // navegador, dejando showCustomModal sin definir (el modal no funcionaba).
   (function() {
     if (typeof window === "undefined") return;
-    
+
     // Solo definir la función si no existe
-    if ((window as any).showCustomModal) return;
-    
-    (window as any).showCustomModal = function(
-      modalId: string,
-      title: string,
-      description: string,
-      onConfirm: () => void,
-      confirmText: string = "Confirmar",
-      cancelText: string = "Cancelar"
-    ): void {
-      console.log('🔍 Mostrando modal:', modalId);
+    if (window.showCustomModal) return;
+
+    window.showCustomModal = function(
+      modalId,
+      title,
+      description,
+      onConfirm,
+      confirmText,
+      cancelText
+    ) {
+      confirmText = confirmText || "Confirmar";
+      cancelText = cancelText || "Cancelar";
       const modal = document.getElementById(modalId);
       const modalTitle = document.getElementById(modalId + '-title');
       const modalDescription = document.getElementById(modalId + '-description');
@@ -82,17 +86,8 @@ const { id } = Astro.props;
       const cancelBtn = document.getElementById(modalId + '-cancel');
       const overlay = document.getElementById(modalId + '-overlay');
 
-      console.log('🔍 Elementos encontrados:', {
-        modal: !!modal,
-        modalTitle: !!modalTitle,
-        modalDescription: !!modalDescription,
-        confirmBtn: !!confirmBtn,
-        cancelBtn: !!cancelBtn,
-        overlay: !!overlay
-      });
-
       if (!modal || !modalTitle || !modalDescription || !confirmBtn || !cancelBtn) {
-        console.error('❌ No se encontraron todos los elementos del modal');
+        console.error('No se encontraron todos los elementos del modal');
         return;
       }
 
@@ -105,31 +100,28 @@ const { id } = Astro.props;
       // Mostrar modal
       modal.style.display = "flex";
       document.body.style.overflow = "hidden";
-      console.log('✅ Modal mostrado');
 
-      // Handlers
-      const handleConfirm = () => {
-        console.log('✅ Confirmado');
+      var closeModal = function() {
+        modal.style.display = "none";
+        document.body.style.overflow = "";
+        // Remover listeners clonando los elementos
+        var newConfirmBtn = confirmBtn.cloneNode(true);
+        var newCancelBtn = cancelBtn.cloneNode(true);
+        confirmBtn.replaceWith(newConfirmBtn);
+        cancelBtn.replaceWith(newCancelBtn);
+        if (overlay) {
+          var newOverlay = overlay.cloneNode(true);
+          overlay.replaceWith(newOverlay);
+        }
+      };
+
+      var handleConfirm = function() {
         onConfirm();
         closeModal();
       };
 
-      const handleCancel = () => {
-        console.log('❌ Cancelado');
+      var handleCancel = function() {
         closeModal();
-      };
-
-      const closeModal = () => {
-        modal.style.display = "none";
-        document.body.style.overflow = "";
-        // Remover listeners clonando los elementos
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        const newOverlay = overlay?.cloneNode(true);
-        
-        confirmBtn.replaceWith(newConfirmBtn);
-        cancelBtn.replaceWith(newCancelBtn);
-        if (overlay) overlay.replaceWith(newOverlay);
       };
 
       // Agregar listeners a los elementos actuales
@@ -138,7 +130,7 @@ const { id } = Astro.props;
       if (overlay) overlay.addEventListener("click", handleCancel);
 
       // Cerrar con ESC
-      const handleEscape = (e: KeyboardEvent) => {
+      var handleEscape = function(e) {
         if (e.key === "Escape") {
           handleCancel();
           document.removeEventListener("keydown", handleEscape);
@@ -146,7 +138,6 @@ const { id } = Astro.props;
       };
       document.addEventListener("keydown", handleEscape);
     };
-    console.log('✅ Función showCustomModal definida globalmente');
   })();
 </script>
 

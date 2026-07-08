@@ -452,15 +452,22 @@ const getStatusText = (status: string) => {
   }
   
   // Event listeners
-  document.addEventListener('DOMContentLoaded', () => {
+  // Re-init en cada navegación de ClientRouter (antes con DOMContentLoaded los
+  // filtros dejaban de funcionar al llegar a Pedidos navegando).
+  function initOrdersFilters() {
     const searchInput = document.getElementById('search-orders');
+    if (!searchInput || searchInput.hasAttribute('data-orders-init')) return;
+    searchInput.setAttribute('data-orders-init', 'true');
     const statusFilter = document.getElementById('filter-status');
     const dateFilter = document.getElementById('filter-date');
-    
-    searchInput?.addEventListener('input', filterOrders);
+
+    searchInput.addEventListener('input', filterOrders);
     statusFilter?.addEventListener('change', filterOrders);
     dateFilter?.addEventListener('change', filterOrders);
-  });
+  }
+
+  initOrdersFilters();
+  document.addEventListener('astro:page-load', initOrdersFilters);
   
   // Función para cancelar pedido
   function cancelOrder(orderId: number) {
