@@ -1,0 +1,521 @@
+---
+import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import SEO from "@/components/shared/SEO.astro";
+import LazyImage from "@/components/shared/LazyImage.astro";
+import { getCategoryBySlug, getCategoryVariants, getCategoryImages } from "@/lib/filter-category-service";
+import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getVariantPriceInMXN, getExchangeRate } from "@/lib/currency-service";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/en/filters');
+}
+
+// Get category by slug
+const category = await getCategoryBySlug(slug);
+
+if (!category) {
+  return Astro.redirect('/en/filters');
+}
+
+// Get variants and images
+const variants = await getCategoryVariants(category.id);
+const images = await getCategoryImages(category.id);
+
+// Filter only active variants with stock
+const activeVariants = variants.filter(v => v.is_active && v.stock > 0);
+
+// Get current exchange rate
+const exchangeRate = await getExchangeRate();
+
+// Calculate min and max price in MXN (convert if needed)
+const pricesInMXN = await Promise.all(
+  activeVariants.map(async v => {
+    if (v.currency === 'USD') {
+      return await getVariantPriceInMXN(v.price, v.currency, v.price_usd);
+    }
+    return v.price;
+  })
+);
+const minPrice = pricesInMXN.length > 0 ? Math.min(...pricesInMXN) : 0;
+const maxPrice = pricesInMXN.length > 0 ? Math.max(...pricesInMXN) : 0;
+
+// Convert USD price to MXN
+const convertPriceToMXN = (priceUSD: number): number => {
+  return priceUSD * exchangeRate;
+};
+
+// Format USD price
+const formatPriceUSD = (price: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(price);
+};
+
+// Format price
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  }).format(price);
+};
+
+// Main image
+const mainImage = category.main_image || images.find(img => img.is_primary)?.image_url || '/images/products/placeholder.svg';
+const carouselImages = images.filter(img => !img.is_primary).sort((a, b) => a.sort_order - b.sort_order);
+
+// SEO data
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Home', url: `${siteUrl}/en` },
+  { name: 'Filters', url: `${siteUrl}/en/filters` },
+  { name: category.name, url: `${siteUrl}/en/filters/${slug}` }
+]);
+---
+
+<WebsiteLayout
+  title={category.name}
+  seoTitle={`${category.name} - Star Filters Industrial Filters`}
+  description={category.description || `Discover our high-quality ${category.name}. Available in multiple sizes and specifications.`}
+>
+  <SEO
+    slot="seo"
+    schemaData={[breadcrumbSchema]}
+  />
+
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Breadcrumbs -->
+    <nav class="mb-8" aria-label="Breadcrumb">
+      <ol class="flex items-center space-x-2 text-sm">
+        <li><a href="/en" class="text-muted-foreground hover:text-foreground transition-colors">Home</a></li>
+        <li><span class="text-muted-foreground">/</span></li>
+        <li><a href="/en/filters" class="text-muted-foreground hover:text-foreground transition-colors">Filters</a></li>
+        <li><span class="text-muted-foreground">/</span></li>
+        <li><span class="text-foreground font-medium">{category.name}</span></li>
+      </ol>
+    </nav>
+
+    <!-- Main grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
+      <!-- Image column -->
+      <div class="space-y-4">
+        <!-- Main image -->
+        <div class="w-full aspect-square overflow-hidden rounded-lg bg-muted">
+          <LazyImage
+            src={mainImage}
+            alt={category.name}
+            class="h-full w-full object-cover object-center"
+          />
+        </div>
+
+        <!-- Carousel image gallery -->
+        {carouselImages.length > 0 && (
+          <div class="grid grid-cols-4 gap-4">
+            {carouselImages.map((img) => (
+              <div class="aspect-square overflow-hidden rounded-lg bg-muted cursor-pointer hover:opacity-75 transition-opacity">
+                <LazyImage
+                  src={img.image_url}
+                  alt={img.alt_text || category.name}
+                  class="h-full w-full object-cover object-center"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Info column -->
+      <div class="space-y-6">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground mb-2">{category.name}</h1>
+          {category.description && (
+            <p class="text-lg text-muted-foreground">{category.description}</p>
+          )}
+        </div>
+
+        <!-- Price -->
+        <div class="border-t border-border pt-6">
+          <p class="text-3xl font-bold text-foreground">
+            {minPrice === maxPrice
+              ? formatPrice(minPrice)
+              : `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`
+            }
+          </p>
+          {activeVariants.length > 1 && (
+            <p class="text-sm text-muted-foreground mt-1">
+              Price varies by selected size
+            </p>
+          )}
+        </div>
+
+        <!-- Variant selector -->
+        {activeVariants.length > 0 && (
+          <div class="border-t border-border pt-6">
+            <h3 class="text-lg font-medium text-foreground mb-4">Select a size:</h3>
+            <div class="space-y-3">
+              {activeVariants.map((variant) => (
+                <div
+                  class="variant-option flex items-center justify-between p-4 border-2 border-border rounded-lg cursor-pointer hover:border-primary transition-colors"
+                  data-variant-id={variant.id}
+                  data-price={variant.currency === 'USD' && variant.price_usd ? convertPriceToMXN(variant.price_usd) : variant.price}
+                  data-original-price={variant.price}
+                  data-currency={variant.currency || 'MXN'}
+                  data-price-usd={variant.price_usd || ''}
+                  data-stock={variant.stock}
+                  data-bind-code={variant.bind_code}
+                >
+                  <div class="flex-1">
+                    <p class="font-medium text-foreground">{variant.nominal_size}</p>
+                    <p class="text-sm text-muted-foreground">Actual size: {variant.real_size}</p>
+                    <p class="text-xs text-green-600 font-medium mt-1">
+                      Available
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    {variant.currency === 'USD' && variant.price_usd ? (
+                      <>
+                        <p class="variant-price-mxn text-lg font-bold text-foreground" data-price-usd={variant.price_usd}>{formatPrice(convertPriceToMXN(variant.price_usd))}</p>
+                        <p class="text-xs text-muted-foreground">{formatPriceUSD(variant.price_usd)} USD</p>
+                      </>
+                    ) : (
+                      <p class="text-lg font-bold text-foreground">{formatPrice(variant.price)}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Add to cart button -->
+        <div class="border-t border-border pt-6">
+          <button
+            id="add-to-cart-btn"
+            disabled
+            class="w-full bg-primary text-primary-foreground py-3 px-6 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Select a size
+          </button>
+          <p id="selection-message" class="text-sm text-muted-foreground mt-2 text-center">
+            Please select a size to continue
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Full description -->
+    {category.description && (
+      <div class="mx-auto mt-16 max-w-3xl">
+        <div class="rounded-lg bg-gray-50 p-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Description</h2>
+          <div class="prose prose-sm max-w-none text-gray-700 whitespace-pre-line">
+            {category.description}
+          </div>
+        </div>
+      </div>
+    )}
+
+    <!-- Technical specifications -->
+    <div class="mx-auto mt-16 max-w-7xl">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main specifications column -->
+        <div class="lg:col-span-2 space-y-8">
+          <div>
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-6">Technical Specifications</h2>
+
+            <!-- Efficiency -->
+            {(category.efficiency || category.efficiency_class) && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Efficiency
+                </h3>
+                {category.efficiency && (
+                  <div class="mb-3">
+                    <p class="text-sm font-medium text-gray-700 mb-1">Filtration efficiency:</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-1">
+                      {category.efficiency.split('\n').filter(line => line.trim()).map((line) => (
+                        <li>{line.trim()}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {category.efficiency_class && (
+                  <div>
+                    <p class="text-sm font-medium text-gray-700 mb-1">EN1822 Class:</p>
+                    <p class="text-gray-600">{category.efficiency_class}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <!-- Characteristics -->
+            {category.characteristics && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Characteristics
+                </h3>
+                <ul class="list-disc list-inside text-gray-600 space-y-2">
+                  {category.characteristics.split('\n').filter(line => line.trim()).map((line) => (
+                    <li>{line.trim()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <!-- Typical Installation -->
+            {category.typical_installation && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  Typical Installation
+                </h3>
+                <p class="text-gray-700 leading-relaxed">{category.typical_installation}</p>
+              </div>
+            )}
+
+            <!-- Applications -->
+            {category.applications && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Applications
+                </h3>
+                <p class="text-gray-700 leading-relaxed">{category.applications}</p>
+              </div>
+            )}
+
+            <!-- Benefits -->
+            {category.benefits && (
+              <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                  Benefits
+                </h3>
+                <ul class="list-disc list-inside text-gray-600 space-y-2">
+                  {category.benefits.split('\n').filter(line => line.trim()).map((line) => (
+                    <li>{line.trim()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <!-- Quick specs sidebar -->
+        <div class="lg:col-span-1">
+          <div class="sticky top-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Specifications</h3>
+            <dl class="space-y-4">
+              {category.efficiency_class && (
+                <div class="border-b border-gray-200 pb-3">
+                  <dt class="text-sm font-medium text-gray-500">EN1822 Class</dt>
+                  <dd class="mt-1 text-base font-semibold text-gray-900">{category.efficiency_class}</dd>
+                </div>
+              )}
+              {category.frame_material && (
+                <div class="border-b border-gray-200 pb-3">
+                  <dt class="text-sm font-medium text-gray-500">Frame Material</dt>
+                  <dd class="mt-1 text-base font-semibold text-gray-900">{category.frame_material}</dd>
+                </div>
+              )}
+              {category.max_temperature && (
+                <div class="border-b border-gray-200 pb-3">
+                  <dt class="text-sm font-medium text-gray-500">Max Temperature</dt>
+                  <dd class="mt-1 text-base font-semibold text-gray-900">{category.max_temperature}</dd>
+                </div>
+              )}
+              {activeVariants.length > 0 && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Available Sizes</dt>
+                  <dd class="mt-1 text-base font-semibold text-gray-900">{activeVariants.length} variants</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional image gallery -->
+    {carouselImages.length > 0 && (
+      <div class="mx-auto mt-16 max-w-7xl">
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-8">Image Gallery</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+          {carouselImages.map((img) => (
+            <div class="aspect-square overflow-hidden rounded-lg bg-gray-100">
+              <LazyImage
+                src={img.image_url}
+                alt={img.alt_text || category.name}
+                class="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</WebsiteLayout>
+
+<script>
+  // Handle variant selection
+  let selectedVariantId: number | null = null;
+  let selectedPrice: number = 0;
+  let selectedStock: number = 0;
+  let selectedBindCode: string = '';
+
+  const addToCartBtn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
+  const selectionMessage = document.getElementById('selection-message') as HTMLParagraphElement;
+  const variantOptions = document.querySelectorAll('.variant-option');
+
+  variantOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      // Remove previous selection
+      variantOptions.forEach(opt => opt.classList.remove('border-primary', 'bg-primary/5'));
+
+      // Add current selection
+      option.classList.add('border-primary', 'bg-primary/5');
+
+      // Get variant data
+      selectedVariantId = parseInt(option.getAttribute('data-variant-id') || '0');
+      selectedPrice = parseFloat(option.getAttribute('data-price') || '0');
+      selectedStock = parseInt(option.getAttribute('data-stock') || '0');
+      selectedBindCode = option.getAttribute('data-bind-code') || '';
+
+      // Update button (stock already filtered, all variants have stock)
+      addToCartBtn.disabled = false;
+      addToCartBtn.textContent = 'Add to cart';
+      selectionMessage.textContent = `Selected size: ${option.querySelector('.font-medium')?.textContent}`;
+      selectionMessage.classList.remove('text-muted-foreground');
+      selectionMessage.classList.add('text-foreground');
+    });
+  });
+
+  // Get current exchange rate and update USD prices
+  async function updateVariantPricesWithExchangeRate() {
+    try {
+      const response = await fetch('/api/exchange-rate');
+      const data = await response.json();
+
+      if (data.success && data.rate) {
+        // Update prices on USD variants
+        const variantOptions = document.querySelectorAll('[data-currency="USD"]');
+        variantOptions.forEach((option) => {
+          const priceUsdElement = option.querySelector('.variant-price-mxn') as HTMLElement;
+          const priceUsd = option.getAttribute('data-price-usd');
+
+          if (priceUsdElement && priceUsd) {
+            const priceUSD = parseFloat(priceUsd);
+            const priceMXN = priceUSD * data.rate;
+            priceUsdElement.textContent = formatPrice(priceMXN);
+            // Update data-price with the converted price
+            option.setAttribute('data-price', priceMXN.toString());
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error updating prices with exchange rate:', error);
+    }
+  }
+
+  // Format price
+  function formatPrice(price: number): string {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(price);
+  }
+
+  // Update prices on page load
+  document.addEventListener('astro:page-load', () => {
+    updateVariantPricesWithExchangeRate();
+    // Update every hour
+    setInterval(updateVariantPricesWithExchangeRate, 60 * 60 * 1000);
+  });
+
+  // Handle add to cart
+  addToCartBtn?.addEventListener('click', async () => {
+    if (!selectedVariantId || selectedStock === 0) return;
+
+    // Get current exchange rate to convert USD price if needed
+    let finalPrice = selectedPrice;
+    try {
+      const selectedOption = document.querySelector(`[data-variant-id="${selectedVariantId}"]`) as HTMLElement;
+      const currency = selectedOption?.getAttribute('data-currency') || 'MXN';
+      const priceUSD = selectedOption?.getAttribute('data-price-usd');
+
+      if (currency === 'USD' && priceUSD) {
+        const rateResponse = await fetch('/api/exchange-rate');
+        const rateData = await rateResponse.json();
+        if (rateData.success && rateData.rate) {
+          finalPrice = parseFloat(priceUSD) * rateData.rate;
+        }
+      }
+    } catch (error) {
+      console.error('Error getting exchange rate for cart:', error);
+    }
+
+    try {
+      addToCartBtn.disabled = true;
+      addToCartBtn.textContent = 'Adding...';
+
+      const response = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: selectedBindCode,
+          quantity: 1,
+          price: finalPrice
+        }),
+      });
+
+      if (response.ok) {
+        addToCartBtn.textContent = '✓ Added to cart';
+        addToCartBtn.classList.add('bg-green-600');
+
+        // Update cart count in header
+        const cartCountElements = document.querySelectorAll('.cart-count');
+        cartCountElements.forEach(el => {
+          const currentCount = parseInt(el.textContent || '0');
+          el.textContent = (currentCount + 1).toString();
+        });
+
+        setTimeout(() => {
+          addToCartBtn.textContent = 'Add to cart';
+          addToCartBtn.disabled = false;
+          addToCartBtn.classList.remove('bg-green-600');
+        }, 2000);
+      } else {
+        throw new Error('Error adding to cart');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      addToCartBtn.textContent = 'Error. Try again';
+      addToCartBtn.classList.add('bg-red-600');
+
+      setTimeout(() => {
+        addToCartBtn.textContent = 'Add to cart';
+        addToCartBtn.disabled = false;
+        addToCartBtn.classList.remove('bg-red-600');
+      }, 2000);
+    }
+  });
+</script>

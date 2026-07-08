@@ -3,7 +3,7 @@ import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import { sendEmail } from "@/lib/email";
-import { getWhatsAppNumber, getWhatsAppMessage, getPhoneNumber } from "@/lib/site-settings-service";
+import { getWhatsAppNumber, getWhatsAppMessage, getPhoneNumber, getPhoneNumberCDMX } from "@/lib/site-settings-service";
 
 export const prerender = false;
 
@@ -28,12 +28,16 @@ const formatPhone = (raw: string) => {
 const phoneDisplay = formatPhone(phoneNumber);
 const whatsappDisplay = whatsappNumber ? formatPhone(whatsappNumber) : '';
 
+const phoneCDMX = await getPhoneNumberCDMX();
+const phoneCDMXDisplay = phoneCDMX ? formatPhone(phoneCDMX) : '';
+
 type ContactFormValues = {
   name: string;
   city: string;
   email: string;
   phone: string;
   company: string;
+  reason: string;
   industry: string;
   message: string;
 };
@@ -44,6 +48,7 @@ const initialValues: ContactFormValues = {
   email: "",
   phone: "",
   company: "",
+  reason: "",
   industry: "",
   message: "",
 };
@@ -66,15 +71,21 @@ if (Astro.request.method === "POST") {
     email: (formData.get("email")?.toString() ?? "").trim(),
     phone: (formData.get("phone")?.toString() ?? "").trim(),
     company: (formData.get("company")?.toString() ?? "").trim(),
+    reason: (formData.get("reason")?.toString() ?? "").trim(),
     industry: (formData.get("industry")?.toString() ?? "").trim(),
     message: (formData.get("message")?.toString() ?? "").trim(),
   };
 
-  const hasEmpty = Object.entries(formValues).some(([key, value]) => value.length === 0);
+  const privacy = formData.get("privacy");
+
+  const hasEmpty = Object.values(formValues).some((value) => value.length === 0);
 
   if (hasEmpty) {
     submissionStatus = "error";
     submissionMessage = "Please fill out all required fields.";
+  } else if (!privacy) {
+    submissionStatus = "error";
+    submissionMessage = "You must accept the privacy notice to continue.";
   } else {
     try {
       const messageHtml = formValues.message.replace(/\n/g, "<br />");
@@ -89,10 +100,11 @@ if (Astro.request.method === "POST") {
           <p><strong>Email:</strong> ${formValues.email}</p>
           <p><strong>Phone:</strong> ${formValues.phone}</p>
           <p><strong>Company:</strong> ${formValues.company || "N/A"}</p>
-          <p><strong>Industry:</strong> ${formValues.industry}</p>
+          <p><strong>Reason for contact:</strong> ${formValues.reason}</p>
+          <p><strong>Industry / Sector:</strong> ${formValues.industry}</p>
           <p><strong>Message:</strong><br />${messageHtml}</p>
         `,
-        text: `New message from the contact form (English)\n\nName: ${formValues.name}\nCity: ${formValues.city}\nEmail: ${formValues.email}\nPhone: ${formValues.phone}\nCompany: ${formValues.company || "N/A"}\nIndustry: ${formValues.industry}\n\nMessage:\n${formValues.message}`,
+        text: `New message from the contact form (English)\n\nName: ${formValues.name}\nCity: ${formValues.city}\nEmail: ${formValues.email}\nPhone: ${formValues.phone}\nCompany: ${formValues.company || "N/A"}\nReason: ${formValues.reason}\nIndustry: ${formValues.industry}\n\nMessage:\n${formValues.message}`,
       });
 
       if (emailSent) {
@@ -130,7 +142,7 @@ if (Astro.request.method === "POST") {
   />
 
   <div class="bg-background py-24 sm:py-32">
-    <div class="mx-auto max-w-5xl px-6 lg:px-8">
+    <div class="reveal mx-auto max-w-5xl px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto mb-16">
         <h1 class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
           Contact us!
@@ -197,6 +209,88 @@ if (Astro.request.method === "POST") {
         </a>
       </div>
 
+      <!-- Our offices -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-semibold text-foreground text-center mb-8">Our Offices</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+          <!-- GDL -->
+          <div class="rounded-2xl border border-border/60 bg-card p-6 shadow-sm flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Branch</p>
+                <p class="font-semibold text-foreground">Guadalajara, Jalisco</p>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm text-muted-foreground">
+              <p>Cto. San Eduardo 88-Int. 4, San Juan de Ocotán, 45019 Zapopan, Jal.</p>
+              <a href={`tel:+${phoneNumber}`} class="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                {phoneDisplay}
+              </a>
+            </div>
+            <a
+              href="https://maps.app.goo.gl/RrwubWzMs941PLrF8"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-auto inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              View on Google Maps
+            </a>
+          </div>
+
+          <!-- CDMX -->
+          <div class="rounded-2xl border border-border/60 bg-card p-6 shadow-sm flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Branch</p>
+                <p class="font-semibold text-foreground">Mexico City, CDMX</p>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm text-muted-foreground">
+              <p>Ventura G.Tena 250, Asturias, Cuauhtémoc, 06890 Ciudad de México, CDMX</p>
+              {phoneCDMX && (
+                <a href={`tel:+${phoneCDMX}`} class="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  {phoneCDMXDisplay}
+                </a>
+              )}
+            </div>
+            <a
+              href="https://maps.app.goo.gl/NPQqP5r7TEZ7CnYE6"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-auto inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              View on Google Maps
+            </a>
+          </div>
+
+        </div>
+      </div>
+
       <!-- Form -->
       <div id="formulario" class="rounded-2xl border border-border/60 bg-muted/20 p-8 shadow-sm max-w-2xl mx-auto">
           <h2 class="text-2xl font-semibold text-foreground text-center">Contact Form</h2>
@@ -213,7 +307,7 @@ if (Astro.request.method === "POST") {
           <form method="post" class="mt-8 space-y-6">
             <div class="grid gap-6 sm:grid-cols-2">
               <div>
-                <label for="name" class="block text-sm font-medium text-foreground">Name</label>
+                <label for="name" class="block text-sm font-medium text-foreground">Name <span class="text-red-500">*</span></label>
                 <input
                   id="name"
                   name="name"
@@ -225,7 +319,7 @@ if (Astro.request.method === "POST") {
                 />
               </div>
               <div>
-                <label for="city" class="block text-sm font-medium text-foreground">City</label>
+                <label for="city" class="block text-sm font-medium text-foreground">City <span class="text-red-500">*</span></label>
                 <input
                   id="city"
                   name="city"
@@ -240,7 +334,7 @@ if (Astro.request.method === "POST") {
 
             <div class="grid gap-6 sm:grid-cols-2">
               <div>
-                <label for="email" class="block text-sm font-medium text-foreground">Email</label>
+                <label for="email" class="block text-sm font-medium text-foreground">Email <span class="text-red-500">*</span></label>
                 <input
                   id="email"
                   name="email"
@@ -252,7 +346,7 @@ if (Astro.request.method === "POST") {
                 />
               </div>
               <div>
-                <label for="phone" class="block text-sm font-medium text-foreground">Phone</label>
+                <label for="phone" class="block text-sm font-medium text-foreground">Phone <span class="text-red-500">*</span></label>
                 <input
                   id="phone"
                   name="phone"
@@ -265,61 +359,99 @@ if (Astro.request.method === "POST") {
               </div>
             </div>
 
-            <div>
-              <label for="company" class="block text-sm font-medium text-foreground">Company Name <span class="text-red-500">*</span></label>
-              <input
-                id="company"
-                name="company"
-                type="text"
-                required
-                autocomplete="organization"
-                value={formValues.company}
-                class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-              />
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label for="company" class="block text-sm font-medium text-foreground">Company Name <span class="text-red-500">*</span></label>
+                <input
+                  id="company"
+                  name="company"
+                  type="text"
+                  required
+                  autocomplete="organization"
+                  value={formValues.company}
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                />
+              </div>
+              <div>
+                <label for="industry" class="block text-sm font-medium text-foreground">Industry / Sector <span class="text-red-500">*</span></label>
+                <select
+                  id="industry"
+                  name="industry"
+                  required
+                  class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                >
+                  <option value="" disabled selected={!formValues.industry}>Select your industry</option>
+                  <option value="Alimentos y envases" selected={formValues.industry === 'Alimentos y envases'}>Food &amp; Packaging</option>
+                  <option value="Automotriz" selected={formValues.industry === 'Automotriz'}>Automotive</option>
+                  <option value="Celdulas" selected={formValues.industry === 'Celdulas'}>Cells</option>
+                  <option value="Centro de mezcla" selected={formValues.industry === 'Centro de mezcla'}>Mixing Center</option>
+                  <option value="Constructora" selected={formValues.industry === 'Constructora'}>Construction</option>
+                  <option value="Maquila / Manufactura por contrato" selected={formValues.industry === 'Maquila / Manufactura por contrato'}>Contract Manufacturing / Maquila</option>
+                  <option value="Dispositivos médicos" selected={formValues.industry === 'Dispositivos médicos'}>Medical Devices</option>
+                  <option value="Farmacéutico" selected={formValues.industry === 'Farmacéutico'}>Pharmaceutical</option>
+                  <option value="Hospital" selected={formValues.industry === 'Hospital'}>Hospital</option>
+                  <option value="HVAC" selected={formValues.industry === 'HVAC'}>HVAC</option>
+                  <option value="Microelectrónica" selected={formValues.industry === 'Microelectrónica'}>Microelectronics</option>
+                  <option value="Pintura especializada" selected={formValues.industry === 'Pintura especializada'}>Specialized Painting</option>
+                  <option value="Otra" selected={formValues.industry === 'Otra'}>Other</option>
+                </select>
+              </div>
             </div>
 
             <div>
-              <label for="industry" class="block text-sm font-medium text-foreground">Industry / Sector <span class="text-red-500">*</span></label>
+              <label for="reason" class="block text-sm font-medium text-foreground">Reason for contact <span class="text-red-500">*</span></label>
               <select
-                id="industry"
-                name="industry"
+                id="reason"
+                name="reason"
                 required
                 class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
               >
-                <option value="" disabled selected={!formValues.industry}>Select your industry</option>
-                <option value="Alimentos y envases" selected={formValues.industry === 'Alimentos y envases'}>Food &amp; Packaging</option>
-                <option value="Automotriz" selected={formValues.industry === 'Automotriz'}>Automotive</option>
-                <option value="Celdulas" selected={formValues.industry === 'Celdulas'}>Cells</option>
-                <option value="Centro de mezcla" selected={formValues.industry === 'Centro de mezcla'}>Mixing Center</option>
-                <option value="Constructora" selected={formValues.industry === 'Constructora'}>Construction</option>
-                <option value="Maquila / Manufactura por contrato" selected={formValues.industry === 'Maquila / Manufactura por contrato'}>Contract Manufacturing / Maquila</option>
-                <option value="Dispositivos médicos" selected={formValues.industry === 'Dispositivos médicos'}>Medical Devices</option>
-                <option value="Farmacéutico" selected={formValues.industry === 'Farmacéutico'}>Pharmaceutical</option>
-                <option value="Hospital" selected={formValues.industry === 'Hospital'}>Hospital</option>
-                <option value="HVAC" selected={formValues.industry === 'HVAC'}>HVAC</option>
-                <option value="Microelectrónica" selected={formValues.industry === 'Microelectrónica'}>Microelectronics</option>
-                <option value="Pintura especializada" selected={formValues.industry === 'Pintura especializada'}>Specialized Painting</option>
-                <option value="Otra" selected={formValues.industry === 'Otra'}>Other</option>
+                <option value="" disabled selected={!formValues.reason}>How can we help you?</option>
+                <option value="Cotización de producto" selected={formValues.reason === 'Cotización de producto'}>Product quote</option>
+                <option value="Asesoría técnica" selected={formValues.reason === 'Asesoría técnica'}>Technical advisory</option>
+                <option value="Servicio de validación" selected={formValues.reason === 'Servicio de validación'}>Validation service</option>
+                <option value="Cuartos limpios" selected={formValues.reason === 'Cuartos limpios'}>Cleanrooms</option>
+                <option value="Soporte post-venta" selected={formValues.reason === 'Soporte post-venta'}>After-sales support</option>
+                <option value="Distribución / revendedores" selected={formValues.reason === 'Distribución / revendedores'}>Distribution / resellers</option>
+                <option value="Información general" selected={formValues.reason === 'Información general'}>General information</option>
               </select>
             </div>
 
             <div>
-              <label for="message" class="block text-sm font-medium text-foreground">Message</label>
+              <label for="message" class="block text-sm font-medium text-foreground">Message <span class="text-red-500">*</span></label>
               <textarea
                 id="message"
                 name="message"
                 required
                 rows={5}
+                placeholder="Tell us more about your project or inquiry..."
                 class="mt-2 block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
               >{formValues.message}</textarea>
             </div>
 
-            <button
+            <!-- Privacy consent -->
+            <div class="flex items-start gap-3">
+              <input
+                id="privacy"
+                name="privacy"
+                type="checkbox"
+                required
+                class="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer flex-shrink-0"
+              />
+              <label for="privacy" class="text-sm text-muted-foreground cursor-pointer">
+                I have read and accept the{" "}
+                <a href="/privacy" class="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+                  Privacy Notice
+                </a>
+                {" "}and consent to the processing of my personal data to respond to my inquiry. <span class="text-red-500">*</span>
+              </label>
+            </div>
+
+            <input
               type="submit"
-              class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              Send message
-            </button>
+              value="Send message"
+              class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer"
+            />
           </form>
       </div>
     </div>

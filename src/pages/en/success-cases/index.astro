@@ -9,12 +9,6 @@ export const prerender = false;
 
 const cases = await getActiveCaseStudies();
 
-// Carrusel infinito (como los logos): la mitad del track debe ser más ancha
-// que el viewport, así que con pocos casos se repite la lista.
-const repeats = cases.length > 0 ? Math.max(1, Math.ceil(6 / cases.length)) : 0;
-const loopCases = Array.from({ length: repeats }, () => cases).flat();
-const scrollDuration = `${loopCases.length * 6}s`;
-
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: siteUrl },
@@ -46,8 +40,8 @@ const getTagsArray = (tags?: string) =>
   />
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
 
-  <div class="bg-background py-24 sm:py-32">
-    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+  <div class="bg-background pt-24 pb-4 sm:py-32">
+    <div class="reveal mx-auto max-w-7xl px-6 lg:px-8">
       <div class="mx-auto max-w-2xl text-center">
         <h1 class="mt-2 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
           Success Cases
@@ -60,16 +54,16 @@ const getTagsArray = (tags?: string) =>
     </div>
 
       {cases.length > 0 ? (
-        <!-- Carrusel infinito de casos (gira como los logos, se pausa con el mouse) -->
-        <div class="mt-16 overflow-hidden">
-        <div class="case-track flex items-stretch" style={`animation-duration: ${scrollDuration}`}>
-          {[...loopCases, ...loopCases].map((c) => {
+        <!-- Swipeable carousel (native touch scroll, with snap) -->
+        <div class="mt-16 reveal">
+        <div class="case-track flex items-stretch gap-0 overflow-x-auto snap-x snap-mandatory scroll-smooth px-6 lg:px-8 pb-4">
+          {cases.map((c) => {
             const title = c.title_en || c.title;
             const excerpt = c.excerpt_en || c.excerpt;
             const industry = c.industry_en || c.industry;
             const tags = getTagsArray(c.tags);
             return (
-              <article class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <article class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 snap-start overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                 {c.featured_image ? (
                   <div class="relative h-48 overflow-hidden">
                     <img
@@ -145,28 +139,13 @@ const getTagsArray = (tags?: string) =>
 
 <style>
   .case-track {
-    animation-name: scroll-cases;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    width: max-content;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
-  .case-track:hover {
-    animation-play-state: paused;
-  }
-
-  @keyframes scroll-cases {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .case-track {
-      animation: none;
-    }
+  .case-track::-webkit-scrollbar {
+    display: none;
   }
 </style>

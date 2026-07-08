@@ -8,140 +8,272 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
-  { name: 'Home', url: siteUrl },
-  { name: 'About Us', url: `${siteUrl}/en/about` }
+  { name: lang === 'en' ? 'Home' : 'Inicio', url: siteUrl },
+  { name: lang === 'en' ? 'About Us' : 'Acerca de', url: `${siteUrl}${lang === 'en' ? '/en/about' : '/acerca-de'}` }
 ]);
+
+const contactHref = lang === 'en' ? '/en/contact' : '/contacto';
+const catalogHref = lang === 'en' ? '/en/products' : '/productos';
+
+const values = [
+  { img: '/images/valores/integridad.svg',    title: t('about.values.integrity.title'),    desc: t('about.values.integrity.description') },
+  { img: '/images/valores/compromiso.svg',    title: t('about.values.commitment.title'),   desc: t('about.values.commitment.description') },
+  { img: '/images/valores/transparencia.svg', title: t('about.values.transparency.title'), desc: t('about.values.transparency.description') },
+  { img: '/images/valores/humildad.svg',      title: t('about.values.humility.title'),     desc: t('about.values.humility.description') },
+  { img: '/images/valores/optimismo.svg',     title: t('about.values.optimism.title'),     desc: t('about.values.optimism.description') },
+  { img: '/images/valores/talento.svg',       title: t('about.values.talent.title'),       desc: t('about.values.talent.description') },
+];
 ---
 
 <WebsiteLayout
-  title="About Us"
-  seoTitle="About Star Filters - Our History and Mission | Star Filters"
-  description="Learn about Star Filters, a leading company in industrial filtration in Mexico with over 40 years of experience in HEPA filters, cleanrooms, and air purification systems."
-  keywords={[
-    'Star Filters',
-    'industrial filtration',
-    'HEPA filters Mexico',
-    'cleanrooms Mexico',
-    'air filtration company'
-  ]}
+  title={lang === 'en' ? 'About Us' : 'Acerca de'}
+  seoTitle={lang === 'en' ? 'About Star Filters - Our History and Mission | Star Filters' : 'Acerca de Star Filters - Nuestra Historia y Misión | Star Filters'}
+  description={lang === 'en' ? 'Learn about Star Filters, a leading company in industrial filtration in Mexico with over 40 years of experience in HEPA filters, cleanrooms, and air purification systems.' : 'Conoce Star Filters, empresa líder en filtración industrial en México con más de 40 años de experiencia en filtros HEPA, cuartos limpios y sistemas de purificación de aire.'}
+  keywords={lang === 'en' ? ['Star Filters','industrial filtration','HEPA filters Mexico','cleanrooms Mexico'] : ['Star Filters','filtración industrial','filtros HEPA México','cuartos limpios México']}
 >
   <SEO
     slot="seo"
-    title="About Star Filters - Our History and Mission"
-    description="Learn about Star Filters, a leading company in industrial filtration in Mexico with over 40 years of experience in HEPA filters, cleanrooms, and air purification systems."
+    title={lang === 'en' ? 'About Star Filters - Our History and Mission' : 'Acerca de Star Filters - Nuestra Historia y Misión'}
+    description={lang === 'en' ? 'Learn about Star Filters, a leading company in industrial filtration in Mexico with over 40 years of experience in HEPA filters, cleanrooms, and air purification systems.' : 'Conoce Star Filters, empresa líder en filtración industrial en México con más de 40 años de experiencia en filtros HEPA, cuartos limpios y sistemas de purificación de aire.'}
     ogType="website"
-    keywords={[
-      'Star Filters',
-      'industrial filtration',
-      'HEPA filters Mexico'
-    ]}
+    keywords={lang === 'en' ? ['Star Filters','industrial filtration','HEPA filters Mexico'] : ['Star Filters','filtración industrial','filtros HEPA México']}
   />
-
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
-  
-  <div class="overflow-hidden bg-white py-24 sm:py-32">
-    <div class="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
-      <div class="max-w-4xl">
+
+  <!-- ── HERO ───────────────────────────────────────────────────────────── -->
+  <div class="bg-background pt-16 pb-0 sm:pt-32">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="mx-auto max-w-3xl text-center reveal">
         <p class="text-base/7 font-semibold text-primary">{t('about.badge')}</p>
-        <h1 class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
+        <h1 class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl lg:text-balance">
           {t('about.title')}
         </h1>
-        <p class="mt-6 text-xl/8 text-balance text-gray-700">
+        <p class="mt-6 text-lg text-muted-foreground leading-relaxed">
           {t('about.subtitle')}
         </p>
       </div>
-
-      <section class="mt-20 grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-16">
-        <div class="lg:pr-8">
-          <h2 class="text-2xl font-semibold tracking-tight text-pretty text-gray-900">
-            {t('about.history.title')}
-          </h2>
-          <p class="mt-6 text-base/7 text-gray-600">
-            {t('about.history.paragraph1')}
-          </p>
-          <p class="mt-8 text-base/7 text-gray-600">
-            {t('about.history.paragraph2')}
-          </p>
-          <p class="mt-8 text-base/7 text-gray-600">
-            {t('about.history.paragraph3')}
-          </p>
-        </div>
-        <div class="pt-16 lg:row-span-2 lg:-mr-16 xl:mr-auto">
-          <div class="-mx-8 grid grid-cols-2 gap-4 sm:-mx-16 sm:grid-cols-4 lg:mx-0 lg:grid-cols-2 xl:gap-8">
-            <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
-              <img
-                src="/images/home-page/Logo%20de%20Star%20Filters.png"
-                alt="Star Filters Logo"
-                class="block size-full object-contain bg-white p-4"
-              />
-            </div>
-            <div class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40">
-              <img
-                src="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
-                alt="Star Filters cleanroom construction"
-                class="block size-full object-cover"
-              />
-            </div>
-            <div class="aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10">
-              <img
-                src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
-                alt="ISO 14644 Certification"
-                class="block size-full object-cover"
-              />
-            </div>
-            <div class="-mt-8 aspect-square overflow-hidden rounded-xl shadow-xl outline-1 -outline-offset-1 outline-black/10 lg:-mt-40">
-              <img
-                src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
-                alt="Star filters in cleanroom"
-                class="block size-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-        <div class="max-lg:mt-16 lg:col-span-1">
-          <p class="text-base/7 font-semibold text-gray-500">{t('about.mission.title')}</p>
-          <hr class="mt-6 border-t border-gray-200" />
-          <p class="mt-6 text-base/7 text-gray-600">
-            {t('about.mission.description')}
-          </p>
-          <p class="mt-8 text-base/7 font-semibold text-gray-500">{t('about.vision.title')}</p>
-          <hr class="mt-6 border-t border-gray-200" />
-          <p class="mt-6 text-base/7 text-gray-600">
-            {t('about.vision.description')}
-          </p>
-        </div>
-      </section>
-
-      <section class="mt-20">
-        <div class="max-w-4xl">
-          <h2 class="text-2xl font-semibold tracking-tight text-pretty text-gray-900">
-            {t('about.values.title')}
-          </h2>
-          <dl class="mt-10 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-            <div class="flex flex-col">
-              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.integrity.title')}</dt>
-              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.integrity.description')}</dd>
-            </div>
-            <div class="flex flex-col">
-              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.tenacity.title')}</dt>
-              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.tenacity.description')}</dd>
-            </div>
-            <div class="flex flex-col">
-              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.reliability.title')}</dt>
-              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.reliability.description')}</dd>
-            </div>
-            <div class="flex flex-col">
-              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.creativity.title')}</dt>
-              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.creativity.description')}</dd>
-            </div>
-            <div class="flex flex-col">
-              <dt class="text-base/7 font-semibold text-gray-900">{t('about.values.attitude.title')}</dt>
-              <dd class="mt-2 text-base/7 text-gray-600">{t('about.values.attitude.description')}</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
     </div>
   </div>
+
+  <!-- ── STATS ──────────────────────────────────────────────────────────── -->
+  <div class="bg-background py-8 sm:py-14">
+    <div class="mx-auto max-w-5xl px-6 lg:px-8">
+      <dl class="grid grid-cols-2 gap-6 sm:grid-cols-4 text-center reveal">
+        <div class="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <dd class="text-4xl font-bold tracking-tight text-primary">
+            <span class="counter-number" data-target="40">0</span>+
+          </dd>
+          <dt class="text-sm text-muted-foreground leading-snug">{lang === 'en' ? 'Years of experience' : 'Años de experiencia'}</dt>
+        </div>
+        <div class="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <dd class="text-4xl font-bold tracking-tight text-primary">
+            <span class="counter-number" data-target="120">0</span>+
+          </dd>
+          <dt class="text-sm text-muted-foreground leading-snug">{lang === 'en' ? 'Cleanrooms built' : 'Cuartos limpios construidos'}</dt>
+        </div>
+        <div class="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <dd class="text-4xl font-bold tracking-tight text-primary">
+            <span class="counter-number" data-target="20">0</span> km²
+          </dd>
+          <dt class="text-sm text-muted-foreground leading-snug">{lang === 'en' ? 'Controlled areas' : 'Áreas controladas'}</dt>
+        </div>
+        <div class="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <dd class="text-4xl font-bold tracking-tight text-primary">ISO</dd>
+          <dt class="text-sm text-muted-foreground leading-snug">{lang === 'en' ? 'Certified quality' : 'Calidad certificada'}</dt>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <!-- ── HISTORIA ────────────────────────────────────────────────────────── -->
+  <div class="bg-primary/10 py-10 sm:py-20 border-t border-border">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="grid grid-cols-1 gap-x-16 gap-y-12 lg:grid-cols-2 lg:items-center">
+
+        <!-- Galería 2×2 -->
+        <div class="grid grid-cols-2 gap-4 reveal">
+          <div class="aspect-square overflow-hidden rounded-2xl shadow-lg">
+            <img
+              src="/images/cleanrooms-page/Construccion%20Cuartos%20Limpios%20Star%20Filters.JPG"
+              alt={lang === 'en' ? 'Cleanroom construction' : 'Construcción de cuartos limpios'}
+              class="size-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <div class="mt-8 aspect-square overflow-hidden rounded-2xl shadow-lg">
+            <img
+              src="/images/cleanrooms-page/Filtros%20Star%20Cuarto%20Limpio.JPG"
+              alt={lang === 'en' ? 'Filters in cleanroom' : 'Filtros en cuarto limpio'}
+              class="size-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <div class="aspect-square overflow-hidden rounded-2xl shadow-lg">
+            <img
+              src="/images/cleanrooms-page/Certificado%20ISO%2014644.JPG"
+              alt={lang === 'en' ? 'ISO 14644 certification' : 'Certificación ISO 14644'}
+              class="size-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <div class="mt-8 aspect-square overflow-hidden rounded-2xl shadow-lg">
+            <img
+              src="/images/cleanrooms-page/Puerta%20Giratoria%20Star%20Filters.JPG"
+              alt={lang === 'en' ? 'Cleanroom revolving door' : 'Puerta giratoria cuarto limpio'}
+              class="size-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        <!-- Texto historia -->
+        <div class="reveal" style="transition-delay:100ms">
+          <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-3">{t('about.history.title')}</p>
+          <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-6">
+            {lang === 'en' ? 'Four decades protecting critical processes' : 'Cuatro décadas protegiendo procesos críticos'}
+          </h2>
+          <div class="space-y-5 text-base text-muted-foreground leading-relaxed">
+            <p>{t('about.history.paragraph1')}</p>
+            <p>{t('about.history.paragraph2')}</p>
+            <p>{t('about.history.paragraph3')}</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MISIÓN + VISIÓN ────────────────────────────────────────────────── -->
+  <div class="bg-primary/10 py-10 sm:py-20">
+    <div class="mx-auto max-w-5xl px-6 lg:px-8">
+      <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
+
+        <div class="reveal rounded-2xl border border-primary/20 bg-white p-8 shadow-sm">
+          <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-5">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-foreground mb-3">{t('about.mission.title')}</h3>
+          <p class="text-muted-foreground leading-relaxed">{t('about.mission.description')}</p>
+        </div>
+
+        <div class="reveal rounded-2xl border border-primary/20 bg-white p-8 shadow-sm" style="transition-delay:100ms">
+          <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-5">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-foreground mb-3">{t('about.vision.title')}</h3>
+          <p class="text-muted-foreground leading-relaxed">{t('about.vision.description')}</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── VALORES ────────────────────────────────────────────────────────── -->
+  <div class="bg-background py-10 sm:py-20 border-t border-border">
+    <div class="mx-auto max-w-5xl px-6 lg:px-8">
+      <div class="text-center mb-14 reveal">
+        <p class="text-sm font-semibold uppercase tracking-widest text-primary mb-2">{lang === 'en' ? 'What drives us' : 'Lo que nos mueve'}</p>
+        <h2 class="text-3xl font-bold text-foreground sm:text-4xl">{t('about.values.title')}</h2>
+      </div>
+      <dl class="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-6 reveal">
+        {values.map((v) => (
+          <div class="flex flex-col items-center text-center">
+            <img src={v.img} alt={v.title} class="value-icon h-14 w-14 object-contain sm:h-16 sm:w-16" width="64" height="64" loading="lazy" />
+            <dt class="mt-4 text-sm font-semibold text-foreground">{v.title}</dt>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </div>
+
+  <!-- ── CTA FINAL ──────────────────────────────────────────────────────── -->
+  <div class="bg-primary/10 py-10 sm:py-20 border-t border-border">
+    <div class="mx-auto max-w-3xl px-6 text-center reveal">
+      <h2 class="text-3xl font-bold text-foreground sm:text-4xl">
+        {lang === 'en' ? 'Ready to work together?' : '¿Listo para trabajar juntos?'}
+      </h2>
+      <p class="mt-4 text-muted-foreground text-lg">
+        {lang === 'en'
+          ? 'Contact us and discover how Star Filters can protect your critical processes.'
+          : 'Contáctanos y descubre cómo Star Filters puede proteger tus procesos críticos.'}
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <a
+          href={contactHref}
+          class="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
+        >
+          {lang === 'en' ? 'Contact us' : 'Contáctanos'}
+        </a>
+        <a
+          href={catalogHref}
+          class="inline-flex items-center gap-2 rounded-full border-2 border-primary/40 px-8 py-3 text-sm font-semibold text-primary hover:border-primary hover:bg-primary/10 transition-colors"
+        >
+          {lang === 'en' ? 'View catalog' : 'Ver catálogo'}
+        </a>
+      </div>
+    </div>
+  </div>
+
 </WebsiteLayout>
 
+<style>
+  /* Lleva los iconos de valores (SVG con bitmap azul oscuro embebido) al azul
+     primario del sitio (#3b82f6), el mismo de "Lo que nos mueve". */
+  .value-icon {
+    filter: brightness(0) saturate(100%) invert(54%) sepia(62%) saturate(4857%) hue-rotate(201deg) brightness(97%) contrast(98%);
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  // Con ClientRouter este módulo solo se evalúa una vez por sesión: hay que
+  // volver a inicializar en cada astro:page-load (también cubre la carga inicial).
+  function initAboutCounters() {
+    const counters = document.querySelectorAll<HTMLElement>('.counter-number:not([data-counter-init])');
+    if (counters.length === 0) return;
+
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          if (el.hasAttribute('data-animated')) return;
+          el.setAttribute('data-animated', 'true');
+          const target = parseInt(el.getAttribute('data-target') || '0', 10);
+          const duration = 1200;
+          const start = performance.now();
+          const update = (now: number) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 2.5);
+            el.textContent = String(Math.round(target * eased));
+            if (progress < 1) requestAnimationFrame(update);
+            else el.textContent = String(target);
+          };
+          requestAnimationFrame(update);
+          counterObserver.unobserve(el);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    counters.forEach(c => {
+      c.setAttribute('data-counter-init', 'true');
+      counterObserver.observe(c);
+    });
+  }
+
+  initAboutCounters();
+  document.addEventListener('astro:page-load', initAboutCounters);
+</script>

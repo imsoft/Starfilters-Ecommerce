@@ -12,6 +12,7 @@ import TestimonialSections from '@/components/shared/TestimonialSections.astro';
 import FooterSection from '@/components/shared/FooterSection.astro';
 import WhatsAppButton from '@/components/shared/WhatsAppButton.astro';
 import BenefitsBanner from '@/components/shared/BenefitsBanner.astro';
+import RevealOnScroll from '@/components/shared/RevealOnScroll.astro';
 import { generateOrganizationSchema } from '@/lib/seo-utils';
 
 const siteUrl = Astro.site?.href || Astro.url.origin;
@@ -56,14 +57,15 @@ const siteUrl = Astro.site?.href || Astro.url.origin;
 	<body class="m-0 p-0">
 		<BenefitsBanner />
 		<HeroSection />
-		<Stats />
-		<BentoGrid />
-		<IndustriesBenefitSection />
-		<LogoSection />
-		<CertificationSection />
-		<ProjectGallery />
-		<TestimonialSections />
+		<div class="reveal"><Stats /></div>
+		<div class="reveal"><BentoGrid /></div>
+		<div class="reveal"><IndustriesBenefitSection /></div>
+		<div class="reveal"><LogoSection /></div>
+		<div class="reveal"><CertificationSection /></div>
+		<div class="reveal"><ProjectGallery /></div>
+		<div class="reveal"><TestimonialSections /></div>
 		<FooterSection />
 		<WhatsAppButton />
+		<RevealOnScroll />
 	</body>
 </html>
