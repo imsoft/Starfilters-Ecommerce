@@ -5,6 +5,9 @@ import "../styles/global.css";
 import Navbar from "@/components/shared/Navbar.astro";
 import RevealOnScroll from "@/components/shared/RevealOnScroll.astro";
 import { ClientRouter } from "astro:transitions";
+import { getLangFromUrl } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
 
 export interface Props {
   title: string;
@@ -28,7 +31,7 @@ const {
 const noindex = noindexProp || import.meta.env.PUBLIC_NOINDEX === 'true';
 ---
 
-<html lang="es" class="scroll-smooth">
+<html lang={lang} class="scroll-smooth">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

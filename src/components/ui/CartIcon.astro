@@ -1,10 +1,14 @@
 ---
 // Componente para mostrar el icono del carrito con contador
+import { getLangFromUrl } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const cartHref = lang === 'en' ? '/en/cart' : '/cart';
 ---
 
 <div class="relative">
   <a
-    href="/cart"
+    href={cartHref}
     class="flex items-center justify-center w-10 h-10 rounded-md text-foreground hover:bg-muted transition-colors"
     aria-label="Ver carrito de compras"
   >

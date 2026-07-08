@@ -4,6 +4,7 @@ import { logout } from '@/lib/auth-utils';
 // Cerrar sesión
 logout(Astro.cookies);
 
-// Redirigir a la página principal
-return Astro.redirect('/');
+// Redirigir a la página principal, respetando el idioma de origen
+const lang = Astro.url.searchParams.get('lang');
+return Astro.redirect(lang === 'en' ? '/en' : '/');
 ---
