@@ -92,14 +92,15 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         >
           {blogPosts.map((post) => {
             const tags = getTagsArray(post.tags);
-            const excerpt = post.excerpt || getExcerpt(post.content);
+            const title = post.title_en || post.title;
+            const excerpt = post.excerpt_en || post.excerpt || getExcerpt(post.content_en || post.content);
 
             return (
               <article class="flex flex-col items-start justify-between">
                 <div class="relative w-full">
                   <img
                     src={getHighQualityImageUrl(post.featured_image, { width: 900 }) || 'https://via.placeholder.com/600x400?text=Star Filters'}
-                    alt={post.title}
+                    alt={title}
                     class="aspect-video w-full rounded-2xl bg-muted object-cover sm:aspect-2/1 lg:aspect-3/2"
                     width={900}
                     height={600}
@@ -131,7 +132,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                     >
                       <a href={`/en/blog/${post.uuid}`}>
                         <span class="absolute inset-0"></span>
-                        {post.title}
+                        {title}
                       </a>
                     </h3>
                     <p class="mt-5 line-clamp-3 text-sm/6 text-muted-foreground">
