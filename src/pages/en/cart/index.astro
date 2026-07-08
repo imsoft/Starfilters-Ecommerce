@@ -295,19 +295,44 @@ const formatPrice = (price: number): string => {
     }).format(price);
   }
 
-  function addProductToCart(
+  async function addProductToCart(
     uuid: string,
     product_id: number,
     name: string,
     price: number,
     image_url: string,
     category: string
-  ): void {
+  ): Promise<void> {
     const cart = getCart();
 
     const existingItemIndex = cart.items.findIndex(
       (item) => item.uuid === uuid
     );
+    const quantityInCart =
+      existingItemIndex >= 0 ? cart.items[existingItemIndex].quantity : 0;
+    const totalNeeded = quantityInCart + 1;
+
+    // Check availability against the same source as the product page (BIND).
+    try {
+      const res = await fetch(
+        `/api/check-stock?uuid=${encodeURIComponent(uuid)}&quantity=${totalNeeded}`
+      );
+      const data = await res.json();
+      if (!data.available) {
+        if (data.stock === 0) {
+          showWarningNotification(
+            "This product is currently out of stock. Please contact us if you need it."
+          );
+        } else {
+          showWarningNotification(
+            `We currently have ${data.stock} unit${data.stock !== 1 ? "s" : ""} in stock.`
+          );
+        }
+        return;
+      }
+    } catch (error) {
+      console.warn("Could not verify stock:", error);
+    }
 
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += 1;
@@ -718,6 +743,24 @@ const formatPrice = (price: number): string => {
     document.body.appendChild(notification);
 
     setTimeout(() => notification.remove(), 3000);
+  }
+
+  // Availability warning (amber), consistent with the product page
+  function showWarningNotification(message: string): void {
+    const notification = document.createElement("div");
+    notification.className =
+      "fixed top-20 right-4 bg-amber-600 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-sm";
+    notification.innerHTML = `
+      <div class="flex items-start gap-2">
+        <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span class="text-sm">${message}</span>
+      </div>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.remove(), 6000);
   }
 
 
