@@ -31,10 +31,7 @@
       els.forEach(function (el) { observer.observe(el); });
     }
 
-    document.addEventListener('DOMContentLoaded', initReveal);
-    // Astro View Transitions (ClientRouter)
+    // Astro View Transitions (ClientRouter) — cubre también la carga inicial
     document.addEventListener('astro:page-load', initReveal);
-    // Por si el script se evalúa después de que el DOM ya cargó
-    if (document.readyState !== 'loading') initReveal();
   })();
 </script>

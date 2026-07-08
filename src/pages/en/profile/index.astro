@@ -404,7 +404,7 @@ const formatDate = (date: Date) => {
 </WebsiteLayout>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const changePhotoBtn = document.getElementById('change-photo-btn');
     const profileImageInput = document.getElementById('profile-image-input');
     const profileAvatarImg = document.getElementById('profile-avatar-img');

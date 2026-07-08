@@ -573,7 +573,7 @@ const errorDetails = url.searchParams.get('details');
 </AdminLayout>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('astro:page-load', function() {
     const titleInput = document.getElementById('title') as HTMLInputElement;
     const titleEnInput = document.getElementById('title_en') as HTMLInputElement;
     const slugInput = document.getElementById('slug') as HTMLInputElement;

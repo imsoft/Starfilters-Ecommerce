@@ -520,7 +520,7 @@ const error = url.searchParams.get('error');
 </AdminLayout>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('astro:page-load', function() {
     const titleInput = document.getElementById('title') as HTMLInputElement;
     const slugInput = document.getElementById('slug') as HTMLInputElement;
     const metaTitleInput = document.getElementById('meta-title') as HTMLInputElement;

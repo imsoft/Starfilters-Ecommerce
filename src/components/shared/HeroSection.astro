@@ -23,10 +23,17 @@ const youtubeId = heroType === 'video' ? getYouTubeId(heroVideo) : null;
     <div class="absolute inset-0 z-0">
       {heroType === 'video' && youtubeId ? (
         <div class="absolute inset-0 overflow-hidden">
+          {/* Imagen de fondo para móvil (el video no hace autoplay en iOS/Android) */}
+          <img
+            src="/images/home-page/Cuarto Limpio Sala Blanca ISO 14644.jpeg"
+            alt="Star Filters — Sala Blanca"
+            class="block md:hidden h-full w-full object-cover"
+          />
+          {/* iframe de YouTube solo en desktop */}
           <div
             id="hero-youtube"
             data-video-id={youtubeId}
-            class="pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2"
+            class="hidden md:block pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2"
           ></div>
         </div>
       ) : heroType === 'video' ? (
@@ -54,6 +61,9 @@ const youtubeId = heroType === 'video' ? getYouTubeId(heroVideo) : null;
     {heroType === 'video' && youtubeId && (
       <script is:inline>
         (function () {
+          // En móvil el div está oculto (hidden md:block); no inicializar el player
+          if (window.innerWidth < 768) return;
+
           var el = document.getElementById('hero-youtube');
           if (!el) return;
           var videoId = el.getAttribute('data-video-id');

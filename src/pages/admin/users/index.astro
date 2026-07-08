@@ -346,7 +346,7 @@ const error = url.searchParams.get('error');
 
 <script>
   // Event listener para los botones de promover
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const promoteButtons = document.querySelectorAll('.promote-button');
     
     promoteButtons.forEach((button) => {

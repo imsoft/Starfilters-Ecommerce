@@ -636,43 +636,8 @@ if (Astro.request.method === "POST") {
   window.deleteVariant = deleteVariant;
   window.editVariant = editVariant;
 
-  // Initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      initializeVariantButtons();
-      
-      // Ensure form submission works
-      var categoryForm = document.getElementById('category-form');
-      var saveButton = document.getElementById('save-category-btn');
-      
-      if (categoryForm && saveButton) {
-        console.log('✅ Formulario y botón encontrados');
-        
-        // Add submit listener to form
-        categoryForm.addEventListener('submit', function(e) {
-          console.log('📝 Formulario enviándose...');
-          // Let it submit naturally
-        });
-        
-        // Add click listener to button as backup
-        saveButton.addEventListener('click', function(e) {
-          console.log('🖱️ Click en Guardar Cambios');
-          // Force form submission if it doesn't happen naturally
-          setTimeout(function() {
-            if (categoryForm) {
-              console.log('📝 Forzando envío del formulario...');
-              categoryForm.submit();
-            }
-          }, 100);
-        });
-      } else {
-        console.error('❌ No se encontró el formulario o el botón:', {
-          form: !!categoryForm,
-          button: !!saveButton
-        });
-      }
-    });
-  } else {
+  // Inicializar en cada navegación de Astro (astro:page-load cubre también la carga inicial)
+  document.addEventListener('astro:page-load', function() {
     initializeVariantButtons();
     
     // Ensure form submission works
@@ -705,5 +670,5 @@ if (Astro.request.method === "POST") {
         button: !!saveButton
       });
     }
-  }
+  });
 </script>

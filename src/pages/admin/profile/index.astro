@@ -394,7 +394,7 @@ const getRoleText = (role: string): string => {
 </AdminLayout>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const changePhotoBtn = document.getElementById('change-photo-btn');
     const profileImageInput = document.getElementById('profile-image-input');
     

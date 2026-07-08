@@ -395,7 +395,7 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
 
 <script>
   // Filtros de órdenes
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const searchInput = document.getElementById('search-orders');
     const statusFilter = document.getElementById('status-filter-orders');
     const dateFilter = document.getElementById('date-filter-orders');
@@ -469,7 +469,7 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
 
 <script>
   // Manejar cambio de estado
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     console.log('🚀 Inicializando gestor de cambio de estado...');
     const dialogOrderInfo = document.getElementById('dialog-order-info');
     const dialogOrderId = document.getElementById('dialog-order-id') as HTMLInputElement;
@@ -576,7 +576,7 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
 
 <script>
   // Manejar eliminación de órdenes
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const deleteButtons = document.querySelectorAll('.delete-order-button');
     
     deleteButtons.forEach((button) => {

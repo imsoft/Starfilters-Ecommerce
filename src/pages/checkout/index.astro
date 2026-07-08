@@ -233,10 +233,10 @@ if (!user) {
                 <!-- Los items se cargarán dinámicamente -->
               </ul>
 
-              <!-- Código de descuento -->
+              <!-- Código de promoción -->
               <div class="border-t border-border px-4 py-6 sm:px-6">
                 <label for="discount-code" class="block text-sm font-medium text-foreground mb-2">
-                  Código de descuento
+                  Código de promoción
                 </label>
                 <div class="flex gap-2">
                   <input
@@ -757,7 +757,7 @@ if (!user) {
       if (appliedDiscount) {
         summaryHTML += `
           <div class="flex items-center justify-between">
-            <dt class="text-sm text-green-600">Descuento (${appliedDiscount.code})</dt>
+            <dt class="text-sm text-green-600">Promoción (${appliedDiscount.code})</dt>
             <dd class="text-sm font-medium text-green-600">-${formatPrice(discountAmount, cartCurrency)}</dd>
           </div>
         `;
@@ -839,7 +839,7 @@ if (!user) {
         }
       } catch (error) {
         console.error('Error applying discount code:', error);
-        messageDiv.textContent = 'Error al aplicar el código de descuento';
+        messageDiv.textContent = 'Error al aplicar el código de promoción';
         messageDiv.className = 'mt-2 text-sm text-red-600';
         messageDiv.classList.remove('hidden');
         button.disabled = false;

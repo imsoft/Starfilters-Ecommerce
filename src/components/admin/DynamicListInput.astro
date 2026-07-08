@@ -253,16 +253,8 @@ if (Array.isArray(initialItems) && initialItems.length > 0) {
       });
     }
     
-    // Ejecutar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializeAllComponents);
-    } else {
-      // DOM ya está listo
-      initializeAllComponents();
-    }
-    
-    // También ejecutar después de un pequeño delay para asegurar que todos los componentes estén renderizados
-    setTimeout(initializeAllComponents, 500);
+    // Ejecutar en cada navegación de Astro (astro:page-load cubre también la carga inicial)
+    document.addEventListener('astro:page-load', initializeAllComponents);
   }
 </script>
 
