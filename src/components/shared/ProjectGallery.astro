@@ -14,13 +14,6 @@ try {
 }
 
 if (projects.length === 0) return;
-
-// Para que el carrusel infinito no muestre huecos en pantallas anchas,
-// la mitad del track debe ser más ancha que el viewport: con pocos
-// proyectos se repite la lista hasta tener al menos 6 tarjetas.
-const repeats = Math.max(1, Math.ceil(6 / projects.length));
-const loopProjects = Array.from({ length: repeats }, () => projects).flat();
-const scrollDuration = `${loopProjects.length * 6}s`;
 ---
 
 <section id={isEn ? 'project-gallery' : 'galeria-de-proyectos'} class="bg-background py-12 sm:py-16 scroll-mt-24">
@@ -42,10 +35,10 @@ const scrollDuration = `${loopProjects.length * 6}s`;
 
   </div>
 
-  <!-- Carrusel de proyectos (gira como los logos) -->
-  <div class="overflow-hidden">
-    <div class="project-track flex items-stretch" style={`animation-duration: ${scrollDuration}`}>
-      {[...loopProjects, ...loopProjects].map((project) => {
+  <!-- Carrusel de proyectos (deslizable con el dedo, con snap) -->
+  <div>
+    <div class="project-track flex items-stretch gap-0 overflow-x-auto snap-x snap-mandatory scroll-smooth px-4 lg:px-6 pb-4">
+      {projects.map((project) => {
         const title = (isEn && project.title_en) ? project.title_en : project.title;
         const description = (isEn && project.description_en) ? project.description_en : project.description;
         let portfolioHref = project.link_url || (isEn ? '/en/success-cases' : '/casos-de-exito');
@@ -54,7 +47,7 @@ const scrollDuration = `${loopProjects.length * 6}s`;
         }
 
         return (
-          <div class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 snap-start overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <!-- Imagen -->
             <div class="relative h-56 overflow-hidden">
               <img
@@ -89,28 +82,13 @@ const scrollDuration = `${loopProjects.length * 6}s`;
 
 <style>
   .project-track {
-    animation-name: scroll-projects;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    width: max-content;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
-  .project-track:hover {
-    animation-play-state: paused;
-  }
-
-  @keyframes scroll-projects {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .project-track {
-      animation: none;
-    }
+  .project-track::-webkit-scrollbar {
+    display: none;
   }
 </style>
