@@ -701,11 +701,11 @@ const formatPrice = (price: number): string => {
         )
         .join("");
 
-      // Render summary
+      // Render summary. Shipping is calculated at checkout based on location,
+      // so it is neither estimated nor added to the total here.
       const subtotal = cart.total;
-      const shipping = subtotal > 500 ? 0 : 99;
       const tax = subtotal * 0.16;
-      const total = subtotal + shipping + tax;
+      const total = subtotal + tax;
 
       cartSummary.innerHTML = `
         <div class="flex items-center justify-between">
@@ -714,14 +714,14 @@ const formatPrice = (price: number): string => {
         </div>
         <div class="flex items-center justify-between border-t border-border pt-4">
           <dt class="text-sm text-muted-foreground">Shipping</dt>
-          <dd class="text-sm font-medium text-foreground">${shipping === 0 ? "Free" : formatPrice(shipping)}</dd>
+          <dd class="text-sm font-medium text-muted-foreground text-right">Calculated at checkout</dd>
         </div>
         <div class="flex items-center justify-between border-t border-border pt-4">
           <dt class="text-sm text-muted-foreground">Tax (16%)</dt>
           <dd class="text-sm font-medium text-foreground">${formatPrice(tax)}</dd>
         </div>
         <div class="flex items-center justify-between border-t border-border pt-4">
-          <dt class="text-base font-medium text-foreground">Total</dt>
+          <dt class="text-base font-medium text-foreground">Total <span class="text-xs font-normal text-muted-foreground">(excl. shipping)</span></dt>
           <dd class="text-base font-medium text-foreground">${formatPrice(total)}</dd>
         </div>
       `;
