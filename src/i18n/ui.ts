@@ -283,7 +283,7 @@ export const ui = {
   en: {
     // Navigation
     'nav.home': 'Home',
-    'nav.filters': 'Filters',
+    'nav.filters': 'Air Filters',
     'nav.cleanrooms': 'Cleanrooms',
     'nav.services': 'Validation Services',
     'nav.blog': 'Blog',
