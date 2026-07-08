@@ -15,7 +15,6 @@ import {
   Settings,
   MessageCircle,
   Phone,
-  Image,
 } from "lucide-react"
 import {
   Sidebar,
@@ -99,11 +98,6 @@ export function AppSidebar({ currentPath = '', adminUser }: AppSidebarProps) {
       title: "WhatsApp",
       url: "/admin/settings/whatsapp",
       icon: MessageCircle,
-    },
-    {
-      title: "Hero (inicio)",
-      url: "/admin/settings/hero",
-      icon: Image,
     },
   ]
 
