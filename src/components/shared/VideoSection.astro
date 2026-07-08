@@ -69,26 +69,10 @@ const sizeClass = isShort ? 'max-w-sm' : noPadding ? '' : size === 'sm' ? 'max-w
         container.appendChild(iframe);
       }
 
-      // Autoplay al hacer scroll hasta el elemento
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              loadVideo();
-              observer.disconnect();
-            }
-          });
-        },
-        { threshold: 0.4 }
-      );
-
-      observer.observe(container);
-
-      // También cargar al hacer click (para quienes quieren reproducir antes)
-      container.addEventListener('click', () => {
-        loadVideo();
-        observer.disconnect();
-      });
+      // Cargar solo al tocar/hacer click: en móvil, autoplay al hacer scroll
+      // podía quedarse cargando indefinidamente (datos lentos, política de
+      // autoplay) mostrando una pantalla en blanco en vez de la miniatura.
+      container.addEventListener('click', loadVideo);
     });
   }
 
