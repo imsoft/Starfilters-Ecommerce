@@ -847,9 +847,17 @@ if (!user) {
       }
     }
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      console.log('🚀 DOMContentLoaded iniciado');
-      
+    // Con ClientRouter este módulo solo se evalúa una vez por sesión y
+    // DOMContentLoaded no se repite al navegar: al llegar por "Finalizar
+    // compra" el checkout no inicializaba (no pasaba nada al elegir entrega,
+    // ni aparecían dirección ni pago). Ahora se inicializa en cada
+    // astro:page-load con guarda para no duplicar listeners.
+    async function initCheckout() {
+      const deliveryOptions = document.getElementById('delivery-options');
+      if (!deliveryOptions || deliveryOptions.hasAttribute('data-checkout-init')) return;
+      deliveryOptions.setAttribute('data-checkout-init', 'true');
+      console.log('🚀 initCheckout iniciado');
+
       // Primero renderizar el resumen del pedido
       console.log('📦 Renderizando resumen del pedido...');
       const cart = renderOrderSummary();
@@ -1066,6 +1074,9 @@ if (!user) {
           loadPaymentForm();
         }
       }, 800);
-    });
+    }
+
+    initCheckout();
+    document.addEventListener('astro:page-load', initCheckout);
   </script>
 </WebsiteLayout>

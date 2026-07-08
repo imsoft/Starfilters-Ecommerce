@@ -841,9 +841,16 @@ if (!user) {
       }
     }
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      console.log('🚀 DOMContentLoaded started');
-      
+    // With ClientRouter this module evaluates once per session and
+    // DOMContentLoaded does not fire again on navigation: arriving via
+    // "Checkout" left the page uninitialized. Re-init on every astro:page-load
+    // with a guard to avoid duplicate listeners.
+    async function initCheckout() {
+      const deliveryOptions = document.getElementById('delivery-options');
+      if (!deliveryOptions || deliveryOptions.hasAttribute('data-checkout-init')) return;
+      deliveryOptions.setAttribute('data-checkout-init', 'true');
+      console.log('🚀 initCheckout started');
+
       // First render order summary
       console.log('📦 Rendering order summary...');
       const cart = renderOrderSummary();
@@ -1059,6 +1066,9 @@ if (!user) {
           loadPaymentForm();
         }
       }, 800);
-    });
+    }
+
+    initCheckout();
+    document.addEventListener('astro:page-load', initCheckout);
   </script>
 </WebsiteLayout>
