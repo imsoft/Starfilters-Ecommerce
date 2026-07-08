@@ -38,6 +38,10 @@ if (Astro.request.method === "POST") {
 
     // Verificar que el usuario esté activo
     if (user.status !== 'active') {
+      // Cuenta pendiente de verificación por correo: ofrecer reenviar el enlace
+      if (user.status === 'pending' || !user.email_verified) {
+        return Astro.redirect(`/en/login?unverified=${encodeURIComponent(user.email)}`);
+      }
       return Astro.redirect(`/en/login?error=${encodeURIComponent(t('auth.login.inactive'))}`);
     }
 
@@ -78,6 +82,8 @@ if (Astro.request.method === "POST") {
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
 const message = url.searchParams.get('message');
+// Account pending verification: email to resend the activation link
+const unverifiedEmail = url.searchParams.get('unverified');
 ---
 
 <AuthLayout title={t('auth.login.title')}>
@@ -99,6 +105,26 @@ const message = url.searchParams.get('message');
       {error && (
         <div class="mb-4 rounded-md bg-red-50 p-4">
           <div class="text-sm text-red-700">{error}</div>
+        </div>
+      )}
+
+      {unverifiedEmail && (
+        <div class="mb-4 rounded-md bg-amber-50 border border-amber-200 p-4">
+          <p class="text-sm font-medium text-amber-800">Your account is not verified yet</p>
+          <p class="mt-1 text-sm text-amber-700">
+            You need to confirm your email before signing in. We sent a verification link to
+            <span class="font-medium">{unverifiedEmail}</span>.
+          </p>
+          <button
+            type="button"
+            id="resend-verification"
+            data-email={unverifiedEmail}
+            data-lang="en"
+            class="mt-3 inline-flex items-center gap-2 rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Resend verification email
+          </button>
+          <p id="resend-status" class="mt-2 text-sm hidden"></p>
         </div>
       )}
       
@@ -168,3 +194,51 @@ const message = url.searchParams.get('message');
     </div>
   </div>
 </AuthLayout>
+
+<script>
+  // Resend the verification email from login (pending account). Re-init on
+  // every astro:page-load (ClientRouter evaluates the module once per session).
+  function initResendFromLogin() {
+    const btn = document.getElementById('resend-verification') as HTMLButtonElement | null;
+    if (!btn || btn.hasAttribute('data-init')) return;
+    btn.setAttribute('data-init', 'true');
+
+    const status = document.getElementById('resend-status') as HTMLElement | null;
+    const show = (msg: string, ok: boolean) => {
+      if (!status) return;
+      status.textContent = msg;
+      status.classList.remove('hidden', 'text-green-700', 'text-red-700');
+      status.classList.add(ok ? 'text-green-700' : 'text-red-700');
+    };
+
+    btn.addEventListener('click', async () => {
+      const email = btn.getAttribute('data-email') || '';
+      if (!email) return;
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Sending…';
+      try {
+        const res = await fetch('/api/users/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, lang: 'en' }),
+        });
+        const data = await res.json();
+        if (data.success && data.alreadyVerified) {
+          show('Your account is already verified. Try signing in again.', true);
+        } else if (data.success) {
+          show('Email sent! Check your inbox (and spam folder).', true);
+        } else {
+          show(data.message || 'The email could not be sent. Try again later.', false);
+        }
+      } catch {
+        show('The email could not be sent. Try again later.', false);
+      } finally {
+        setTimeout(() => { btn.disabled = false; btn.textContent = original; }, 30000);
+      }
+    });
+  }
+
+  initResendFromLogin();
+  document.addEventListener('astro:page-load', initResendFromLogin);
+</script>
