@@ -1071,34 +1071,33 @@ console.log('📦 Tamaños preparados:', productSizes.length);
     }
   })();
 
-  // Inicializar en cada navegación de Astro (astro:page-load cubre también la carga inicial)
-  document.addEventListener('astro:page-load', function() {
+  // Inicializar al cargar el DOM (el admin no usa el Client Router de Astro)
+  document.addEventListener('DOMContentLoaded', function() {
     var productForm = document.getElementById('product-form');
     var saveButton = document.getElementById('save-product-btn');
-    
+
     if (productForm && saveButton) {
       console.log('✅ Formulario y botón encontrados');
-      
+
       productForm.addEventListener('submit', function(e) {
         console.log('📝 Formulario enviándose...');
-        
+
         // Asegurar que el JSON de tamaños esté actualizado antes de enviar
-        const sizesTable = document.querySelector('[data-sizes-table]');
+        var sizesTable = document.querySelector('[data-sizes-table]');
         if (sizesTable) {
-          const jsonInput = sizesTable.querySelector('[data-sizes-json]');
-          const tbody = sizesTable.querySelector('[data-sizes-tbody]');
+          var jsonInput = sizesTable.querySelector('[data-sizes-json]');
+          var tbody = sizesTable.querySelector('[data-sizes-tbody]');
           if (jsonInput && tbody) {
-            // Forzar actualización del JSON
-            const rows = tbody.querySelectorAll('tr[data-row-index]');
-            const sizes = [];
+            var rows = tbody.querySelectorAll('tr[data-row-index]');
+            var sizes = [];
 
             rows.forEach(function(row) {
-              const nominalInput = row.querySelector('[data-field="nominal_size"]');
-              const realInput = row.querySelector('[data-field="real_size"]');
-              const priceInput = row.querySelector('[data-field="price"]');
-              const currencySelect = row.querySelector('[data-field="currency"]');
-              const bindCodeInput = row.querySelector('[data-field="bind_code"]');
-              const productCodeInput = row.querySelector('[data-field="product_code"]');
+              var nominalInput = row.querySelector('[data-field="nominal_size"]');
+              var realInput = row.querySelector('[data-field="real_size"]');
+              var priceInput = row.querySelector('[data-field="price"]');
+              var currencySelect = row.querySelector('[data-field="currency"]');
+              var bindCodeInput = row.querySelector('[data-field="bind_code"]');
+              var productCodeInput = row.querySelector('[data-field="product_code"]');
 
               if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
                 sizes.push({
@@ -1111,22 +1110,11 @@ console.log('📦 Tamaños preparados:', productSizes.length);
                 });
               }
             });
-            
+
             jsonInput.value = JSON.stringify(sizes);
             console.log('📦 JSON actualizado antes de enviar:', sizes.length, 'filas');
-            console.log('📦 Contenido JSON:', jsonInput.value);
           }
         }
-      });
-      
-      saveButton.addEventListener('click', function(e) {
-        console.log('🖱️ Click en Guardar Cambios');
-        setTimeout(function() {
-          if (productForm) {
-            console.log('📝 Forzando envío del formulario...');
-            productForm.submit();
-          }
-        }, 100);
       });
     }
   });
