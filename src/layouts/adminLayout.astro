@@ -628,58 +628,69 @@ const currentPath = Astro.url.pathname;
       </div>
     </div>
 
-    <script>
-      document.addEventListener("astro:page-load", () => {
+    <script is:inline>
+      document.addEventListener("DOMContentLoaded", function () {
         // Menú móvil
-        const mobileMenu = document.getElementById("mobile-menu");
-        const openBtn = document.querySelector('[data-action="show-modal"]');
-        const closeBtn = document.querySelector('[data-action="close"]');
+        var mobileMenu = document.getElementById("mobile-menu");
+        var openBtn = document.querySelector('[data-action="show-modal"]');
+        var closeBtn = document.querySelector('[data-action="close"]');
 
-        openBtn?.addEventListener("click", () => {
-          mobileMenu?.classList.remove("hidden");
-        });
+        if (openBtn) {
+          openBtn.addEventListener("click", function () {
+            mobileMenu && mobileMenu.classList.remove("hidden");
+          });
+        }
 
-        closeBtn?.addEventListener("click", () => {
-          mobileMenu?.classList.add("hidden");
-        });
+        if (closeBtn) {
+          closeBtn.addEventListener("click", function () {
+            mobileMenu && mobileMenu.classList.add("hidden");
+          });
+        }
 
-        // Cerrar menú móvil al hacer clic fuera
-        mobileMenu?.addEventListener("click", (e) => {
-          if (e.target === mobileMenu) {
-            mobileMenu.classList.add("hidden");
-          }
-        });
+        if (mobileMenu) {
+          mobileMenu.addEventListener("click", function (e) {
+            if (e.target === mobileMenu) {
+              mobileMenu.classList.add("hidden");
+            }
+          });
+        }
 
         // Menú desplegable del perfil
-        const userMenuButton = document.getElementById("user-menu-button");
-        const userMenu = document.getElementById("user-menu");
+        var userMenuButton = document.getElementById("user-menu-button");
+        var userMenu = document.getElementById("user-menu");
 
-        userMenuButton?.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const isHidden = userMenu?.classList.contains("hidden");
-          
-          if (isHidden) {
-            userMenu?.classList.remove("hidden");
-            userMenuButton?.setAttribute("aria-expanded", "true");
-          } else {
-            userMenu?.classList.add("hidden");
-            userMenuButton?.setAttribute("aria-expanded", "false");
-          }
-        });
+        if (userMenuButton) {
+          userMenuButton.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (!userMenu) return;
+            var isHidden = userMenu.classList.contains("hidden");
+            if (isHidden) {
+              userMenu.classList.remove("hidden");
+              userMenuButton.setAttribute("aria-expanded", "true");
+            } else {
+              userMenu.classList.add("hidden");
+              userMenuButton.setAttribute("aria-expanded", "false");
+            }
+          });
+        }
 
         // Cerrar menú del perfil al hacer clic fuera
-        document.addEventListener("click", (e) => {
-          if (!userMenuButton?.contains(e.target as Node) && !userMenu?.contains(e.target as Node)) {
-            userMenu?.classList.add("hidden");
-            userMenuButton?.setAttribute("aria-expanded", "false");
+        document.addEventListener("click", function (e) {
+          if (
+            userMenuButton && userMenu &&
+            !userMenuButton.contains(e.target) &&
+            !userMenu.contains(e.target)
+          ) {
+            userMenu.classList.add("hidden");
+            userMenuButton.setAttribute("aria-expanded", "false");
           }
         });
 
         // Cerrar menú del perfil con tecla Escape
-        document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") {
-            userMenu?.classList.add("hidden");
-            userMenuButton?.setAttribute("aria-expanded", "false");
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && userMenu && userMenuButton) {
+            userMenu.classList.add("hidden");
+            userMenuButton.setAttribute("aria-expanded", "false");
           }
         });
       });
