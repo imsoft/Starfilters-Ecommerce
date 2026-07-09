@@ -53,7 +53,7 @@ const getTagsArray = (tags?: string) =>
 
     </div>
 
-      {cases.length > 0 ? (
+      {cases.length > 0 && (
         <!-- Infinite auto-scroll carousel -->
         <div class="mt-16 reveal overflow-hidden w-full">
           <div class="case-marquee-wrapper">
@@ -80,15 +80,15 @@ const getTagsArray = (tags?: string) =>
                     <div class="flex flex-1 flex-col p-6">
                       <div class="flex items-center gap-2 mb-3">
                         <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{industry}</span>
-                        {c.client_name && <span class="text-xs text-muted-foreground">{c.client_name}</span>}
+                        {c.client_name && (<span class="text-xs text-muted-foreground">{c.client_name}</span>)}
                       </div>
                       <h2 class="text-base font-semibold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
                         <a href={`/en/success-cases/${c.slug}`}>{title}</a>
                       </h2>
-                      {excerpt && <p class="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{excerpt}</p>}
+                      {excerpt && (<p class="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{excerpt}</p>)}
                       {tags.length > 0 && (
                         <div class="mt-4 flex flex-wrap gap-1">
-                          {tags.slice(0, 3).map((tag) => <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tag}</span>)}
+                          {tags.slice(0, 3).map((tag) => (<span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tag}</span>))}
                         </div>
                       )}
                       <div class="mt-4">
@@ -125,15 +125,15 @@ const getTagsArray = (tags?: string) =>
                     <div class="flex flex-1 flex-col p-6">
                       <div class="flex items-center gap-2 mb-3">
                         <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{industry}</span>
-                        {c.client_name && <span class="text-xs text-muted-foreground">{c.client_name}</span>}
+                        {c.client_name && (<span class="text-xs text-muted-foreground">{c.client_name}</span>)}
                       </div>
                       <h2 class="text-base font-semibold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
                         <a href={`/en/success-cases/${c.slug}`}>{title}</a>
                       </h2>
-                      {excerpt && <p class="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{excerpt}</p>}
+                      {excerpt && (<p class="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{excerpt}</p>)}
                       {tags.length > 0 && (
                         <div class="mt-4 flex flex-wrap gap-1">
-                          {tags.slice(0, 3).map((tag) => <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tag}</span>)}
+                          {tags.slice(0, 3).map((tag) => (<span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tag}</span>))}
                         </div>
                       )}
                       <div class="mt-4">
@@ -147,13 +147,6 @@ const getTagsArray = (tags?: string) =>
                 );
               })}
             </div>
-          </div>
-        </div>
-      ) : (
-        <div class="mx-auto mt-16 max-w-7xl px-6 text-center">
-          <div class="rounded-lg bg-muted p-12">
-            <h3 class="text-sm font-medium text-foreground">Coming soon</h3>
-            <p class="mt-1 text-sm text-muted-foreground">We are documenting our most outstanding projects.</p>
           </div>
         </div>
       )}
