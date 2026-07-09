@@ -54,70 +54,100 @@ const getTagsArray = (tags?: string) =>
     </div>
 
       {cases.length > 0 ? (
-        <!-- Swipeable carousel (native touch scroll, with snap) -->
-        <div class="mt-16 reveal">
-        <div class="case-track flex items-stretch gap-0 overflow-x-auto snap-x snap-mandatory scroll-smooth px-6 lg:px-8 pb-4">
-          {cases.map((c) => {
-            const title = c.title_en || c.title;
-            const excerpt = c.excerpt_en || c.excerpt;
-            const industry = c.industry_en || c.industry;
-            const tags = getTagsArray(c.tags);
-            return (
-              <article class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 snap-start overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-                {c.featured_image ? (
-                  <div class="relative h-48 overflow-hidden">
-                    <img
-                      src={c.featured_image}
-                      alt={title}
-                      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : (
-                  <div class="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                    <svg class="h-16 w-16 text-primary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                  </div>
-                )}
-                <div class="flex flex-1 flex-col p-6">
-                  <div class="flex items-center gap-2 mb-3">
-                    <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                      {industry}
-                    </span>
-                    {c.client_name && (
-                      <span class="text-xs text-muted-foreground">{c.client_name}</span>
+        <!-- Infinite auto-scroll carousel -->
+        <div class="mt-16 reveal overflow-hidden w-full">
+          <div class="case-marquee-wrapper">
+            <!-- Set 1 -->
+            <div class="case-track">
+              {cases.map((c) => {
+                const title = c.title_en || c.title;
+                const excerpt = c.excerpt_en || c.excerpt;
+                const industry = c.industry_en || c.industry;
+                const tags = getTagsArray(c.tags);
+                return (
+                  <article class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                    {c.featured_image ? (
+                      <div class="relative h-48 overflow-hidden">
+                        <img src={c.featured_image} alt={title} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                      </div>
+                    ) : (
+                      <div class="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                        <svg class="h-16 w-16 text-primary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                      </div>
                     )}
-                  </div>
-                  <h2 class="text-base font-semibold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
-                    <a href={`/en/success-cases/${c.slug}`}>{title}</a>
-                  </h2>
-                  {excerpt && (
-                    <p class="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{excerpt}</p>
-                  )}
-                  {tags.length > 0 && (
-                    <div class="mt-4 flex flex-wrap gap-1">
-                      {tags.slice(0, 3).map((tag) => (
-                        <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tag}</span>
-                      ))}
+                    <div class="flex flex-1 flex-col p-6">
+                      <div class="flex items-center gap-2 mb-3">
+                        <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{industry}</span>
+                        {c.client_name && <span class="text-xs text-muted-foreground">{c.client_name}</span>}
+                      </div>
+                      <h2 class="text-base font-semibold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
+                        <a href={`/en/success-cases/${c.slug}`}>{title}</a>
+                      </h2>
+                      {excerpt && <p class="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{excerpt}</p>}
+                      {tags.length > 0 && (
+                        <div class="mt-4 flex flex-wrap gap-1">
+                          {tags.slice(0, 3).map((tag) => <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tag}</span>)}
+                        </div>
+                      )}
+                      <div class="mt-4">
+                        <a href={`/en/success-cases/${c.slug}`} class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                          Read full case
+                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                        </a>
+                      </div>
                     </div>
-                  )}
-                  <div class="mt-4">
-                    <a
-                      href={`/en/success-cases/${c.slug}`}
-                      class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-                    >
-                      Read full case
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+                  </article>
+                );
+              })}
+            </div>
+            <!-- Set 2 (duplicate for infinite loop) -->
+            <div class="case-track" aria-hidden="true">
+              {cases.map((c) => {
+                const title = c.title_en || c.title;
+                const excerpt = c.excerpt_en || c.excerpt;
+                const industry = c.industry_en || c.industry;
+                const tags = getTagsArray(c.tags);
+                return (
+                  <article class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                    {c.featured_image ? (
+                      <div class="relative h-48 overflow-hidden">
+                        <img src={c.featured_image} alt={title} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                      </div>
+                    ) : (
+                      <div class="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                        <svg class="h-16 w-16 text-primary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                      </div>
+                    )}
+                    <div class="flex flex-1 flex-col p-6">
+                      <div class="flex items-center gap-2 mb-3">
+                        <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{industry}</span>
+                        {c.client_name && <span class="text-xs text-muted-foreground">{c.client_name}</span>}
+                      </div>
+                      <h2 class="text-base font-semibold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
+                        <a href={`/en/success-cases/${c.slug}`}>{title}</a>
+                      </h2>
+                      {excerpt && <p class="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{excerpt}</p>}
+                      {tags.length > 0 && (
+                        <div class="mt-4 flex flex-wrap gap-1">
+                          {tags.slice(0, 3).map((tag) => <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tag}</span>)}
+                        </div>
+                      )}
+                      <div class="mt-4">
+                        <a href={`/en/success-cases/${c.slug}`} class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                          Read full case
+                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                        </a>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
         </div>
       ) : (
         <div class="mx-auto mt-16 max-w-7xl px-6 text-center">
@@ -138,14 +168,25 @@ const getTagsArray = (tags?: string) =>
 </WebsiteLayout>
 
 <style>
-  .case-track {
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  .case-marquee-wrapper {
+    display: flex;
+    width: max-content;
+    animation: cases-scroll 35s linear infinite;
+    padding-bottom: 1rem;
   }
 
-  .case-track::-webkit-scrollbar {
-    display: none;
+  .case-marquee-wrapper:hover {
+    animation-play-state: paused;
+  }
+
+  .case-track {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+  }
+
+  @keyframes cases-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
   }
 </style>
