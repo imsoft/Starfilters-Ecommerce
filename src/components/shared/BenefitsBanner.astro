@@ -7,8 +7,33 @@ const benefits = await getActiveBenefits();
 ---
 
 {benefits.length > 0 && (
-  <div class="bg-primary px-6 py-3 sm:px-3.5 m-0">
-    <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+  <div class="bg-primary py-3 m-0 overflow-hidden w-full">
+    <!-- Versión móvil: Marquee infinito en horizontal -->
+    <div class="sm:hidden overflow-hidden relative w-full flex">
+      <div class="marquee-content">
+        {benefits.map((benefit) => (
+          <span class="marquee-item flex items-center gap-x-2 text-sm font-medium text-primary-foreground">
+            <svg viewBox="0 0 2 2" aria-hidden="true" class="inline size-0.5 fill-current opacity-60">
+              <circle r="1" cx="1" cy="1" />
+            </svg>
+            {lang === 'en' ? benefit.text_en : benefit.text_es}
+          </span>
+        ))}
+      </div>
+      <div class="marquee-content" aria-hidden="true">
+        {benefits.map((benefit) => (
+          <span class="marquee-item flex items-center gap-x-2 text-sm font-medium text-primary-foreground">
+            <svg viewBox="0 0 2 2" aria-hidden="true" class="inline size-0.5 fill-current opacity-60">
+              <circle r="1" cx="1" cy="1" />
+            </svg>
+            {lang === 'en' ? benefit.text_en : benefit.text_es}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    <!-- Versión escritorio: Lista centrada convencional -->
+    <div class="hidden sm:flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
       {benefits.map((benefit) => (
         <span class="flex items-center gap-x-2 text-sm/6 font-medium text-primary-foreground">
           <svg viewBox="0 0 2 2" aria-hidden="true" class="inline size-0.5 fill-current opacity-60">
@@ -20,4 +45,28 @@ const benefits = await getActiveBenefits();
     </div>
   </div>
 )}
+
+<style>
+  .marquee-content {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-around;
+    min-width: 100%;
+    animation: marquee 25s linear infinite;
+  }
+  .marquee-item {
+    padding: 0 1.5rem;
+    white-space: nowrap;
+  }
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+</style>
+
 
