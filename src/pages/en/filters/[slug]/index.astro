@@ -443,7 +443,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   }
 
   // Update prices on page load
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     updateVariantPricesWithExchangeRate();
     // Update every hour
     setInterval(updateVariantPricesWithExchangeRate, 60 * 60 * 1000);

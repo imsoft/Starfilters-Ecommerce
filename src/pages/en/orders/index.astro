@@ -467,7 +467,7 @@ const getStatusText = (status: string) => {
   }
 
   initOrdersFilters();
-  document.addEventListener('DOMContentLoaded', initOrdersFilters);
+  document.addEventListener('astro:page-load', initOrdersFilters);
   
   // Function to cancel order
   function cancelOrder(orderId: number) {

@@ -165,5 +165,5 @@ const email = url.searchParams.get('email');
   }
 
   initResendVerification();
-  document.addEventListener('DOMContentLoaded', initResendVerification);
+  document.addEventListener('astro:page-load', initResendVerification);
 </script>

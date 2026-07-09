@@ -243,5 +243,5 @@ const unverifiedEmail = url.searchParams.get('unverified');
   }
 
   initResendFromLogin();
-  document.addEventListener('DOMContentLoaded', initResendFromLogin);
+  document.addEventListener('astro:page-load', initResendFromLogin);
 </script>

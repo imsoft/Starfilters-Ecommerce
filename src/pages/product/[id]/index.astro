@@ -882,7 +882,7 @@ const benefitsList = parseListField(product.benefits);
   }
 
   initProductPage();
-  document.addEventListener('DOMContentLoaded', initProductPage);
+  document.addEventListener('astro:page-load', initProductPage);
 
   async function updateCurrentProduct(sizeSelect: HTMLSelectElement) {
     const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];

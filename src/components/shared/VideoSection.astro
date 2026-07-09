@@ -93,5 +93,5 @@ const sizeClass = isShort ? 'max-w-sm' : noPadding ? '' : size === 'sm' ? 'max-w
   }
 
   initVideoSections();
-  document.addEventListener('DOMContentLoaded', initVideoSections);
+  document.addEventListener('astro:page-load', initVideoSections);
 </script>

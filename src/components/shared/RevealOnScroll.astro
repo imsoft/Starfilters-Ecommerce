@@ -38,5 +38,6 @@
     // transiciones de vista (ClientRouter) subsecuentes.
     initReveal();
     document.addEventListener('DOMContentLoaded', initReveal);
+    document.addEventListener('astro:page-load', initReveal);
   })();
 </script>

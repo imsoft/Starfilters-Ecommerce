@@ -430,7 +430,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   }
 
   initQuantityValidation();
-  document.addEventListener('DOMContentLoaded', initQuantityValidation);
+  document.addEventListener('astro:page-load', initQuantityValidation);
 
   function showErrorNotification(message: string): void {
     const notification = document.createElement('div');
