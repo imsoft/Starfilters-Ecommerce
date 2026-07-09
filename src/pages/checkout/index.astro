@@ -851,7 +851,7 @@ if (!user) {
     // DOMContentLoaded no se repite al navegar: al llegar por "Finalizar
     // compra" el checkout no inicializaba (no pasaba nada al elegir entrega,
     // ni aparecían dirección ni pago). Ahora se inicializa en cada
-    // astro:page-load con guarda para no duplicar listeners.
+    // DOMContentLoaded con guarda para no duplicar listeners.
     async function initCheckout() {
       const deliveryOptions = document.getElementById('delivery-options');
       if (!deliveryOptions || deliveryOptions.hasAttribute('data-checkout-init')) return;
@@ -1077,6 +1077,6 @@ if (!user) {
     }
 
     initCheckout();
-    document.addEventListener('astro:page-load', initCheckout);
+    document.addEventListener('DOMContentLoaded', initCheckout);
   </script>
 </WebsiteLayout>

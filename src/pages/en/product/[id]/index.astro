@@ -412,7 +412,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     });
   }
 
-  // Validate quantity input (re-init on every astro:page-load: with
+  // Validate quantity input (re-init on every DOMContentLoaded: with
   // ClientRouter this module only evaluates once per session)
   function initQuantityValidation() {
     const quantityInput = document.getElementById('quantity') as HTMLInputElement;
@@ -430,7 +430,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   }
 
   initQuantityValidation();
-  document.addEventListener('astro:page-load', initQuantityValidation);
+  document.addEventListener('DOMContentLoaded', initQuantityValidation);
 
   function showErrorNotification(message: string): void {
     const notification = document.createElement('div');

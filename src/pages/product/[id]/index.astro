@@ -789,7 +789,7 @@ const benefitsList = parseListField(product.benefits);
   };
 
   // Con ClientRouter este módulo solo se evalúa una vez por sesión: la
-  // inicialización debe repetirse en cada astro:page-load (cubre la carga
+  // inicialización debe repetirse en cada DOMContentLoaded (cubre la carga
   // inicial y el DOM nuevo tras cada navegación). Antes se usaba
   // DOMContentLoaded y el botón de carrito quedaba sin listener al llegar
   // navegando desde la tienda.
@@ -882,7 +882,7 @@ const benefitsList = parseListField(product.benefits);
   }
 
   initProductPage();
-  document.addEventListener('astro:page-load', initProductPage);
+  document.addEventListener('DOMContentLoaded', initProductPage);
 
   async function updateCurrentProduct(sizeSelect: HTMLSelectElement) {
     const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];

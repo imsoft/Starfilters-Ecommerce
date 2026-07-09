@@ -843,7 +843,7 @@ if (!user) {
 
     // With ClientRouter this module evaluates once per session and
     // DOMContentLoaded does not fire again on navigation: arriving via
-    // "Checkout" left the page uninitialized. Re-init on every astro:page-load
+    // "Checkout" left the page uninitialized. Re-init on every DOMContentLoaded
     // with a guard to avoid duplicate listeners.
     async function initCheckout() {
       const deliveryOptions = document.getElementById('delivery-options');
@@ -1069,6 +1069,6 @@ if (!user) {
     }
 
     initCheckout();
-    document.addEventListener('astro:page-load', initCheckout);
+    document.addEventListener('DOMContentLoaded', initCheckout);
   </script>
 </WebsiteLayout>

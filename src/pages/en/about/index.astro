@@ -241,7 +241,7 @@ const values = [
 
 <script>
   // Con ClientRouter este módulo solo se evalúa una vez por sesión: hay que
-  // volver a inicializar en cada astro:page-load (también cubre la carga inicial).
+  // volver a inicializar en cada DOMContentLoaded (también cubre la carga inicial).
   function initAboutCounters() {
     const counters = document.querySelectorAll<HTMLElement>('.counter-number:not([data-counter-init])');
     if (counters.length === 0) return;
@@ -275,5 +275,5 @@ const values = [
   }
 
   initAboutCounters();
-  document.addEventListener('astro:page-load', initAboutCounters);
+  document.addEventListener('DOMContentLoaded', initAboutCounters);
 </script>

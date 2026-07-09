@@ -200,7 +200,7 @@ const unverifiedEmail = url.searchParams.get('unverified');
 <script>
   // Reenvío del correo de verificación desde el login (cuenta pendiente).
   // Con ClientRouter el módulo solo se evalúa una vez por sesión: re-init en
-  // cada astro:page-load.
+  // cada DOMContentLoaded.
   function initResendFromLogin() {
     const btn = document.getElementById('resend-verification') as HTMLButtonElement | null;
     if (!btn || btn.hasAttribute('data-init')) return;
@@ -243,5 +243,5 @@ const unverifiedEmail = url.searchParams.get('unverified');
   }
 
   initResendFromLogin();
-  document.addEventListener('astro:page-load', initResendFromLogin);
+  document.addEventListener('DOMContentLoaded', initResendFromLogin);
 </script>

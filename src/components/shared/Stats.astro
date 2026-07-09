@@ -204,12 +204,12 @@ const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   }
 
   // Con ClientRouter este módulo solo se evalúa una vez por sesión: hay que
-  // volver a inicializar en cada astro:page-load (también cubre la carga inicial).
+  // volver a inicializar en cada DOMContentLoaded (también cubre la carga inicial).
   function initAll() {
     initVideos();
     initStatsSection();
   }
 
   initAll();
-  document.addEventListener('astro:page-load', initAll);
+  document.addEventListener('DOMContentLoaded', initAll);
 </script>

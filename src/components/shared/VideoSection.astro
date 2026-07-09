@@ -46,7 +46,7 @@ const sizeClass = isShort ? 'max-w-sm' : noPadding ? '' : size === 'sm' ? 'max-w
 
 <script>
   // Con ClientRouter este módulo solo se evalúa una vez por sesión: hay que
-  // volver a inicializar en cada astro:page-load (también cubre la carga inicial).
+  // volver a inicializar en cada DOMContentLoaded (también cubre la carga inicial).
   function initVideoSections() {
     document.querySelectorAll<HTMLElement>('.video-container:not([data-video-init])').forEach((container) => {
       container.setAttribute('data-video-init', 'true');
@@ -93,5 +93,5 @@ const sizeClass = isShort ? 'max-w-sm' : noPadding ? '' : size === 'sm' ? 'max-w
   }
 
   initVideoSections();
-  document.addEventListener('astro:page-load', initVideoSections);
+  document.addEventListener('DOMContentLoaded', initVideoSections);
 </script>

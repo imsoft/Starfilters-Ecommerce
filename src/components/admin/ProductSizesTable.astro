@@ -511,6 +511,6 @@ const normalizedSizes = initialSizes.map(size => ({
     });
   }
 
-  // Ejecutar en cada navegación de Astro (astro:page-load cubre también la carga inicial)
-  document.addEventListener('astro:page-load', initSizesTable);
+  // Ejecutar al cargar el DOM (el admin no usa el Client Router de Astro)
+  document.addEventListener('DOMContentLoaded', initSizesTable);
 </script>

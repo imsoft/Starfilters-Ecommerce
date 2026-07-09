@@ -68,7 +68,7 @@ const storageKey = `form_draft_${formId}`;
 </div>
 
 <script define:vars={{ storageKey, formSelector, excludeFields, showIndicator }}>
-  document.addEventListener('astro:page-load', () => {
+  document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector(formSelector);
     if (!form) {
       console.warn('FormPersistence: No se encontró el formulario con selector:', formSelector);

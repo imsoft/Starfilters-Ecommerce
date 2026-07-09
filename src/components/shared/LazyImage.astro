@@ -181,5 +181,5 @@ const imageId = `lazy-image-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   initLazyImages();
-  document.addEventListener('astro:page-load', initLazyImages);
+  document.addEventListener('DOMContentLoaded', initLazyImages);
 </script>

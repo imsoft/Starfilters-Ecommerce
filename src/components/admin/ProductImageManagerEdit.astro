@@ -538,6 +538,6 @@ console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carousel
     console.log('🖼️ [ProductImageManagerEdit] Inicializado correctamente');
   }
   
-  // Ejecutar en cada navegación de Astro (astro:page-load cubre también la carga inicial)
-  document.addEventListener('astro:page-load', initImageButtons);
+  // Ejecutar en cada navegación de Astro (DOMContentLoaded cubre también la carga inicial)
+  document.addEventListener('DOMContentLoaded', initImageButtons);
 </script>

@@ -280,7 +280,7 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
   };
 
   // Con ClientRouter este módulo solo se evalúa una vez por sesión, así que
-  // la inicialización debe repetirse en cada astro:page-load (que también
+  // la inicialización debe repetirse en cada DOMContentLoaded (que también
   // se dispara en la carga inicial).
   const initCounters = () => {
     const counters = document.querySelectorAll<HTMLElement>('.counter-number:not([data-counter-init])');
@@ -309,5 +309,5 @@ const contactUrl = lang === 'en' ? '/en/contact' : '/contacto';
   };
 
   initCounters();
-  document.addEventListener('astro:page-load', initCounters);
+  document.addEventListener('DOMContentLoaded', initCounters);
 </script>

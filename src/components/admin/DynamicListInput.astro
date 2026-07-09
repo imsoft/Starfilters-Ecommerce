@@ -253,8 +253,8 @@ if (Array.isArray(initialItems) && initialItems.length > 0) {
       });
     }
     
-    // Ejecutar en cada navegación de Astro (astro:page-load cubre también la carga inicial)
-    document.addEventListener('astro:page-load', initializeAllComponents);
+    // Ejecutar al cargar el DOM (el admin no usa el Client Router de Astro)
+    document.addEventListener('DOMContentLoaded', initializeAllComponents);
   }
 </script>
 

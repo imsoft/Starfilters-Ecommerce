@@ -197,7 +197,7 @@ const unverifiedEmail = url.searchParams.get('unverified');
 
 <script>
   // Resend the verification email from login (pending account). Re-init on
-  // every astro:page-load (ClientRouter evaluates the module once per session).
+  // every DOMContentLoaded (ClientRouter evaluates the module once per session).
   function initResendFromLogin() {
     const btn = document.getElementById('resend-verification') as HTMLButtonElement | null;
     if (!btn || btn.hasAttribute('data-init')) return;
@@ -240,5 +240,5 @@ const unverifiedEmail = url.searchParams.get('unverified');
   }
 
   initResendFromLogin();
-  document.addEventListener('astro:page-load', initResendFromLogin);
+  document.addEventListener('DOMContentLoaded', initResendFromLogin);
 </script>

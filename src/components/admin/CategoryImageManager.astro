@@ -381,6 +381,6 @@ const { categoryId, categoryName, mainImageUrl } = Astro.props;
     }
   }
   
-  // Ejecutar en cada navegación de Astro (astro:page-load cubre también la carga inicial)
-  document.addEventListener('astro:page-load', initializeComponent);
+  // Ejecutar al cargar el DOM (el admin no usa el Client Router de Astro)
+  document.addEventListener('DOMContentLoaded', initializeComponent);
 </script>

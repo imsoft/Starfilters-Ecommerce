@@ -612,7 +612,7 @@ function formatCurrency(amount: number): string {
     window.history.replaceState({}, '', url);
   };
 
-  document.addEventListener('astro:page-load', () => {
+  document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-products');
     const categoryFilter = document.getElementById('category-filter');
     const stockFilter = document.getElementById('stock-filter');

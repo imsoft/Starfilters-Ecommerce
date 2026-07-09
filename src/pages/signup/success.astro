@@ -110,7 +110,7 @@ const email = url.searchParams.get('email');
 
 <script>
   // Con ClientRouter este módulo solo se evalúa una vez por sesión: hay que
-  // re-inicializar en cada astro:page-load.
+  // re-inicializar en cada DOMContentLoaded.
   function initResendVerification() {
     const btn = document.getElementById('resend-verification') as HTMLButtonElement | null;
     if (!btn || btn.hasAttribute('data-init')) return;
@@ -165,5 +165,5 @@ const email = url.searchParams.get('email');
   }
 
   initResendVerification();
-  document.addEventListener('astro:page-load', initResendVerification);
+  document.addEventListener('DOMContentLoaded', initResendVerification);
 </script>

@@ -377,7 +377,7 @@ function getStatusText(status: string): string {
 </AdminLayout>
 
 <script>
-  document.addEventListener('astro:page-load', () => {
+  document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-blog');
     const statusFilter = document.getElementById('status-filter-blog');
     const categoryFilter = document.getElementById('category-filter-blog');

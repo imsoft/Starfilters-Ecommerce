@@ -386,7 +386,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
   (window as any).addToCartQuick = addToCartQuick;
 
-  document.addEventListener('astro:page-load', () => {
+  document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('search-products')?.addEventListener('input', (e) => {
       currentSearchTerm = (e.target as HTMLInputElement).value;
       applyFilters();

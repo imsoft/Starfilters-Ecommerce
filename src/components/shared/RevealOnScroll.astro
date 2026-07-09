@@ -32,11 +32,11 @@
     }
 
     // Llamar de inmediato cubre la carga inicial incluso si este script se
-    // ejecuta después de que 'astro:page-load' ya se disparó (condición de
+    // ejecuta después de que 'DOMContentLoaded' ya se disparó (condición de
     // carrera observada en producción: todas las secciones .reveal se
     // quedaban en opacity:0 para siempre). El listener cubre además las
     // transiciones de vista (ClientRouter) subsecuentes.
     initReveal();
-    document.addEventListener('astro:page-load', initReveal);
+    document.addEventListener('DOMContentLoaded', initReveal);
   })();
 </script>

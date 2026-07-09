@@ -636,8 +636,8 @@ if (Astro.request.method === "POST") {
   window.deleteVariant = deleteVariant;
   window.editVariant = editVariant;
 
-  // Inicializar en cada navegación de Astro (astro:page-load cubre también la carga inicial)
-  document.addEventListener('astro:page-load', function() {
+  // Inicializar al cargar el DOM (el admin no usa el Client Router de Astro)
+  document.addEventListener('DOMContentLoaded', function() {
     initializeVariantButtons();
     
     // Ensure form submission works
