@@ -34,7 +34,7 @@ if (Astro.request.method === 'POST') {
         is_active: formData.is_active,
         sort_order,
       });
-      return Astro.redirect('/admin/benefits');
+      return Astro.redirect('/admin/benefits?success=created');
     } catch (error) {
       console.error('Error creating benefit:', error);
       errorMessage = 'Error al crear el beneficio';

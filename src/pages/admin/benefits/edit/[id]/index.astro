@@ -41,7 +41,7 @@ if (Astro.request.method === 'POST') {
         is_active: formData.is_active,
         sort_order: benefit.sort_order,
       });
-      return Astro.redirect('/admin/benefits');
+      return Astro.redirect('/admin/benefits?success=updated');
     } catch (error) {
       console.error('Error updating benefit:', error);
       errorMessage = 'Error al actualizar el beneficio';

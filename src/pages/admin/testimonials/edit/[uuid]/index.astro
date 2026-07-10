@@ -243,6 +243,7 @@ const error = url.searchParams.get('error');
     async function upload(file: File) {
       statusEl.textContent = 'Subiendo...';
       statusEl.style.color = '';
+      const loadingToast = (window as any).showLoadingToast('Subiendo imagen…');
       const fd = new FormData();
       fd.append('image', file);
       fd.append('type', uploadType);
@@ -256,13 +257,16 @@ const error = url.searchParams.get('error');
           dropZone.classList.add('hidden');
           statusEl.textContent = '✅ Imagen actualizada';
           statusEl.style.color = 'green';
+          loadingToast.success('Imagen actualizada correctamente');
         } else {
           statusEl.textContent = '❌ ' + data.message;
           statusEl.style.color = 'red';
+          loadingToast.error('No se pudo subir la imagen: ' + data.message);
         }
       } catch {
         statusEl.textContent = '❌ Error al subir';
         statusEl.style.color = 'red';
+        loadingToast.error('Error de red al subir la imagen. Revisa tu conexión.');
       }
     }
   }

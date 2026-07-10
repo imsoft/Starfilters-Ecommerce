@@ -364,6 +364,7 @@ const error = url.searchParams.get('error');
   async function uploadFile(file: File) {
     statusEl.textContent = 'Subiendo imagen...';
     statusEl.style.color = '';
+    const loadingToast = (window as any).showLoadingToast('Subiendo imagen…');
     const fd = new FormData();
     fd.append('image', file);
     try {
@@ -376,13 +377,16 @@ const error = url.searchParams.get('error');
         dropZone.classList.add('hidden');
         statusEl.textContent = '✅ Imagen subida correctamente';
         statusEl.style.color = 'green';
+        loadingToast.success('Imagen subida correctamente');
       } else {
         statusEl.textContent = '❌ ' + data.message;
         statusEl.style.color = 'red';
+        loadingToast.error('No se pudo subir la imagen: ' + data.message);
       }
     } catch {
       statusEl.textContent = '❌ Error al subir la imagen';
       statusEl.style.color = 'red';
+      loadingToast.error('Error de red al subir la imagen. Revisa tu conexión.');
     }
   }
 
@@ -417,6 +421,7 @@ const error = url.searchParams.get('error');
 
   async function uploadGalleryFile(file: File) {
     galleryStatus.textContent = `Subiendo ${file.name}...`;
+    const loadingToast = (window as any).showLoadingToast(`Subiendo ${file.name}…`);
     const fd = new FormData();
     fd.append('image', file);
     try {
@@ -427,11 +432,14 @@ const error = url.searchParams.get('error');
         galleryHidden.value = JSON.stringify(galleryUrls);
         renderGallery();
         galleryStatus.textContent = `✅ ${galleryUrls.length} imagen(es) en galería`;
+        loadingToast.success(`${file.name} agregada a la galería`);
       } else {
         galleryStatus.textContent = '❌ ' + data.message;
+        loadingToast.error(`No se pudo subir ${file.name}: ` + data.message);
       }
     } catch {
       galleryStatus.textContent = '❌ Error al subir imagen';
+      loadingToast.error(`Error de red al subir ${file.name}. Revisa tu conexión.`);
     }
   }
 
