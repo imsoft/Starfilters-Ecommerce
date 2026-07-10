@@ -110,13 +110,13 @@ export default function LanguageSelector() {
           '/en/contact': '/contacto',
           '/en/cart': '/carrito',
           '/en/checkout': '/checkout',
-          '/en/profile': '/perfil',
+          '/en/profile': '/profile',
           '/en/blog': '/blog',
-          '/en/orders': '/pedidos',
+          '/en/orders': '/orders',
           '/en/login': '/login',
           '/en/signup': '/signup',
           '/en/about': '/acerca-de',
-          '/en/change-password': '/cambiar-contraseña',
+          '/en/change-password': '/change-password',
           '/en/forgot-password': '/forgot-password',
           '/en/reset-password': '/reset-password',
           '/en/privacy': '/privacy',
@@ -136,7 +136,7 @@ export default function LanguageSelector() {
         } else if (currentPath.startsWith('/en/product/')) {
           newPath = currentPath.replace('/en/product/', '/product/');
         } else if (currentPath.startsWith('/en/orders/')) {
-          newPath = currentPath.replace('/en/orders/', '/pedidos/');
+          newPath = currentPath.replace('/en/orders/', '/orders/');
         } else if (currentPath.startsWith('/en/success-cases/')) {
           newPath = currentPath.replace('/en/success-cases/', '/casos-de-exito/');
         } else {
