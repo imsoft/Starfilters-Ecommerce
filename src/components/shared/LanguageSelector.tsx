@@ -69,6 +69,9 @@ export default function LanguageSelector() {
           '/reset-password': '/en/reset-password',
           '/privacy': '/en/privacy',
           '/terms': '/en/terms',
+          '/casos-de-exito': '/en/success-cases',
+          '/preguntas-frecuentes': '/en/faq',
+          '/soluciones': '/en/solutions',
         };
 
         // Check for exact match first
@@ -84,6 +87,8 @@ export default function LanguageSelector() {
           newPath = currentPath.replace('/pedidos/', '/en/orders/');
         } else if (currentPath.startsWith('/orders/')) {
           newPath = currentPath.replace('/orders/', '/en/orders/');
+        } else if (currentPath.startsWith('/casos-de-exito/')) {
+          newPath = currentPath.replace('/casos-de-exito/', '/en/success-cases/');
         } else {
           newPath = `/en${currentPath}`;
         }
@@ -116,6 +121,9 @@ export default function LanguageSelector() {
           '/en/reset-password': '/reset-password',
           '/en/privacy': '/privacy',
           '/en/terms': '/terms',
+          '/en/success-cases': '/casos-de-exito',
+          '/en/faq': '/preguntas-frecuentes',
+          '/en/solutions': '/soluciones',
         };
 
         // Check for exact match first
@@ -129,6 +137,8 @@ export default function LanguageSelector() {
           newPath = currentPath.replace('/en/product/', '/product/');
         } else if (currentPath.startsWith('/en/orders/')) {
           newPath = currentPath.replace('/en/orders/', '/pedidos/');
+        } else if (currentPath.startsWith('/en/success-cases/')) {
+          newPath = currentPath.replace('/en/success-cases/', '/casos-de-exito/');
         } else {
           // Remove /en prefix for other routes
           newPath = currentPath.replace(/^\/en/, '') || '/';
