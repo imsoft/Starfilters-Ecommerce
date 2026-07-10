@@ -695,5 +695,200 @@ const currentPath = Astro.url.pathname;
         });
       });
     </script>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+    <style is:global>
+      .toast-notification {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1rem;
+        border-radius: 0.75rem;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        color: #1e293b;
+        transform: translateY(1.5rem) scale(0.95);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: auto;
+      }
+      
+      .toast-notification.show {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+      
+      .toast-notification.success {
+        border-left: 4px solid #10b981;
+      }
+      
+      .toast-notification.error {
+        border-left: 4px solid #ef4444;
+      }
+      
+      .toast-notification.info {
+        border-left: 4px solid #3b82f6;
+      }
+      
+      .toast-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 9999px;
+      }
+      
+      .toast-success .toast-icon {
+        background-color: #d1fae5;
+        color: #065f46;
+      }
+      
+      .toast-error .toast-icon {
+        background-color: #fee2e2;
+        color: #991b1b;
+      }
+
+      .toast-info .toast-icon {
+        background-color: #dbeafe;
+        color: #1e40af;
+      }
+      
+      /* Dark mode support in Admin */
+      .dark .toast-notification {
+        background: rgba(15, 23, 42, 0.9);
+        border-color: rgba(51, 65, 85, 0.8);
+        color: #f8fafc;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      }
+    </style>
+
+    <script is:inline>
+      // ==========================================
+      // Sistema de Toasts Premium
+      // ==========================================
+      window.showToast = function(message, type = 'success') {
+        var container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        // Crear elemento toast
+        var toast = document.createElement('div');
+        toast.className = 'toast-notification ' + type + ' toast-' + type;
+        
+        // Icono correspondiente
+        var iconHtml = '';
+        if (type === 'success') {
+          iconHtml = `
+            <div class="toast-icon">
+              <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          `;
+        } else if (type === 'error') {
+          iconHtml = `
+            <div class="toast-icon">
+              <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+          `;
+        } else {
+          iconHtml = `
+            <div class="toast-icon">
+              <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          `;
+        }
+        
+        toast.innerHTML = `
+          ${iconHtml}
+          <div class="flex-1 text-sm font-medium pr-2 leading-tight">${message}</div>
+          <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors ml-auto flex-shrink-0" onclick="this.parentElement.remove()">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Entrada animada
+        setTimeout(function() {
+          toast.classList.add('show');
+        }, 10);
+        
+        // Auto-eliminar después de 4 segundos
+        setTimeout(function() {
+          toast.classList.remove('show');
+          setTimeout(function() {
+            toast.remove();
+          }, 400);
+        }, 4000);
+      };
+
+      // Sobrescribir el alert del navegador para interceptar todos los mensajes
+      window._nativeAlert = window.alert;
+      window.alert = function(message) {
+        if (!message) return;
+        var msgStr = String(message);
+        var msgLower = msgStr.toLowerCase();
+        var type = 'info';
+        
+        if (
+          msgLower.includes('éxito') || 
+          msgLower.includes('exitosamente') || 
+          msgLower.includes('guardad') || 
+          msgLower.includes('actualizad') || 
+          msgLower.includes('eliminad') || 
+          msgLower.includes('importad') ||
+          msgLower.includes('cread')
+        ) {
+          type = 'success';
+        } else if (
+          msgLower.includes('error') || 
+          msgLower.includes('fall') || 
+          msgLower.includes('no se pudo') || 
+          msgLower.includes('incorrect') || 
+          msgLower.includes('inválid') ||
+          msgLower.includes('expiró')
+        ) {
+          type = 'error';
+        }
+        
+        window.showToast(msgStr, type);
+      };
+
+      // Mostrar toasts automáticos si hay parámetros en la URL
+      (function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var successParam = urlParams.get('success');
+        var errorParam = urlParams.get('error');
+        
+        if (successParam) {
+          var msg = 'Operación realizada con éxito.';
+          if (successParam === 'created') msg = 'Elemento creado exitosamente.';
+          if (successParam === 'updated') msg = 'Cambios guardados con éxito.';
+          if (successParam === 'deleted') msg = 'Elemento eliminado correctamente.';
+          window.showToast(msg, 'success');
+        }
+        
+        if (errorParam) {
+          var msg = decodeURIComponent(errorParam);
+          if (errorParam === 'creation_failed') msg = 'Error al intentar crear el elemento.';
+          if (errorParam === 'update_failed') msg = 'Error al intentar guardar los cambios.';
+          if (errorParam === 'missing_fields') msg = 'Por favor completa todos los campos requeridos.';
+          window.showToast(msg, 'error');
+        }
+      })();
+    </script>
   </body>
 </html>
