@@ -19,7 +19,7 @@ const { id: uuid } = Astro.params;
 
 // Verificar que el ID sea válido
 if (!uuid || typeof uuid !== 'string') {
-  return Astro.redirect('/filtros');
+  return Astro.redirect('/productos');
 }
 
 // Detectar idioma actual
@@ -30,7 +30,7 @@ const product = await getProductByUuid(uuid);
 
 // Si no existe el producto, redirigir
 if (!product) {
-  return Astro.redirect('/filtros');
+  return Astro.redirect('/productos');
 }
 
 // Obtener variantes de categoría (tamaños) desde filter_category_variants
@@ -94,19 +94,23 @@ const relatedProducts = allProducts
   .slice(0, 3);
 
 // Preparar productos relacionados con imágenes
-const relatedProductsWithImages = relatedProducts.map(p => {
-  const pCat = getProductCategory(p, lang);
-  const imageUrl = getProductPlaceholderImage(pCat);
-  const { price: pPrice, currency: pCurrency } = getProductPriceAndCurrency(p, lang);
-  return { 
-    ...p, 
-    imageUrl, 
-    name: getProductName(p, lang), 
-    category: pCat,
-    price: pPrice,
-    currency: pCurrency
-  };
-});
+const relatedProductsWithImages = await Promise.all(
+  relatedProducts.map(async (p) => {
+    const images = await getProductImages(p.id);
+    const primaryImage = images.find(img => img.is_primary) || images[0];
+    const pCat = getProductCategory(p, lang);
+    const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(pCat);
+    const { price: pPrice, currency: pCurrency } = getProductPriceAndCurrency(p, lang);
+    return { 
+      ...p, 
+      imageUrl, 
+      name: getProductName(p, lang), 
+      category: pCat,
+      price: pPrice,
+      currency: pCurrency
+    };
+  })
+);
 
 // Obtener imágenes del producto desde la base de datos
 const productImages = await getProductImages(product.id);
@@ -143,7 +147,7 @@ const productDescription = extractTextFromHTML(productDesc || '', 160);
 const productSchema = generateProductSchema(product, siteUrl);
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Inicio', url: siteUrl },
-  { name: 'Productos', url: `${siteUrl}/filtros` },
+  { name: 'Productos', url: `${siteUrl}/productos` },
   { name: productName, url: `${siteUrl}/product/${product.bind_id}` }
 ]);
 
@@ -422,7 +426,7 @@ const benefitsList = parseListField(product.benefits);
             </svg>
           </li>
           <li>
-            <a href="/filtros" class="hover:text-foreground transition-colors">Productos</a>
+            <a href="/productos" class="hover:text-foreground transition-colors">Productos</a>
           </li>
           <li>
             <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">

@@ -892,7 +892,7 @@ console.log('📦 Tamaños preparados:', productSizes.length);
               </svg>
               Descargar plantilla de tamaños
             </a>
-            <form id="import-sizes-form" class="inline-flex flex-wrap items-center gap-2">
+            <div id="import-sizes-form" class="inline-flex flex-wrap items-center gap-2">
               <input
                 type="file"
                 id="import-sizes-file"
@@ -901,7 +901,7 @@ console.log('📦 Tamaños preparados:', productSizes.length);
                 class="block w-full min-w-0 max-w-xs rounded-lg border border-gray-300 text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-teal-600 file:px-4 file:py-2 file:text-white file:hover:bg-teal-700"
               />
               <button
-                type="submit"
+                type="button"
                 id="import-sizes-btn"
                 class="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-700 disabled:opacity-50"
               >
@@ -910,7 +910,7 @@ console.log('📦 Tamaños preparados:', productSizes.length);
                 </svg>
                 <span id="import-sizes-btn-text">Subir tamaños desde Excel</span>
               </button>
-            </form>
+            </div>
             <p class="w-full text-xs text-teal-700 sm:w-auto">
               Columnas: medida_nominal, medida_real, precio, moneda, id_bind, codigo_producto, flujo_aire. El archivo puede tener hasta 30+ filas.
             </p>
@@ -1028,12 +1028,11 @@ console.log('📦 Tamaños preparados:', productSizes.length);
 <script is:inline define:vars={{ productId }}>
   // Importar tamaños desde Excel
   (function() {
-    var form = document.getElementById('import-sizes-form');
     var fileInput = document.getElementById('import-sizes-file');
     var submitBtn = document.getElementById('import-sizes-btn');
     var btnText = document.getElementById('import-sizes-btn-text');
-    if (form && fileInput && submitBtn && btnText) {
-      form.addEventListener('submit', function(e) {
+    if (fileInput && submitBtn && btnText) {
+      submitBtn.addEventListener('click', function(e) {
         e.preventDefault();
         if (!fileInput.files || fileInput.files.length === 0) {
           alert('Selecciona un archivo Excel (.xlsx o .xls)');

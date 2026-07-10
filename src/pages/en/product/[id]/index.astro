@@ -14,7 +14,7 @@ const { id: uuid } = Astro.params;
 
 // Verify UUID is valid
 if (!uuid || typeof uuid !== 'string') {
-  return Astro.redirect('/en/filtros');
+  return Astro.redirect('/en/products');
 }
 
 // Detect current language
@@ -25,7 +25,7 @@ const product = await getProductByUuid(uuid);
 
 // If product doesn't exist, redirect
 if (!product) {
-  return Astro.redirect('/en/filtros');
+  return Astro.redirect('/en/products');
 }
 
 // Get translated names
@@ -87,7 +87,7 @@ const productDescription = extractTextFromHTML(productDesc || '', 160);
 const productSchema = generateProductSchema(product, siteUrl);
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: `${siteUrl}/en` },
-  { name: 'Products', url: `${siteUrl}/en/filters` },
+  { name: 'Products', url: `${siteUrl}/en/products` },
   { name: productName, url: `${siteUrl}/en/product/${product.uuid}` }
 ]);
 ---
@@ -134,7 +134,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             </svg>
           </li>
           <li>
-            <a href="/en/filters" class="hover:text-foreground transition-colors">Products</a>
+            <a href="/en/products" class="hover:text-foreground transition-colors">Products</a>
           </li>
           <li>
             <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
