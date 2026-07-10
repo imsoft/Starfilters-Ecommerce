@@ -63,6 +63,7 @@ export default function LanguageSelector() {
           '/login': '/en/login',
           '/signup': '/en/signup',
           '/acerca-de': '/en/about',
+          '/accesorios': '/en/products?category=accesorios-cuarto-limpio',
           '/cambiar-contraseña': '/en/change-password',
           '/change-password': '/en/change-password',
           '/forgot-password': '/en/forgot-password',
@@ -89,6 +90,8 @@ export default function LanguageSelector() {
           newPath = currentPath.replace('/orders/', '/en/orders/');
         } else if (currentPath.startsWith('/casos-de-exito/')) {
           newPath = currentPath.replace('/casos-de-exito/', '/en/success-cases/');
+        } else if (currentPath.startsWith('/filtros/')) {
+          newPath = currentPath.replace('/filtros/', '/en/filters/');
         } else {
           newPath = `/en${currentPath}`;
         }
@@ -139,6 +142,8 @@ export default function LanguageSelector() {
           newPath = currentPath.replace('/en/orders/', '/orders/');
         } else if (currentPath.startsWith('/en/success-cases/')) {
           newPath = currentPath.replace('/en/success-cases/', '/casos-de-exito/');
+        } else if (currentPath.startsWith('/en/filters/')) {
+          newPath = currentPath.replace('/en/filters/', '/filtros/');
         } else {
           // Remove /en prefix for other routes
           newPath = currentPath.replace(/^\/en/, '') || '/';
@@ -157,7 +162,8 @@ export default function LanguageSelector() {
     }
     
     // Preserve query parameters
-    window.location.href = newPath + searchParams;
+    const joiner = newPath.includes('?') && searchParams ? '&' + searchParams.slice(1) : searchParams;
+    window.location.href = newPath + joiner;
   };
 
   const languages = [
