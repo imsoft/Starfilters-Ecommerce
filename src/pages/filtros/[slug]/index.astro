@@ -64,9 +64,16 @@ const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-// Imagen principal
-const mainImage = category.main_image || images.find(img => img.is_primary)?.image_url || '/images/products/placeholder.svg';
-const carouselImages = images.filter(img => !img.is_primary).sort((a, b) => a.sort_order - b.sort_order);
+// Imagen principal. Algunas filas de BD guardan solo el nombre de archivo
+// (sin ruta), que resuelve relativo a la URL y da 404: ignorarlas.
+const validImage = (src?: string) =>
+  src && (src.startsWith('http') || src.startsWith('/')) ? src : undefined;
+const mainImage = validImage(category.main_image)
+  || validImage(images.find(img => img.is_primary)?.image_url)
+  || '/images/products/placeholder-product.svg';
+const carouselImages = images
+  .filter(img => !img.is_primary && validImage(img.image_url))
+  .sort((a, b) => a.sort_order - b.sort_order);
 
 // Generar datos SEO
 const siteUrl = Astro.site?.href || Astro.url.origin;

@@ -9,6 +9,12 @@ export const prerender = false;
 
 const categories = await getActiveCategories();
 
+// Some categories have main_image stored as a bare filename (no path or
+// domain); those resolve relative to the current URL and 404. Only use
+// images with an absolute path.
+const validImage = (src?: string) =>
+  src && (src.startsWith('http') || src.startsWith('/')) ? src : null;
+
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: 'Home', url: siteUrl },
@@ -110,9 +116,9 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {categories.map((cat) => (
             <div class="product-card group flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden" data-efficiency="all">
-              {cat.main_image ? (
+              {validImage(cat.main_image) ? (
                 <div class="relative h-44 overflow-hidden">
-                  <img src={cat.main_image} alt={cat.name_en || cat.name} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                  <img src={validImage(cat.main_image)} alt={cat.name_en || cat.name} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
                 </div>
               ) : (
                 <div class="h-44 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">

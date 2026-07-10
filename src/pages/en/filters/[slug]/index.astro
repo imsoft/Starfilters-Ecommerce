@@ -64,9 +64,16 @@ const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-// Main image
-const mainImage = category.main_image || images.find(img => img.is_primary)?.image_url || '/images/products/placeholder.svg';
-const carouselImages = images.filter(img => !img.is_primary).sort((a, b) => a.sort_order - b.sort_order);
+// Main image. Some DB rows store just a bare filename (no path), which
+// resolves relative to the URL and 404s: ignore those.
+const validImage = (src?: string) =>
+  src && (src.startsWith('http') || src.startsWith('/')) ? src : undefined;
+const mainImage = validImage(category.main_image)
+  || validImage(images.find(img => img.is_primary)?.image_url)
+  || '/images/products/placeholder-product.svg';
+const carouselImages = images
+  .filter(img => !img.is_primary && validImage(img.image_url))
+  .sort((a, b) => a.sort_order - b.sort_order);
 
 // SEO data
 const siteUrl = Astro.site?.href || Astro.url.origin;

@@ -399,7 +399,7 @@ const error = url.searchParams.get('error');
       wrap.className = 'relative group aspect-square rounded-lg overflow-hidden border border-border';
       wrap.innerHTML = `
         <img src="${url}" alt="Imagen ${i + 1}" class="h-full w-full object-cover" />
-        <button type="button" data-i="${i}" class="gallery-remove absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Eliminar">
+        <button type="button" data-i="${i}" class="gallery-remove absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 transition-opacity" aria-label="Eliminar">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>`;
       galleryGrid.appendChild(wrap);
