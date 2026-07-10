@@ -113,6 +113,47 @@ if (!user) {
             </div>
 
             <!-- Shipping Information (only for options that require an address) -->
+          </div>
+  
+          <!-- Order summary -->
+          <div class="mt-10 lg:mt-0">
+            <h2 class="mt-10 text-lg font-medium text-foreground">Order Summary</h2>
+
+            <div class="mt-4 rounded-lg border border-border bg-background shadow-xs">
+              <h3 class="sr-only">Items in your cart</h3>
+              <ul role="list" class="divide-y divide-border" id="order-items-list">
+                <!-- Items will be loaded dynamically -->
+              </ul>
+
+              <!-- Discount code -->
+              <div class="border-t border-border px-4 py-6 sm:px-6">
+                <label for="discount-code" class="block text-sm font-medium text-foreground mb-2">
+                  Discount Code
+                </label>
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    id="discount-code"
+                    name="discount-code"
+                    placeholder="Enter your code"
+                    class="flex-1 rounded-md bg-background px-3 py-2 text-sm text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary uppercase"
+                  />
+                  <button
+                    type="button"
+                    id="apply-discount"
+                    class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
+                  >
+                    Apply
+                  </button>
+                </div>
+                <div id="discount-message" class="mt-2 text-sm hidden"></div>
+              </div>
+
+              <dl class="space-y-6 border-t border-border px-4 py-6 sm:px-6" id="order-summary">
+                <!-- Summary will be loaded dynamically -->
+              </dl>
+            </div>
+
             <div class="mt-10 border-t border-border pt-10 hidden" id="shipping-info-section">
               <h2 class="text-lg font-medium text-foreground">
                 Shipping Information
@@ -220,46 +261,6 @@ if (!user) {
                   <!-- Stripe component will load here -->
                 </div>
               </div>
-            </div>
-          </div>
-  
-          <!-- Order summary -->
-          <div class="mt-10 lg:mt-0">
-            <h2 class="mt-10 text-lg font-medium text-foreground">Order Summary</h2>
-
-            <div class="mt-4 rounded-lg border border-border bg-background shadow-xs">
-              <h3 class="sr-only">Items in your cart</h3>
-              <ul role="list" class="divide-y divide-border" id="order-items-list">
-                <!-- Items will be loaded dynamically -->
-              </ul>
-
-              <!-- Discount code -->
-              <div class="border-t border-border px-4 py-6 sm:px-6">
-                <label for="discount-code" class="block text-sm font-medium text-foreground mb-2">
-                  Discount Code
-                </label>
-                <div class="flex gap-2">
-                  <input
-                    type="text"
-                    id="discount-code"
-                    name="discount-code"
-                    placeholder="Enter your code"
-                    class="flex-1 rounded-md bg-background px-3 py-2 text-sm text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary uppercase"
-                  />
-                  <button
-                    type="button"
-                    id="apply-discount"
-                    class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
-                  >
-                    Apply
-                  </button>
-                </div>
-                <div id="discount-message" class="mt-2 text-sm hidden"></div>
-              </div>
-
-              <dl class="space-y-6 border-t border-border px-4 py-6 sm:px-6" id="order-summary">
-                <!-- Summary will be loaded dynamically -->
-              </dl>
             </div>
           </div>
         </div>
@@ -916,7 +917,11 @@ if (!user) {
           }
           // Only validate address fields if not a pickup option
           if (!isPickup && (!address || !city || !state || !postalCode || !country)) {
-            return;
+            // Si quedó un error de un intento anterior, volver al mensaje instructivo
+          if (paymentFormContainer.querySelector('.bg-red-50')) {
+            paymentFormContainer.innerHTML = '<div class="p-4 bg-muted rounded-lg"><p class="text-sm text-muted-foreground">Please complete all shipping information fields to continue with payment.</p></div>';
+          }
+          return;
           }
 
           isLoadingPaymentForm = true;

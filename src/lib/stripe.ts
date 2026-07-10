@@ -50,19 +50,41 @@ export const createPaymentIntent = async (data: PaymentIntentData): Promise<Crea
 
     const currency = data.currency || 'mxn';
 
+    // customer_balance (transferencia SPEI) exige un customer asociado al
+    // PaymentIntent; sin él Stripe rechaza TODA la creación del intent
+    // ("You must provide a customer..."), bloqueando también el pago con
+    // tarjeta. Buscar o crear el customer por email.
+    let customerId: string | undefined;
+    if (data.customer_email) {
+      try {
+        const existing = await stripe.customers.list({ email: data.customer_email, limit: 1 });
+        customerId = existing.data[0]?.id
+          || (await stripe.customers.create({ email: data.customer_email, name: data.customer_name })).id;
+      } catch (customerError) {
+        console.error('⚠️ No se pudo obtener/crear el customer de Stripe; se continúa solo con tarjeta:', customerError);
+      }
+    }
+
+    // Sin customer no se puede ofrecer transferencia: degradar a solo tarjeta
+    // en lugar de fallar todo el pago.
+    const paymentMethodTypes = customerId ? ['card', 'customer_balance'] : ['card'];
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
       currency,
       metadata: data.metadata || {},
-      payment_method_types: ['card', 'customer_balance'],
-      payment_method_options: {
-        customer_balance: {
-          funding_type: 'bank_transfer',
-          bank_transfer: {
-            type: 'mx_bank_transfer',
+      ...(customerId && { customer: customerId }),
+      payment_method_types: paymentMethodTypes,
+      ...(customerId && {
+        payment_method_options: {
+          customer_balance: {
+            funding_type: 'bank_transfer',
+            bank_transfer: {
+              type: 'mx_bank_transfer',
+            },
           },
         },
-      },
+      }),
       ...(data.customer_email && { receipt_email: data.customer_email }),
     });
 

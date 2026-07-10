@@ -137,6 +137,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       apartment: body.apartment,
     };
 
+    // Recogida en sucursal: el formulario de dirección se oculta a propósito
+    // en el checkout, así que llega vacío. Se completa con la dirección de la
+    // sucursal para que la validación pase y el pedido quede con datos útiles.
+    // (Antes esto respondía "Datos inválidos" y bloqueaba todo pago con recogida.)
+    const shippingMethodFromBody = body.shippingMethod || 'standard';
+    if (shippingMethodFromBody === 'pickup-gdl' || shippingMethodFromBody === 'pickup-cdmx') {
+      const isGdl = shippingMethodFromBody === 'pickup-gdl';
+      checkoutData.address = checkoutData.address?.trim()
+        || (isGdl
+          ? 'Recoger en sucursal: Cto. San Eduardo 88-Int. 4, San Juan de Ocotán'
+          : 'Recoger en sucursal: Ventura G.Tena 250, Asturias, Cuauhtémoc');
+      checkoutData.city = checkoutData.city?.trim() || (isGdl ? 'Zapopan' : 'Ciudad de México');
+      checkoutData.state = checkoutData.state?.trim() || (isGdl ? 'Jalisco' : 'CDMX');
+      checkoutData.postalCode = checkoutData.postalCode?.trim() || (isGdl ? '45019' : '06890');
+      checkoutData.country = checkoutData.country?.trim() || 'México';
+    }
+
     // Validar datos
     const validation = validateCheckoutData(checkoutData);
     if (!validation.isValid) {
