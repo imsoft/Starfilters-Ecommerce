@@ -56,6 +56,21 @@ if (selected) {
   if (activeParent) childCats = await getChildCategories(activeParent.id);
 }
 
+// Portada (sin selección): también mostrar TODAS las subcategorías del admin,
+// agrupadas por su familia, para que cada categoría sea visible y clickeable.
+let parentsWithChildren: Array<{ parent: any; children: any[] }> = [];
+if (!selected) {
+  const childLists = await Promise.all(
+    parentCats.map(async (p) => ({ parent: p, children: await getChildCategories(p.id) }))
+  );
+  parentsWithChildren = childLists.filter((g) => g.children.length > 0);
+}
+
+// Algunas categorías tienen main_image guardada como nombre de archivo sin
+// ruta (resuelve relativo a la URL y da 404): solo usar rutas absolutas.
+const validImage = (src?: string) =>
+  src && (src.startsWith('http') || src.startsWith('/')) ? src : null;
+
 // Construir las variantes/productos a mostrar
 const exchangeRate = await getExchangeRate();
 
@@ -213,7 +228,7 @@ const subheading = selected
             >
               <div class="w-full aspect-square overflow-hidden bg-muted">
                 <LazyImage
-                  src={cat.main_image || getProductPlaceholderImage("productos")}
+                  src={validImage(cat.main_image) || getProductPlaceholderImage("productos")}
                   alt={getCategoryName(cat, lang)}
                   class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                 />
@@ -232,6 +247,52 @@ const subheading = selected
             </a>
           ))}
         </div>
+
+        <!-- Subcategorías del admin agrupadas por familia (todas visibles y clickeables) -->
+        {parentsWithChildren.map(({ parent, children }) => (
+          <div class="mt-14">
+            <div class="mb-6 flex items-baseline justify-between gap-4">
+              <h2 class="text-lg font-bold text-foreground sm:text-xl">
+                {isEn
+                  ? `${getCategoryName(parent, lang)} — by type`
+                  : `Tipos de ${getCategoryName(parent, lang)}`}
+              </h2>
+              <a
+                href={`${productsRoute}?category=${parent.slug}`}
+                class="text-xs font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+              >
+                {isEn ? 'View all' : 'Ver todos'} →
+              </a>
+            </div>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-6">
+              {children.map((cat) => (
+                <a
+                  href={`${productsRoute}?category=${cat.slug}`}
+                  class="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300"
+                >
+                  <div class="w-full aspect-square overflow-hidden bg-muted">
+                    <LazyImage
+                      src={validImage(cat.main_image) || getProductPlaceholderImage("productos")}
+                      alt={getCategoryName(cat, lang)}
+                      class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <div class="flex flex-col flex-1 p-4">
+                    <h3 class="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {getCategoryName(cat, lang)}
+                    </h3>
+                    <div class="mt-2 flex items-center gap-1 text-xs font-semibold text-primary">
+                      <span>{t.viewProducts}</span>
+                      <svg class="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                      </svg>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     ) : products.length > 0 ? (
       <!-- Con productos: grid de variantes -->
