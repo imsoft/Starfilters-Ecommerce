@@ -15,6 +15,7 @@ const heroVideoSrc = "/videos/VIDEO-2026-05-19-13-33-53.mp4";
     <!-- Fondo: video local en todos los dispositivos -->
     <div class="absolute inset-0 z-0">
       <video
+        id="hero-video"
         class="h-full w-full object-cover"
         autoplay
         muted
@@ -61,3 +62,29 @@ const heroVideoSrc = "/videos/VIDEO-2026-05-19-13-33-53.mp4";
 
   </div>
 </div>
+
+<script>
+  function ensureVideoPlays() {
+    const video = document.getElementById('hero-video') as HTMLVideoElement | null;
+    if (video) {
+      // Intentar reproducir el video
+      video.play().catch(err => {
+        console.warn("Autoplay del video hero bloqueado por políticas del navegador:", err);
+        // Fallback: reproducir en el primer clic o toque táctil en cualquier parte de la pantalla
+        const playOnInteraction = () => {
+          video.play().catch(e => console.error("Error al reproducir tras interacción:", e));
+          document.removeEventListener('click', playOnInteraction);
+          document.removeEventListener('touchstart', playOnInteraction);
+        };
+        document.addEventListener('click', playOnInteraction);
+        document.addEventListener('touchstart', playOnInteraction);
+      });
+    }
+  }
+
+  // Ejecutar en la carga inicial de la página
+  ensureVideoPlays();
+
+  // Ejecutar después de transiciones de página (ClientRouter de Astro)
+  document.addEventListener('astro:page-load', ensureVideoPlays);
+</script>
