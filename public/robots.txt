@@ -33,6 +33,7 @@ Disallow: /reset-password
 Disallow: /forgot-password
 Disallow: /change-password
 Disallow: /cart
+Disallow: /carrito
 Disallow: /checkout
 Disallow: /orders
 Disallow: /profile
