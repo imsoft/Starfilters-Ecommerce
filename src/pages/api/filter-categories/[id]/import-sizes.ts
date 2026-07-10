@@ -1,9 +1,13 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth-utils';
-import { getProductById } from '@/lib/product-service';
+import { getCategoryById } from '@/lib/filter-category-service';
 import { importSizesForCategory } from '@/lib/import-sizes';
 
 export const prerender = false;
+
+// Importación masiva de tamaños directamente a una categoría de filtro.
+// Permite usar la plantilla de Excel desde "Agregar producto" (donde el
+// producto aún no existe) con solo haber elegido el tipo de filtro.
 
 const json = (body: object, status: number) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -16,24 +20,12 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
 
   const id = parseInt(params.id || '0');
   if (!id || isNaN(id)) {
-    return json({ success: false, message: 'ID de producto inválido' }, 400);
+    return json({ success: false, message: 'ID de categoría inválido' }, 400);
   }
 
-  const product = await getProductById(id);
-  if (!product) {
-    return json({ success: false, message: 'Producto no encontrado' }, 404);
-  }
-
-  const filterCategoryId = product.filter_category_id;
-  if (!filterCategoryId) {
-    return json(
-      {
-        success: false,
-        message:
-          'El producto debe tener una categoría de filtro asignada para importar tamaños. Edita el producto y asigna una categoría primero.',
-      },
-      400
-    );
+  const category = await getCategoryById(id);
+  if (!category) {
+    return json({ success: false, message: 'Categoría de filtro no encontrada' }, 404);
   }
 
   let file: File;
@@ -47,7 +39,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     return json({ success: false, message: 'Error al leer el formulario' }, 400);
   }
 
-  const result = await importSizesForCategory(filterCategoryId, file);
+  const result = await importSizesForCategory(id, file);
   const { status, ...body } = result;
   return json(body, status);
 };
