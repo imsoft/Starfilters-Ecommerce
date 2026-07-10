@@ -27,10 +27,10 @@ const cartHref = lang === 'en' ? '/en/cart' : '/carrito';
       />
     </svg>
     
-    <!-- Contador de items -->
+    <!-- Contador de items (clase, no id: el icono se renderiza en varios
+         lugares — navbar desktop y barra móvil — y todos deben actualizarse) -->
     <span
-      id="cart-count"
-      class="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]"
+      class="cart-count absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]"
       style="display: none;"
     >
       0
@@ -39,23 +39,27 @@ const cartHref = lang === 'en' ? '/en/cart' : '/carrito';
 </div>
 
 <script>
-  // Función para actualizar el contador del carrito
+  // Función para actualizar el contador del carrito (todas las instancias)
   function updateCartCount() {
     try {
       const cartData = localStorage.getItem('starfilters_cart');
-      const cartCountElement = document.getElementById('cart-count');
-      
-      if (cartData && cartCountElement) {
+      const cartCountElements = document.querySelectorAll<HTMLElement>('.cart-count');
+      if (!cartCountElements.length) return;
+
+      let itemCount = 0;
+      if (cartData) {
         const cart = JSON.parse(cartData);
-        const itemCount = cart.items ? cart.items.reduce((total: number, item: any) => total + item.quantity, 0) : 0;
-        
-        if (itemCount > 0) {
-          cartCountElement.textContent = itemCount.toString();
-          cartCountElement.style.display = 'flex';
-        } else {
-          cartCountElement.style.display = 'none';
-        }
+        itemCount = cart.items ? cart.items.reduce((total: number, item: any) => total + item.quantity, 0) : 0;
       }
+
+      cartCountElements.forEach((el) => {
+        if (itemCount > 0) {
+          el.textContent = itemCount.toString();
+          el.style.display = 'flex';
+        } else {
+          el.style.display = 'none';
+        }
+      });
     } catch (error) {
       console.error('Error al actualizar contador del carrito:', error);
     }
