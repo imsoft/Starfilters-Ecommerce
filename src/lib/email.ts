@@ -194,11 +194,11 @@ export const createOrderConfirmationEmail = (
           <p>Te notificaremos cuando tu pedido sea enviado.</p>
           
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${siteUrl}/pedidos" class="button">Ver Mis Pedidos</a>
+            <a href="${siteUrl}/orders" class="button">Ver Mis Pedidos</a>
           </div>
         </div>
         <div class="footer">
-          <p>© 2024 Star Filters. Todos los derechos reservados.</p>
+          <p>© ${new Date().getFullYear()} Star Filters. Todos los derechos reservados.</p>
         </div>
       </div>
     </body>
@@ -225,7 +225,7 @@ export const createOrderConfirmationEmail = (
     
     Te notificaremos cuando tu pedido sea enviado.
     
-    © 2024 Star Filters
+    © ${new Date().getFullYear()} Star Filters
   `;
   
   return {
@@ -309,7 +309,7 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
           </div>
         </div>
         <div class="footer">
-          <p>© 2024 Star Filters. Todos los derechos reservados.</p>
+          <p>© ${new Date().getFullYear()} Star Filters. Todos los derechos reservados.</p>
         </div>
       </div>
     </body>
@@ -328,7 +328,7 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
     
     Si no solicitaste este cambio, ignora este email.
     
-    © 2024 Star Filters
+    © ${new Date().getFullYear()} Star Filters
   `;
   
   return {
@@ -486,7 +486,7 @@ export const createNewOrderNotificationEmail = (
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #10b981; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
         .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
         .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
@@ -558,7 +558,7 @@ export const createNewOrderNotificationEmail = (
           </div>
         </div>
         <div class="footer">
-          <p>© 2024 Star Filters. Todos los derechos reservados.</p>
+          <p>© ${new Date().getFullYear()} Star Filters. Todos los derechos reservados.</p>
         </div>
       </div>
     </body>
@@ -586,7 +586,7 @@ export const createNewOrderNotificationEmail = (
     
     Ver orden en: ${siteUrl}/admin/orders
     
-    © 2024 Star Filters
+    © ${new Date().getFullYear()} Star Filters
   `;
   
   return {
@@ -742,11 +742,11 @@ export const createOrderStatusUpdateEmail = (
           </div>
           
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${siteUrl}/pedidos" class="button">Ver Mis Pedidos</a>
+            <a href="${siteUrl}/orders" class="button">Ver Mis Pedidos</a>
           </div>
         </div>
         <div class="footer">
-          <p>© 2024 Star Filters. Todos los derechos reservados.</p>
+          <p>© ${new Date().getFullYear()} Star Filters. Todos los derechos reservados.</p>
         </div>
       </div>
     </body>
@@ -771,9 +771,9 @@ export const createOrderStatusUpdateEmail = (
     
     Total: $${total.toFixed(2)} MXN
     
-    Ver tus pedidos: ${siteUrl}/pedidos
+    Ver tus pedidos: ${siteUrl}/orders
     
-    © 2024 Star Filters
+    © ${new Date().getFullYear()} Star Filters
   `;
   
   return {
