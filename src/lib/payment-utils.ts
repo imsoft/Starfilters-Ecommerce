@@ -2,6 +2,8 @@ import { createPaymentIntent } from './stripe';
 import { getCart } from './cart';
 import type { CartItem } from './cart';
 import { getExchangeRate } from './currency-service';
+import { createCheckoutDraft, attachPaymentIntentToDraft } from './checkout-drafts';
+import type { DraftItem } from './checkout-drafts';
 
 // Interface para datos del checkout
 export interface CheckoutData {
@@ -111,18 +113,25 @@ export const calculateOrderTotal = async (
   };
 };
 
+// Item de carrito con datos ya resueltos en el servidor (precio de BD,
+// variante y destino BIND). El precio del cliente NUNCA se usa para cobrar.
+export interface ResolvedCartItem extends CartItem {
+  variant_id?: number | null;
+  bind_target?: string | null;
+}
+
 // Crear Payment Intent para el checkout
 export const createCheckoutPaymentIntent = async (
   checkoutData: CheckoutData,
   shippingMethod: DeliveryMethod = 'pickup-gdl',
   userId?: number,
   discountData?: DiscountData,
-  cartItems?: CartItem[] // Items del carrito pasados como parámetro
+  cartItems?: ResolvedCartItem[] // Items con precios resueltos en el servidor
 ): Promise<{ client_secret: string; payment_intent_id: string; order_total: number }> => {
   try {
     // Obtener items del carrito: primero del parámetro, luego de getCart() como fallback
-    let items: CartItem[] = [];
-    
+    let items: ResolvedCartItem[] = [];
+
     if (cartItems && cartItems.length > 0) {
       items = cartItems;
     } else {
@@ -139,45 +148,52 @@ export const createCheckoutPaymentIntent = async (
     const discountAmount = discountData?.amount || 0;
     const orderTotals = await calculateOrderTotal(items, shippingMethod, discountAmount);
 
-    // Serializar items del carrito para el metadata
-    const cartItemsJSON = JSON.stringify(
-      items.map(item => ({
+    // Guardar el carrito completo como borrador en la BD. El metadata de
+    // Stripe limita cada valor a 500 caracteres, así que el carrito
+    // serializado no cabe ahí (2+ items superan el límite y Stripe rechaza
+    // el Payment Intent); el webhook lo recupera por draft_uuid.
+    const draftItems: DraftItem[] = items.map(item => {
+      const priceMXN = item.currency === 'USD' && orderTotals.exchangeRate
+        ? Math.round(item.price * orderTotals.exchangeRate * 100) / 100
+        : item.price;
+      return {
         product_id: item.product_id,
         uuid: item.uuid,
         name: item.name,
         quantity: item.quantity,
         price: item.price,
-        currency: item.currency,
-        image_url: item.image_url,
-        size: item.size
-      }))
-    );
+        currency: item.currency || 'MXN',
+        price_mxn: priceMXN,
+        image_url: item.image_url || null,
+        size: item.size || null,
+        variant_id: item.variant_id ?? null,
+        bind_target: item.bind_target ?? null,
+      };
+    });
 
-    // Crear metadata para el Payment Intent
+    const draft = await createCheckoutDraft({
+      checkout: checkoutData,
+      shippingMethod,
+      items: draftItems,
+      totals: orderTotals,
+      discount: discountData
+        ? { code: discountData.code, discountCodeId: discountData.discountCodeId, amount: discountData.amount }
+        : null,
+    }, userId);
+
+    // Metadata mínimo: referencia al borrador + datos cortos de contexto
     const metadata: Record<string, string> = {
+      draft_uuid: draft.uuid,
       customer_email: checkoutData.email,
       customer_name: `${checkoutData.firstName} ${checkoutData.lastName}`,
-      shipping_address: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.state} ${checkoutData.postalCode}, ${checkoutData.country}`,
       shipping_method: shippingMethod,
       items_count: items.length.toString(),
-      subtotal: orderTotals.subtotal.toFixed(2),
-      shipping_cost: orderTotals.shipping.toFixed(2),
-      tax_amount: orderTotals.tax.toFixed(2),
-      cart_items: cartItemsJSON,
     };
-
-    // Agregar campos opcionales
     if (userId) {
       metadata.user_id = userId.toString();
     }
     if (discountData) {
       metadata.discount_code = discountData.code;
-      metadata.discount_code_id = discountData.discountCodeId.toString();
-      metadata.discount_amount = discountData.amount.toString();
-    }
-    if (orderTotals.exchangeRate) {
-      metadata.exchange_rate = orderTotals.exchangeRate.toFixed(4);
-      metadata.currency_note = 'Precios en USD fueron convertidos a MXN';
     }
 
     // Siempre cobrar en MXN (los precios USD ya fueron convertidos)
@@ -195,6 +211,8 @@ export const createCheckoutPaymentIntent = async (
     if (!paymentIntent.client_secret) {
       throw new Error('Stripe no devolvió client_secret en el Payment Intent');
     }
+
+    await attachPaymentIntentToDraft(draft.uuid, paymentIntent.payment_intent_id);
 
     return {
       client_secret: paymentIntent.client_secret,

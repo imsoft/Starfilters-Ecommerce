@@ -1014,8 +1014,8 @@ if (!user) {
             throw new Error('Client secret not received from server');
           }
 
-          // Load Stripe with real client_secret (cartCurrency already defined above)
-          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, cartCurrency);
+          // order_total comes from the server ALWAYS in MXN (USD prices already converted)
+          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, 'MXN');
         } catch (error) {
           console.error('❌ Complete error:', error);
           isLoadingPaymentForm = false;

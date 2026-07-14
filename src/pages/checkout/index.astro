@@ -1022,7 +1022,8 @@ if (!user) {
           }
 
           // Cargar Stripe con el client_secret real (cartCurrency ya definido arriba)
-          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, cartCurrency);
+          // order_total viene del servidor SIEMPRE en MXN (los USD ya se convirtieron)
+          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, 'MXN');
         } catch (error) {
           console.error('❌ Error completo:', error);
           isLoadingPaymentForm = false;

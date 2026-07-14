@@ -134,6 +134,7 @@ export interface Order {
   total_amount: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   shipping_address?: string;
+  stripe_payment_intent_id?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -142,7 +143,10 @@ export interface OrderItem {
   id: number;
   uuid: string;
   order_id: number;
-  product_id: number;
+  // NULL para variantes: su id vive en filter_category_variants y la FK de
+  // order_items.product_id apunta a products (insertar el id de la variante
+  // viola la FK y rompía el webhook a mitad de la orden)
+  product_id: number | null;
   quantity: number;
   price: number;
   product_name: string;
@@ -467,11 +471,40 @@ export const deleteBlogPost = async (id: number): Promise<boolean> => {
 };
 
 // Funciones para Órdenes
+
+// La columna stripe_payment_intent_id permite deduplicar webhooks de Stripe
+// (los eventos se pueden reenviar/reintentar). Se agrega en caliente porque
+// producción no corre migraciones manuales.
+let ordersPaymentIntentColumnEnsured: Promise<void> | null = null;
+export const ensureOrdersPaymentIntentColumn = (): Promise<void> => {
+  if (!ordersPaymentIntentColumnEnsured) {
+    ordersPaymentIntentColumnEnsured = (async () => {
+      const rows = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'stripe_payment_intent_id'`
+      ) as any[];
+      if (!rows[0] || Number(rows[0].n) === 0) {
+        await query(
+          `ALTER TABLE orders
+           ADD COLUMN stripe_payment_intent_id VARCHAR(100) NULL,
+           ADD UNIQUE INDEX idx_orders_stripe_pi (stripe_payment_intent_id)`
+        );
+        console.log('✅ Columna orders.stripe_payment_intent_id creada');
+      }
+    })().catch((error) => {
+      ordersPaymentIntentColumnEnsured = null;
+      throw error;
+    });
+  }
+  return ordersPaymentIntentColumnEnsured;
+};
+
 export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at' | 'updated_at'>): Promise<number> => {
+  await ensureOrdersPaymentIntentColumn();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -482,21 +515,54 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
     order.customer_phone || null,
     order.total_amount,
     order.status,
-    order.shipping_address || null
+    order.shipping_address || null,
+    order.stripe_payment_intent_id || null
   ]) as any;
   return result.insertId;
 };
 
+export const getOrderByPaymentIntentId = async (paymentIntentId: string): Promise<Order | null> => {
+  await ensureOrdersPaymentIntentColumn();
+  const rows = await query(
+    'SELECT * FROM orders WHERE stripe_payment_intent_id = ? LIMIT 1',
+    [paymentIntentId]
+  ) as Order[];
+  return rows.length > 0 ? rows[0] : null;
+};
+
+// order_items.product_id debe aceptar NULL para items de variantes (ver
+// OrderItem). Migración en caliente, igual que la columna de orders.
+let orderItemsProductIdNullableEnsured: Promise<void> | null = null;
+const ensureOrderItemsProductIdNullable = (): Promise<void> => {
+  if (!orderItemsProductIdNullableEnsured) {
+    orderItemsProductIdNullableEnsured = (async () => {
+      const rows = await query(
+        `SELECT IS_NULLABLE FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_items' AND COLUMN_NAME = 'product_id'`
+      ) as any[];
+      if (rows[0] && rows[0].IS_NULLABLE === 'NO') {
+        await query('ALTER TABLE order_items MODIFY product_id INT NULL');
+        console.log('✅ Columna order_items.product_id ahora acepta NULL (variantes)');
+      }
+    })().catch((error) => {
+      orderItemsProductIdNullableEnsured = null;
+      throw error;
+    });
+  }
+  return orderItemsProductIdNullableEnsured;
+};
+
 export const createOrderItem = async (item: Omit<OrderItem, 'id' | 'uuid' | 'created_at'>): Promise<number> => {
+  await ensureOrderItemsProductIdNullable();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO order_items (uuid, order_id, product_id, quantity, price, product_name, image_url) 
+    INSERT INTO order_items (uuid, order_id, product_id, quantity, price, product_name, image_url)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
     item.order_id,
-    item.product_id,
+    item.product_id ?? null,
     item.quantity,
     item.price,
     item.product_name,
