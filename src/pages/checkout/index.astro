@@ -252,13 +252,44 @@ if (!user) {
               </div>
             </div>
 
+            <!-- Botón de confirmación -->
+            <div class="mt-10 border-t border-border pt-10" id="confirm-section">
+              <div id="confirm-button-wrapper">
+                <button
+                  type="button"
+                  id="confirm-info-btn"
+                  disabled
+                  class="w-full bg-primary text-primary-foreground py-3 px-6 rounded-md hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base shadow-sm"
+                >
+                  Selecciona un método de entrega para continuar
+                </button>
+                <p id="confirm-validation-msg" class="mt-2 text-sm text-red-600 hidden"></p>
+              </div>
+
+              <!-- Resumen de información confirmada (oculto inicialmente) -->
+              <div id="confirmed-info-summary" class="hidden">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Información confirmada
+                  </h3>
+                  <button type="button" id="edit-info-btn" class="text-sm text-primary hover:text-primary/80 font-medium underline">Editar</button>
+                </div>
+                <div id="confirmed-details" class="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 space-y-1"></div>
+              </div>
+            </div>
+
             <!-- Payment -->
-            <div class="mt-10 border-t border-border pt-10">
+            <div class="mt-10 border-t border-border pt-10" id="payment-section">
               <h2 class="text-lg font-medium text-foreground">Pago</h2>
   
               <div class="mt-6">
                 <div id="stripe-payment-form" class="space-y-4">
-                  <!-- El componente Stripe se cargará aquí -->
+                  <!-- Estado bloqueado inicial -->
+                  <div id="payment-locked" class="p-6 bg-muted/30 border border-dashed border-border rounded-lg text-center">
+                    <svg class="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <p class="text-sm text-muted-foreground">Primero confirma tu información de envío para continuar con el pago.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -870,16 +901,22 @@ if (!user) {
       }
 
       const paymentFormContainer = document.getElementById('stripe-payment-form');
-      console.log('💳 Payment form container:', paymentFormContainer);
+      const confirmBtn = document.getElementById('confirm-info-btn') as HTMLButtonElement;
+      const confirmBtnWrapper = document.getElementById('confirm-button-wrapper');
+      const confirmedSummary = document.getElementById('confirmed-info-summary');
+      const confirmedDetails = document.getElementById('confirmed-details');
+      const editInfoBtn = document.getElementById('edit-info-btn');
+      const confirmValidationMsg = document.getElementById('confirm-validation-msg');
+      const paymentSection = document.getElementById('payment-section');
       
-      if (!paymentFormContainer) {
-        console.log('❌ No se encontró el contenedor de pago');
+      if (!paymentFormContainer || !confirmBtn) {
+        console.log('❌ No se encontraron elementos del checkout');
         return;
       }
 
-      // Mostrar mensaje inicial mientras se espera que el usuario complete los campos
-      paymentFormContainer.innerHTML = '<div class="p-4 bg-muted rounded-lg"><p class="text-sm text-muted-foreground">Por favor completa todos los campos de información de envío y selecciona un método de entrega para continuar con el pago.</p></div>';
-      console.log('✅ Mensaje inicial mostrado');
+      // Estado de confirmación
+      let isInfoConfirmed = false;
+      let isLoadingPaymentForm = false;
 
       // Add discount code button listener
       const applyDiscountButton = document.getElementById('apply-discount');
@@ -897,16 +934,158 @@ if (!user) {
         });
       }
 
-      // Control para evitar llamadas concurrentes y debounce
-      let loadPaymentFormTimeout: ReturnType<typeof setTimeout> | null = null;
-      let isLoadingPaymentForm = false;
+      // Función para actualizar el estado del botón de confirmación
+      function updateConfirmButton() {
+        if (isInfoConfirmed) return; // No modificar si ya confirmó
+        
+        const deliveryMethod = getSelectedDeliveryMethod();
+        const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
+        
+        if (!deliveryMethod) {
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = 'Selecciona un método de entrega para continuar';
+          return;
+        }
 
-      // Función para intentar cargar el formulario de pago
+        if (isPickup) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirmar y continuar al pago';
+        } else {
+          // Validar campos de dirección
+          const address = (document.getElementById('address') as HTMLInputElement)?.value?.trim();
+          const city = (document.getElementById('city') as HTMLInputElement)?.value?.trim();
+          const state = (document.getElementById('state') as HTMLInputElement)?.value?.trim();
+          const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value?.trim();
+
+          if (address && city && state && postalCode) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirmar información y continuar al pago';
+          } else {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Completa la dirección de envío para continuar';
+          }
+        }
+      }
+
+      // Función para resetear el estado de confirmación
+      function resetConfirmation() {
+        if (!isInfoConfirmed) return;
+        
+        isInfoConfirmed = false;
+        isLoadingPaymentForm = false;
+        
+        // Mostrar botón de confirmar, ocultar resumen
+        if (confirmBtnWrapper) confirmBtnWrapper.classList.remove('hidden');
+        if (confirmedSummary) confirmedSummary.classList.add('hidden');
+        
+        // Resetear el payment form al estado bloqueado
+        paymentFormContainer.innerHTML = `
+          <div id="payment-locked" class="p-6 bg-muted/30 border border-dashed border-border rounded-lg text-center">
+            <svg class="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <p class="text-sm text-muted-foreground">Primero confirma tu información de envío para continuar con el pago.</p>
+          </div>
+        `;
+        
+        // Desmontar Payment Element si existe
+        if (currentPaymentElement) {
+          try {
+            currentPaymentElement.unmount();
+            currentPaymentElement = null;
+            isElementMounted = false;
+          } catch (e) {
+            console.warn('⚠️ Error al desmontar Payment Element:', e);
+          }
+        }
+        
+        updateConfirmButton();
+        console.log('🔄 Confirmación reseteada');
+      }
+
+      // Función para confirmar la información
+      async function confirmInfo() {
+        const deliveryMethod = getSelectedDeliveryMethod();
+        const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
+        const email = (document.getElementById('email-address') as HTMLInputElement)?.value;
+        const firstName = (document.getElementById('first-name') as HTMLInputElement)?.value;
+        const lastName = (document.getElementById('last-name') as HTMLInputElement)?.value;
+        
+        // Validación
+        if (!deliveryMethod) {
+          if (confirmValidationMsg) {
+            confirmValidationMsg.textContent = 'Por favor selecciona un método de entrega.';
+            confirmValidationMsg.classList.remove('hidden');
+          }
+          return;
+        }
+
+        if (!isPickup) {
+          const address = (document.getElementById('address') as HTMLInputElement)?.value?.trim();
+          const city = (document.getElementById('city') as HTMLInputElement)?.value?.trim();
+          const state = (document.getElementById('state') as HTMLInputElement)?.value?.trim();
+          const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value?.trim();
+          
+          const missingFields: string[] = [];
+          if (!address) missingFields.push('Dirección');
+          if (!city) missingFields.push('Ciudad');
+          if (!state) missingFields.push('Estado');
+          if (!postalCode) missingFields.push('Código postal');
+          
+          if (missingFields.length > 0) {
+            if (confirmValidationMsg) {
+              confirmValidationMsg.textContent = `Por favor completa: ${missingFields.join(', ')}`;
+              confirmValidationMsg.classList.remove('hidden');
+            }
+            return;
+          }
+        }
+
+        // Ocultar mensaje de validación
+        if (confirmValidationMsg) confirmValidationMsg.classList.add('hidden');
+
+        // Marcar como confirmado
+        isInfoConfirmed = true;
+        
+        // Construir resumen de información confirmada
+        const deliveryLabels: Record<string, string> = {
+          'pickup-gdl': '📍 Recoger en Guadalajara',
+          'pickup-cdmx': '📍 Recoger en Ciudad de México',
+          'metro-gdl': '🚚 Entrega zona metropolitana GDL',
+          'metro-cdmx': '🚚 Entrega zona metropolitana CDMX',
+          'paqueteria': '📦 Envío por paquetería',
+        };
+        
+        let summaryHTML = `<p><strong>Entrega:</strong> ${deliveryLabels[deliveryMethod] || deliveryMethod}</p>`;
+        
+        if (!isPickup) {
+          const address = (document.getElementById('address') as HTMLInputElement)?.value;
+          const city = (document.getElementById('city') as HTMLInputElement)?.value;
+          const state = (document.getElementById('state') as HTMLInputElement)?.value;
+          const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value;
+          summaryHTML += `<p><strong>Dirección:</strong> ${address}, ${city}, ${state}, CP ${postalCode}</p>`;
+        }
+        
+        summaryHTML += `<p><strong>Contacto:</strong> ${firstName} ${lastName} (${email})</p>`;
+        
+        if (confirmedDetails) confirmedDetails.innerHTML = summaryHTML;
+        
+        // Ocultar botón, mostrar resumen
+        if (confirmBtnWrapper) confirmBtnWrapper.classList.add('hidden');
+        if (confirmedSummary) confirmedSummary.classList.remove('hidden');
+
+        // Scroll suave a la sección de pago
+        if (paymentSection) {
+          paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Cargar formulario de pago
+        await loadPaymentForm();
+      }
+
+      // Función para cargar el formulario de pago
       const loadPaymentForm = async () => {
         if (isLoadingPaymentForm) return;
         
         try {
-          // Obtener datos del formulario
           const email = (document.getElementById('email-address') as HTMLInputElement)?.value;
           const firstName = (document.getElementById('first-name') as HTMLInputElement)?.value;
           const lastName = (document.getElementById('last-name') as HTMLInputElement)?.value;
@@ -915,26 +1094,12 @@ if (!user) {
           const state = (document.getElementById('state') as HTMLInputElement)?.value;
           const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value;
           const country = (document.getElementById('country') as HTMLInputElement)?.value;
-
-          // Validar que todos los campos requeridos estén llenos
           const deliveryMethod = getSelectedDeliveryMethod();
-          const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
-          if (!email || !firstName || !lastName || !deliveryMethod) {
-            return;
-          }
-          // Solo validar dirección si no es recogida en sucursal
-          if (!isPickup && (!address || !city || !state || !postalCode || !country)) {
-            // Si quedó un error de un intento anterior, volver al mensaje instructivo
-          if (paymentFormContainer.querySelector('.bg-red-50')) {
-            paymentFormContainer.innerHTML = '<div class="p-4 bg-muted rounded-lg"><p class="text-sm text-muted-foreground">Por favor completa todos los campos de información de envío y selecciona un método de entrega para continuar con el pago.</p></div>';
-          }
-          return;
-          }
 
           isLoadingPaymentForm = true;
 
           // Mostrar loading
-          paymentFormContainer.innerHTML = '<div class="flex items-center justify-center p-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>';
+          paymentFormContainer.innerHTML = '<div class="flex items-center justify-center p-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div><p class="ml-3 text-sm text-muted-foreground">Preparando formulario de pago...</p></div>';
 
           const checkoutData = {
             email,
@@ -949,7 +1114,6 @@ if (!user) {
 
           console.log('💳 Creando Payment Intent con Stripe...');
 
-          // Obtener carrito actual desde localStorage
           const cart = getCartFromStorage();
           
           if (cart.items.length === 0) {
@@ -958,7 +1122,6 @@ if (!user) {
             return;
           }
 
-          // Calcular totales para validar mínimo
           const cartCurrency = cart.currency || 'MXN';
           const subtotal = cart.total;
           const discountAmount = appliedDiscount?.amount || 0;
@@ -967,7 +1130,6 @@ if (!user) {
           const tax = subtotalAfterDiscount * 0.16;
           const total = subtotalAfterDiscount + shipping + tax;
 
-          // Validar mínimo de precio (Stripe requiere mínimo $0.50 USD o $10 MXN)
           const minAmount = cartCurrency === 'USD' ? 0.50 : 10.00;
           if (total < minAmount) {
             isLoadingPaymentForm = false;
@@ -986,7 +1148,6 @@ if (!user) {
             return;
           }
 
-          // Llamar al API para crear el Payment Intent real
           const response = await fetch('/api/create-payment-intent', {
             method: 'POST',
             headers: {
@@ -994,7 +1155,7 @@ if (!user) {
             },
             body: JSON.stringify({
               ...checkoutData,
-              items: cart.items, // Enviar items del carrito
+              items: cart.items,
               shippingMethod: deliveryMethod,
               discountCode: appliedDiscount ? {
                 code: appliedDiscount.code,
@@ -1021,8 +1182,6 @@ if (!user) {
             throw new Error('No se recibió client_secret del servidor');
           }
 
-          // Cargar Stripe con el client_secret real (cartCurrency ya definido arriba)
-          // order_total viene del servidor SIEMPRE en MXN (los USD ya se convirtieron)
           await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, 'MXN');
         } catch (error) {
           console.error('❌ Error completo:', error);
@@ -1040,19 +1199,23 @@ if (!user) {
         }
       };
 
-      // Función con debounce para cargar el formulario
-      const loadPaymentFormDebounced = () => {
-        if (loadPaymentFormTimeout) clearTimeout(loadPaymentFormTimeout);
-        loadPaymentFormTimeout = setTimeout(loadPaymentForm, 400);
-      };
+      // Listener del botón de confirmar
+      confirmBtn.addEventListener('click', confirmInfo);
 
-      // Agregar listeners a todos los campos requeridos (con debounce)
-      const requiredFields = ['address', 'city', 'state', 'postal-code'];
-      requiredFields.forEach(fieldId => {
+      // Listener del botón de editar
+      if (editInfoBtn) {
+        editInfoBtn.addEventListener('click', () => {
+          resetConfirmation();
+        });
+      }
+
+      // Listeners para campos de dirección (actualizar estado del botón)
+      const addressFields = ['address', 'city', 'state', 'postal-code'];
+      addressFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) {
-          field.addEventListener('blur', loadPaymentFormDebounced);
-          field.addEventListener('change', loadPaymentFormDebounced);
+          field.addEventListener('input', updateConfirmButton);
+          field.addEventListener('change', updateConfirmButton);
         }
       });
 
@@ -1062,24 +1225,18 @@ if (!user) {
         radio.addEventListener('change', () => {
           const method = (radio as HTMLInputElement).value;
           toggleShippingFields(method);
-          // Resetear Stripe para recalcular el total con el nuevo método de entrega
-          isLoadingPaymentForm = false;
           renderOrderSummary();
-          loadPaymentFormDebounced();
+          
+          // Si ya estaba confirmado, resetear
+          if (isInfoConfirmed) {
+            resetConfirmation();
+          } else {
+            updateConfirmButton();
+          }
         });
       });
 
-      // Cargar formulario al iniciar si los campos ya están llenos (ej. autofill)
-      setTimeout(() => {
-        const email = (document.getElementById('email-address') as HTMLInputElement)?.value;
-        const address = (document.getElementById('address') as HTMLInputElement)?.value;
-        const city = (document.getElementById('city') as HTMLInputElement)?.value;
-        const state = (document.getElementById('state') as HTMLInputElement)?.value;
-        const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value;
-        if (email && address && city && state && postalCode) {
-          loadPaymentForm();
-        }
-      }, 800);
+      console.log('✅ Checkout inicializado con flujo por pasos');
     }
 
     initCheckout();
