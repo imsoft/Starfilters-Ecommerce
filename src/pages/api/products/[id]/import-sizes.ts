@@ -47,7 +47,8 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     return json({ success: false, message: 'Error al leer el formulario' }, 400);
   }
 
-  const result = await importSizesForCategory(filterCategoryId, file);
+  // Los tamaños importados quedan asignados a ESTE producto
+  const result = await importSizesForCategory(filterCategoryId, file, product.id);
   const { status, ...body } = result;
   return json(body, status);
 };

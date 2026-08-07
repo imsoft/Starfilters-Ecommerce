@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getProductByUuid } from '@/lib/database';
 import { getBindProductById } from '@/lib/bind';
-import { getCategoryVariants } from '@/lib/filter-category-service';
+import { getProductVariants } from '@/lib/filter-category-service';
 
 export const GET: APIRoute = async ({ request }) => {
   try {
@@ -55,7 +55,7 @@ export const GET: APIRoute = async ({ request }) => {
         } else {
           // Buscar en variantes de categoría que puedan tener este bind_code
           if (product.filter_category_id) {
-            const variants = await getCategoryVariants(product.filter_category_id);
+            const variants = await getProductVariants(product.id, product.filter_category_id);
             const matchingVariant = variants.find(v => 
               v.bind_code && v.bind_code.trim().toLowerCase() === codeToCheck.trim().toLowerCase()
             );
@@ -87,12 +87,14 @@ export const GET: APIRoute = async ({ request }) => {
 
     const available = stock >= requestedQuantity;
 
+    // El cliente no quiere publicar cuántas piezas hay: la respuesta solo dice
+    // si alcanza o no, y si está agotado. La cantidad exacta (y de dónde salió)
+    // se queda en el servidor, donde se sigue validando el pago.
     return new Response(JSON.stringify({
       available,
-      stock: stock,
+      outOfStock: stock === 0,
       requested: requestedQuantity,
-      canAddToCart: stock > 0 && available,
-      stockSource
+      canAddToCart: stock > 0 && available
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

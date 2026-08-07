@@ -39,6 +39,10 @@ export interface FilterCategoryImage {
 export interface FilterCategoryVariant {
   id: number;
   category_id: number;
+  // Producto dueño de este tamaño. Antes las variantes colgaban solo de la
+  // categoría, así que dos productos de la misma categoría (p. ej. manómetro
+  // digital y análogo) compartían la misma tabla de tamaños.
+  product_id?: number | null;
   bind_code: string;
   product_code?: string;
   air_flow?: string | null;
@@ -417,6 +421,116 @@ export const deletePrimaryCategoryImages = async (categoryId: number): Promise<b
  * ===================================
  */
 
+// La columna product_id se agregó después de que la tabla ya estaba en
+// producción. Además, bind_code era UNIQUE global: dos productos no podían
+// repetir código y la fila se perdía en silencio. Pasa a ser único por producto.
+let variantProductColumnEnsured: Promise<void> | null = null;
+
+export const ensureVariantProductColumn = (): Promise<void> => {
+  if (!variantProductColumnEnsured) {
+    variantProductColumnEnsured = (async () => {
+      const cols = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'filter_category_variants'
+           AND COLUMN_NAME = 'product_id'`
+      ) as any[];
+      if (!cols[0] || Number(cols[0].n) === 0) {
+        await query('ALTER TABLE filter_category_variants ADD COLUMN product_id INT NULL');
+        await query('CREATE INDEX idx_fcv_product ON filter_category_variants (product_id)');
+        console.log('✅ Columna filter_category_variants.product_id creada');
+      }
+
+      // Reemplazar el índice único global de bind_code por uno por producto
+      const uniques = await query(
+        `SELECT INDEX_NAME AS name, COUNT(*) AS cols
+         FROM information_schema.STATISTICS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'filter_category_variants'
+           AND NON_UNIQUE = 0 AND INDEX_NAME <> 'PRIMARY'
+         GROUP BY INDEX_NAME`
+      ) as any[];
+      const tieneUnicoPorProducto = uniques.some((u: any) => u.name === 'idx_fcv_product_bind');
+      if (!tieneUnicoPorProducto) {
+        for (const u of uniques) {
+          const columnas = await query(
+            `SELECT COLUMN_NAME AS c FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'filter_category_variants'
+               AND INDEX_NAME = ?`,
+            [u.name]
+          ) as any[];
+          const soloBindCode = columnas.length === 1 && columnas[0].c === 'bind_code';
+          if (soloBindCode) {
+            await query(`DROP INDEX \`${u.name}\` ON filter_category_variants`);
+            console.log(`✅ Índice único global ${u.name} eliminado`);
+          }
+        }
+        await query(
+          'CREATE UNIQUE INDEX idx_fcv_product_bind ON filter_category_variants (product_id, bind_code)'
+        );
+        console.log('✅ Índice único (product_id, bind_code) creado');
+      }
+    })().catch((error) => {
+      variantProductColumnEnsured = null;
+      throw error;
+    });
+  }
+  return variantProductColumnEnsured;
+};
+
+/**
+ * Tamaños de un producto concreto.
+ *
+ * Compatibilidad: las variantes cargadas antes de este cambio no tienen
+ * product_id. Si el producto no tiene ninguna propia, se devuelven las de su
+ * categoría (comportamiento anterior) para no dejar fichas vacías.
+ */
+export const getProductVariants = async (
+  productId: number,
+  categoryId?: number | null
+): Promise<FilterCategoryVariant[]> => {
+  try {
+    await ensureVariantProductColumn();
+
+    const propias = await query(
+      'SELECT * FROM filter_category_variants WHERE product_id = ? ORDER BY bind_code',
+      [productId]
+    ) as any[];
+
+    if (propias.length > 0) return propias.map(normalizeVariant);
+
+    if (categoryId) {
+      const heredadas = await query(
+        'SELECT * FROM filter_category_variants WHERE category_id = ? AND product_id IS NULL ORDER BY bind_code',
+        [categoryId]
+      ) as any[];
+      return heredadas.map(normalizeVariant);
+    }
+
+    return [];
+  } catch (error) {
+    console.error('❌ Error obteniendo variantes del producto:', error);
+    return [];
+  }
+};
+
+/** Normaliza una fila de variante (air_flow y product_id pueden no existir aún) */
+const normalizeVariant = (v: any): FilterCategoryVariant => ({
+  id: v.id,
+  category_id: v.category_id,
+  product_id: v.product_id !== undefined ? v.product_id : null,
+  bind_code: v.bind_code || '',
+  product_code: v.product_code || null,
+  air_flow: v.air_flow !== undefined ? v.air_flow : null,
+  nominal_size: v.nominal_size || '',
+  real_size: v.real_size || '',
+  price: v.price || 0,
+  currency: v.currency || 'MXN',
+  price_usd: v.price_usd || null,
+  stock: v.stock || 0,
+  is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+  created_at: v.created_at,
+  updated_at: v.updated_at,
+});
+
 /**
  * Obtener todas las variantes de una categoría
  */
@@ -503,15 +617,17 @@ export const getVariantByBindCode = async (bindCode: string): Promise<FilterCate
 export const addCategoryVariant = async (variantData: Partial<FilterCategoryVariant>): Promise<number | null> => {
   try {
     console.log('✨ Agregando variante:', variantData.bind_code);
+    await ensureVariantProductColumn();
 
     // Intentar con air_flow primero (si la columna existe)
     try {
       const result = await query(
         `INSERT INTO filter_category_variants (
-          category_id, bind_code, product_code, air_flow, nominal_size, real_size, price, currency, price_usd, stock, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          category_id, product_id, bind_code, product_code, air_flow, nominal_size, real_size, price, currency, price_usd, stock, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           variantData.category_id,
+          variantData.product_id ?? null,
           variantData.bind_code,
           variantData.product_code || null,
           variantData.air_flow || null,
@@ -566,14 +682,17 @@ export const addCategoryVariant = async (variantData: Partial<FilterCategoryVari
 export const updateCategoryVariant = async (id: number, variantData: Partial<FilterCategoryVariant>): Promise<boolean> => {
   try {
     console.log('📝 Actualizando variante ID:', id);
+    await ensureVariantProductColumn();
 
     // Intentar con air_flow primero (si la columna existe)
     try {
       await query(
         `UPDATE filter_category_variants SET
+          product_id = COALESCE(?, product_id),
           bind_code = ?, product_code = ?, air_flow = ?, nominal_size = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
         WHERE id = ?`,
         [
+          variantData.product_id ?? null,
           variantData.bind_code,
           variantData.product_code || null,
           variantData.air_flow || null,
@@ -680,6 +799,8 @@ export default {
   deletePrimaryCategoryImages,
   // Variantes
   getCategoryVariants,
+  getProductVariants,
+  ensureVariantProductColumn,
   getVariantByBindCode,
   addCategoryVariant,
   updateCategoryVariant,

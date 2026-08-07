@@ -4,7 +4,7 @@ import {
   getProductById,
   updateProduct as updateProductService,
 } from "@/lib/product-service";
-import { getActiveCategories, getCategoryVariants, addCategoryVariant, updateCategoryVariant, deleteCategoryVariant, type FilterCategoryVariant } from "@/lib/filter-category-service";
+import { getActiveCategories, getProductVariants, addCategoryVariant, updateCategoryVariant, deleteCategoryVariant, type FilterCategoryVariant } from "@/lib/filter-category-service";
 import { getProductImages } from "@/lib/database";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
@@ -43,6 +43,22 @@ const filterCategories = await getActiveCategories();
 let error: string | null = null;
 let success: string | null = null;
 
+// Avisos tras guardar: tamaños que no quedaron registrados y por qué
+const skippedParam = Astro.url.searchParams.get('sizes_skipped');
+const failedParam = Astro.url.searchParams.get('sizes_failed');
+const warnings: string[] = [];
+if (skippedParam) {
+  warnings.push(
+    `Estos tamaños NO se registraron porque les falta el Código BIND: ${skippedParam}. Captura el código de cada uno y vuelve a guardar.`
+  );
+}
+if (failedParam) {
+  warnings.push(`Estos tamaños NO se pudieron guardar: ${failedParam}.`);
+}
+const warning = warnings.length > 0
+  ? `El producto se guardó. ${warnings.join(' ')}`
+  : null;
+
 // Procesar formulario
 if (Astro.request.method === "POST") {
   try {
@@ -51,10 +67,17 @@ if (Astro.request.method === "POST") {
 
     if (action === "update_product") {
       // Procesar todos los campos
+      // El nombre de la categoría (en los dos idiomas) se toma de la categoría
+      // de filtro elegida, que es la fuente de verdad. Antes era texto suelto
+      // que se quedaba viejo: los manómetros seguían apareciendo como
+      // "Filtros de aire" y en /en nunca había traducción.
       const category = formData.get("category") as string || product.category;
       const productType = (formData.get("product_type") as string || product.product_type || "filter") as "filter" | "special";
       const filterCategoryIdStr = formData.get("filter_category_id") as string;
       const filterCategoryId = filterCategoryIdStr ? parseInt(filterCategoryIdStr) : null;
+      const selectedFilterCategory = filterCategoryId
+        ? (await getActiveCategories()).find((c) => c.id === filterCategoryId)
+        : null;
 
       // Procesar tabla de tamaños
       const sizesJson = formData.get("product_sizes") as string;
@@ -87,9 +110,12 @@ if (Astro.request.method === "POST") {
         console.warn('⚠️ No se recibió product_sizes en el formulario');
       }
 
-      // Usar el primer tamaño si existe, o mantener valores actuales
+      // El precio del producto (el que se ve en el listado y en la ficha) sale
+      // de sus tamaños. Se toma el primero CON precio: si la primera fila venía
+      // sin precio, el producto quedaba en $0.00 aunque los demás sí tuvieran.
       const firstSize = sizes.length > 0 ? sizes[0] : null;
-      const currency = firstSize?.currency || product.currency || 'MXN';
+      const firstPricedSize = sizes.find((s) => Number(s.price) > 0) || firstSize;
+      const currency = firstPricedSize?.currency || product.currency || 'MXN';
 
       // Actualizar el producto con todos los campos
       const updated = await updateProductService(productId, {
@@ -101,13 +127,17 @@ if (Astro.request.method === "POST") {
         name_en: (formData.get("name_en") as string) || undefined,
         description: (formData.get("description") as string) || undefined,
         description_en: (formData.get("description_en") as string) || undefined,
-        price: firstSize?.price ?? product.price ?? 0,
+        price: firstPricedSize?.price ?? product.price ?? 0,
         currency: currency as 'MXN' | 'USD',
-        price_usd: currency === 'USD' ? (firstSize?.price ?? product.price ?? 0) : null,
+        price_usd: currency === 'USD' ? (firstPricedSize?.price ?? product.price ?? 0) : null,
         nominal_size: firstSize?.nominal_size || product.nominal_size || null,
         real_size: firstSize?.real_size || product.real_size || null,
-        category: category,
-        stock: 0,
+        category: selectedFilterCategory?.name || category,
+        category_en: selectedFilterCategory?.name_en || product.category_en || undefined,
+        // El inventario real está en BIND; aquí solo se conserva el valor local
+        // que sirve de respaldo si BIND no responde. Antes se ponía en 0 en cada
+        // guardado y el listado siempre mostraba "0 unidades".
+        stock: product.stock ?? 0,
         status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
         // Campos técnicos
         efficiency: processListField(formData.get("efficiency")),
@@ -135,14 +165,19 @@ if (Astro.request.method === "POST") {
         // El componente CategoryImageManager se encargará de esto
       }
 
+      // Tamaños que no se pudieron guardar (se avisa al usuario al terminar)
+      const skippedSizes: string[] = [];
+      const failedSizes: string[] = [];
+
       // Sincronizar variantes de categoría si hay filter_category_id y tamaños
       if (updated && filterCategoryId && sizes.length > 0) {
         try {
           // Obtener tasa de cambio para calcular price_usd
           const exchangeRate = await getExchangeRate();
           
-          // Obtener variantes existentes de la categoría
-          const existingVariants = await getCategoryVariants(filterCategoryId);
+          // Tamaños que ya tiene ESTE producto (no los de toda la categoría:
+          // antes dos productos de la misma categoría se pisaban entre sí)
+          const existingVariants = await getProductVariants(productId, filterCategoryId);
           
           // Crear un mapa de variantes existentes por bind_code
           const existingVariantsMap = new Map<string, FilterCategoryVariant>();
@@ -158,9 +193,12 @@ if (Astro.request.method === "POST") {
           let skippedCount = 0;
           
           for (const size of sizes) {
-            // Solo procesar si tiene bind_code (requerido para variantes)
+            // La tabla filter_category_variants exige bind_code (NOT NULL UNIQUE),
+            // así que una fila sin código no se puede guardar. Antes se descartaba
+            // en silencio y el usuario creía que sí se había guardado.
             if (!size.bind_code || !size.bind_code.trim()) {
               console.log('⚠️ Filtrando tamaño sin bind_code:', size);
+              skippedSizes.push(size.nominal_size || size.real_size || `fila ${skippedCount + 1}`);
               skippedCount++;
               continue;
             }
@@ -178,6 +216,7 @@ if (Astro.request.method === "POST") {
             
             const variantData = {
               category_id: filterCategoryId,
+              product_id: productId,
               bind_code: size.bind_code.trim(),
               product_code: size.product_code?.trim() || null,
               air_flow: size.air_flow?.trim() || null,
@@ -203,11 +242,20 @@ if (Astro.request.method === "POST") {
                   console.log(`✅ Variante creada: ${size.bind_code} (ID: ${newId})`);
                 } else {
                   console.error(`❌ Error creando variante: ${size.bind_code}`);
+                  failedSizes.push(`${size.bind_code} (no se pudo crear)`);
                 }
               }
               savedCount++;
-            } catch (error) {
+            } catch (error: any) {
+              // bind_code es UNIQUE en toda la tabla: si el código ya lo usa otro
+              // producto, la fila se perdía sin decir nada.
               console.error(`❌ Error procesando variante ${size.bind_code}:`, error);
+              const duplicado = /duplicate|unique/i.test(error?.sqlMessage || error?.message || '');
+              failedSizes.push(
+                duplicado
+                  ? `${size.bind_code} (ese código BIND ya está usado por otro producto)`
+                  : `${size.bind_code} (${error?.sqlMessage || error?.message || 'error al guardar'})`
+              );
             }
           }
           
@@ -230,6 +278,14 @@ if (Astro.request.method === "POST") {
       }
 
       if (updated) {
+        if (skippedSizes.length > 0 || failedSizes.length > 0) {
+          // El producto sí se guardó, pero estos tamaños no. Se queda en la
+          // página para que el aviso sea visible.
+          const params = new URLSearchParams();
+          if (skippedSizes.length > 0) params.set('sizes_skipped', skippedSizes.join(', '));
+          if (failedSizes.length > 0) params.set('sizes_failed', failedSizes.join(', '));
+          return Astro.redirect(`/admin/products/edit/${productId}?${params.toString()}`);
+        }
         return Astro.redirect("/admin/products");
       } else {
         error = "Error al actualizar el producto";
@@ -303,7 +359,7 @@ let productSizes: Array<{nominal_size: string; real_size: string; price: number;
 if (product.filter_category_id) {
   try {
     // Cargar variantes de la categoría
-    const categoryVariants = await getCategoryVariants(product.filter_category_id);
+    const categoryVariants = await getProductVariants(product.id, product.filter_category_id);
     // Solo incluir variantes activas
     const activeVariants = categoryVariants.filter(v => v.is_active);
     
@@ -402,6 +458,21 @@ console.log('📦 Tamaños preparados:', productSizes.length);
     </div>
 
     <!-- Mensajes -->
+    {
+      warning && (
+        <div class="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+          <div class="flex">
+            <svg class="h-5 w-5 flex-shrink-0 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-yellow-800">{warning}</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     {
       error && (
         <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">

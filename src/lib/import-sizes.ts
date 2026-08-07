@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import {
   getCategoryVariants,
+  getProductVariants,
   addCategoryVariant,
   updateCategoryVariant,
   type FilterCategoryVariant,
@@ -45,7 +46,11 @@ export interface ImportSizesResult {
 
 export const importSizesForCategory = async (
   filterCategoryId: number,
-  file: File
+  file: File,
+  // Producto dueño de los tamaños importados. Si no viene (importación desde
+  // "Agregar producto", cuando el producto todavía no existe) quedan sin dueño
+  // y el producto los adopta al guardarse por primera vez.
+  productId?: number | null
 ): Promise<ImportSizesResult> => {
   const arrayBuffer = await file.arrayBuffer();
   let workbook: XLSX.WorkBook;
@@ -135,7 +140,9 @@ export const importSizesForCategory = async (
     // usar 1 si falla la tasa
   }
 
-  const existingVariants = await getCategoryVariants(filterCategoryId);
+  const existingVariants = productId
+    ? await getProductVariants(productId, filterCategoryId)
+    : await getCategoryVariants(filterCategoryId);
   const existingByBind = new Map<string, FilterCategoryVariant>();
   existingVariants.forEach((v) => {
     if (v.bind_code) existingByBind.set(v.bind_code, v);
@@ -156,6 +163,7 @@ export const importSizesForCategory = async (
 
     const variantData = {
       category_id: filterCategoryId,
+      product_id: productId ?? null,
       bind_code: bindCode,
       product_code: size.product_code?.trim() || null,
       air_flow: size.air_flow?.trim() || null,
