@@ -6,7 +6,8 @@ import {
   getDashboardStats, 
   getRecentProducts, 
   getSalesStats, 
-  getTopProducts
+  getTopProducts,
+  getProductImages
 } from "@/lib/database";
 import { getExchangeRate } from "@/lib/currency-service";
 
@@ -41,6 +42,21 @@ try {
 try {
   console.log('🔍 Obteniendo productos recientes...');
   recentProducts = await getRecentProducts(3);
+  // products.image_url suele venir vacío: la foto real vive en product_images,
+  // igual que en el listado de /admin/products. Sin esto la miniatura siempre
+  // caía al icono gris.
+  recentProducts = await Promise.all(
+    recentProducts.map(async (product) => {
+      if (product.image_url) return product;
+      try {
+        const images = await getProductImages(product.id);
+        const primary = images.find((img: any) => img.is_primary) || images[0];
+        return { ...product, image_url: primary?.image_url || null };
+      } catch {
+        return product;
+      }
+    })
+  );
   console.log('📦 Productos recientes obtenidos:', recentProducts);
 } catch (error) {
   console.error('❌ Error obteniendo productos recientes:', error);

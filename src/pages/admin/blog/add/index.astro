@@ -23,6 +23,7 @@ if (Astro.request.method === 'POST') {
   const status = formData.get('status') as 'draft' | 'published' | 'scheduled';
   const publishDate = formData.get('publish-date') as string;
   const tags = formData.get('tags') as string;
+  const tags_en = formData.get('tags_en') as string;
   const featuredImage = formData.get('featured_image') as string | null;
   
   // Debug: verificar qué imagen se recibió
@@ -71,6 +72,7 @@ if (Astro.request.method === 'POST') {
       status: finalStatus,
       publish_date: publishDate ? new Date(publishDate) : undefined,
       tags,
+      tags_en: tags_en || undefined,
       featured_image_url: featuredImage || undefined,
       meta_title: metaTitle,
       meta_title_en: metaTitle_en || undefined,
@@ -429,6 +431,25 @@ const errorDetails = url.searchParams.get('details');
           />
           <p class="mt-1 text-sm text-muted-foreground">
             Separa las etiquetas con comas para facilitar la búsqueda
+          </p>
+        </div>
+
+        <div class="mt-6">
+          <label
+            for="tags_en"
+            class="block text-sm font-medium text-foreground mb-2"
+          >
+            Etiquetas (inglés)
+          </label>
+          <input
+            type="text"
+            id="tags_en"
+            name="tags_en"
+            class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder="Tags separated by commas (e.g. filters, hepa, cleanrooms)"
+          />
+          <p class="mt-1 text-sm text-muted-foreground">
+            Las que se muestran en /en/blog. Si lo dejas vacío, se usan las de español.
           </p>
         </div>
       </div>

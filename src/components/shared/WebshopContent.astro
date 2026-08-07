@@ -413,11 +413,14 @@ const subheading = selected
       const res = await fetch(`/api/check-stock?uuid=${encodeURIComponent(uuid)}&quantity=${quantityInCart + 1}`);
       const data = await res.json();
       if (!data.available) {
+        // Sin cifras: el cliente no quiere publicar cuántas piezas hay.
         const isEn = window.location.pathname.startsWith("/en");
-        if (data.stock === 0) {
+        if (data.outOfStock) {
           showWarningNotification(isEn ? "This product is currently out of stock." : "Este producto está agotado por el momento.");
         } else {
-          showWarningNotification(isEn ? `Only ${data.stock} unit${data.stock !== 1 ? "s" : ""} in stock.` : `Solo contamos con ${data.stock} unidad${data.stock !== 1 ? "es" : ""} en inventario.`);
+          showWarningNotification(isEn
+            ? "We don't have enough stock for that quantity. Contact us and we'll gladly help."
+            : "No tenemos inventario suficiente para esa cantidad. Contáctanos y con gusto te ayudamos.");
         }
         return;
       }

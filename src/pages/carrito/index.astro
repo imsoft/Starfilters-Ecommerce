@@ -322,15 +322,12 @@ const formatPrice = (price: number): string => {
       );
       const data = await res.json();
       if (!data.available) {
-        if (data.stock === 0) {
-          showWarningNotification(
-            "Este producto está agotado por el momento. Si lo necesitas, contáctanos."
-          );
-        } else {
-          showWarningNotification(
-            `Actualmente contamos con ${data.stock} unidad${data.stock !== 1 ? "es" : ""} en inventario.`
-          );
-        }
+        // Sin cifras: el cliente no quiere publicar cuántas piezas hay.
+        showWarningNotification(
+          data.outOfStock
+            ? "Este producto está agotado por el momento. Si lo necesitas, contáctanos."
+            : "No tenemos inventario suficiente para esa cantidad. Contáctanos y con gusto te ayudamos."
+        );
         return;
       }
     } catch (error) {
@@ -651,16 +648,20 @@ const formatPrice = (price: number): string => {
           (item) => `
         <li class="flex py-6 sm:py-10">
           <div class="shrink-0">
-            <img
-              src="${item.image_url || "/images/products/placeholder-product.svg"}"
-              alt="${item.name}"
-              class="size-24 rounded-md object-cover sm:size-48"
-            />
+            <a href="/product/${item.uuid}">
+              <img
+                src="${item.image_url || "/images/products/placeholder-product.svg"}"
+                alt="${item.name}"
+                class="size-24 rounded-md object-cover sm:size-48 hover:opacity-90 transition-opacity"
+              />
+            </a>
           </div>
           <div class="ml-4 flex flex-1 flex-col justify-between sm:ml-6">
             <div class="relative pr-9 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:pr-0">
               <div>
-                <h3 class="text-sm font-medium text-foreground">${item.name}</h3>
+                <h3 class="text-sm font-medium text-foreground">
+                  <a href="/product/${item.uuid}" class="hover:text-primary transition-colors">${item.name}</a>
+                </h3>
                 ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">${item.category}</p>` : ""}
                 <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
                 
