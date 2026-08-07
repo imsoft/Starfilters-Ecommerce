@@ -95,8 +95,12 @@ const scrollDuration = `${loopProjects.length * 6}s`;
     width: max-content;
   }
 
-  .project-track:hover {
-    animation-play-state: paused;
+  /* Solo pausar con mouse real: en pantallas táctiles el :hover se queda
+     "pegado" tras tocar la tarjeta y el carrusel ya no volvía a arrancar. */
+  @media (hover: hover) and (pointer: fine) {
+    .project-track:hover {
+      animation-play-state: paused;
+    }
   }
 
   @keyframes scroll-projects {

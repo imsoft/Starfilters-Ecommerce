@@ -6,6 +6,9 @@ interface Props {
   videoId: string;
   videoTitle: string;
   heading?: string;
+  // Las páginas alternan fondo azul claro / blanco sección a sección; según
+  // dónde caiga el video, necesita uno u otro para no romper la secuencia.
+  background?: 'tinted' | 'plain';
 }
 
 const lang = getLangFromUrl(Astro.url);
@@ -13,10 +16,13 @@ const {
   videoId,
   videoTitle,
   heading = lang === 'en' ? 'See our work' : 'Conoce nuestros proyectos',
+  background = 'tinted',
 } = Astro.props;
+
+const bgClass = background === 'plain' ? 'bg-background' : 'bg-primary/10';
 ---
 
-<div class="bg-primary/10 py-16 border-t border-border">
+<div class={`${bgClass} py-16 border-t border-border`}>
   <div class="mx-auto max-w-4xl px-6 lg:px-8">
     <h2 class="text-center text-3xl font-bold text-foreground sm:text-4xl mb-8">
       {heading}

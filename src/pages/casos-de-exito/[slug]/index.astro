@@ -4,6 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getHeroImageUrl } from "@/lib/image-utils";
 
 export const prerender = false;
 
@@ -56,7 +57,7 @@ const formatDate = (date: Date) =>
       {caseStudy.featured_image ? (
         <div class="h-56 sm:h-96 overflow-hidden">
           <img
-            src={caseStudy.featured_image}
+            src={getHeroImageUrl(caseStudy.featured_image)}
             alt={caseStudy.title}
             class="h-full w-full object-cover"
           />

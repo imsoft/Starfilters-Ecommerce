@@ -25,6 +25,35 @@ export function getHighQualityImageUrl(
   return `${before}${transformations}/${after}`;
 }
 
+/**
+ * URL para imágenes de banner a todo lo ancho (heros de casos de éxito, etc.).
+ *
+ * Muchas fotos del cliente se suben pequeñas (p. ej. 765px de ancho) y el hero
+ * las estira a ~1900px: el navegador las escala con interpolación bilineal y se
+ * ven borrosas. Cloudinary escala mejor y, con e_sharpen, recupera bastante
+ * definición aparente. No sustituye a subir una foto grande, pero mejora las
+ * que ya están cargadas.
+ */
+export function getHeroImageUrl(
+  url: string | null | undefined,
+  options?: { width?: number; height?: number }
+): string {
+  if (!url) return '';
+  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
+
+  const width = options?.width ?? 1920;
+  const height = options?.height ?? 640;
+
+  const uploadIndex = url.indexOf('/upload/') + '/upload/'.length;
+  const before = url.slice(0, uploadIndex);
+  const after = url.slice(uploadIndex);
+
+  // c_fill + g_auto recorta hacia la zona relevante de la foto; e_sharpen
+  // compensa el escalado.
+  const transformations = `c_fill,g_auto,w_${width},h_${height},e_sharpen:60,q_auto:best,f_auto`;
+  return `${before}${transformations}/${after}`;
+}
+
 // Helper function to get appropriate placeholder image based on product category
 export function getProductPlaceholderImage(category?: string): string {
   if (!category) return '/images/products/placeholder-product.svg';

@@ -128,6 +128,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* iOS rebota al llegar al final y deja un espacio en blanco bajo el footer
+     que parece que la página sigue. Ninguna página tiene contenido después
+     del footer (medido en viewport móvil), es el rebote del navegador. */
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
 }
 
 /* Estilos para el editor de texto enriquecido */

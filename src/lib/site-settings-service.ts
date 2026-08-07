@@ -110,7 +110,7 @@ export const updateHeroType = async (type: 'video' | 'image'): Promise<boolean> 
 
 export const getHeroVideo = async (): Promise<string> => {
   const video = await getSetting('hero_video');
-  return video || '/videos/VIDEO-2026-05-19-13-33-53.mp4';
+  return video || '/videos/hero-720.mp4';
 };
 
 export const updateHeroVideo = async (videoUrl: string): Promise<boolean> => {
