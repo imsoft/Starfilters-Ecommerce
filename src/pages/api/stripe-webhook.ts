@@ -201,6 +201,8 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     shipping_address: shippingAddress,
     user_id: paymentIntent.metadata?.user_id ? parseInt(paymentIntent.metadata.user_id) : undefined,
     stripe_payment_intent_id: paymentIntent.id,
+    // Datos fiscales opcionales: si el cliente no pidió factura, va null
+    billing_data: checkout.billing ? JSON.stringify(checkout.billing) : null,
   });
 
   console.log('✅ Orden creada con ID:', orderId, 'Número:', orderNumber);

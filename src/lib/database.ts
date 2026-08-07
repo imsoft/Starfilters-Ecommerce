@@ -95,6 +95,7 @@ export interface BlogPost {
   meta_description: string;
   meta_description_en?: string;
   tags: string;
+  tags_en?: string;
   publish_date: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -135,6 +136,8 @@ export interface Order {
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   shipping_address?: string;
   stripe_payment_intent_id?: string;
+  // Datos fiscales opcionales capturados en el checkout (JSON serializado)
+  billing_data?: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -366,6 +369,30 @@ export const deleteOrder = async (id: number): Promise<boolean> => {
 };
 
 // Función helper para mapear blog post desde la base de datos
+// Las etiquetas en inglés se agregaron después de que la tabla ya estaba en
+// producción (en /en/blog salían las españolas). Misma estrategia que
+// orders.billing_data: crear la columna al vuelo.
+let blogTagsEnColumnEnsured: Promise<void> | null = null;
+
+export const ensureBlogTagsEnColumn = (): Promise<void> => {
+  if (!blogTagsEnColumnEnsured) {
+    blogTagsEnColumnEnsured = (async () => {
+      const rows = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'blog_posts' AND COLUMN_NAME = 'tags_en'`
+      ) as any[];
+      if (!rows[0] || Number(rows[0].n) === 0) {
+        await query('ALTER TABLE blog_posts ADD COLUMN tags_en VARCHAR(500) NULL');
+        console.log('✅ Columna blog_posts.tags_en creada');
+      }
+    })().catch((error) => {
+      blogTagsEnColumnEnsured = null;
+      throw error;
+    });
+  }
+  return blogTagsEnColumnEnsured;
+};
+
 function mapBlogPostFromDB(row: any): BlogPost {
   // Priorizar featured_image_url (Cloudinary) sobre featured_image
   const featuredImage = row.featured_image_url || row.featured_image || '';
@@ -499,12 +526,36 @@ export const ensureOrdersPaymentIntentColumn = (): Promise<void> => {
   return ordersPaymentIntentColumnEnsured;
 };
 
+// La facturación se agregó después de que la tabla ya estaba en producción:
+// misma estrategia que stripe_payment_intent_id, crear la columna al vuelo.
+let ordersBillingColumnEnsured: Promise<void> | null = null;
+
+export const ensureOrdersBillingColumn = (): Promise<void> => {
+  if (!ordersBillingColumnEnsured) {
+    ordersBillingColumnEnsured = (async () => {
+      const rows = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'billing_data'`
+      ) as any[];
+      if (!rows[0] || Number(rows[0].n) === 0) {
+        await query('ALTER TABLE orders ADD COLUMN billing_data JSON NULL');
+        console.log('✅ Columna orders.billing_data creada');
+      }
+    })().catch((error) => {
+      ordersBillingColumnEnsured = null;
+      throw error;
+    });
+  }
+  return ordersBillingColumnEnsured;
+};
+
 export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at' | 'updated_at'>): Promise<number> => {
   await ensureOrdersPaymentIntentColumn();
+  await ensureOrdersBillingColumn();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -516,7 +567,8 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
     order.total_amount,
     order.status,
     order.shipping_address || null,
-    order.stripe_payment_intent_id || null
+    order.stripe_payment_intent_id || null,
+    order.billing_data || null
   ]) as any;
   return result.insertId;
 };
@@ -1112,6 +1164,7 @@ export interface CreateBlogPostData {
   status: 'draft' | 'published' | 'scheduled';
   publish_date?: Date;
   tags?: string;
+  tags_en?: string;
   featured_image_url?: string;
   meta_title?: string;
   meta_title_en?: string;
@@ -1135,15 +1188,17 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
       throw new Error('Faltan campos requeridos para crear el artículo del blog');
     }
 
+    await ensureBlogTagsEnColumn();
+
     const uuid = generateUUID();
     const now = new Date();
     
     const result = await query(
       `INSERT INTO blog_posts (
         uuid, title, title_en, slug, slug_en, excerpt, excerpt_en, content, content_en, category, author, 
-        status, publish_date, tags, featured_image_url, 
+        status, publish_date, tags, tags_en, featured_image_url, 
         meta_title, meta_title_en, meta_description, meta_description_en, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         uuid,
         data.title,
@@ -1159,6 +1214,7 @@ export async function createBlogPost(data: CreateBlogPostData): Promise<BlogPost
         data.status,
         data.publish_date || now,
         data.tags || '',
+        data.tags_en || null,
         data.featured_image_url || null,
         data.meta_title || data.title,
         data.meta_title_en || null,
@@ -1265,6 +1321,7 @@ export interface UpdateBlogPostData {
   status: 'draft' | 'published' | 'scheduled';
   publish_date?: Date;
   tags?: string;
+  tags_en?: string;
   featured_image_url?: string;
   meta_title?: string;
   meta_title_en?: string;
@@ -1274,6 +1331,7 @@ export interface UpdateBlogPostData {
 
 export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Promise<BlogPost | null> {
   try {
+    await ensureBlogTagsEnColumn();
     const now = new Date();
 
     const result = await query(
@@ -1281,7 +1339,7 @@ export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Pr
         title = ?, title_en = ?, slug = ?, slug_en = ?,
         excerpt = ?, excerpt_en = ?, content = ?, content_en = ?,
         category = ?, author = ?, status = ?, publish_date = ?,
-        tags = ?, featured_image_url = ?,
+        tags = ?, tags_en = ?, featured_image_url = ?,
         meta_title = ?, meta_title_en = ?,
         meta_description = ?, meta_description_en = ?,
         updated_at = ?
@@ -1300,6 +1358,7 @@ export async function updateBlogPost(uuid: string, data: UpdateBlogPostData): Pr
         data.status,
         data.publish_date || now,
         data.tags || '',
+        data.tags_en || null,
         data.featured_image_url || null,
         data.meta_title || data.title,
         data.meta_title_en || null,

@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
-import { createCheckoutPaymentIntent, validateCheckoutData, type CheckoutData, type DiscountData, type DeliveryMethod, type ResolvedCartItem } from '@/lib/payment-utils';
+import { createCheckoutPaymentIntent, validateCheckoutData, type CheckoutData, type BillingData, type DiscountData, type DeliveryMethod, type ResolvedCartItem } from '@/lib/payment-utils';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { getProductByUuid, getProductPrimaryImage } from '@/lib/database';
 import { getBindProductById } from '@/lib/bind';
-import { getCategoryVariants } from '@/lib/filter-category-service';
+import { getProductVariants } from '@/lib/filter-category-service';
 import { validateDiscountCode } from '@/lib/discount-codes';
 import { getExchangeRate } from '@/lib/currency-service';
 
@@ -15,6 +15,23 @@ const ALLOWED_SHIPPING_METHODS: DeliveryMethod[] = [
 
 const isUUID = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim());
+
+// Datos de facturación: opcionales y sin validación bloqueante. Solo se
+// recortan y limitan de largo; si no viene nada útil se guarda null.
+const sanitizeBilling = (raw: any): BillingData | null => {
+  if (!raw || typeof raw !== 'object') return null;
+  const clean = (value: any, max = 200) =>
+    typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : undefined;
+  const billing: BillingData = {
+    businessName: clean(raw.businessName),
+    rfc: clean(raw.rfc, 13)?.toUpperCase(),
+    taxRegime: clean(raw.taxRegime),
+    cfdiUse: clean(raw.cfdiUse),
+    postalCode: clean(raw.postalCode, 10),
+    email: clean(raw.email),
+  };
+  return Object.values(billing).some(Boolean) ? billing : null;
+};
 
 // Resuelve stock real y el ProductID de BIND para un código dado.
 // Lee de BIND ERP si es posible; si BIND falla, cae al stock de BD sin romper.
@@ -107,6 +124,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       phone: body.phone,
       company: body.company,
       apartment: body.apartment,
+      billing: sanitizeBilling(body.billing),
     };
 
     // Solo se aceptan los métodos de entrega que ofrece la UI; el costo se
@@ -215,7 +233,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         } else if (item.size && (product as any).filter_category_id) {
           // Producto base con tamaño elegido: buscar la variante que coincide
           try {
-            const variants = await getCategoryVariants((product as any).filter_category_id);
+            const variants = await getProductVariants(product.id, (product as any).filter_category_id);
             const sizeParts = String(item.size).split(' / ');
             const nominalSize = sizeParts[0]?.trim() || '';
             const realSize = sizeParts[1]?.trim() || '';
@@ -253,7 +271,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         if (actualStock < quantity) {
           return new Response(JSON.stringify({
             error: 'Stock insuficiente',
-            details: [`No hay suficiente stock para ${item.name || product.name}. Disponible: ${actualStock}, Solicitado: ${quantity}`]
+            // Sin cifras de inventario: el mensaje llega hasta la pantalla del
+            // cliente y no queremos publicar cuántas piezas hay.
+            details: [`No tenemos inventario suficiente de "${item.name || product.name}" para la cantidad solicitada. Contáctanos y con gusto te ayudamos.`]
           }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' }

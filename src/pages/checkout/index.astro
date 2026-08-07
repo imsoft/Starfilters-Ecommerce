@@ -104,7 +104,6 @@ if (!user) {
                     <span class="flex flex-col">
                       <span class="block text-sm font-medium text-foreground">Envío por paquetería</span>
                       <span class="mt-1 flex items-center text-sm text-muted-foreground">Tiempo según paquetería seleccionada</span>
-                      <span class="mt-1 text-xs text-muted-foreground">Gratis en compras de $5,000 MXN o más</span>
                     </span>
                   </span>
                   <span class="ml-4 shrink-0 text-sm font-medium" id="price-paqueteria">$350.00</span>
@@ -252,6 +251,61 @@ if (!user) {
               </div>
             </div>
 
+            <!-- Datos de facturación (opcional) -->
+            <div class="mt-10 border-t border-border pt-10">
+              <h2 class="text-lg font-medium text-foreground">Datos de facturación</h2>
+              <p class="mt-1 text-sm text-muted-foreground">Opcional. Solo si necesitas factura para este pedido.</p>
+
+              <label class="mt-4 flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="wants-invoice" class="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+                <span class="text-sm font-medium text-foreground">Necesito factura</span>
+              </label>
+
+              <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4 hidden" id="billing-fields">
+                <div class="sm:col-span-2">
+                  <label for="billing-business-name" class="block text-sm/6 font-medium text-foreground">Razón social</label>
+                  <div class="mt-2">
+                    <input id="billing-business-name" type="text" name="billing-business-name" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="billing-rfc" class="block text-sm/6 font-medium text-foreground">RFC</label>
+                  <div class="mt-2">
+                    <input id="billing-rfc" type="text" name="billing-rfc" maxlength="13" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground uppercase outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="billing-postal-code" class="block text-sm/6 font-medium text-foreground">Código postal fiscal</label>
+                  <div class="mt-2">
+                    <input id="billing-postal-code" type="text" name="billing-postal-code" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="billing-tax-regime" class="block text-sm/6 font-medium text-foreground">Régimen fiscal</label>
+                  <div class="mt-2">
+                    <input id="billing-tax-regime" type="text" name="billing-tax-regime" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="billing-cfdi-use" class="block text-sm/6 font-medium text-foreground">Uso de CFDI</label>
+                  <div class="mt-2">
+                    <input id="billing-cfdi-use" type="text" name="billing-cfdi-use" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+                  </div>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label for="billing-email" class="block text-sm/6 font-medium text-foreground">Correo para la factura</label>
+                  <div class="mt-2">
+                    <input id="billing-email" type="email" name="billing-email" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Botón de confirmación -->
             <div class="mt-10 border-t border-border pt-10" id="confirm-section">
               <div id="confirm-button-wrapper">
@@ -324,6 +378,36 @@ if (!user) {
       ).format(price);
     }
 
+    // Facturación (opcional): el checkbox solo muestra u oculta los campos,
+    // ninguno es obligatorio y nada de esto bloquea el pago.
+    function initInvoiceToggle() {
+      const checkbox = document.getElementById('wants-invoice') as HTMLInputElement;
+      const fields = document.getElementById('billing-fields');
+      if (!checkbox || !fields || checkbox.hasAttribute('data-invoice-init')) return;
+      checkbox.setAttribute('data-invoice-init', 'true');
+      checkbox.addEventListener('change', () => {
+        fields.classList.toggle('hidden', !checkbox.checked);
+      });
+    }
+
+    // Devuelve los datos fiscales capturados, o null si no se pidió factura
+    // (o si se marcó la casilla pero no se llenó nada).
+    function getBillingData() {
+      const checkbox = document.getElementById('wants-invoice') as HTMLInputElement;
+      if (!checkbox?.checked) return null;
+      const val = (id: string) =>
+        (document.getElementById(id) as HTMLInputElement)?.value.trim() || undefined;
+      const billing = {
+        businessName: val('billing-business-name'),
+        rfc: val('billing-rfc')?.toUpperCase(),
+        taxRegime: val('billing-tax-regime'),
+        cfdiUse: val('billing-cfdi-use'),
+        postalCode: val('billing-postal-code'),
+        email: val('billing-email'),
+      };
+      return Object.values(billing).some(Boolean) ? billing : null;
+    }
+
     const FREE_SHIPPING_THRESHOLD = 5000;
 
     // Calcular costo de envío según método y subtotal
@@ -336,7 +420,9 @@ if (!user) {
         case 'metro-cdmx':
           return subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250;
         case 'paqueteria':
-          return subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 350;
+          // El envío nacional siempre se cobra; el umbral de envío gratis solo
+          // aplica a las entregas metropolitanas.
+          return 350;
         default:
           return 0;
       }
@@ -382,8 +468,8 @@ if (!user) {
         metroCdmxEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
       }
       if (paqueteriaEl) {
-        paqueteriaEl.textContent = isFree ? 'Gratis' : '$350.00';
-        paqueteriaEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
+        paqueteriaEl.textContent = '$350.00';
+        paqueteriaEl.className = 'ml-4 shrink-0 text-sm font-medium';
       }
     }
 
@@ -763,7 +849,8 @@ if (!user) {
       const subtotalAfterDiscount = subtotal - discountAmount;
       const deliveryMethod = getSelectedDeliveryMethod();
       const shipping = deliveryMethod ? getShippingCost(deliveryMethod, subtotalAfterDiscount) : 0;
-      const tax = subtotalAfterDiscount * 0.16;
+      // El IVA también aplica al envío (mismo criterio que el servidor).
+      const tax = (subtotalAfterDiscount + shipping) * 0.16;
       const total = subtotalAfterDiscount + shipping + tax;
 
       // Actualizar precios de opciones de entrega
@@ -888,6 +975,7 @@ if (!user) {
       const deliveryOptions = document.getElementById('delivery-options');
       if (!deliveryOptions || deliveryOptions.hasAttribute('data-checkout-init')) return;
       deliveryOptions.setAttribute('data-checkout-init', 'true');
+      initInvoiceToggle();
       console.log('🚀 initCheckout iniciado');
 
       // Primero renderizar el resumen del pedido
@@ -1127,7 +1215,7 @@ if (!user) {
           const discountAmount = appliedDiscount?.amount || 0;
           const subtotalAfterDiscount = subtotal - discountAmount;
           const shipping = getShippingCost(deliveryMethod, subtotalAfterDiscount);
-          const tax = subtotalAfterDiscount * 0.16;
+          const tax = (subtotalAfterDiscount + shipping) * 0.16;
           const total = subtotalAfterDiscount + shipping + tax;
 
           const minAmount = cartCurrency === 'USD' ? 0.50 : 10.00;
@@ -1155,6 +1243,7 @@ if (!user) {
             },
             body: JSON.stringify({
               ...checkoutData,
+              billing: getBillingData(),
               items: cart.items,
               shippingMethod: deliveryMethod,
               discountCode: appliedDiscount ? {
@@ -1168,7 +1257,11 @@ if (!user) {
           if (!response.ok) {
             const errorData = await response.json();
             console.error('❌ Error del servidor:', errorData);
-            throw new Error(errorData.error || errorData.details?.[0] || 'Error al crear el pago');
+            // El servidor manda en `details` la causa concreta (qué producto y
+            // cuántas piezas hay); sin ella el usuario solo veía "Stock insuficiente".
+            const detail = Array.isArray(errorData.details) ? errorData.details.join(' ') : '';
+            const base = errorData.error || 'Error al crear el pago';
+            throw new Error(detail ? `${base}. ${detail}` : base);
           }
 
           const paymentData = await response.json();
@@ -1191,7 +1284,7 @@ if (!user) {
             <div class="p-4 bg-red-50 border border-red-200 rounded-md">
               <p class="text-red-800 font-medium">Error al inicializar el pago</p>
               <p class="text-red-600 text-sm mt-1">${errorMessage}</p>
-              <p class="text-red-600 text-xs mt-2">Por favor verifica la consola del navegador (F12) para más detalles.</p>
+              <p class="text-red-600 text-xs mt-2">Si el problema continúa, contáctanos y te ayudamos a completar tu pedido.</p>
             </div>
           `;
         } finally {

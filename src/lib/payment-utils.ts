@@ -5,6 +5,18 @@ import { getExchangeRate } from './currency-service';
 import { createCheckoutDraft, attachPaymentIntentToDraft } from './checkout-drafts';
 import type { DraftItem } from './checkout-drafts';
 
+// Datos fiscales para la factura. TODOS son opcionales: el cliente puede
+// comprar sin facturar, y si pide factura el admin recibe lo que haya
+// capturado (nada aquí bloquea el pago).
+export interface BillingData {
+  businessName?: string;   // Razón social
+  rfc?: string;
+  taxRegime?: string;      // Régimen fiscal
+  cfdiUse?: string;        // Uso de CFDI
+  postalCode?: string;     // CP del domicilio fiscal
+  email?: string;          // Correo al que enviar la factura
+}
+
 // Interface para datos del checkout
 export interface CheckoutData {
   email: string;
@@ -18,6 +30,7 @@ export interface CheckoutData {
   phone?: string;
   company?: string;
   apartment?: string;
+  billing?: BillingData | null;
 }
 
 // Interface para datos de descuento
@@ -52,7 +65,9 @@ export const calculateShipping = (method: DeliveryMethod, subtotalMXN: number = 
     case 'metro-cdmx':
       return { method, cost: subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250, days: '1-3 días hábiles' };
     case 'paqueteria':
-      return { method, cost: subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 350, days: '4-10 días hábiles' };
+      // El envío nacional por paquetería NUNCA es gratis: el umbral de $5,000
+      // solo aplica a las entregas en zona metropolitana.
+      return { method, cost: 350, days: '4-10 días hábiles' };
     case 'express':
       return { method, cost: 16.00, days: '2-5 días hábiles' };
     default:
@@ -100,7 +115,8 @@ export const calculateOrderTotal = async (
   const discount = discountAmount;
   const subtotalAfterDiscount = Math.max(0, subtotal - discount);
   const shipping = calculateShipping(shippingMethod, subtotalAfterDiscount).cost;
-  const tax = calculateTax(subtotalAfterDiscount);
+  // El flete es un servicio gravado: el IVA se calcula sobre mercancía + envío.
+  const tax = calculateTax(subtotalAfterDiscount + shipping);
   const total = subtotalAfterDiscount + shipping + tax;
 
   return {

@@ -20,6 +20,28 @@ if (!order) {
 // Obtener los items de la orden
 const orderItems = await getOrderItems(order.id);
 
+// Datos fiscales: se guardan como JSON y solo existen si el cliente pidió
+// factura. MySQL puede devolverlos ya parseados o como texto.
+let billing: Record<string, string> | null = null;
+if (order.billing_data) {
+  try {
+    billing = typeof order.billing_data === 'string'
+      ? JSON.parse(order.billing_data)
+      : order.billing_data as any;
+  } catch (error) {
+    console.error('⚠️ billing_data ilegible en la orden', order.order_number, error);
+  }
+}
+
+const billingFields: Array<{ label: string; value?: string }> = billing ? [
+  { label: 'Razón social', value: billing.businessName },
+  { label: 'RFC', value: billing.rfc },
+  { label: 'Régimen fiscal', value: billing.taxRegime },
+  { label: 'Uso de CFDI', value: billing.cfdiUse },
+  { label: 'Código postal fiscal', value: billing.postalCode },
+  { label: 'Correo para la factura', value: billing.email },
+].filter(f => f.value) : [];
+
 // Función para formatear fecha
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('es-ES', {
@@ -369,6 +391,24 @@ if (Astro.request.method === 'POST') {
                 </p>
               )}
             </div>
+          </div>
+
+          <!-- Datos de facturación (solo si el cliente los capturó) -->
+          <div class="rounded-lg border border-border bg-background p-6">
+            <h2 class="text-lg font-semibold text-foreground mb-4">Datos de Facturación</h2>
+
+            {billingFields.length > 0 ? (
+              <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                {billingFields.map((field) => (
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{field.label}</dt>
+                    <dd class="mt-1 text-sm text-foreground break-words">{field.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p class="text-sm text-muted-foreground">Este pedido no solicitó factura.</p>
+            )}
           </div>
         </div>
 
