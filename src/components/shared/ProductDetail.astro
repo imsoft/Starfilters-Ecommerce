@@ -292,6 +292,11 @@ if (categoryVariants.length > 0) {
   // Primero, crear clave única para el producto actual
   const currentProductSizeKey = product.bind_code?.trim() || 
                                 `${(product.nominal_size || '').trim()}_${(product.real_size || '').trim()}`;
+  // Fuera del bucle: más abajo se usa para registrar el producto actual cuando
+  // no coincide con ninguna variante. Estaba declarada dentro del for y esa
+  // línea lanzaba ReferenceError (500 en la ficha). No se notaba mientras el
+  // producto siempre aparecía entre las variantes de su categoría.
+  const normalizedCurrentKey = currentProductSizeKey.toLowerCase();
   let currentProductAdded = false;
   // Flujo de aire: del producto (tabla products) o de la variante que coincida
   const currentProductVariantForAirFlow = product.bind_code 
@@ -304,8 +309,6 @@ if (categoryVariants.length > 0) {
     const variantSizeKey = (variant.bind_code?.trim() || '').toLowerCase() || 
                           `${(variant.nominal_size || '').trim().toLowerCase()}_${(variant.real_size || '').trim().toLowerCase()}`;
     
-    // Normalizar también la clave del producto actual para comparación
-    const normalizedCurrentKey = currentProductSizeKey.toLowerCase();
     const normalizedVariantKey = variantSizeKey.toLowerCase();
     
     // Verificar si esta variante es el producto actual
