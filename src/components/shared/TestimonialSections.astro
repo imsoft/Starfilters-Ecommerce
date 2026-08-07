@@ -53,8 +53,12 @@ try {
                   {`"${body}"`}
                 </p>
                 {isLong && (
-                  <button class="expand-btn mt-2 text-primary text-xs font-semibold hover:underline focus:outline-none">
-                    Leer más +
+                  <button
+                    class="expand-btn mt-2 text-primary text-xs font-semibold hover:underline focus:outline-none"
+                    data-more={isEn ? 'Read more +' : 'Leer más +'}
+                    data-less={isEn ? 'Read less −' : 'Leer menos −'}
+                  >
+                    {isEn ? 'Read more +' : 'Leer más +'}
                   </button>
                 )}
               </blockquote>
@@ -92,8 +96,12 @@ try {
     width: max-content;
   }
 
-  .testimonials-track:hover {
-    animation-play-state: paused;
+  /* Solo pausar con mouse real: en pantallas táctiles el :hover se queda
+     "pegado" tras tocar la tarjeta y el carrusel ya no volvía a arrancar. */
+  @media (hover: hover) and (pointer: fine) {
+    .testimonials-track:hover {
+      animation-play-state: paused;
+    }
   }
 
   @keyframes scroll-testimonials {
@@ -103,17 +111,25 @@ try {
 </style>
 
 <script>
-  document.querySelectorAll<HTMLElement>('.expand-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const text = btn.previousElementSibling as HTMLElement;
-      const expanded = !text.classList.contains('line-clamp-4');
-      if (expanded) {
-        text.classList.add('line-clamp-4');
-        btn.textContent = 'Leer más +';
-      } else {
-        text.classList.remove('line-clamp-4');
-        btn.textContent = 'Leer menos −';
-      }
+  // Los textos vienen en data-more/data-less porque el idioma se resuelve al
+  // renderizar; antes estaban fijos en español y salían así en /en.
+  // Con ClientRouter este módulo solo se evalúa una vez por sesión: hay que
+  // volver a enlazar en cada astro:page-load (con guarda para no duplicar).
+  function initTestimonialToggles() {
+    document.querySelectorAll<HTMLElement>('.expand-btn').forEach((btn) => {
+      if (btn.hasAttribute('data-toggle-init')) return;
+      btn.setAttribute('data-toggle-init', 'true');
+      btn.addEventListener('click', () => {
+        const text = btn.previousElementSibling as HTMLElement;
+        const collapsed = text.classList.contains('line-clamp-4');
+        text.classList.toggle('line-clamp-4', !collapsed);
+        btn.textContent = collapsed
+          ? (btn.dataset.less || 'Leer menos −')
+          : (btn.dataset.more || 'Leer más +');
+      });
     });
-  });
+  }
+
+  initTestimonialToggles();
+  document.addEventListener('astro:page-load', initTestimonialToggles);
 </script>

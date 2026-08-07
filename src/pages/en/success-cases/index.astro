@@ -69,6 +69,7 @@ const getTagsArray = (tags?: string) =>
                     {c.featured_image ? (
                       <div class="relative h-48 overflow-hidden">
                         <img src={c.featured_image} alt={title} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                        <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent"></div>
                       </div>
                     ) : (
                       <div class="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
@@ -114,6 +115,7 @@ const getTagsArray = (tags?: string) =>
                     {c.featured_image ? (
                       <div class="relative h-48 overflow-hidden">
                         <img src={c.featured_image} alt={title} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                        <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent"></div>
                       </div>
                     ) : (
                       <div class="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
@@ -168,8 +170,12 @@ const getTagsArray = (tags?: string) =>
     padding-bottom: 1rem;
   }
 
-  .case-marquee-wrapper:hover {
-    animation-play-state: paused;
+  /* Solo pausar con mouse real: en pantallas táctiles el :hover se queda
+     "pegado" tras tocar la tarjeta y el carrusel ya no volvía a arrancar. */
+  @media (hover: hover) and (pointer: fine) {
+    .case-marquee-wrapper:hover {
+      animation-play-state: paused;
+    }
   }
 
   .case-track {

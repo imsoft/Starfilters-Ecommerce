@@ -10,6 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "check:i18n": "node scripts/check-i18n-parity.mjs",
     "db:create-discount-codes": "node scripts/create-discount-codes.js",
     "db:create-filter-categories": "node scripts/create-filter-categories.js",
     "db:verify-consistency": "node scripts/verify-database-consistency.js",

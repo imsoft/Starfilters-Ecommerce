@@ -4,6 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
+import { getHeroImageUrl } from "@/lib/image-utils";
 
 export const prerender = false;
 
@@ -60,7 +61,7 @@ const formatDate = (date: Date) =>
     <div>
       {caseStudy.featured_image ? (
         <div class="h-56 sm:h-96 overflow-hidden">
-          <img src={caseStudy.featured_image} alt={title} class="h-full w-full object-cover" />
+          <img src={getHeroImageUrl(caseStudy.featured_image)} alt={title} class="h-full w-full object-cover" />
         </div>
       ) : (
         <div class="h-40 bg-gradient-to-br from-primary/10 to-primary/5"></div>
@@ -114,8 +115,10 @@ const formatDate = (date: Date) =>
               <span class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-700 font-bold text-sm flex-shrink-0">1</span>
               <h2 class="text-2xl font-semibold text-foreground">The Challenge</h2>
             </div>
-            <div class="pl-11 prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-              {challenge}
+            <div class="pl-11">
+              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
+                {challenge}
+              </div>
             </div>
           </section>
         )}
@@ -126,8 +129,10 @@ const formatDate = (date: Date) =>
               <span class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-sm flex-shrink-0">2</span>
               <h2 class="text-2xl font-semibold text-foreground">The Solution</h2>
             </div>
-            <div class="pl-11 prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-              {solution}
+            <div class="pl-11">
+              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
+                {solution}
+              </div>
             </div>
           </section>
         )}
@@ -138,8 +143,10 @@ const formatDate = (date: Date) =>
               <span class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-700 font-bold text-sm flex-shrink-0">3</span>
               <h2 class="text-2xl font-semibold text-foreground">The Results</h2>
             </div>
-            <div class="pl-11 prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-              {results}
+            <div class="pl-11">
+              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
+                {results}
+              </div>
             </div>
           </section>
         )}
