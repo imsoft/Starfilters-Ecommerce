@@ -54,8 +54,6 @@ const t = {
   nominalSize: isEn ? 'Nominal Size' : 'Medida Nominal',
   realSize: isEn ? 'Actual Size' : 'Medida Real',
   price: isEn ? 'Price' : 'Precio',
-  action: isEn ? 'Action' : 'Acción',
-  viewDetails: isEn ? 'View Details' : 'Ver Detalles',
   relatedProducts: isEn ? 'Related Products' : 'Productos Relacionados',
 };
 
@@ -84,13 +82,6 @@ if (product.filter_category_id) {
     console.error('Error obteniendo variantes relacionadas:', error);
   }
 }
-
-// La tabla "Tamaños Disponibles" solo debe listar variantes que de verdad son
-// tamaños. getProductsByFilterCategory devuelve todo lo que comparte
-// filter_category_id, así que sin este filtro productos distintos de la misma
-// familia (p. ej. el manómetro análogo dentro del digital) salían como una fila
-// de guiones que al pulsar "Ver Detalles" llevaba a otro producto.
-const sizeVariants = relatedVariants.filter(v => v.nominal_size || v.real_size);
 
 // Migas de pan de la categoría: desde la ficha se podía volver a "Productos"
 // pero no al listado de la categoría en la que venías (ej. todos los filtros),
@@ -139,6 +130,18 @@ const convertPriceToMXN = (price: number, currency: string): number => {
     return price * exchangeRate;
   }
   return price;
+};
+
+// Precio de un tamaño según el idioma: inglés en USD, español en MXN
+const precioDeVariante = (v: FilterCategoryVariant): { price: number; currency: 'MXN' | 'USD' } => {
+  const moneda = (v.currency || 'MXN') as 'MXN' | 'USD';
+  if (lang === 'en') {
+    if (v.price_usd && v.price_usd > 0) return { price: v.price_usd, currency: 'USD' };
+    if (moneda === 'USD') return { price: v.price, currency: 'USD' };
+    return { price: v.price / exchangeRate, currency: 'USD' };
+  }
+  if (moneda === 'USD') return { price: convertPriceToMXN(v.price, 'USD'), currency: 'MXN' };
+  return { price: v.price, currency: 'MXN' };
 };
 
 // Obtener precio y moneda según idioma
@@ -767,7 +770,7 @@ const benefitsList = parseListField(product.benefits);
       </div>
 
       <!-- Tabla de Tamaños/Variantes -->
-      {sizeVariants.length > 0 && (
+      {categoryVariants.length > 0 && (
         <section class="mt-24">
           <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold tracking-tight text-foreground mb-8">
@@ -789,33 +792,16 @@ const benefitsList = parseListField(product.benefits);
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                       {t.price}
                     </th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                      {t.action}
-                    </th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  {sizeVariants.map((variant) => {
-                    // Obtener precio y moneda según idioma para variantes
-                    const { price: variantDisplayPrice, currency: variantDisplayCurrency } = getProductPriceAndCurrency(variant, lang);
-                    let variantFinalPrice = variantDisplayPrice;
-                    let variantFinalCurrency = variantDisplayCurrency;
-                    if (lang === 'es' && variantDisplayCurrency === 'USD') {
-                      // Convertir USD a MXN usando la tasa de cambio
-                      variantFinalPrice = convertPriceToMXN(variantDisplayPrice, 'USD');
-                      variantFinalCurrency = 'MXN';
-                    }
-                    // Buscar product_code desde categoryVariants por bind_code
-                    const matchingCategoryVariant = categoryVariants.find(cv =>
-                      cv.bind_code && variant.bind_code &&
-                      cv.bind_code.trim().toLowerCase() === variant.bind_code.trim().toLowerCase()
-                    );
-                    const variantProductCode = matchingCategoryVariant?.product_code || '-';
+                  {categoryVariants.map((variant) => {
+                    const { price: variantFinalPrice, currency: variantFinalCurrency } = precioDeVariante(variant);
 
                     return (
-                    <tr class="hover:bg-gray-50 transition-colors" data-product-uuid={variant.uuid} data-currency={variantFinalCurrency} data-price-usd={variant.price_usd || ''} data-price={variantFinalPrice}>
+                    <tr class="hover:bg-gray-50 transition-colors" data-currency={variantFinalCurrency} data-price-usd={variant.price_usd || ''} data-price={variantFinalPrice}>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {variantProductCode}
+                        {variant.product_code || '-'}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {variant.nominal_size || '-'}
@@ -831,14 +817,6 @@ const benefitsList = parseListField(product.benefits);
                             <span class="text-xs text-muted-foreground" data-price-usd={variant.price_usd}>{formatPrice(variant.price_usd, 'USD')} USD</span>
                           </>
                         )}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <a
-                          href={productHref(variant.uuid)}
-                          class="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
-                        >
-                          {t.viewDetails}
-                        </a>
                       </td>
                     </tr>
                     );
