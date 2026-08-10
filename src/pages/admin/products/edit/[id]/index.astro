@@ -82,7 +82,7 @@ if (Astro.request.method === "POST") {
       // Procesar tabla de tamaños
       const sizesJson = formData.get("product_sizes") as string;
       console.log('📦 JSON recibido del formulario (raw):', sizesJson);
-      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; product_code?: string}> = [];
+      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code?: string | null; product_code?: string; air_flow?: string}> = [];
       if (sizesJson) {
         try {
           const parsed = JSON.parse(sizesJson);
@@ -179,12 +179,17 @@ if (Astro.request.method === "POST") {
           // antes dos productos de la misma categoría se pisaban entre sí)
           const existingVariants = await getProductVariants(productId, filterCategoryId);
           
-          // Crear un mapa de variantes existentes por bind_code
+          // Clave de cada tamaño: su código BIND si lo tiene y, si no, sus
+          // medidas. El código dejó de ser obligatorio: antes una fila sin
+          // código se descartaba en silencio y solo quedaba la primera.
+          const claveDeTamano = (v: { bind_code?: string | null; nominal_size?: string | null; real_size?: string | null }) =>
+            v.bind_code?.trim()
+              ? `bind:${v.bind_code.trim().toLowerCase()}`
+              : `medidas:${(v.nominal_size || '').trim().toLowerCase()}|${(v.real_size || '').trim().toLowerCase()}`;
+
           const existingVariantsMap = new Map<string, FilterCategoryVariant>();
           existingVariants.forEach(v => {
-            if (v.bind_code) {
-              existingVariantsMap.set(v.bind_code, v);
-            }
+            existingVariantsMap.set(claveDeTamano(v), v);
           });
           
           // Procesar cada tamaño del formulario
@@ -193,17 +198,13 @@ if (Astro.request.method === "POST") {
           let skippedCount = 0;
           
           for (const size of sizes) {
-            // La tabla filter_category_variants exige bind_code (NOT NULL UNIQUE),
-            // así que una fila sin código no se puede guardar. Antes se descartaba
-            // en silencio y el usuario creía que sí se había guardado.
-            if (!size.bind_code || !size.bind_code.trim()) {
-              console.log('⚠️ Filtrando tamaño sin bind_code:', size);
-              skippedSizes.push(size.nominal_size || size.real_size || `fila ${skippedCount + 1}`);
+            // Una fila sin medidas ni código no aporta nada
+            if (!size.bind_code?.trim() && !size.nominal_size?.trim() && !size.real_size?.trim()) {
               skippedCount++;
               continue;
             }
-            
-            processedBindCodes.add(size.bind_code.trim());
+
+            processedBindCodes.add(claveDeTamano(size));
             
             // Calcular price_usd si es necesario
             let priceUsd: number | null = null;
@@ -217,7 +218,7 @@ if (Astro.request.method === "POST") {
             const variantData = {
               category_id: filterCategoryId,
               product_id: productId,
-              bind_code: size.bind_code.trim(),
+              bind_code: size.bind_code?.trim() || null,
               product_code: size.product_code?.trim() || null,
               air_flow: size.air_flow?.trim() || null,
               nominal_size: size.nominal_size?.trim() || '',
@@ -231,7 +232,7 @@ if (Astro.request.method === "POST") {
             
             try {
               // Si existe una variante con este bind_code, actualizarla
-              const existingVariant = existingVariantsMap.get(size.bind_code.trim());
+              const existingVariant = existingVariantsMap.get(claveDeTamano(size));
               if (existingVariant) {
                 await updateCategoryVariant(existingVariant.id, variantData);
                 console.log(`✅ Variante actualizada: ${size.bind_code}`);
@@ -261,7 +262,7 @@ if (Astro.request.method === "POST") {
           
           // Eliminar variantes que ya no están en el formulario (marcar como inactivas en lugar de eliminar)
           for (const existingVariant of existingVariants) {
-            if (existingVariant.bind_code && !processedBindCodes.has(existingVariant.bind_code)) {
+            if (!processedBindCodes.has(claveDeTamano(existingVariant))) {
               // Marcar como inactiva en lugar de eliminar
               await updateCategoryVariant(existingVariant.id, {
                 ...existingVariant,
@@ -270,7 +271,7 @@ if (Astro.request.method === "POST") {
             }
           }
           
-          console.log(`✅ ${savedCount} variantes guardadas, ${skippedCount} omitidas (sin bind_code), de ${sizes.length} totales para categoría ${filterCategoryId}`);
+          console.log(`✅ ${savedCount} variantes guardadas, ${skippedCount} vacías omitidas, de ${sizes.length} totales (producto ${productId})`);
         } catch (variantError) {
           console.error('Error sincronizando variantes de categoría:', variantError);
           // No fallar el guardado del producto si hay error en variantes

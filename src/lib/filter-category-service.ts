@@ -43,8 +43,9 @@ export interface FilterCategoryVariant {
   // categoría, así que dos productos de la misma categoría (p. ej. manómetro
   // digital y análogo) compartían la misma tabla de tamaños.
   product_id?: number | null;
-  bind_code: string;
-  product_code?: string;
+  // Opcional: hay tamaños que no existen en BIND
+  bind_code?: string | null;
+  product_code?: string | null;
   air_flow?: string | null;
   nominal_size: string;
   real_size: string;
@@ -429,6 +430,18 @@ let variantProductColumnEnsured: Promise<void> | null = null;
 export const ensureVariantProductColumn = (): Promise<void> => {
   if (!variantProductColumnEnsured) {
     variantProductColumnEnsured = (async () => {
+      // bind_code dejó de ser obligatorio: hay tamaños que no existen en BIND
+      // y antes no había forma de guardarlos (se descartaban en silencio).
+      const bindCol = await query(
+        `SELECT IS_NULLABLE AS nullable FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'filter_category_variants'
+           AND COLUMN_NAME = 'bind_code'`
+      ) as any[];
+      if (bindCol[0] && bindCol[0].nullable === 'NO') {
+        await query('ALTER TABLE filter_category_variants MODIFY bind_code VARCHAR(50) NULL');
+        console.log('✅ filter_category_variants.bind_code ahora admite vacío');
+      }
+
       const cols = await query(
         `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'filter_category_variants'
