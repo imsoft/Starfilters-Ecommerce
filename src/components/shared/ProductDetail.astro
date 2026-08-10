@@ -6,7 +6,7 @@ import { getActiveProducts, getProductsByFilterCategory } from "@/lib/product-se
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import type { Product } from "@/lib/database";
 import { getProductImages } from "@/lib/database";
-import { getProductVariants, getCategoryById } from "@/lib/filter-category-service";
+import { getProductVariants, getCategoryById, getChildCategories } from "@/lib/filter-category-service";
 import type { FilterCategoryVariant } from "@/lib/filter-category-service";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getExchangeRate } from "@/lib/currency-service";
@@ -96,12 +96,16 @@ const sizeVariants = relatedVariants.filter(v => v.nominal_size || v.real_size);
 // pero no al listado de la categoría en la que venías (ej. todos los filtros),
 // así que había que empezar de cero para ver productos parecidos.
 const categoryTrail: Array<{ name: string; href: string }> = [];
+let productCategory: Awaited<ReturnType<typeof getCategoryById>> = null;
+let parentCategory: Awaited<ReturnType<typeof getCategoryById>> = null;
 if (product.filter_category_id) {
   try {
     const cat = await getCategoryById(product.filter_category_id);
+    productCategory = cat;
     if (cat) {
       if (cat.parent_id) {
         const parent = await getCategoryById(cat.parent_id);
+        parentCategory = parent;
         if (parent?.slug) {
           categoryTrail.push({
             name: getCategoryName(parent, lang),
@@ -148,14 +152,53 @@ if (lang === 'es' && displayCurrency === 'USD') {
   finalCurrency = 'MXN';
 }
 
-// Obtener productos relacionados
-const allProducts = await getActiveProducts();
-const relatedProducts = allProducts
-  .filter(p => {
-    const pCat = getProductCategory(p, lang);
-    return p.uuid !== product.uuid && pCat === productCat;
-  })
-  .slice(0, 3);
+// Productos relacionados: primero los de la misma categoría de filtro y, si no
+// llegan a tres, los de las categorías hermanas de la misma familia.
+//
+// Antes se comparaba el TEXTO de la categoría, que funcionaba solo porque todos
+// los productos tenían "Filtros de Aire" escrito. Al sincronizar ese texto con
+// la categoría real de cada uno, cada producto quedó con un texto distinto y la
+// sección se vació.
+const relatedProducts: Product[] = [];
+const yaIncluidos = new Set<string>([product.uuid]);
+
+const agregarRelacionados = (candidatos: Product[]) => {
+  for (const p of candidatos) {
+    if (relatedProducts.length >= 3) return;
+    if (yaIncluidos.has(p.uuid) || p.status !== 'active') continue;
+    yaIncluidos.add(p.uuid);
+    relatedProducts.push(p);
+  }
+};
+
+// 1. Misma categoría (relatedVariants ya excluye el producto actual)
+agregarRelacionados(relatedVariants);
+
+// 2. Categorías hermanas de la misma familia
+if (relatedProducts.length < 3 && parentCategory) {
+  try {
+    const hermanas = await getChildCategories(parentCategory.id);
+    for (const hermana of hermanas) {
+      if (relatedProducts.length >= 3) break;
+      if (hermana.id === product.filter_category_id) continue;
+      agregarRelacionados(await getProductsByFilterCategory(hermana.id));
+    }
+    if (relatedProducts.length < 3) {
+      agregarRelacionados(await getProductsByFilterCategory(parentCategory.id));
+    }
+  } catch (error) {
+    console.error('Error obteniendo productos de categorías hermanas:', error);
+  }
+}
+
+// 3. Último recurso: productos con la misma categoría escrita (productos sin
+// categoría de filtro asignada)
+if (relatedProducts.length === 0) {
+  const allProducts = await getActiveProducts();
+  agregarRelacionados(
+    allProducts.filter((p) => getProductCategory(p, lang) === productCat)
+  );
+}
 
 // Preparar productos relacionados con imágenes
 const relatedProductsWithImages = await Promise.all(
