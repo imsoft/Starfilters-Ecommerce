@@ -1,6 +1,7 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { REGIMENES_FISCALES, USOS_CFDI, etiquetaSat } from "@/lib/sat-catalogs";
 
 // Verificar que el usuario esté autenticado
 const user = getAuthenticatedUser(Astro.cookies);
@@ -244,14 +245,24 @@ if (!user) {
                 <div>
                   <label for="billing-tax-regime" class="block text-sm/6 font-medium text-foreground">Régimen fiscal</label>
                   <div class="mt-2">
-                    <input id="billing-tax-regime" type="text" name="billing-tax-regime" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+                    <select id="billing-tax-regime" name="billing-tax-regime" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6">
+                      <option value="">Selecciona un régimen</option>
+                      {REGIMENES_FISCALES.map((opcion) => (
+                        <option value={etiquetaSat(opcion)}>{etiquetaSat(opcion)}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
                 <div>
                   <label for="billing-cfdi-use" class="block text-sm/6 font-medium text-foreground">Uso de CFDI</label>
                   <div class="mt-2">
-                    <input id="billing-cfdi-use" type="text" name="billing-cfdi-use" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+                    <select id="billing-cfdi-use" name="billing-cfdi-use" class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6">
+                      <option value="">Selecciona un uso</option>
+                      {USOS_CFDI.map((opcion) => (
+                        <option value={etiquetaSat(opcion)}>{etiquetaSat(opcion)}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
