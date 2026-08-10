@@ -33,28 +33,12 @@ try {
 
 // El inventario real vive en BIND, no en la columna local products.stock (que
 // el formulario de edición deja siempre en 0). Se consulta una sola vez y se
-// cruza por código para no hacer una llamada por producto.
-import { getAllBindProducts } from '@/lib/bind';
+// cruza por código, con tiempo límite y caché (ver getBindInventoryByCode).
+import { getBindInventoryByCode } from '@/lib/bind';
 
-const bindInventoryByCode = new Map<string, number>();
-let bindDisponible = false;
-try {
-  const codigos = allProducts.map((p: any) => p.bind_code).filter(Boolean);
-  if (codigos.length > 0) {
-    const bindResult = await getAllBindProducts();
-    if (bindResult.success && bindResult.data) {
-      bindDisponible = true;
-      for (const bp of bindResult.data as any[]) {
-        const inventario = Number(bp.inventory ?? bp.Inventory ?? 0) || 0;
-        if (bp.code) bindInventoryByCode.set(String(bp.code).trim().toUpperCase(), inventario);
-        if (bp.sku) bindInventoryByCode.set(String(bp.sku).trim().toUpperCase(), inventario);
-        if (bp.id) bindInventoryByCode.set(String(bp.id).trim().toUpperCase(), inventario);
-      }
-    }
-  }
-} catch (error) {
-  console.error('❌ No se pudo obtener inventario de BIND para el listado:', error);
-}
+const tieneCodigos = allProducts.some((p: any) => p.bind_code);
+const bindInventoryByCode = tieneCodigos ? await getBindInventoryByCode() : null;
+const bindDisponible = bindInventoryByCode !== null;
 
 // La categoría que se muestra sale de la categoría de filtro ASIGNADA al
 // producto, no del texto suelto products.category: ese texto se quedaba viejo
@@ -77,7 +61,7 @@ const categoriaDeProducto = (product: any): string =>
 // si no, el valor local (que hoy casi siempre es 0).
 const stockDeProducto = (product: any): { valor: number; origen: 'bind' | 'local' } => {
   const codigo = product.bind_code ? String(product.bind_code).trim().toUpperCase() : '';
-  if (codigo && bindInventoryByCode.has(codigo)) {
+  if (codigo && bindInventoryByCode?.has(codigo)) {
     return { valor: bindInventoryByCode.get(codigo)!, origen: 'bind' };
   }
   return { valor: Number(product.stock) || 0, origen: 'local' };

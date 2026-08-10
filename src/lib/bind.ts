@@ -577,3 +577,65 @@ export default {
   syncBindProduct,
   checkBindConnection,
 };
+
+/**
+ * Mapa código BIND → inventario, para pintar existencias en listados.
+ *
+ * Una sola página de la API (no getAllBindProducts, que recorre hasta 50 en
+ * serie y dejaba el admin cargando indefinidamente), con tiempo límite y caché
+ * en memoria: si BIND tarda o falla, quien llama muestra el dato local.
+ */
+let inventarioCache: { data: Map<string, number>; timestamp: number } | null = null;
+const INVENTARIO_TTL_MS = 5 * 60 * 1000;
+
+export const getBindInventoryByCode = async (
+  timeoutMs = 8000
+): Promise<Map<string, number> | null> => {
+  if (inventarioCache && Date.now() - inventarioCache.timestamp < INVENTARIO_TTL_MS) {
+    return inventarioCache.data;
+  }
+
+  try {
+    const limite = Date.now() + timeoutMs;
+    const mapa = new Map<string, number>();
+    const porPagina = 100; // máximo que acepta la API
+    const maxPaginas = 10; // 1000 productos: de sobra para el catálogo actual
+    let recibioAlgo = false;
+
+    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+      const restante = limite - Date.now();
+      if (restante <= 0) {
+        console.warn('⚠️ Se agotó el tiempo consultando BIND; se usa lo obtenido hasta ahora');
+        break;
+      }
+
+      const resultado = await Promise.race([
+        getBindProducts({ page: pagina, pageSize: porPagina }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), restante)),
+      ]);
+
+      if (!resultado || !resultado.success || !resultado.data) break;
+      recibioAlgo = true;
+
+      for (const bp of resultado.data as any[]) {
+        const inventario = Number(bp.inventory ?? bp.Inventory ?? 0) || 0;
+        for (const clave of [bp.code, bp.sku, bp.id]) {
+          if (clave) mapa.set(String(clave).trim().toUpperCase(), inventario);
+        }
+      }
+
+      if (resultado.data.length < porPagina) break; // última página
+    }
+
+    if (!recibioAlgo) {
+      console.warn(`⚠️ BIND no respondió a tiempo (${timeoutMs}ms); se usará el inventario local`);
+      return null;
+    }
+
+    inventarioCache = { data: mapa, timestamp: Date.now() };
+    return mapa;
+  } catch (error) {
+    console.error('❌ Error obteniendo inventario de BIND:', error);
+    return null;
+  }
+};
