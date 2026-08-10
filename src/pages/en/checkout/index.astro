@@ -212,7 +212,7 @@ if (!user) {
             </div>
 
             <!-- Billing details (optional) -->
-            <div class="mt-10 border-t border-border pt-10">
+            <div class="mt-10 border-t border-border pt-10" id="billing-section">
               <h2 class="text-lg font-medium text-foreground">Billing details</h2>
               <p class="mt-1 text-sm text-muted-foreground">Optional. Only if you need a tax invoice for this order.</p>
 
@@ -1314,7 +1314,7 @@ if (!user) {
           // still pending after choosing a delivery method.
           const isPickup = method === 'pickup-gdl' || method === 'pickup-cdmx';
           const siguiente = isPickup
-            ? document.getElementById('confirm-section')
+            ? document.getElementById('billing-section') || document.getElementById('confirm-section')
             : document.getElementById('shipping-info-section');
           siguiente?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
