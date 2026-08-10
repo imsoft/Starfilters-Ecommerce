@@ -51,7 +51,9 @@ const formatDate = (date: Date) =>
   />
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
 
-  <article class="bg-background">
+  <!-- pt-12: el navbar es absolute y mide 104px, y <main> solo aporta 64px.
+       Sin esto la foto de portada quedaba 40px por debajo de la barra. -->
+  <article class="bg-background pt-12">
     <!-- Hero -->
     <div>
       {caseStudy.featured_image ? (
