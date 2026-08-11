@@ -329,19 +329,25 @@ const subheading = selected
 
   // Agregar al carrito vía data-attributes (evita problemas de escape con
   // comillas en los nombres, p. ej. medidas en pulgadas 9.125").
-  document.querySelectorAll<HTMLElement>(".add-to-cart-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const d = btn.dataset;
-      addToCartQuick(
-        d.uuid || "",
-        Number(d.id),
-        d.name || "",
-        Number(d.price),
-        d.image || "",
-        d.category || "",
-        d.currency || "MXN"
-      );
-    });
+  //
+  // Listener delegado en document, igual que los filtros: este módulo solo se
+  // evalúa una vez por sesión, así que enlazar botón por botón dejaba sin
+  // escucha a los que llegan tras una navegación con ClientRouter (entrar a la
+  // tienda desde otra página, o cambiar de categoría) y el clic no hacía nada.
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement | null;
+    const btn = target?.closest<HTMLElement>(".add-to-cart-btn");
+    if (!btn) return;
+    const d = btn.dataset;
+    addToCartQuick(
+      d.uuid || "",
+      Number(d.id),
+      d.name || "",
+      Number(d.price),
+      d.image || "",
+      d.category || "",
+      d.currency || "MXN"
+    );
   });
 
   async function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = "MXN") {
