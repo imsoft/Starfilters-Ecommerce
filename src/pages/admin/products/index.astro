@@ -57,12 +57,40 @@ const categoriaDeProducto = (product: any): string =>
   || product.category?.replace('-', ' ')
   || 'Sin categoría';
 
-// Inventario a mostrar: BIND si el producto tiene código y BIND respondió;
-// si no, el valor local (que hoy casi siempre es 0).
+// Códigos BIND de los tamaños de cada producto: el producto guarda el código
+// de su primer tamaño, así que por sí solo no refleja el inventario de los
+// demás.
+const codigosPorProducto = new Map<number, string[]>();
+try {
+  const filas = await query(
+    `SELECT product_id, bind_code FROM filter_category_variants
+     WHERE product_id IS NOT NULL AND bind_code IS NOT NULL AND is_active = 1`
+  ) as Array<{ product_id: number; bind_code: string }>;
+  for (const fila of filas) {
+    const lista = codigosPorProducto.get(fila.product_id) || [];
+    lista.push(String(fila.bind_code).trim().toUpperCase());
+    codigosPorProducto.set(fila.product_id, lista);
+  }
+} catch (error) {
+  console.error('❌ No se pudieron cargar los códigos BIND de los tamaños:', error);
+}
+
+// Inventario a mostrar: la suma de lo que BIND reporta para el producto y sus
+// tamaños; si no hay coincidencia, el valor local (que hoy casi siempre es 0).
 const stockDeProducto = (product: any): { valor: number; origen: 'bind' | 'local' } => {
-  const codigo = product.bind_code ? String(product.bind_code).trim().toUpperCase() : '';
-  if (codigo && bindInventoryByCode?.has(codigo)) {
-    return { valor: bindInventoryByCode.get(codigo)!, origen: 'bind' };
+  if (bindInventoryByCode) {
+    const codigos = new Set<string>(codigosPorProducto.get(product.id) || []);
+    if (product.bind_code) codigos.add(String(product.bind_code).trim().toUpperCase());
+
+    let total = 0;
+    let hubo = false;
+    for (const codigo of codigos) {
+      if (bindInventoryByCode.has(codigo)) {
+        total += bindInventoryByCode.get(codigo)!;
+        hubo = true;
+      }
+    }
+    if (hubo) return { valor: total, origen: 'bind' };
   }
   return { valor: Number(product.stock) || 0, origen: 'local' };
 };

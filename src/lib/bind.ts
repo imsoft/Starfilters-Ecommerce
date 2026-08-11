@@ -581,12 +581,25 @@ export default {
 /**
  * Mapa código BIND → inventario, para pintar existencias en listados.
  *
- * Una sola página de la API (no getAllBindProducts, que recorre hasta 50 en
- * serie y dejaba el admin cargando indefinidamente), con tiempo límite y caché
- * en memoria: si BIND tarda o falla, quien llama muestra el dato local.
+ * /api/ProductsPriceAndInventory devuelve el catálogo COMPLETO en una sola
+ * llamada (la paginación de getBindProducts es un slice en memoria), así que
+ * se pide una vez con un tamaño grande: paginar de 100 en 100 hacía una
+ * descarga completa por página y con el plazo de 8s solo entraban los primeros
+ * productos, por eso el resto salía como "código sin coincidencia".
+ *
+ * Con tiempo límite y caché en memoria: si BIND tarda o falla, quien llama
+ * muestra el dato local.
  */
 let inventarioCache: { data: Map<string, number>; timestamp: number } | null = null;
 const INVENTARIO_TTL_MS = 5 * 60 * 1000;
+
+/** Los campos llegan en distintas grafías según el endpoint de BIND */
+const primerValor = (obj: any, claves: string[]): any => {
+  for (const clave of claves) {
+    if (obj[clave] !== undefined && obj[clave] !== null && obj[clave] !== '') return obj[clave];
+  }
+  return undefined;
+};
 
 export const getBindInventoryByCode = async (
   timeoutMs = 8000
@@ -596,40 +609,39 @@ export const getBindInventoryByCode = async (
   }
 
   try {
-    const limite = Date.now() + timeoutMs;
+    const resultado = await Promise.race([
+      getBindProducts({ page: 1, pageSize: 5000 }),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+    ]);
+
+    if (!resultado) {
+      console.warn(`⚠️ BIND no respondió en ${timeoutMs}ms; se usará el inventario local`);
+      return null;
+    }
+    if (!resultado.success || !resultado.data) return null;
+
     const mapa = new Map<string, number>();
-    const porPagina = 100; // máximo que acepta la API
-    const maxPaginas = 10; // 1000 productos: de sobra para el catálogo actual
-    let recibioAlgo = false;
-
-    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-      const restante = limite - Date.now();
-      if (restante <= 0) {
-        console.warn('⚠️ Se agotó el tiempo consultando BIND; se usa lo obtenido hasta ahora');
-        break;
+    for (const bp of resultado.data as any[]) {
+      const inventario = Number(
+        primerValor(bp, ['inventory', 'Inventory', 'CurrentInventory', 'currentInventory', 'Existencia', 'stock']) ?? 0
+      ) || 0;
+      const claves = [
+        primerValor(bp, ['code', 'Code', 'productCode', 'ProductCode']),
+        primerValor(bp, ['sku', 'SKU', 'Sku']),
+        primerValor(bp, ['id', 'ID', 'Id', 'productId', 'ProductID']),
+      ];
+      for (const clave of claves) {
+        if (clave) mapa.set(String(clave).trim().toUpperCase(), inventario);
       }
-
-      const resultado = await Promise.race([
-        getBindProducts({ page: pagina, pageSize: porPagina }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), restante)),
-      ]);
-
-      if (!resultado || !resultado.success || !resultado.data) break;
-      recibioAlgo = true;
-
-      for (const bp of resultado.data as any[]) {
-        const inventario = Number(bp.inventory ?? bp.Inventory ?? 0) || 0;
-        for (const clave of [bp.code, bp.sku, bp.id]) {
-          if (clave) mapa.set(String(clave).trim().toUpperCase(), inventario);
-        }
-      }
-
-      if (resultado.data.length < porPagina) break; // última página
     }
 
-    if (!recibioAlgo) {
-      console.warn(`⚠️ BIND no respondió a tiempo (${timeoutMs}ms); se usará el inventario local`);
-      return null;
+    if (mapa.size === 0 && (resultado.data as any[]).length > 0) {
+      console.warn(
+        '⚠️ BIND devolvió productos pero sin código reconocible. Campos del primero:',
+        Object.keys((resultado.data as any[])[0])
+      );
+    } else {
+      console.log(`📦 Inventario de BIND: ${mapa.size} claves de ${(resultado.data as any[]).length} productos`);
     }
 
     inventarioCache = { data: mapa, timestamp: Date.now() };
