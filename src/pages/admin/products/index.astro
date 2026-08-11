@@ -83,22 +83,24 @@ const tieneAlgunCodigo = (product: any): boolean =>
 
 // Inventario a mostrar: la suma de lo que BIND reporta para el producto y sus
 // tamaños; si no hay coincidencia, el valor local (que hoy casi siempre es 0).
-const stockDeProducto = (product: any): { valor: number; origen: 'bind' | 'local' } => {
+const stockDeProducto = (
+  product: any
+): { valor: number; origen: 'bind' | 'local'; tamanos: number } => {
   if (bindInventoryByCode) {
     const codigos = new Set<string>(codigosPorProducto.get(product.id) || []);
     if (product.bind_code) codigos.add(String(product.bind_code).trim().toUpperCase());
 
     let total = 0;
-    let hubo = false;
+    let encontrados = 0;
     for (const codigo of codigos) {
       if (bindInventoryByCode.has(codigo)) {
         total += bindInventoryByCode.get(codigo)!;
-        hubo = true;
+        encontrados++;
       }
     }
-    if (hubo) return { valor: total, origen: 'bind' };
+    if (encontrados > 0) return { valor: total, origen: 'bind', tamanos: encontrados };
   }
-  return { valor: Number(product.stock) || 0, origen: 'local' };
+  return { valor: Number(product.stock) || 0, origen: 'local', tamanos: 0 };
 };
 
 // Obtener imágenes principales para todos los productos
@@ -521,7 +523,7 @@ function formatCurrency(amount: number): string {
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       {(() => {
-                        const { valor, origen } = stockDeProducto(product);
+                        const { valor, origen, tamanos } = stockDeProducto(product);
                         return (
                           <div>
                             <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -535,7 +537,7 @@ function formatCurrency(amount: number): string {
                             </span>
                             <div class="mt-1 text-xs text-muted-foreground">
                               {origen === 'bind'
-                                ? 'BIND'
+                                ? (tamanos > 1 ? `BIND · suma de ${tamanos} tamaños` : 'BIND')
                                 : tieneAlgunCodigo(product)
                                 ? (bindDisponible ? 'código sin coincidencia en BIND' : 'BIND no disponible')
                                 : 'sin código BIND'}
