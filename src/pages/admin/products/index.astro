@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import AdminFilters from "@/components/shared/AdminFilters.astro";
 import { getAllProducts } from "@/lib/product-service";
 import { requireAdmin } from "@/lib/auth-utils";
+import { getExchangeRate } from "@/lib/currency-service";
 import type { Product } from "@/lib/database";
 
 // Verificar que el usuario es administrador
@@ -61,19 +62,48 @@ const categoriaDeProducto = (product: any): string =>
 // de su primer tamaño, así que por sí solo no refleja el inventario de los
 // demás.
 const codigosPorProducto = new Map<number, string[]>();
+// Precios de los tamaños (en MXN) para mostrar un rango en vez del precio
+// suelto del primero: un producto con varios tamaños no tiene "un" precio.
+const preciosPorProducto = new Map<number, number[]>();
+const tipoDeCambio = await getExchangeRate().catch(() => 17);
 try {
   const filas = await query(
-    `SELECT product_id, bind_code FROM filter_category_variants
-     WHERE product_id IS NOT NULL AND bind_code IS NOT NULL AND is_active = 1`
-  ) as Array<{ product_id: number; bind_code: string }>;
+    `SELECT product_id, bind_code, price, currency, price_usd
+     FROM filter_category_variants
+     WHERE product_id IS NOT NULL AND is_active = 1`
+  ) as Array<{ product_id: number; bind_code: string | null; price: number; currency: string | null; price_usd: number | null }>;
   for (const fila of filas) {
-    const lista = codigosPorProducto.get(fila.product_id) || [];
-    lista.push(String(fila.bind_code).trim().toUpperCase());
-    codigosPorProducto.set(fila.product_id, lista);
+    if (fila.bind_code) {
+      const lista = codigosPorProducto.get(fila.product_id) || [];
+      lista.push(String(fila.bind_code).trim().toUpperCase());
+      codigosPorProducto.set(fila.product_id, lista);
+    }
+    const enMXN = fila.currency === 'USD'
+      ? Number(fila.price) * tipoDeCambio
+      : Number(fila.price);
+    if (enMXN > 0) {
+      const precios = preciosPorProducto.get(fila.product_id) || [];
+      precios.push(enMXN);
+      preciosPorProducto.set(fila.product_id, precios);
+    }
   }
 } catch (error) {
-  console.error('❌ No se pudieron cargar los códigos BIND de los tamaños:', error);
+  console.error('❌ No se pudieron cargar los tamaños:', error);
 }
+
+// Precio a mostrar: rango si los tamaños valen distinto, y cuántos son
+const precioDeProducto = (product: any): { texto: string; tamanos: number } => {
+  const precios = preciosPorProducto.get(product.id) || [];
+  if (precios.length === 0) {
+    return { texto: formatCurrency(product.price || 0), tamanos: 0 };
+  }
+  const min = Math.min(...precios);
+  const max = Math.max(...precios);
+  return {
+    texto: min === max ? formatCurrency(min) : `${formatCurrency(min)} – ${formatCurrency(max)}`,
+    tamanos: precios.length,
+  };
+};
 
 // ¿El producto o alguno de sus tamaños tiene código BIND? El aviso del listado
 // miraba solo el del producto y decía "sin código BIND" aunque los tamaños sí
@@ -519,7 +549,19 @@ function formatCurrency(amount: number): string {
                       </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-foreground">
-                      {formatCurrency(product.price || 0)}
+                      {(() => {
+                        const { texto, tamanos } = precioDeProducto(product);
+                        return (
+                          <div>
+                            <div>{texto}</div>
+                            {tamanos > 1 && (
+                              <div class="mt-1 text-xs font-normal text-muted-foreground">
+                                {tamanos} tamaños
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       {(() => {
