@@ -282,7 +282,10 @@ const getProductStatus = (stock: number) => {
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
-                          <a href={`/admin/products/edit/${product.uuid}`}>
+                          {/* La ruta de edición espera el id numérico, no el
+                              uuid: con el uuid parseInt daba 0 y rebotaba al
+                              listado en vez de abrir el producto. */}
+                          <a href={`/admin/products/edit/${product.id}`}>
                             <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
                               Editar
                             </Button>
