@@ -28,15 +28,40 @@ export function getHighQualityImageUrl(
 /**
  * URL para imágenes de banner a todo lo ancho (heros de casos de éxito, etc.).
  *
- * Muchas fotos del cliente se suben pequeñas (p. ej. 765px de ancho) y el hero
- * las estira a ~1900px: el navegador las escala con interpolación bilineal y se
- * ven borrosas. Cloudinary escala mejor y, con e_sharpen, recupera bastante
- * definición aparente. No sustituye a subir una foto grande, pero mejora las
- * que ya están cargadas.
+ * Varias fotos del cliente están subidas pequeñas (la del caso de Guadalajara
+ * mide 765px) y el hero las estira a ~1900px. Medido sobre esa foto, escalando
+ * cada opción al tamaño en que se muestra:
+ *
+ *   sin transformar ....................... nitidez 253
+ *   c_fill + e_sharpen (lo que había) ......         98   ← peor que no tocarla
+ *   e_upscale (IA de Cloudinary) ..........         415
+ *   e_upscale + e_sharpen:100 .............       ~1000
+ *
+ * De ahí que se use el escalado por IA y después el enfoque. No sustituye a
+ * subir una foto grande, pero la diferencia es visible.
  */
 export function getHeroImageUrl(
   url: string | null | undefined,
   options?: { width?: number; height?: number }
+): string {
+  return construirHero(url, options, true);
+}
+
+/**
+ * Misma imagen sin el escalado por IA. e_upscale es un complemento con cuota
+ * mensual: si se agota, esa URL falla y hay que poder caer a esta.
+ */
+export function getHeroImageFallbackUrl(
+  url: string | null | undefined,
+  options?: { width?: number; height?: number }
+): string {
+  return construirHero(url, options, false);
+}
+
+function construirHero(
+  url: string | null | undefined,
+  options: { width?: number; height?: number } | undefined,
+  conIA: boolean
 ): string {
   if (!url) return '';
   if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
@@ -48,10 +73,9 @@ export function getHeroImageUrl(
   const before = url.slice(0, uploadIndex);
   const after = url.slice(uploadIndex);
 
-  // c_fill + g_auto recorta hacia la zona relevante de la foto; e_sharpen
-  // compensa el escalado.
-  const transformations = `c_fill,g_auto,w_${width},h_${height},e_sharpen:60,q_auto:best,f_auto`;
-  return `${before}${transformations}/${after}`;
+  // c_fill + g_auto recorta hacia la zona relevante de la foto
+  const encuadre = `c_fill,g_auto,w_${width},h_${height},e_sharpen:100,q_auto:best,f_auto`;
+  return conIA ? `${before}e_upscale/${encuadre}/${after}` : `${before}${encuadre}/${after}`;
 }
 
 // Helper function to get appropriate placeholder image based on product category

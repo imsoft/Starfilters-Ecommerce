@@ -4,7 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
-import { getHeroImageUrl } from "@/lib/image-utils";
+import { getHeroImageUrl, getHeroImageFallbackUrl } from "@/lib/image-utils";
 
 export const prerender = false;
 
@@ -63,7 +63,9 @@ const formatDate = (date: Date) =>
     <div>
       {caseStudy.featured_image ? (
         <div class="h-56 sm:h-96 overflow-hidden">
-          <img src={getHeroImageUrl(caseStudy.featured_image)} alt={title} class="h-full w-full object-cover" />
+          <!-- Si el escalado por IA no está disponible (cuota agotada), se
+               cae a la versión sin IA en vez de dejar la foto rota -->
+          <img src={getHeroImageUrl(caseStudy.featured_image)} data-fallback={getHeroImageFallbackUrl(caseStudy.featured_image)} onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.src=this.dataset.fallback}" alt={title} class="h-full w-full object-cover" />
         </div>
       ) : (
         <div class="h-40 bg-gradient-to-br from-primary/10 to-primary/5"></div>
