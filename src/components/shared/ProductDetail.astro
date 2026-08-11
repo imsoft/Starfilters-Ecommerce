@@ -49,11 +49,6 @@ const t = {
   quantity: isEn ? 'Quantity:' : 'Cantidad:',
   addToCart: isEn ? 'Add to Cart' : 'Agregar al Carrito',
   requestQuote: isEn ? 'Request a formal quote' : 'Solicitar cotización formal',
-  availableSizes: isEn ? 'Available Sizes' : 'Tamaños Disponibles',
-  productCode: isEn ? 'Product Code' : 'Código de Producto',
-  nominalSize: isEn ? 'Nominal Size' : 'Medida Nominal',
-  realSize: isEn ? 'Actual Size' : 'Medida Real',
-  price: isEn ? 'Price' : 'Precio',
   relatedProducts: isEn ? 'Related Products' : 'Productos Relacionados',
 };
 
@@ -130,18 +125,6 @@ const convertPriceToMXN = (price: number, currency: string): number => {
     return price * exchangeRate;
   }
   return price;
-};
-
-// Precio de un tamaño según el idioma: inglés en USD, español en MXN
-const precioDeVariante = (v: FilterCategoryVariant): { price: number; currency: 'MXN' | 'USD' } => {
-  const moneda = (v.currency || 'MXN') as 'MXN' | 'USD';
-  if (lang === 'en') {
-    if (v.price_usd && v.price_usd > 0) return { price: v.price_usd, currency: 'USD' };
-    if (moneda === 'USD') return { price: v.price, currency: 'USD' };
-    return { price: v.price / exchangeRate, currency: 'USD' };
-  }
-  if (moneda === 'USD') return { price: convertPriceToMXN(v.price, 'USD'), currency: 'MXN' };
-  return { price: v.price, currency: 'MXN' };
 };
 
 // Obtener precio y moneda según idioma
@@ -322,7 +305,7 @@ interface SizeOption {
   image: string;
   id: number;
   variantId?: number;
-  bindCode?: string;
+  bindCode?: string | null;
   airFlow?: string | null;
   isCurrentProduct: boolean;
 }
@@ -769,65 +752,6 @@ const benefitsList = parseListField(product.benefits);
         </div>
       </div>
 
-      <!-- Tabla de Tamaños/Variantes -->
-      {categoryVariants.length > 0 && (
-        <section class="mt-24">
-          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold tracking-tight text-foreground mb-8">
-              {t.availableSizes}
-            </h2>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                      {t.productCode}
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                      {t.nominalSize}
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                      {t.realSize}
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                      {t.price}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  {categoryVariants.map((variant) => {
-                    const { price: variantFinalPrice, currency: variantFinalCurrency } = precioDeVariante(variant);
-
-                    return (
-                    <tr class="hover:bg-gray-50 transition-colors" data-currency={variantFinalCurrency} data-price-usd={variant.price_usd || ''} data-price={variantFinalPrice}>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {variant.product_code || '-'}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {variant.nominal_size || '-'}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {variant.real_size || '-'}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-currency={variantFinalCurrency}>
-                        <span class="variant-price font-semibold text-lg">{formatPrice(variantFinalPrice, variantFinalCurrency)}</span>
-                        {lang === 'es' && variant.currency === 'USD' && variant.price_usd && (
-                          <>
-                            <br />
-                            <span class="text-xs text-muted-foreground" data-price-usd={variant.price_usd}>{formatPrice(variant.price_usd, 'USD')} USD</span>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      )}
-
       <!-- Productos relacionados -->
       {relatedProducts.length > 0 && (
         <section aria-labelledby="related-heading" class="mt-24">
@@ -925,8 +849,6 @@ const benefitsList = parseListField(product.benefits);
   // inicial y el DOM nuevo tras cada navegación). Antes se usaba
   // DOMContentLoaded y el botón de carrito quedaba sin listener al llegar
   // navegando desde la tienda.
-  let exchangeRateTimerStarted = false;
-
   function initProductPage() {
     const sizeSelect = document.getElementById('size-select') as HTMLSelectElement;
     const quantityInput = document.getElementById('quantity') as HTMLInputElement;
@@ -1003,15 +925,6 @@ const benefitsList = parseListField(product.benefits);
     // Agregar evento al botón de agregar al carrito
     addToCartBtn.addEventListener('click', handleAddToCart);
 
-    // Actualizar precios si estamos en español y hay USD
-    const currentLang = window.location.pathname.startsWith('/en') ? 'en' : 'es';
-    if (currentLang === 'es') {
-      updatePricesWithExchangeRate();
-      if (!exchangeRateTimerStarted) {
-        exchangeRateTimerStarted = true;
-        setInterval(updatePricesWithExchangeRate, 60 * 60 * 1000);
-      }
-    }
   }
 
   initProductPage();
@@ -1150,30 +1063,6 @@ const benefitsList = parseListField(product.benefits);
     } catch (error) {
       console.error('Error verificando stock:', error);
       return true;
-    }
-  }
-
-  // Obtener tasa de cambio actual y actualizar precios USD
-  async function updatePricesWithExchangeRate() {
-    try {
-      const response = await fetch('/api/exchange-rate');
-      const data = await response.json();
-      
-      if (data.success && data.rate) {
-        const variantRows = document.querySelectorAll('[data-currency="USD"]');
-        variantRows.forEach((row) => {
-          const priceUsdElement = row.querySelector('[data-price-usd]');
-          const priceElement = row.querySelector('.variant-price');
-          
-          if (priceUsdElement && priceElement) {
-            const priceUSD = parseFloat(priceUsdElement.getAttribute('data-price-usd') || '0');
-            const priceMXN = priceUSD * data.rate;
-            priceElement.textContent = formatPrice(priceMXN, 'MXN');
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error actualizando precios con tasa de cambio:', error);
     }
   }
 
