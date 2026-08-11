@@ -75,6 +75,12 @@ try {
   console.error('❌ No se pudieron cargar los códigos BIND de los tamaños:', error);
 }
 
+// ¿El producto o alguno de sus tamaños tiene código BIND? El aviso del listado
+// miraba solo el del producto y decía "sin código BIND" aunque los tamaños sí
+// lo tuvieran.
+const tieneAlgunCodigo = (product: any): boolean =>
+  Boolean(product.bind_code) || (codigosPorProducto.get(product.id)?.length ?? 0) > 0;
+
 // Inventario a mostrar: la suma de lo que BIND reporta para el producto y sus
 // tamaños; si no hay coincidencia, el valor local (que hoy casi siempre es 0).
 const stockDeProducto = (product: any): { valor: number; origen: 'bind' | 'local' } => {
@@ -530,7 +536,7 @@ function formatCurrency(amount: number): string {
                             <div class="mt-1 text-xs text-muted-foreground">
                               {origen === 'bind'
                                 ? 'BIND'
-                                : product.bind_code
+                                : tieneAlgunCodigo(product)
                                 ? (bindDisponible ? 'código sin coincidencia en BIND' : 'BIND no disponible')
                                 : 'sin código BIND'}
                             </div>
