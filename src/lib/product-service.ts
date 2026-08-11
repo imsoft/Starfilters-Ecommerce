@@ -10,6 +10,75 @@ import type { Product } from './database';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 
 /**
+ * La tabla products fue creciendo con el catálogo (ficha técnica, precios en
+ * dos monedas, códigos de BIND...) y no todos los entornos tienen las mismas
+ * columnas. Falta UNA y el UPDATE completo revienta: el usuario ve "Error al
+ * actualizar el producto" y no se guarda nada, ni los tamaños ni el CFM.
+ *
+ * Igual que con orders.billing_data o filter_category_variants.product_id, las
+ * columnas que falten se crean al vuelo la primera vez que se guarda.
+ */
+const COLUMNAS_PRODUCTO: Array<{ nombre: string; ddl: string }> = [
+  { nombre: 'product_type', ddl: "VARCHAR(20) NOT NULL DEFAULT 'filter'" },
+  { nombre: 'filter_category_id', ddl: 'INT NULL' },
+  { nombre: 'name_en', ddl: 'VARCHAR(255) NULL' },
+  { nombre: 'description_en', ddl: 'TEXT NULL' },
+  { nombre: 'currency', ddl: "VARCHAR(3) NOT NULL DEFAULT 'MXN'" },
+  { nombre: 'price_usd', ddl: 'DECIMAL(10,2) NULL' },
+  { nombre: 'nominal_size', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'real_size', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'category_en', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'bind_id', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'bind_code', ddl: 'VARCHAR(50) NULL' },
+  { nombre: 'sku', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'product_code', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'air_flow', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'efficiency', ddl: 'TEXT NULL' },
+  { nombre: 'efficiency_en', ddl: 'TEXT NULL' },
+  { nombre: 'efficiency_class', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'characteristics', ddl: 'TEXT NULL' },
+  { nombre: 'characteristics_en', ddl: 'TEXT NULL' },
+  { nombre: 'frame_material', ddl: 'VARCHAR(255) NULL' },
+  { nombre: 'max_temperature', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'typical_installation', ddl: 'TEXT NULL' },
+  { nombre: 'typical_installation_en', ddl: 'TEXT NULL' },
+  { nombre: 'initial_pressure_drop', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'recommended_final_pressure_drop', ddl: 'VARCHAR(100) NULL' },
+  { nombre: 'applications', ddl: 'TEXT NULL' },
+  { nombre: 'applications_en', ddl: 'TEXT NULL' },
+  { nombre: 'benefits', ddl: 'TEXT NULL' },
+  { nombre: 'benefits_en', ddl: 'TEXT NULL' },
+];
+
+let columnasProductoAsguradas: Promise<void> | null = null;
+
+export const ensureProductColumns = (): Promise<void> => {
+  if (!columnasProductoAsguradas) {
+    columnasProductoAsguradas = (async () => {
+      const filas = await query(
+        `SELECT COLUMN_NAME AS nombre FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'`
+      ) as Array<{ nombre: string }>;
+      const existentes = new Set(filas.map((f) => f.nombre));
+
+      for (const columna of COLUMNAS_PRODUCTO) {
+        if (existentes.has(columna.nombre)) continue;
+        try {
+          await query(`ALTER TABLE products ADD COLUMN \`${columna.nombre}\` ${columna.ddl}`);
+          console.log(`✅ Columna products.${columna.nombre} creada`);
+        } catch (error) {
+          console.error(`❌ No se pudo crear products.${columna.nombre}:`, error);
+        }
+      }
+    })().catch((error) => {
+      columnasProductoAsguradas = null;
+      throw error;
+    });
+  }
+  return columnasProductoAsguradas;
+};
+
+/**
  * Obtener todos los productos desde la base de datos local
  */
 export const getAllProducts = async (): Promise<Product[]> => {
@@ -153,6 +222,7 @@ export const getProductById = async (id: number): Promise<Product | null> => {
 export const createProduct = async (productData: Partial<Product>): Promise<number | null> => {
   try {
     console.log('✨ Creando producto en la base de datos...');
+    await ensureProductColumns();
 
     // Construir INSERT dinámico con solo los campos que tienen valor
     const fields: string[] = [];
@@ -302,6 +372,7 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
 export const updateProduct = async (id: number, productData: Partial<Product>): Promise<boolean> => {
   try {
     console.log('📝 Actualizando producto ID:', id);
+    await ensureProductColumns();
 
     await query(
       `UPDATE products SET
