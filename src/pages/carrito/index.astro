@@ -325,7 +325,7 @@ const formatPrice = (price: number): string => {
         // Sin cifras: el cliente no quiere publicar cuántas piezas hay.
         showWarningNotification(
           data.outOfStock
-            ? "Este producto está agotado por el momento. Si lo necesitas, contáctanos."
+            ? "Este producto está agotado, contáctanos para conocer los tiempos de entrega reales."
             : "No tenemos inventario suficiente para esa cantidad. Contáctanos y con gusto te ayudamos."
         );
         return;

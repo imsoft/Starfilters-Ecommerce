@@ -361,7 +361,9 @@ const subheading = selected
         // Sin cifras: el cliente no quiere publicar cuántas piezas hay.
         const isEn = window.location.pathname.startsWith("/en");
         if (data.outOfStock) {
-          showWarningNotification(isEn ? "This product is currently out of stock." : "Este producto está agotado por el momento.");
+          showWarningNotification(isEn
+            ? "This product is out of stock, please contact us for actual delivery times."
+            : "Este producto está agotado, contáctanos para conocer los tiempos de entrega reales.");
         } else {
           showWarningNotification(isEn
             ? "We don't have enough stock for that quantity. Contact us and we'll gladly help."

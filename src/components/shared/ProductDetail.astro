@@ -807,8 +807,8 @@ const benefitsList = parseListField(product.benefits);
   const msg = {
     minQty: isEnPage ? 'Quantity must be at least 1' : 'La cantidad debe ser al menos 1',
     soldOut: isEnPage
-      ? 'This product is out of stock right now. If you need it, please get in touch with us.'
-      : 'Este producto está agotado por el momento. Si necesitas este producto, no dudes en contactarnos.',
+      ? 'This product is out of stock, please contact us for actual delivery times.'
+      : 'Este producto está agotado, contáctanos para conocer los tiempos de entrega reales.',
     limitedStock: isEnPage
       ? "We don't have enough stock for that quantity. Contact us and we'll gladly help."
       : 'No tenemos inventario suficiente para esa cantidad. Cont\u00e1ctanos y con gusto te ayudamos.',
@@ -822,7 +822,7 @@ const benefitsList = parseListField(product.benefits);
     addedSingle: (name: string) => isEnPage
       ? `${name} added to cart`
       : `${name} agregado al carrito`,
-    contactLarge: isEnPage ? 'Contact us for large orders' : 'Contactar para pedidos grandes',
+    contactar: isEnPage ? 'Contact us' : 'Contáctanos',
     contactHref: isEnPage ? '/en/contact' : '/contacto',
   };
 
@@ -1114,7 +1114,7 @@ const benefitsList = parseListField(product.benefits);
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
           </svg>
-          ${msg.contactLarge}
+          ${msg.contactar}
         </a>
       </div>
     `;

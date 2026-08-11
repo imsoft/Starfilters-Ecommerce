@@ -322,7 +322,7 @@ const formatPrice = (price: number): string => {
         // No figures: the client does not want to publish exact quantities.
         showWarningNotification(
           data.outOfStock
-            ? "This product is currently out of stock. Please contact us if you need it."
+            ? "This product is out of stock, please contact us for actual delivery times."
             : "We don't have enough stock for that quantity. Contact us and we'll gladly help."
         );
         return;
