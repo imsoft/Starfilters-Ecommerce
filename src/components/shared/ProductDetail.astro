@@ -136,7 +136,7 @@ const convertPriceToMXN = (price: number, currency: string): number => {
 };
 
 // Obtener precio y moneda según idioma
-const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCurrency(product, lang);
+const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCurrency(product, lang, exchangeRate);
 
 // Si estamos en español y el producto está en USD, convertir a MXN
 let finalPrice = displayPrice;
@@ -201,7 +201,7 @@ const relatedProductsWithImages = await Promise.all(
     const primaryImage = images.find(img => img.is_primary) || images[0];
     const pCat = getProductCategory(p, lang);
     const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(pCat);
-    const { price: pPrice, currency: pCurrency } = getProductPriceAndCurrency(p, lang);
+    const { price: pPrice, currency: pCurrency } = getProductPriceAndCurrency(p, lang, exchangeRate);
     return { 
       ...p, 
       imageUrl, 
@@ -452,7 +452,7 @@ if (categoryVariants.length > 0) {
       continue;
     }
     
-    const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang);
+    const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang, exchangeRate);
     let variantFinalPrice = variantPrice;
     let variantFinalCurrency = variantCurrency;
     if (lang === 'es' && variantCurrency === 'USD') {

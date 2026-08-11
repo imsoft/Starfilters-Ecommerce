@@ -421,6 +421,26 @@ if (!user) {
       return Object.values(billing).some(Boolean) ? billing : null;
     }
 
+    // El cobro SIEMPRE se hace en pesos (ver payment-utils: stripeCurrency =
+    // 'mxn'), así que el resumen del checkout se muestra en MXN. Antes se
+    // pintaba en USD mezclando importes: los productos en dólares, el envío y
+    // el IVA en pesos, y el botón mostraba el total en pesos con el símbolo de
+    // dólar. El cliente veía "Pay $2,088.00" creyendo que eran dólares.
+    let tasaCambio = 17;
+    const cargarTasaCambio = async () => {
+      try {
+        const res = await fetch('/api/exchange-rate');
+        const data = await res.json();
+        if (data.success && data.rate) tasaCambio = data.rate;
+      } catch {
+        // Si falla, se usa la tasa por defecto
+      }
+    };
+
+    /** Convierte a MXN, que es la moneda del cobro */
+    const aMXN = (monto: number, moneda?: string) =>
+      moneda === 'USD' ? monto * tasaCambio : monto;
+
     const FREE_SHIPPING_THRESHOLD = 5000;
 
     function getShippingCost(method: string, subtotalMXN: number): number {
@@ -605,7 +625,7 @@ if (!user) {
         
         // Get cart currency
         const cart = getCartFromStorage();
-        const cartCurrency = cart.currency || 'USD';
+        const cartCurrency = 'MXN';
         
         container.innerHTML = `
           <div class="space-y-6">
@@ -816,8 +836,8 @@ if (!user) {
         return cart;
       }
 
-      // Get cart currency (before map to use inside)
-      const cartCurrency = cart.currency || 'USD';
+      // Todo el resumen va en MXN: es la moneda en la que cobra Stripe
+      const cartCurrency = 'MXN';
 
       // Render items
       orderItemsList.innerHTML = cart.items.map(item => `
@@ -842,7 +862,7 @@ if (!user) {
               </div>
             </div>
             <div class="flex flex-1 items-end justify-between pt-2">
-              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price, item.currency || cartCurrency)}</p>
+              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aMXN(item.price, item.currency), cartCurrency)}</p>
               <div class="ml-4">
                 <span class="text-sm text-muted-foreground">Quantity: ${item.quantity}</span>
               </div>
@@ -852,8 +872,13 @@ if (!user) {
       `).join('');
 
       // Calculate totals
-      const subtotal = cart.total;
-      const discountAmount = appliedDiscount?.amount || 0;
+      // cart.total viene en la moneda del carrito (USD en el sitio en inglés):
+      // se convierte para que el resumen cuadre con lo que se va a cobrar
+      const subtotal = cart.items.reduce(
+        (suma: number, item: any) => suma + aMXN(item.price, item.currency) * item.quantity,
+        0
+      );
+      const discountAmount = aMXN(appliedDiscount?.amount || 0, cart.currency);
       const subtotalAfterDiscount = subtotal - discountAmount;
       const deliveryMethod = getSelectedDeliveryMethod();
       const shipping = deliveryMethod ? getShippingCost(deliveryMethod, subtotalAfterDiscount) : 0;
@@ -902,6 +927,7 @@ if (!user) {
           <dt class="text-base font-medium text-foreground">Total</dt>
           <dd class="text-base font-medium text-foreground">${formatPrice(total, cartCurrency)}</dd>
         </div>
+        <p class="text-xs text-muted-foreground">Your card will be charged in Mexican pesos (MXN).</p>
       `;
 
       orderSummary.innerHTML = summaryHTML;
@@ -949,8 +975,7 @@ if (!user) {
             discountCodeId: data.discountCode.id,
             amount: data.discountAmount,
           };
-          const currency = cart.currency || 'USD';
-          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(data.discountAmount, currency)}`;
+          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(aMXN(data.discountAmount, cart.currency), 'MXN')}`;
           messageDiv.className = 'mt-2 text-sm text-green-600';
           messageDiv.classList.remove('hidden');
           input.disabled = true;
@@ -982,6 +1007,8 @@ if (!user) {
       if (!deliveryOptions || deliveryOptions.hasAttribute('data-checkout-init')) return;
       deliveryOptions.setAttribute('data-checkout-init', 'true');
       initInvoiceToggle();
+      // Antes de pintar importes: el resumen va en MXN y hay que convertir
+      await cargarTasaCambio();
       console.log('🚀 initCheckout started');
 
       // First render order summary
@@ -1204,9 +1231,12 @@ if (!user) {
             return;
           }
 
-          const cartCurrency = cart.currency || 'USD';
-          const subtotal = cart.total;
-          const discountAmount = appliedDiscount?.amount || 0;
+          const cartCurrency = 'MXN';
+          const subtotal = cart.items.reduce(
+            (suma: number, item: any) => suma + aMXN(item.price, item.currency) * item.quantity,
+            0
+          );
+          const discountAmount = aMXN(appliedDiscount?.amount || 0, cart.currency);
           const subtotalAfterDiscount = subtotal - discountAmount;
           const shipping = getShippingCost(deliveryMethod, subtotalAfterDiscount);
           const tax = (subtotalAfterDiscount + shipping) * 0.16;

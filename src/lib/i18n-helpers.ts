@@ -65,7 +65,10 @@ export function getProductPriceAndCurrency(
     price_usd?: number | null; 
     currency?: 'MXN' | 'USD' | null 
   }, 
-  lang: string = 'es'
+  lang: string = 'es',
+  // Tasa del día. Antes se dividía entre un 17 fijo, así que el precio en
+  // inglés no coincidía con la conversión que usa el resto del sitio.
+  exchangeRate = 17
 ): { price: number; currency: 'MXN' | 'USD' } {
   if (lang === 'en') {
     // En inglés, preferir USD
@@ -76,9 +79,8 @@ export function getProductPriceAndCurrency(
     if (product.currency === 'USD') {
       return { price: product.price, currency: 'USD' };
     }
-    // Si no tiene precio USD, convertir MXN a USD (aproximado)
-    // Nota: Esto debería mejorarse con tasa de cambio real
-    return { price: product.price / 17, currency: 'USD' };
+    // Sin precio en dólares: convertir con la tasa del día
+    return { price: product.price / (exchangeRate || 17), currency: 'USD' };
   }
   
   // En español, usar MXN

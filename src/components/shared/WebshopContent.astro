@@ -92,7 +92,7 @@ const products = await Promise.all(
     }
 
     const { price: displayPrice, currency: displayCurrency } =
-      getProductPriceAndCurrency(product, lang);
+      getProductPriceAndCurrency(product, lang, exchangeRate);
     let finalPrice = displayPrice;
     let finalCurrency = displayCurrency;
     if (lang === "es" && displayCurrency === "USD") {
