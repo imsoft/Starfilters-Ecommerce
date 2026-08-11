@@ -17,15 +17,54 @@ const heroPoster = "/videos/hero-poster.jpg";
 
 <!-- svh en vez de vh: en iOS, 100vh mide la pantalla SIN las barras de
      Safari, así que el hero quedaba ~110px más alto que lo visible y la
-     página se podía seguir desplazando después del footer. -->
-<div class="bg-background p-3 sm:p-4 min-h-svh">
-  <!-- Contenedor redondeado que envuelve TODO: navbar + imagen + tarjeta -->
-  <div class="relative min-h-[calc(100svh-1.5rem)] sm:min-h-[calc(100svh-2rem)] flex flex-col rounded-2xl overflow-hidden">
+     página se podía seguir desplazando después del footer.
 
-    <!-- Fondo: video local en todos los dispositivos. El poster va también como
-         background del contenedor porque iOS no siempre lo pinta. -->
+     En móvil el texto va APILADO sobre el video, no encima: la tarjeta
+     flotante tapaba casi todo el video en una pantalla angosta. En escritorio
+     se conserva el video a sangre con la tarjeta flotando sobre él. -->
+<div class="bg-background p-3 sm:p-4 lg:min-h-svh">
+  <!-- Contenedor redondeado que envuelve TODO: navbar + video + tarjeta -->
+  <div class="relative flex flex-col rounded-2xl overflow-hidden lg:min-h-[calc(100svh-2rem)]">
+
+    <!-- Navbar: encima de todo -->
+    <div class="relative z-20">
+      <Navbar />
+    </div>
+
+    <!-- Texto. En móvil es un bloque sólido debajo del navbar; en escritorio
+         vuelve a ser la tarjeta translúcida flotante abajo a la izquierda. -->
+    <!-- pt-28 en móvil: el navbar es absolute (no ocupa lugar) y mide 104px,
+         sin ese espacio el logo tapaba el título -->
+    <div class="relative z-10 order-1 px-4 pt-28 pb-4 sm:px-6 lg:order-none lg:flex lg:flex-1 lg:items-end lg:px-16 lg:pb-16 lg:pt-0">
+      <div class="hero-card w-full rounded-2xl bg-white p-6 shadow-sm sm:p-8 lg:max-w-lg lg:bg-white/40 lg:p-10 lg:shadow-xl lg:backdrop-blur-md">
+        <h1 class="hero-title text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl leading-[1.08]">
+          {t('hero.title')}
+        </h1>
+        <p class="hero-description mt-3 text-sm text-gray-600 leading-relaxed sm:mt-4 sm:text-lg">
+          {t('hero.description')}
+        </p>
+        <div class="hero-cta mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:mt-8">
+          <a
+            href={lang === 'en' ? '/en/filters' : '/filtros'}
+            class="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            {t('hero.cta')}
+          </a>
+          <a
+            href={lang === 'en' ? '/en/contact' : '/contacto'}
+            class="inline-flex items-center justify-center gap-2 rounded-full border-2 border-border px-6 py-3 text-sm font-semibold text-gray-900 hover:border-primary hover:text-primary transition-colors bg-white lg:border-white/80 lg:bg-white/30 lg:backdrop-blur-sm"
+          >
+            {t('hero.ctaSecondary')}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video: en móvil ocupa su propia franja debajo del texto; en escritorio
+         pasa a ser el fondo de todo el hero. El poster va también como
+         background porque iOS no siempre lo pinta. -->
     <div
-      class="absolute inset-0 z-0 bg-cover bg-center"
+      class="relative order-2 h-[58vw] max-h-[380px] w-full overflow-hidden rounded-2xl bg-cover bg-center lg:absolute lg:inset-0 lg:z-0 lg:order-none lg:h-full lg:max-h-none lg:rounded-none"
       style={`background-image: url('${heroPoster}')`}
     >
       <video
@@ -41,38 +80,7 @@ const heroPoster = "/videos/hero-poster.jpg";
       >
         <source src={heroVideoSrc} type="video/mp4" />
       </video>
-      <div class="absolute inset-0 bg-black/20"></div>
-    </div>
-
-    <!-- Navbar encima de la imagen -->
-    <div class="relative z-20">
-      <Navbar />
-    </div>
-
-    <!-- Tarjeta blanca flotante - bottom left -->
-    <div class="relative z-10 flex flex-1 items-end pb-16 px-6 sm:px-12 lg:px-16">
-      <div class="hero-card bg-white/40 backdrop-blur-md rounded-2xl p-8 sm:p-10 max-w-lg w-full shadow-xl">
-        <h1 class="hero-title text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl leading-[1.08]">
-          {t('hero.title')}
-        </h1>
-        <p class="hero-description mt-4 text-base text-gray-600 leading-relaxed sm:text-lg hidden md:block">
-          {t('hero.description')}
-        </p>
-        <div class="hero-cta mt-8 flex flex-wrap gap-3">
-          <a
-            href={lang === 'en' ? '/en/filters' : '/filtros'}
-            class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
-          >
-            {t('hero.cta')}
-          </a>
-          <a
-            href={lang === 'en' ? '/en/contact' : '/contacto'}
-            class="inline-flex items-center gap-2 rounded-full border-2 border-white/80 px-6 py-3 text-sm font-semibold text-gray-900 hover:border-primary hover:text-primary transition-colors bg-white/30 backdrop-blur-sm"
-          >
-            {t('hero.ctaSecondary')}
-          </a>
-        </div>
-      </div>
+      <div class="absolute inset-0 hidden bg-black/20 lg:block"></div>
     </div>
 
   </div>
