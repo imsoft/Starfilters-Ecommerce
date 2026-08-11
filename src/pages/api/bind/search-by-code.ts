@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getBindProducts, getBindProductById } from '@/lib/bind';
+import { getBindProducts, getBindProductById, getBindInventoryByCode } from '@/lib/bind';
 
 export const prerender = false;
 
@@ -69,8 +69,15 @@ export const GET: APIRoute = async ({ url }) => {
       }
     }
     
+    // Atajo: el mapa código → inventario ya está cacheado (5 min) y contempla
+    // las distintas grafías de los campos. Antes se comparaba p.code en
+    // minúscula mientras BIND devuelve "Code", así que no encontraba nada y el
+    // admin mostraba N/A en la columna Stock.
+    const mapaInventario = await getBindInventoryByCode();
+    const inventarioDelMapa = mapaInventario?.get(code.trim().toUpperCase());
+
     // Buscar en todos los productos de Bind por código o SKU
-    const result = await getBindProducts({ page: 1, pageSize: 1000 });
+    const result = await getBindProducts({ page: 1, pageSize: 5000 });
 
     if (!result.success || !result.data) {
       return new Response(
@@ -86,10 +93,10 @@ export const GET: APIRoute = async ({ url }) => {
     }
 
     // Buscar el producto por código o SKU
-    product = result.data.find(
-      (p) => p.code?.toUpperCase() === code.toUpperCase() || 
-             p.sku?.toUpperCase() === code.toUpperCase() ||
-             p.id?.toUpperCase() === code.toUpperCase()
+    const buscado = code.trim().toUpperCase();
+    const igual = (valor: unknown) => String(valor ?? '').trim().toUpperCase() === buscado;
+    product = (result.data as any[]).find(
+      (p) => igual(p.Code ?? p.code) || igual(p.SKU ?? p.sku) || igual(p.ID ?? p.id)
     );
 
     if (!product) {
@@ -112,10 +119,10 @@ export const GET: APIRoute = async ({ url }) => {
     // Intentar obtener medidas desde customFields o usar valores por defecto
     const nominalSize = customFields.nominalSize || customFields.nominal_size || customFields.medida_nominal || '';
     const realSize = customFields.realSize || customFields.real_size || customFields.medida_real || '';
-    const price = product.price || 0;
+    const price = product.Price ?? product.price ?? 0;
     
     // Obtener inventario: primero intentar desde el producto encontrado, luego desde detalles completos
-    inventory = product.inventory || product.Inventory || 0;
+    inventory = inventarioDelMapa ?? (product.Inventory ?? product.inventory ?? 0);
     
     // Si el producto tiene un ID y no tenemos inventario, obtener detalles completos
     if (product.id && (!inventory || inventory === 0)) {
@@ -135,14 +142,14 @@ export const GET: APIRoute = async ({ url }) => {
       JSON.stringify({
         success: true,
         data: {
-          code: product.code || product.sku || code,
+          code: product.Code || product.code || product.SKU || product.sku || code,
           nominalSize,
           realSize,
           price,
           inventory: inventory || 0,
           // Información adicional del producto
-          title: product.title,
-          description: product.description,
+          title: product.Title || product.title,
+          description: product.Descripcion || product.description,
           customFields: product.customFields,
         },
       }),
