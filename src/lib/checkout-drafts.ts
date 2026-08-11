@@ -15,7 +15,11 @@ export interface DraftItem {
   quantity: number;
   price: number; // precio unitario en la moneda original (resuelto en servidor)
   currency: 'MXN' | 'USD';
-  price_mxn: number; // precio unitario en MXN (lo que efectivamente se cobra)
+  price_mxn: number; // precio unitario en MXN (referencia histórica)
+  // Precio unitario en la moneda del cobro: es el que se guarda en la orden
+  // para que sus renglones cuadren con el total cobrado.
+  price_charge?: number;
+  charge_currency?: 'MXN' | 'USD';
   image_url: string | null;
   size: string | null;
   // Fila de filter_category_variants a decrementar (si el item es una variante

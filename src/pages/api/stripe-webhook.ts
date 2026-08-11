@@ -189,7 +189,8 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
   const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
   const customerName = `${checkout.firstName} ${checkout.lastName}`;
   const shippingAddress = `${checkout.address}, ${checkout.city}, ${checkout.state} ${checkout.postalCode}, ${checkout.country}`;
-  const totalMXN = paymentIntent.amount / 100; // centavos → MXN
+  // Centavos → unidades, en la moneda en la que Stripe cobró
+  const totalMXN = paymentIntent.amount / 100;
 
   const orderId = await createOrder({
     order_number: orderNumber,
@@ -203,6 +204,8 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     stripe_payment_intent_id: paymentIntent.id,
     // Datos fiscales opcionales: si el cliente no pidió factura, va null
     billing_data: checkout.billing ? JSON.stringify(checkout.billing) : null,
+    // La moneda real del cargo, tal como la reporta Stripe
+    currency: String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD',
   });
 
   console.log('✅ Orden creada con ID:', orderId, 'Número:', orderNumber);
@@ -219,7 +222,8 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
         order_id: orderId,
         product_id: isVariant ? null : item.product_id,
         quantity: item.quantity,
-        price: item.price_mxn, // MXN: consistente con total_amount
+        // En la moneda del cobro, para que cuadre con total_amount
+        price: item.price_charge ?? item.price_mxn,
         product_name: item.name,
         image_url: item.image_url || undefined
       });
@@ -265,7 +269,7 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     customerName,
     checkout.email,
     totalMXN,
-    items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price_mxn })),
+    items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price_charge ?? item.price_mxn })),
     shippingAddress
   );
 }

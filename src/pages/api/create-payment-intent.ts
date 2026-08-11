@@ -127,6 +127,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       billing: sanitizeBilling(body.billing),
     };
 
+    // Moneda del cobro: la manda el checkout según su idioma (español MXN,
+    // inglés USD). Solo se aceptan esas dos; cualquier otra cosa cae a pesos.
+    const chargeCurrency: 'MXN' | 'USD' =
+      String(body.currency || '').toUpperCase() === 'USD' ? 'USD' : 'MXN';
+
     // Solo se aceptan los métodos de entrega que ofrece la UI; el costo se
     // calcula en el servidor.
     const shippingMethodFromBody = (body.shippingMethod || 'paqueteria') as DeliveryMethod;
@@ -377,7 +382,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         shippingMethodFromBody,
         user.id,
         discountData,
-        resolvedItems
+        resolvedItems,
+        chargeCurrency
       );
 
       console.log('✅ Payment Intent creado exitosamente:', {
@@ -407,6 +413,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       client_secret: result.client_secret,
       payment_intent_id: result.payment_intent_id,
       order_total: result.order_total,
+      // El checkout la necesita para mostrar el total en la misma moneda que
+      // se va a cobrar, sin volver a calcularla por su cuenta
+      currency: result.currency,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

@@ -421,11 +421,9 @@ if (!user) {
       return Object.values(billing).some(Boolean) ? billing : null;
     }
 
-    // El cobro SIEMPRE se hace en pesos (ver payment-utils: stripeCurrency =
-    // 'mxn'), así que el resumen del checkout se muestra en MXN. Antes se
-    // pintaba en USD mezclando importes: los productos en dólares, el envío y
-    // el IVA en pesos, y el botón mostraba el total en pesos con el símbolo de
-    // dólar. El cliente veía "Pay $2,088.00" creyendo que eran dólares.
+    // El sitio en inglés cobra en dólares (el servidor recibe currency=USD).
+    // Las tarifas de envío están definidas en pesos, así que se convierten con
+    // la tasa del día: así hay una sola lista de precios de envío.
     let tasaCambio = 17;
     const cargarTasaCambio = async () => {
       try {
@@ -437,9 +435,9 @@ if (!user) {
       }
     };
 
-    /** Convierte a MXN, que es la moneda del cobro */
-    const aMXN = (monto: number, moneda?: string) =>
-      moneda === 'USD' ? monto * tasaCambio : monto;
+    /** Lleva un importe a USD, que es la moneda del cobro en este sitio */
+    const aUSD = (monto: number, moneda?: string) =>
+      moneda === 'USD' ? monto : monto / tasaCambio;
 
     const FREE_SHIPPING_THRESHOLD = 5000;
 
@@ -625,7 +623,7 @@ if (!user) {
         
         // Get cart currency
         const cart = getCartFromStorage();
-        const cartCurrency = 'MXN';
+        const cartCurrency = 'USD';
         
         container.innerHTML = `
           <div class="space-y-6">
@@ -836,8 +834,8 @@ if (!user) {
         return cart;
       }
 
-      // Todo el resumen va en MXN: es la moneda en la que cobra Stripe
-      const cartCurrency = 'MXN';
+      // Todo el resumen va en USD: es la moneda en la que cobra Stripe aquí
+      const cartCurrency = 'USD';
 
       // Render items
       orderItemsList.innerHTML = cart.items.map(item => `
@@ -862,7 +860,7 @@ if (!user) {
               </div>
             </div>
             <div class="flex flex-1 items-end justify-between pt-2">
-              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aMXN(item.price, item.currency), cartCurrency)}</p>
+              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aUSD(item.price, item.currency), cartCurrency)}</p>
               <div class="ml-4">
                 <span class="text-sm text-muted-foreground">Quantity: ${item.quantity}</span>
               </div>
@@ -872,16 +870,17 @@ if (!user) {
       `).join('');
 
       // Calculate totals
-      // cart.total viene en la moneda del carrito (USD en el sitio en inglés):
-      // se convierte para que el resumen cuadre con lo que se va a cobrar
       const subtotal = cart.items.reduce(
-        (suma: number, item: any) => suma + aMXN(item.price, item.currency) * item.quantity,
+        (suma: number, item: any) => suma + aUSD(item.price, item.currency) * item.quantity,
         0
       );
-      const discountAmount = aMXN(appliedDiscount?.amount || 0, cart.currency);
+      const discountAmount = aUSD(appliedDiscount?.amount || 0, cart.currency);
       const subtotalAfterDiscount = subtotal - discountAmount;
       const deliveryMethod = getSelectedDeliveryMethod();
-      const shipping = deliveryMethod ? getShippingCost(deliveryMethod, subtotalAfterDiscount) : 0;
+      // getShippingCost devuelve pesos (tarifas reales): se convierte a USD
+      const shipping = deliveryMethod
+        ? aUSD(getShippingCost(deliveryMethod, subtotalAfterDiscount * tasaCambio), 'MXN')
+        : 0;
       // VAT also applies to shipping (same rule as the server).
       const tax = (subtotalAfterDiscount + shipping) * 0.16;
       const total = subtotalAfterDiscount + shipping + tax;
@@ -927,7 +926,7 @@ if (!user) {
           <dt class="text-base font-medium text-foreground">Total</dt>
           <dd class="text-base font-medium text-foreground">${formatPrice(total, cartCurrency)}</dd>
         </div>
-        <p class="text-xs text-muted-foreground">Your card will be charged in Mexican pesos (MXN).</p>
+        <p class="text-xs text-muted-foreground">Your card will be charged in US dollars (USD).</p>
       `;
 
       orderSummary.innerHTML = summaryHTML;
@@ -975,7 +974,7 @@ if (!user) {
             discountCodeId: data.discountCode.id,
             amount: data.discountAmount,
           };
-          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(aMXN(data.discountAmount, cart.currency), 'MXN')}`;
+          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(aUSD(data.discountAmount, cart.currency), 'USD')}`;
           messageDiv.className = 'mt-2 text-sm text-green-600';
           messageDiv.classList.remove('hidden');
           input.disabled = true;
@@ -1233,12 +1232,12 @@ if (!user) {
 
           const cartCurrency = 'MXN';
           const subtotal = cart.items.reduce(
-            (suma: number, item: any) => suma + aMXN(item.price, item.currency) * item.quantity,
+            (suma: number, item: any) => suma + aUSD(item.price, item.currency) * item.quantity,
             0
           );
-          const discountAmount = aMXN(appliedDiscount?.amount || 0, cart.currency);
+          const discountAmount = aUSD(appliedDiscount?.amount || 0, cart.currency);
           const subtotalAfterDiscount = subtotal - discountAmount;
-          const shipping = getShippingCost(deliveryMethod, subtotalAfterDiscount);
+          const shipping = aUSD(getShippingCost(deliveryMethod, subtotalAfterDiscount * tasaCambio), 'MXN');
           const tax = (subtotalAfterDiscount + shipping) * 0.16;
           const total = subtotalAfterDiscount + shipping + tax;
 
@@ -1267,6 +1266,7 @@ if (!user) {
             },
             body: JSON.stringify({
               ...checkoutData,
+              currency: 'USD',
               billing: getBillingData(),
               items: cart.items,
               shippingMethod: deliveryMethod,
@@ -1299,7 +1299,7 @@ if (!user) {
             throw new Error('Client secret not received from server');
           }
 
-          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, 'MXN');
+          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, paymentData.currency || 'USD');
         } catch (error) {
           console.error('❌ Complete error:', error);
           isLoadingPaymentForm = false;

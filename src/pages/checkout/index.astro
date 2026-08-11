@@ -1257,6 +1257,7 @@ if (!user) {
             },
             body: JSON.stringify({
               ...checkoutData,
+              currency: 'MXN',
               billing: getBillingData(),
               items: cart.items,
               shippingMethod: deliveryMethod,
@@ -1289,7 +1290,7 @@ if (!user) {
             throw new Error('No se recibió client_secret del servidor');
           }
 
-          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, 'MXN');
+          await loadStripeForm(paymentFormContainer, paymentData.client_secret, paymentData.order_total, paymentData.currency || 'MXN');
         } catch (error) {
           console.error('❌ Error completo:', error);
           isLoadingPaymentForm = false;

@@ -65,9 +65,11 @@ export const createPaymentIntent = async (data: PaymentIntentData): Promise<Crea
       }
     }
 
-    // Sin customer no se puede ofrecer transferencia: degradar a solo tarjeta
-    // en lugar de fallar todo el pago.
-    const paymentMethodTypes = customerId ? ['card', 'customer_balance'] : ['card'];
+    // La transferencia SPEI solo existe en pesos: con un cargo en dólares
+    // Stripe rechaza el método y con él todo el Payment Intent.
+    // Sin customer tampoco se puede ofrecer: en ambos casos, solo tarjeta.
+    const admiteTransferencia = customerId && currency === 'mxn';
+    const paymentMethodTypes = admiteTransferencia ? ['card', 'customer_balance'] : ['card'];
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
@@ -75,7 +77,7 @@ export const createPaymentIntent = async (data: PaymentIntentData): Promise<Crea
       metadata: data.metadata || {},
       ...(customerId && { customer: customerId }),
       payment_method_types: paymentMethodTypes,
-      ...(customerId && {
+      ...(admiteTransferencia && {
         payment_method_options: {
           customer_balance: {
             funding_type: 'bank_transfer',

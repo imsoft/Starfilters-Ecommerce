@@ -80,11 +80,19 @@ export const calculateTax = (subtotal: number): number => {
   return subtotal * 0.16; // 16% IVA
 };
 
-// Calcular total del pedido (convierte USD a MXN automáticamente)
+/**
+ * Calcular el total del pedido en la moneda en la que se va a cobrar.
+ *
+ * Las tarifas de envío y el umbral de envío gratis están definidos en pesos
+ * (son las tarifas reales de las paqueterías), así que para un cobro en
+ * dólares se convierten con la tasa del día. Así hay una sola fuente de
+ * verdad y no dos listas de precios que mantener.
+ */
 export const calculateOrderTotal = async (
   cartItems: CartItem[],
   shippingMethod: DeliveryMethod,
-  discountAmount: number = 0
+  discountAmount: number = 0,
+  targetCurrency: 'MXN' | 'USD' = 'MXN'
 ): Promise<{
   subtotal: number;
   discount: number;
@@ -93,28 +101,35 @@ export const calculateOrderTotal = async (
   total: number;
   exchangeRate?: number;
 }> => {
-  // Obtener tasa de cambio si hay productos en USD
+  // Hace falta la tasa si hay que convertir algo: productos en otra moneda o
+  // un cobro en dólares (las tarifas de envío están en pesos).
   const hasUSDItems = cartItems.some(item => item.currency === 'USD');
-  let exchangeRate: number | undefined;
+  const exchangeRate = (hasUSDItems || targetCurrency === 'USD')
+    ? await getExchangeRate()
+    : undefined;
 
-  if (hasUSDItems) {
-    exchangeRate = await getExchangeRate();
-    console.log(`💱 Tasa de cambio obtenida: ${exchangeRate} MXN por USD`);
-  }
+  /** Lleva un importe a la moneda de cobro */
+  const convertir = (monto: number, monedaOrigen: 'MXN' | 'USD'): number => {
+    if (monedaOrigen === targetCurrency) return monto;
+    if (!exchangeRate) return monto;
+    return monedaOrigen === 'USD' ? monto * exchangeRate : monto / exchangeRate;
+  };
 
-  // Calcular subtotal convirtiendo USD a MXN si es necesario
   const subtotal = cartItems.reduce((sum, item) => {
-    let priceInMXN = item.price;
-    if (item.currency === 'USD' && exchangeRate) {
-      priceInMXN = item.price * exchangeRate;
-      console.log(`💱 Convertido: ${item.name} - $${item.price} USD = $${priceInMXN.toFixed(2)} MXN`);
-    }
-    return sum + (priceInMXN * item.quantity);
+    const moneda = item.currency === 'USD' ? 'USD' : 'MXN';
+    return sum + convertir(item.price, moneda) * item.quantity;
   }, 0);
 
   const discount = discountAmount;
   const subtotalAfterDiscount = Math.max(0, subtotal - discount);
-  const shipping = calculateShipping(shippingMethod, subtotalAfterDiscount).cost;
+
+  // El envío se decide en pesos (tarifas reales) y se convierte si hace falta
+  const subtotalEnMXN = targetCurrency === 'MXN'
+    ? subtotalAfterDiscount
+    : subtotalAfterDiscount * (exchangeRate || 1);
+  const shippingMXN = calculateShipping(shippingMethod, subtotalEnMXN).cost;
+  const shipping = convertir(shippingMXN, 'MXN');
+
   // El flete es un servicio gravado: el IVA se calcula sobre mercancía + envío.
   const tax = calculateTax(subtotalAfterDiscount + shipping);
   const total = subtotalAfterDiscount + shipping + tax;
@@ -142,8 +157,10 @@ export const createCheckoutPaymentIntent = async (
   shippingMethod: DeliveryMethod = 'pickup-gdl',
   userId?: number,
   discountData?: DiscountData,
-  cartItems?: ResolvedCartItem[] // Items con precios resueltos en el servidor
-): Promise<{ client_secret: string; payment_intent_id: string; order_total: number }> => {
+  cartItems?: ResolvedCartItem[], // Items con precios resueltos en el servidor
+  // Moneda del cobro: la decide el idioma del sitio (español MXN, inglés USD)
+  chargeCurrency: 'MXN' | 'USD' = 'MXN'
+): Promise<{ client_secret: string; payment_intent_id: string; order_total: number; currency: 'MXN' | 'USD' }> => {
   try {
     // Obtener items del carrito: primero del parámetro, luego de getCart() como fallback
     let items: ResolvedCartItem[] = [];
@@ -160,18 +177,30 @@ export const createCheckoutPaymentIntent = async (
       throw new Error('El carrito está vacío');
     }
 
-    // Calcular totales con descuento si existe (convierte USD a MXN automáticamente)
+    // Totales ya en la moneda del cobro
     const discountAmount = discountData?.amount || 0;
-    const orderTotals = await calculateOrderTotal(items, shippingMethod, discountAmount);
+    const orderTotals = await calculateOrderTotal(items, shippingMethod, discountAmount, chargeCurrency);
 
     // Guardar el carrito completo como borrador en la BD. El metadata de
     // Stripe limita cada valor a 500 caracteres, así que el carrito
     // serializado no cabe ahí (2+ items superan el límite y Stripe rechaza
     // el Payment Intent); el webhook lo recupera por draft_uuid.
+    const tasa = orderTotals.exchangeRate;
+    const redondear = (n: number) => Math.round(n * 100) / 100;
+
     const draftItems: DraftItem[] = items.map(item => {
-      const priceMXN = item.currency === 'USD' && orderTotals.exchangeRate
-        ? Math.round(item.price * orderTotals.exchangeRate * 100) / 100
+      const monedaItem = item.currency === 'USD' ? 'USD' : 'MXN';
+      const priceMXN = monedaItem === 'USD' && tasa
+        ? redondear(item.price * tasa)
         : item.price;
+      // Precio unitario en la moneda del cobro: con él los renglones de la
+      // orden cuadran con el total que se cobró
+      let priceCharge = item.price;
+      if (monedaItem !== chargeCurrency && tasa) {
+        priceCharge = monedaItem === 'USD'
+          ? redondear(item.price * tasa)
+          : redondear(item.price / tasa);
+      }
       return {
         product_id: item.product_id,
         uuid: item.uuid,
@@ -180,6 +209,8 @@ export const createCheckoutPaymentIntent = async (
         price: item.price,
         currency: item.currency || 'MXN',
         price_mxn: priceMXN,
+        price_charge: priceCharge,
+        charge_currency: chargeCurrency,
         image_url: item.image_url || null,
         size: item.size || null,
         variant_id: item.variant_id ?? null,
@@ -204,6 +235,7 @@ export const createCheckoutPaymentIntent = async (
       customer_name: `${checkoutData.firstName} ${checkoutData.lastName}`,
       shipping_method: shippingMethod,
       items_count: items.length.toString(),
+      currency: chargeCurrency,
     };
     if (userId) {
       metadata.user_id = userId.toString();
@@ -212,10 +244,9 @@ export const createCheckoutPaymentIntent = async (
       metadata.discount_code = discountData.code;
     }
 
-    // Siempre cobrar en MXN (los precios USD ya fueron convertidos)
-    const stripeCurrency = 'mxn' as const;
+    const stripeCurrency = chargeCurrency.toLowerCase() as 'mxn' | 'usd';
 
-    // Crear Payment Intent en MXN
+    // Crear Payment Intent en la moneda elegida
     const paymentIntent = await createPaymentIntent({
       amount: orderTotals.total,
       currency: stripeCurrency,
@@ -231,6 +262,7 @@ export const createCheckoutPaymentIntent = async (
     await attachPaymentIntentToDraft(draft.uuid, paymentIntent.payment_intent_id);
 
     return {
+      currency: chargeCurrency,
       client_secret: paymentIntent.client_secret,
       payment_intent_id: paymentIntent.payment_intent_id,
       order_total: orderTotals.total,

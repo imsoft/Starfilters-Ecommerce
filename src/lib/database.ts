@@ -138,6 +138,8 @@ export interface Order {
   stripe_payment_intent_id?: string;
   // Datos fiscales opcionales capturados en el checkout (JSON serializado)
   billing_data?: string | null;
+  // Moneda del cobro: sin ella un total de 2,000 es ambiguo (¿pesos o dólares?)
+  currency?: 'MXN' | 'USD';
   created_at: Date;
   updated_at: Date;
 }
@@ -541,6 +543,15 @@ export const ensureOrdersBillingColumn = (): Promise<void> => {
         await query('ALTER TABLE orders ADD COLUMN billing_data JSON NULL');
         console.log('✅ Columna orders.billing_data creada');
       }
+
+      const moneda = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'currency'`
+      ) as any[];
+      if (!moneda[0] || Number(moneda[0].n) === 0) {
+        await query("ALTER TABLE orders ADD COLUMN currency VARCHAR(3) NOT NULL DEFAULT 'MXN'");
+        console.log('✅ Columna orders.currency creada');
+      }
     })().catch((error) => {
       ordersBillingColumnEnsured = null;
       throw error;
@@ -554,8 +565,8 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
   await ensureOrdersBillingColumn();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data, currency)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -568,7 +579,8 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
     order.status,
     order.shipping_address || null,
     order.stripe_payment_intent_id || null,
-    order.billing_data || null
+    order.billing_data || null,
+    order.currency || 'MXN'
   ]) as any;
   return result.insertId;
 };
