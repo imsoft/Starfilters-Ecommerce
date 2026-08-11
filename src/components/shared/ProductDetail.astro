@@ -35,7 +35,6 @@ const t = {
   products: isEn ? 'Products' : 'Productos',
   buyAt: isEn ? 'Buy at Star Filters' : 'Comprar en Star Filters',
   image: isEn ? 'image' : 'imagen',
-  dailyRate: isEn ? 'daily rate' : 'tasa del día',
   efficiency: isEn ? 'Efficiency' : 'Eficiencia',
   efficiencyClass: isEn ? 'EN1822 Class:' : 'EN1822 Clase:',
   characteristics: isEn ? 'Characteristics' : 'Características',
@@ -557,15 +556,12 @@ const benefitsList = parseListField(product.benefits);
         <div>
           <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h2>
           <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''} data-nominal-size={product.nominal_size || ''} data-real-size={product.real_size || ''} data-category={productCat}>
+            {/* Un solo precio, en la moneda del idioma y con el código a la
+                vista: mostrar además el equivalente en la otra moneda con la
+                tasa del día confundía más de lo que ayudaba. */}
             <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
-              {formatPrice(productPriceFinal, finalCurrency)}
+              {formatPrice(productPriceFinal, finalCurrency)} <span class="text-xl text-muted-foreground">{finalCurrency}</span>
             </p>
-            {lang === 'es' && product.currency === 'USD' && product.price_usd && (
-              <p class="mt-1 text-sm text-muted-foreground">
-                {formatPrice(product.price_usd, 'USD')} USD 
-                <span id="exchange-rate-info" class="text-xs">({t.dailyRate}: {exchangeRate.toFixed(2)})</span>
-              </p>
-            )}
           </div>
 
           <!-- Descripción -->
@@ -970,7 +966,10 @@ const benefitsList = parseListField(product.benefits);
   function updateDisplayedPrice() {
     const priceElement = document.getElementById('main-product-price');
     if (priceElement) {
-      priceElement.textContent = formatPrice(currentProduct.price, currentProduct.currency);
+      // Mismo formato que en el servidor: importe + código de moneda
+      priceElement.innerHTML =
+        `${formatPrice(currentProduct.price, currentProduct.currency)} ` +
+        `<span class="text-xl text-muted-foreground">${currentProduct.currency}</span>`;
     }
   }
 
