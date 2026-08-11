@@ -13,6 +13,7 @@ try {
 } catch (error) {
   console.error('Error cargando testimonios desde DB:', error);
 }
+import MarqueePause from "@/components/shared/MarqueePause.astro";
 ---
 
 <div class="bg-primary/10 py-12 sm:py-16">
@@ -26,7 +27,7 @@ try {
   </div>
 
   <div class="overflow-hidden">
-    <div class="testimonials-track flex items-stretch">
+    <div class="testimonials-track flex items-stretch" data-marquee>
       {[...testimonials, ...testimonials].map((testimonial) => {
         const body = (isEn && testimonial.body_en) ? testimonial.body_en : testimonial.body;
         const role = (isEn && testimonial.role_en) ? testimonial.role_en : testimonial.role;
@@ -133,3 +134,5 @@ try {
   initTestimonialToggles();
   document.addEventListener('astro:page-load', initTestimonialToggles);
 </script>
+
+<MarqueePause />

@@ -17,6 +17,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
 const getTagsArray = (tags?: string) =>
   tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+import MarqueePause from "@/components/shared/MarqueePause.astro";
 ---
 
 <WebsiteLayout
@@ -56,7 +57,7 @@ const getTagsArray = (tags?: string) =>
       {cases.length > 0 && (
         <!-- Infinite auto-scroll carousel -->
         <div class="mt-16 reveal overflow-hidden w-full">
-          <div class="case-marquee-wrapper">
+          <div class="case-marquee-wrapper" data-marquee>
             <!-- Set 1 -->
             <div class="case-track">
               {cases.map((c) => {
@@ -189,3 +190,5 @@ const getTagsArray = (tags?: string) =>
     100% { transform: translateX(-50%); }
   }
 </style>
+
+<MarqueePause />

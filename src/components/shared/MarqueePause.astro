@@ -1,0 +1,61 @@
+---
+// Permite pausar con el dedo los carruseles que avanzan solos.
+//
+// Con mouse basta :hover, pero en pantallas táctiles no existe: al tocar, el
+// hover se quedaba "pegado" y el carrusel no volvía a arrancar; al quitarlo,
+// ya no había forma de detenerlo para leer (los testimonios pasaban de largo).
+//
+// Solución: tocar un carrusel lo pausa y lo deja pausado; el siguiente toque lo
+// reanuda. Mantener el dedo encima también lo detiene mientras dure el toque.
+//
+// Este componente solo aporta el script; se incluye desde cada carrusel y Astro
+// lo carga una sola vez por página aunque haya varios.
+---
+
+<script>
+  const PAUSADO = 'marquee-paused';
+
+  // Listeners delegados en document: no dependen de cuándo se cree el carrusel
+  // ni se pierden en las transiciones de página del ClientRouter.
+  document.addEventListener(
+    'touchstart',
+    (e) => {
+      const track = (e.target as HTMLElement)?.closest<HTMLElement>('[data-marquee]');
+      if (!track) return;
+      // Pausa inmediata mientras el dedo está encima
+      track.classList.add(PAUSADO);
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    'touchend',
+    (e) => {
+      const track = (e.target as HTMLElement)?.closest<HTMLElement>('[data-marquee]');
+      if (!track) return;
+
+      // Los toques sobre tarjetas que son enlaces navegan igual: se alterna el
+      // estado sin distinguir, porque dejarlo aparte podía dejar el carrusel
+      // pausado para siempre si la navegación no llegaba a ocurrir.
+      if (track.dataset.marqueeSticky === '1') {
+        track.classList.remove(PAUSADO);
+        track.dataset.marqueeSticky = '0';
+      } else {
+        // Se queda pausado para poder leer; el siguiente toque lo reanuda
+        track.dataset.marqueeSticky = '1';
+      }
+    },
+    { passive: true }
+  );
+
+  // Si el toque se cancela (p. ej. empieza un scroll), no dejarlo pausado
+  document.addEventListener(
+    'touchcancel',
+    (e) => {
+      const track = (e.target as HTMLElement)?.closest<HTMLElement>('[data-marquee]');
+      if (!track || track.dataset.marqueeSticky === '1') return;
+      track.classList.remove(PAUSADO);
+    },
+    { passive: true }
+  );
+</script>

@@ -218,6 +218,13 @@
   transform: translateY(0);
 }
 
+/* Carruseles automáticos: clase global para pausarlos desde el script táctil
+   (ver MarqueePause.astro). Las reglas :hover de cada carrusel solo aplican
+   con mouse; en táctil se pausa al tocar. */
+.marquee-paused {
+  animation-play-state: paused !important;
+}
+
 /* Animación de entrada uniforme en todo el sitio (aparición al hacer scroll) */
 .reveal {
   opacity: 0;
