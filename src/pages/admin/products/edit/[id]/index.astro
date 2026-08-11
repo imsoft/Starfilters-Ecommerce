@@ -82,7 +82,7 @@ if (Astro.request.method === "POST") {
       // Procesar tabla de tamaños
       const sizesJson = formData.get("product_sizes") as string;
       console.log('📦 JSON recibido del formulario (raw):', sizesJson);
-      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code?: string | null; product_code?: string; air_flow?: string}> = [];
+      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code?: string | null; air_flow?: string}> = [];
       if (sizesJson) {
         try {
           const parsed = JSON.parse(sizesJson);
@@ -219,7 +219,6 @@ if (Astro.request.method === "POST") {
               category_id: filterCategoryId,
               product_id: productId,
               bind_code: size.bind_code?.trim() || null,
-              product_code: size.product_code?.trim() || null,
               air_flow: size.air_flow?.trim() || null,
               nominal_size: size.nominal_size?.trim() || '',
               real_size: size.real_size?.trim() || '',
@@ -355,7 +354,7 @@ function textToArray(text: string | null | undefined): string[] {
 
 // Preparar tamaños para la tabla
 // Cargar variantes de categoría si existe filter_category_id
-let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; product_code?: string; air_flow?: string}> = [];
+let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; air_flow?: string}> = [];
 
 if (product.filter_category_id) {
   try {
@@ -372,7 +371,6 @@ if (product.filter_category_id) {
         price: v.price || 0,
         currency: (v.currency as 'MXN' | 'USD') || 'MXN',
         bind_code: v.bind_code || '',
-        product_code: v.product_code || '',
         air_flow: v.air_flow || ''
       }));
     } else {
@@ -1212,7 +1210,6 @@ console.log('📦 Tamaños preparados:', productSizes.length);
               var priceInput = row.querySelector('[data-field="price"]');
               var currencySelect = row.querySelector('[data-field="currency"]');
               var bindCodeInput = row.querySelector('[data-field="bind_code"]');
-              var productCodeInput = row.querySelector('[data-field="product_code"]');
 
               if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
                 sizes.push({
@@ -1220,8 +1217,7 @@ console.log('📦 Tamaños preparados:', productSizes.length);
                   real_size: realInput.value || '',
                   price: parseFloat(priceInput.value) || 0,
                   currency: currencySelect.value || 'MXN',
-                  bind_code: bindCodeInput.value || '',
-                  product_code: productCodeInput ? productCodeInput.value || '' : ''
+                  bind_code: bindCodeInput.value || ''
                 });
               }
             });
