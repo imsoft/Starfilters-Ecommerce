@@ -45,7 +45,6 @@ const t = {
   airFlow: isEn ? 'Air Flow' : 'Flujo de Aire',
   initialDp: isEn ? 'Initial ΔP' : 'ΔP Inicial',
   finalDp: isEn ? 'Recommended Final ΔP' : 'ΔP Final Recomendada',
-  sizeLabel: isEn ? 'Nominal size / Actual size:' : 'Tamaño nominal / Tamaño real:',
   quantity: isEn ? 'Quantity:' : 'Cantidad:',
   addToCart: isEn ? 'Add to Cart' : 'Agregar al Carrito',
   requestQuote: isEn ? 'Request a formal quote' : 'Solicitar cotización formal',
@@ -77,6 +76,16 @@ if (product.filter_category_id) {
     console.error('Error obteniendo variantes relacionadas:', error);
   }
 }
+
+// Cómo llamar al selector: en los filtros la variante es una medida, pero en
+// manómetros o equipos es un modelo ("Digital - Rango 0 - 30 pascales"), y
+// "Tamaño nominal / Tamaño real" no describía eso. Si ninguna variante trae
+// medida real, se trata como modelo.
+const hayMedidaReal = categoryVariants.some((v) => v.real_size?.trim())
+  || Boolean(product.real_size?.trim());
+const etiquetaSelector = hayMedidaReal
+  ? (isEn ? 'Nominal size / Actual size:' : 'Tamaño nominal / Tamaño real:')
+  : (isEn ? 'Model:' : 'Modelo:');
 
 // Migas de pan de la categoría: desde la ficha se podía volver a "Productos"
 // pero no al listado de la categoría en la que venías (ej. todos los filtros),
@@ -289,9 +298,12 @@ function parseListField(field: string | null | undefined): string[] {
 
 // Formato "tamaño nominal / tamaño real" para opciones del select
 function sizeOptionLabel(nominal: string | null | undefined, real: string | null | undefined): string {
-  const n = nominal?.trim() || '—';
-  const r = real?.trim() || '—';
-  return `${n} / ${r}`;
+  const n = nominal?.trim();
+  const r = real?.trim();
+  // Hay productos (manómetros, equipos) donde la variante es un modelo y solo
+  // se llena un campo: mostrar "Modelo X / —" se leía como dato faltante.
+  if (n && r) return `${n} / ${r}`;
+  return n || r || '—';
 }
 
 // Preparar opciones del select de tamaños sin duplicados
@@ -407,22 +419,11 @@ if (categoryVariants.length > 0) {
     addedSizes.add(normalizedVariantKey);
   }
 
-  // Si el producto actual no estaba en las variantes, agregarlo al principio
-  if (!currentProductAdded && (product.nominal_size || product.real_size)) {
-    sizeOptions.unshift({
-      value: product.uuid,
-      label: sizeOptionLabel(product.nominal_size, product.real_size),
-      price: productPriceFinal,
-      currency: finalCurrency,
-      stock: product.stock,
-      name: productName,
-      image: mainImage,
-      id: product.id,
-      airFlow: currentProductAirFlow,
-      isCurrentProduct: true
-    });
-    addedSizes.add(normalizedCurrentKey);
-  }
+  // Antes, si el producto no coincidía con ninguna de sus variantes se añadía
+  // su propia fila como una opción más. Eso metía datos viejos del producto
+  // (el manómetro digital ofrecía "Análogo - Rango 0 - 1 columna de agua",
+  // heredado de cuando ambos manómetros compartían tabla). Teniendo variantes
+  // propias, ellas son la lista completa.
 } else {
   // Fallback: usar producto actual y productos relacionados (currentProductAirFlow ya definido arriba)
   const currentSizeKey = product.bind_code || 
@@ -673,7 +674,7 @@ const benefitsList = parseListField(product.benefits);
               {sizeOptions.length > 0 && (
                 <div>
                   <label for="size-select" class="block text-sm font-medium text-foreground mb-2">
-                    {t.sizeLabel}
+                    {etiquetaSelector}
                   </label>
                   <select
                     id="size-select"
