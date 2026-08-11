@@ -7,8 +7,11 @@ const t = useTranslations(lang);
 
 <footer class="bg-background">
   <div class="mx-auto max-w-7xl px-6 pt-16 pb-8 sm:pt-24 lg:px-8 lg:pt-32">
-    <div class="xl:grid xl:grid-cols-3 xl:gap-8">
-      <div class="space-y-8">
+    <!-- En móvil el logo y las redes van DESPUÉS de los enlaces (order-2):
+         arriba ocupaban toda la primera pantalla del pie y había que
+         desplazarse para llegar a las secciones. En escritorio no cambia. -->
+    <div class="flex flex-col xl:grid xl:grid-cols-3 xl:gap-8">
+      <div class="order-2 mt-16 space-y-8 xl:order-none xl:mt-0">
         <img
           src="/images/home-page/Logo%20de%20Star%20Filters.png"
           alt="Star Filters"
@@ -76,7 +79,7 @@ const t = useTranslations(lang);
           </a>
         </div>
       </div>
-      <div class="mt-16 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
+      <div class="order-1 grid grid-cols-2 gap-8 xl:order-none xl:col-span-2 xl:mt-0">
         <div class="md:grid md:grid-cols-2 md:gap-8">
           <div>
             <h3 class="text-sm/6 font-semibold text-foreground">{t('footer.solutions')}</h3>
