@@ -94,7 +94,10 @@ async function sendOrderEmails(
   customerEmail: string,
   totalMXN: number,
   items: Array<{ name: string; quantity: number; price: number }>,
-  shippingAddress: string
+  shippingAddress: string,
+  // Moneda real del cargo: sin esto los correos decían MXN incluso en pedidos
+  // cobrados en dólares
+  currency: 'MXN' | 'USD' = 'MXN'
 ) {
   try {
     const orderDate = new Date().toLocaleDateString('es-MX', {
@@ -111,7 +114,8 @@ async function sendOrderEmails(
       orderDate,
       totalMXN,
       items,
-      shippingAddress
+      shippingAddress,
+      currency
     );
     emailData.to = customerEmail;
 
@@ -129,7 +133,8 @@ async function sendOrderEmails(
         customerEmail,
         totalMXN,
         items,
-        shippingAddress
+        shippingAddress,
+        currency
       );
       adminEmailData.to = adminEmail;
 
@@ -270,7 +275,8 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     checkout.email,
     totalMXN,
     items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price_charge ?? item.price_mxn })),
-    shippingAddress
+    shippingAddress,
+    String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD'
   );
 }
 
@@ -349,7 +355,8 @@ async function processOrderFromLegacyMetadata(paymentIntent: any) {
       metadata.customer_email,
       totalMXN,
       items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price })),
-      metadata.shipping_address
+      metadata.shipping_address,
+      String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD'
     );
   }
 }

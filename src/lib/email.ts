@@ -93,7 +93,9 @@ export const createOrderConfirmationEmail = (
   orderDate: string,
   total: number,
   items: Array<{ name: string; quantity: number; price: number }>,
-  shippingAddress: string
+  shippingAddress: string,
+  // Los pedidos pueden cobrarse en pesos o en dólares
+  currency: 'MXN' | 'USD' = 'MXN'
 ): EmailData => {
   // Paleta de colores de la aplicación
   const color50 = '#EFF6FF';
@@ -183,7 +185,7 @@ export const createOrderConfirmationEmail = (
           </table>
           
           <div class="total">
-            <p>Total: $${total.toFixed(2)} MXN</p>
+            <p>Total: $${total.toFixed(2)} ${currency}</p>
           </div>
           
           <div class="shipping">
@@ -218,7 +220,7 @@ export const createOrderConfirmationEmail = (
     Productos:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
     
-    Total: $${total.toFixed(2)} MXN
+    Total: $${total.toFixed(2)} ${currency}
     
     Dirección de Envío:
     ${shippingAddress}
@@ -452,7 +454,9 @@ export const createNewOrderNotificationEmail = (
   customerEmail: string,
   total: number,
   items: Array<{ name: string; quantity: number; price: number }>,
-  shippingAddress: string
+  shippingAddress: string,
+  // Los pedidos pueden cobrarse en pesos o en dólares
+  currency: 'MXN' | 'USD' = 'MXN'
 ): EmailData => {
   // Paleta de colores de la aplicación
   const color50 = '#EFF6FF';
@@ -526,7 +530,7 @@ export const createNewOrderNotificationEmail = (
             <h3>Detalles de la Orden</h3>
             <p><strong>Número de Pedido:</strong> ${orderNumber}</p>
             <p><strong>Fecha:</strong> ${orderDate}</p>
-            <p><strong>Total:</strong> $${total.toFixed(2)} MXN</p>
+            <p><strong>Total:</strong> $${total.toFixed(2)} ${currency}</p>
           </div>
           
           <div class="customer-info">
@@ -572,7 +576,7 @@ export const createNewOrderNotificationEmail = (
     
     Número de Pedido: ${orderNumber}
     Fecha: ${orderDate}
-    Total: $${total.toFixed(2)} MXN
+    Total: $${total.toFixed(2)} ${currency}
     
     Cliente:
     Nombre: ${customerName}
@@ -606,7 +610,8 @@ export const createOrderStatusUpdateEmail = (
   orderDate: string,
   items: Array<{ name: string; quantity: number; price: number }>,
   total: number,
-  trackingNumber?: string
+  trackingNumber?: string,
+  currency: 'MXN' | 'USD' = 'MXN'
 ): EmailData => {
   // Paleta de colores de la aplicación
   const color50 = '#EFF6FF';
@@ -738,7 +743,7 @@ export const createOrderStatusUpdateEmail = (
           </table>
           
           <div style="text-align: right; margin-top: 20px;">
-            <p style="font-size: 18px; font-weight: bold;">Total: $${total.toFixed(2)} MXN</p>
+            <p style="font-size: 18px; font-weight: bold;">Total: $${total.toFixed(2)} ${currency}</p>
           </div>
           
           <div style="text-align: center; margin-top: 30px;">
@@ -769,7 +774,7 @@ export const createOrderStatusUpdateEmail = (
     Productos:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
     
-    Total: $${total.toFixed(2)} MXN
+    Total: $${total.toFixed(2)} ${currency}
     
     Ver tus pedidos: ${siteUrl}/orders
     

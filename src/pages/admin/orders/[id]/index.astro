@@ -138,7 +138,9 @@ if (Astro.request.method === 'POST') {
             quantity: item.quantity,
             price: item.price
           })),
-          order.total_amount
+          order.total_amount,
+          undefined,
+          order.currency
         );
 
         emailData.to = order.customer_email;

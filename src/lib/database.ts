@@ -949,10 +949,21 @@ export const getDashboardStats = async () => {
     // Obtener ventas del mes actual
     const currentDate = new Date();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    // Separado por moneda: sumar pesos y dólares en un mismo número daría una
+    // cifra que no significa nada.
+    await ensureOrdersBillingColumn();
     const monthlySalesResult = await query(
-      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status = "completed" AND created_at >= ?',
+      `SELECT COALESCE(currency, 'MXN') AS currency, COALESCE(SUM(total_amount), 0) AS total
+       FROM orders WHERE status = "completed" AND created_at >= ?
+       GROUP BY COALESCE(currency, 'MXN')`,
       [firstDayOfMonth]
-    );
+    ) as Array<{ currency: string; total: number }>;
+
+    const ventasPorMoneda = { MXN: 0, USD: 0 };
+    for (const fila of monthlySalesResult) {
+      if (fila.currency === 'USD') ventasPorMoneda.USD = Number(fila.total) || 0;
+      else ventasPorMoneda.MXN = Number(fila.total) || 0;
+    }
 
     return {
       totalProducts: (productsResult as any)[0]?.total || 0,
@@ -960,7 +971,8 @@ export const getDashboardStats = async () => {
       pendingOrders: (pendingOrdersResult as any)[0]?.total || 0,
       totalBlogPosts: (blogResult as any)[0]?.total || 0,
       totalUsers: (usersResult as any)[0]?.total || 0,
-      monthlySales: (monthlySalesResult as any)[0]?.total || 0
+      monthlySales: ventasPorMoneda.MXN,
+      monthlySalesUSD: ventasPorMoneda.USD
     };
   } catch (error) {
     console.error('Error obteniendo estadísticas del dashboard:', error);
@@ -970,7 +982,8 @@ export const getDashboardStats = async () => {
       pendingOrders: 0,
       totalBlogPosts: 0,
       totalUsers: 0,
-      monthlySales: 0
+      monthlySales: 0,
+      monthlySalesUSD: 0
     };
   }
 };

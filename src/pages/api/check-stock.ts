@@ -33,8 +33,20 @@ export const GET: APIRoute = async ({ request }) => {
     let stock = product.stock || 0;
     let stockSource = 'database';
 
-    // Si hay un bind_code (del producto o pasado como parámetro), intentar obtener stock desde Bind ERP
-    const codeToCheck = bindCode || product.bind_code || product.bind_id;
+    // Código a consultar: el que venga en la petición, el del producto o —si el
+    // producto no tiene— el de alguno de sus tamaños. Sin este último caso, un
+    // producto cuyos códigos viven solo en las variantes caía al stock local
+    // (siempre 0) y bloqueaba la compra de algo que la tienda muestra como
+    // disponible.
+    let codeToCheck = bindCode || product.bind_code || product.bind_id;
+    if (!codeToCheck && product.filter_category_id) {
+      try {
+        const variantes = await getProductVariants(product.id, product.filter_category_id);
+        codeToCheck = variantes.find((v) => v.is_active && v.bind_code)?.bind_code || null;
+      } catch (error) {
+        console.warn('⚠️ No se pudieron leer los tamaños para resolver el código BIND:', error);
+      }
+    }
     
     if (codeToCheck && codeToCheck.trim()) {
       try {
