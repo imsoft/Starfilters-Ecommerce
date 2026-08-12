@@ -36,11 +36,14 @@ const formatDate = (date: Date) => {
   }).format(new Date(date));
 };
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('es-MX', {
+// Los pedidos pueden estar en pesos o en dólares: se formatea con la moneda
+// de cada uno y se muestra el código.
+const formatCurrency = (amount: number, currency: string = 'MXN') => {
+  const moneda = currency === 'USD' ? 'USD' : 'MXN';
+  return new Intl.NumberFormat(moneda === 'USD' ? 'en-US' : 'es-MX', {
     style: 'currency',
-    currency: 'MXN'
-  }).format(amount);
+    currency: moneda,
+  }).format(amount) + ` ${moneda}`;
 };
 
 const getStatusColor = (status: string) => {
@@ -288,7 +291,7 @@ const getStatusText = (status: string) => {
                   <div class="text-right">
                     <p class="text-sm text-muted-foreground">Total</p>
                     <p class="text-xl font-bold text-foreground">
-                      {formatCurrency(order.total_amount)}
+                      {formatCurrency(order.total_amount, order.currency)}
                     </p>
                   </div>
                 </div>

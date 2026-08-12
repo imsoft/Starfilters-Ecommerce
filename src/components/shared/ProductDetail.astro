@@ -578,7 +578,7 @@ const benefitsList = parseListField(product.benefits);
                 vista: mostrar además el equivalente en la otra moneda con la
                 tasa del día confundía más de lo que ayudaba. */}
             <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
-              {formatPrice(productPriceFinal, finalCurrency)} <span class="text-xl text-muted-foreground">{finalCurrency}</span>
+              {formatPrice(productPriceFinal, finalCurrency)}
             </p>
           </div>
 
@@ -984,10 +984,7 @@ const benefitsList = parseListField(product.benefits);
   function updateDisplayedPrice() {
     const priceElement = document.getElementById('main-product-price');
     if (priceElement) {
-      // Mismo formato que en el servidor: importe + código de moneda
-      priceElement.innerHTML =
-        `${formatPrice(currentProduct.price, currentProduct.currency)} ` +
-        `<span class="text-xl text-muted-foreground">${currentProduct.currency}</span>`;
+      priceElement.textContent = formatPrice(currentProduct.price, currentProduct.currency);
     }
   }
 
@@ -1089,13 +1086,14 @@ const benefitsList = parseListField(product.benefits);
   const defaultCurrency = currentLang === 'en' ? 'USD' : 'MXN';
   
   function formatPrice(price: number, currency: string = defaultCurrency): string {
+    // Mismo formato que el servidor: importe + código de moneda
     return new Intl.NumberFormat(
       currency === 'USD' ? 'en-US' : 'es-MX',
       {
         style: 'currency',
         currency: currency
       }
-    ).format(price);
+    ).format(price) + ' ' + currency;
   }
 
   function showNotification(message: string): void {

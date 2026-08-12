@@ -101,16 +101,17 @@ export function getProductPriceAndCurrency(
 /**
  * Formatea un precio según la moneda
  */
+/**
+ * Formatea un precio con el código de moneda visible: "$1,001.00 MXN".
+ *
+ * El sitio maneja pesos y dólares, y el símbolo $ es el mismo en los dos: sin
+ * el código no se sabe cuál se está viendo.
+ */
 export function formatPriceByCurrency(price: number, currency: 'MXN' | 'USD'): string {
-  if (currency === 'USD') {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price);
-  }
-  
-  return new Intl.NumberFormat('es-MX', {
+  const moneda = currency === 'USD' ? 'USD' : 'MXN';
+  const importe = new Intl.NumberFormat(moneda === 'USD' ? 'en-US' : 'es-MX', {
     style: 'currency',
-    currency: 'MXN'
+    currency: moneda,
   }).format(price);
+  return `${importe} ${moneda}`;
 }

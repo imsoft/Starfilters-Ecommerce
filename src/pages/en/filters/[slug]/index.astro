@@ -445,10 +445,12 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
   // Format price
   function formatPrice(price: number): string {
+    // This page shows MXN prices (they come from the catalog in pesos); the
+    // code is shown so it isn't mistaken for dollars on the English site.
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN'
-    }).format(price);
+    }).format(price) + ' MXN';
   }
 
   // Update prices on page load

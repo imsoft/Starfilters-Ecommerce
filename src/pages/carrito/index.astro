@@ -288,11 +288,13 @@ const formatPrice = (price: number): string => {
     return items.reduce((count, item) => count + item.quantity, 0);
   }
 
+  // Con el código de moneda: el sitio maneja pesos y dólares y el símbolo $
+  // es el mismo en los dos.
   function formatPrice(price: number): string {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
       currency: "MXN",
-    }).format(price);
+    }).format(price) + " MXN";
   }
 
   async function addProductToCart(

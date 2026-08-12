@@ -382,13 +382,15 @@ if (!user) {
 
     // Función para formatear precio según moneda del carrito
     function formatPrice(price: number, currency: string = 'MXN'): string {
+      // Con el código de moneda visible: el símbolo $ no distingue pesos de
+      // dólares y el sitio maneja los dos.
       return new Intl.NumberFormat(
         currency === 'USD' ? 'en-US' : 'es-MX',
         {
           style: 'currency',
           currency: currency
         }
-      ).format(price);
+      ).format(price) + ' ' + currency;
     }
 
     // Facturación (opcional): el checkbox solo muestra u oculta los campos,

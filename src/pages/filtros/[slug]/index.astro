@@ -445,10 +445,11 @@ const breadcrumbSchema = generateBreadcrumbSchema([
 
   // Función para formatear precio
   function formatPrice(price: number): string {
+    // Con el código de moneda: el sitio maneja pesos y dólares
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN'
-    }).format(price);
+    }).format(price) + ' MXN';
   }
 
   // Actualizar precios al cargar la página
