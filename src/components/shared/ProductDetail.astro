@@ -11,6 +11,7 @@ import type { FilterCategoryVariant } from "@/lib/filter-category-service";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getExchangeRate } from "@/lib/currency-service";
 import { getBindInventoryByCode } from "@/lib/bind";
+import { getMoneda, precioEnMoneda, convertirMoneda } from "@/lib/currency-preference";
 import { getProductName, getProductDescription, getProductCategory, getProductPriceAndCurrency, formatPriceByCurrency, getCategoryName } from "@/lib/i18n-helpers";
 import { getWhatsAppNumber } from "@/lib/site-settings-service";
 
@@ -23,6 +24,9 @@ interface Props {
   lang: 'es' | 'en';
 }
 const { product, lang } = Astro.props;
+
+// Moneda elegida por el visitante (cookie); si no ha elegido, la del idioma
+const moneda = getMoneda(Astro.cookies, lang);
 
 const isEn = lang === 'en';
 // Prefijos de ruta por idioma (la tienda en español vive en /productos y la
@@ -153,16 +157,9 @@ const convertPriceToMXN = (price: number, currency: string): number => {
   return price;
 };
 
-// Obtener precio y moneda según idioma
-const { price: displayPrice, currency: displayCurrency } = getProductPriceAndCurrency(product, lang, exchangeRate);
-
-// Si estamos en español y el producto está en USD, convertir a MXN
-let finalPrice = displayPrice;
-let finalCurrency = displayCurrency;
-if (lang === 'es' && displayCurrency === 'USD') {
-  finalPrice = convertPriceToMXN(displayPrice, 'USD');
-  finalCurrency = 'MXN';
-}
+// Precio en la moneda que eligió el visitante (independiente del idioma)
+const finalCurrency = moneda;
+const finalPrice = precioEnMoneda(product, moneda, exchangeRate);
 
 // Productos relacionados: primero los de la misma categoría de filtro y, si no
 // llegan a tres, los de las categorías hermanas de la misma familia.
@@ -219,7 +216,8 @@ const relatedProductsWithImages = await Promise.all(
     const primaryImage = images.find(img => img.is_primary) || images[0];
     const pCat = getProductCategory(p, lang);
     const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(pCat);
-    const { price: pPrice, currency: pCurrency } = getProductPriceAndCurrency(p, lang, exchangeRate);
+    const pPrice = precioEnMoneda(p, moneda, exchangeRate);
+    const pCurrency = moneda;
     return { 
       ...p, 
       imageUrl, 
@@ -405,18 +403,9 @@ if (categoryVariants.length > 0) {
       p.bind_code.trim().toLowerCase() === variant.bind_code.trim().toLowerCase()
     );
     
-    let variantPrice = variant.price;
-    let variantCurrency = variant.currency || 'MXN';
-    
-    // Si estamos en español y la variante está en USD, convertir a MXN
-    if (lang === 'es' && variantCurrency === 'USD') {
-      variantPrice = convertPriceToMXN(variant.price, 'USD');
-      variantCurrency = 'MXN';
-    } else if (lang === 'es' && variant.price_usd) {
-      // Si hay precio USD, usar ese convertido
-      variantPrice = convertPriceToMXN(variant.price_usd, 'USD');
-      variantCurrency = 'MXN';
-    }
+    // En la moneda que eligió el visitante
+    const variantPrice = precioEnMoneda(variant, moneda, exchangeRate);
+    const variantCurrency = moneda;
     
     sizeOptions.push({
       value: variantProduct?.uuid || `variant-${variant.id}`,
@@ -470,13 +459,8 @@ if (categoryVariants.length > 0) {
       continue;
     }
     
-    const { price: variantPrice, currency: variantCurrency } = getProductPriceAndCurrency(variant, lang, exchangeRate);
-    let variantFinalPrice = variantPrice;
-    let variantFinalCurrency = variantCurrency;
-    if (lang === 'es' && variantCurrency === 'USD') {
-      variantFinalPrice = convertPriceToMXN(variantPrice, 'USD');
-      variantFinalCurrency = 'MXN';
-    }
+    const variantFinalPrice = precioEnMoneda(variant, moneda, exchangeRate);
+    const variantFinalCurrency = moneda;
     const variantName = getProductName(variant, lang);
     
     sizeOptions.push({
@@ -803,7 +787,7 @@ const benefitsList = parseListField(product.benefits);
                   <button
                     type="button"
                     class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}', '${relatedProduct.currency || displayCurrency}')`}
+                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}', '${relatedProduct.currency || finalCurrency}')`}
                   >
                     {t.addToCart}
                   </button>

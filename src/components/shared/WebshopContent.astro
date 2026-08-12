@@ -13,6 +13,7 @@ import { getProductImages } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { getExchangeRate } from "@/lib/currency-service";
 import { getBindInventoryByCode } from "@/lib/bind";
+import { getMoneda, precioEnMoneda } from "@/lib/currency-preference";
 import {
   getProductPriceAndCurrency,
   formatPriceByCurrency,
@@ -23,6 +24,8 @@ import {
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === "en";
+// Moneda elegida por el visitante (cookie); si no ha elegido, la del idioma
+const moneda = getMoneda(Astro.cookies, lang);
 
 const productsRoute = isEn ? "/en/products" : "/productos";
 const productDetailRoute = (uuid: string) =>
@@ -93,17 +96,9 @@ const products = await Promise.all(
       /* la imagen de la categoría ya viene en product.image_url */
     }
 
-    const { price: displayPrice, currency: displayCurrency } =
-      getProductPriceAndCurrency(product, lang, exchangeRate);
-    let finalPrice = displayPrice;
-    let finalCurrency = displayCurrency;
-    if (lang === "es" && displayCurrency === "USD") {
-      finalPrice = displayPrice * exchangeRate;
-      finalCurrency = "MXN";
-    } else if (lang === "en" && displayCurrency === "MXN") {
-      finalPrice = displayPrice / exchangeRate;
-      finalCurrency = "USD";
-    }
+    // Precio en la moneda que eligió el visitante
+    const finalPrice = precioEnMoneda(product, moneda, exchangeRate);
+    const finalCurrency = moneda;
 
     return {
       id: product.id,

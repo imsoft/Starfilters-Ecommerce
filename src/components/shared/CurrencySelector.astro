@@ -1,0 +1,42 @@
+---
+import { getMoneda } from "@/lib/currency-preference";
+import { getLangFromUrl } from "@/i18n/utils";
+
+// Selector de moneda, independiente del idioma: hay quien navega en español y
+// quiere ver dólares. Guarda la elección en una cookie porque los precios se
+// calculan en el servidor y tiene que llegar con la petición.
+const lang = getLangFromUrl(Astro.url);
+const moneda = getMoneda(Astro.cookies, lang);
+---
+
+<div class="relative">
+  <label class="sr-only" for="currency-selector">
+    {lang === 'en' ? 'Currency' : 'Moneda'}
+  </label>
+  <select
+    id="currency-selector"
+    data-currency-selector
+    class="cursor-pointer rounded-md border border-transparent bg-transparent py-1.5 pl-2 pr-6 text-sm font-medium text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
+    aria-label={lang === 'en' ? 'Currency' : 'Moneda'}
+  >
+    <option value="MXN" selected={moneda === 'MXN'}>MXN</option>
+    <option value="USD" selected={moneda === 'USD'}>USD</option>
+  </select>
+</div>
+
+<script>
+  // Listener delegado en document: sobrevive a las transiciones de página del
+  // ClientRouter, que en este proyecto ya dejaron sin escucha a varios botones.
+  document.addEventListener('change', (e) => {
+    const select = e.target as HTMLSelectElement | null;
+    if (!select?.hasAttribute('data-currency-selector')) return;
+
+    const moneda = select.value === 'USD' ? 'USD' : 'MXN';
+    // Un año, en todo el sitio
+    document.cookie = `moneda=${moneda}; path=/; max-age=31536000; samesite=lax`;
+
+    // Los precios se arman en el servidor: hay que recargar para verlos en la
+    // moneda nueva. reload() conserva la página en la que está el visitante.
+    window.location.reload();
+  });
+</script>

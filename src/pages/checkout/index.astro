@@ -423,6 +423,36 @@ if (!user) {
       return Object.values(billing).some(Boolean) ? billing : null;
     }
 
+    /**
+     * Moneda elegida por el visitante (selector del menú). Se lee de la cookie
+     * para que el checkout cobre en la misma que muestran los precios.
+     */
+    const monedaElegida = (): 'MXN' | 'USD' => {
+      const cookie = document.cookie.split('; ').find((c) => c.startsWith('moneda='));
+      const valor = cookie?.split('=')[1]?.toUpperCase();
+      return valor === 'USD' || valor === 'MXN' ? valor : 'MXN';
+    };
+
+    // Tasa del día para convertir cuando la moneda elegida no es la del carrito
+    let tasaCambio = 17;
+    const cargarTasaCambio = async () => {
+      try {
+        const res = await fetch('/api/exchange-rate');
+        const data = await res.json();
+        if (data.success && data.rate) tasaCambio = data.rate;
+      } catch {
+        // Si falla, se usa la tasa por defecto
+      }
+    };
+
+    /** Lleva un importe a la moneda elegida por el visitante */
+    const aMonedaElegida = (monto: number, moneda?: string) => {
+      const destino = monedaElegida();
+      const origen = moneda === 'USD' ? 'USD' : 'MXN';
+      if (origen === destino) return monto;
+      return origen === 'USD' ? monto * tasaCambio : monto / tasaCambio;
+    };
+
     const FREE_SHIPPING_THRESHOLD = 5000;
 
     // Calcular costo de envío según método y subtotal
@@ -612,7 +642,7 @@ if (!user) {
         
         // Obtener moneda del carrito (usar getCartFromStorage en cliente)
         const cart = getCartFromStorage();
-        const cartCurrency = cart.currency || 'MXN';
+        const cartCurrency = monedaElegida();
         
         container.innerHTML = `
           <div class="space-y-6">
@@ -824,7 +854,7 @@ if (!user) {
       }
 
       // Obtener moneda del carrito (antes del map para usarla dentro)
-      const cartCurrency = cart.currency || 'MXN';
+      const cartCurrency = monedaElegida();
 
       // Renderizar items
       orderItemsList.innerHTML = cart.items.map(item => `
@@ -859,11 +889,17 @@ if (!user) {
       `).join('');
 
       // Calcular totales
-      const subtotal = cart.total;
+      const subtotal = cart.items.reduce(
+        (suma: number, item: any) => suma + aMonedaElegida(item.price, item.currency) * item.quantity,
+        0
+      );
       const discountAmount = appliedDiscount?.amount || 0;
       const subtotalAfterDiscount = subtotal - discountAmount;
       const deliveryMethod = getSelectedDeliveryMethod();
-      const shipping = deliveryMethod ? getShippingCost(deliveryMethod, subtotalAfterDiscount) : 0;
+      const subtotalMXN = monedaElegida() === 'MXN' ? subtotalAfterDiscount : subtotalAfterDiscount * tasaCambio;
+      const shipping = deliveryMethod
+        ? aMonedaElegida(getShippingCost(deliveryMethod, subtotalMXN), 'MXN')
+        : 0;
       // El IVA también aplica al envío (mismo criterio que el servidor).
       const tax = (subtotalAfterDiscount + shipping) * 0.16;
       const total = subtotalAfterDiscount + shipping + tax;
@@ -910,7 +946,7 @@ if (!user) {
           <dt class="text-base font-medium text-foreground">Total</dt>
           <dd class="text-base font-medium text-foreground">${formatPrice(total, cartCurrency)}</dd>
         </div>
-        <p class="text-xs text-muted-foreground">El cargo se hace en pesos mexicanos (MXN).</p>
+        <p class="text-xs text-muted-foreground">${cartCurrency === 'USD' ? 'El cargo se hace en dólares (USD).' : 'El cargo se hace en pesos mexicanos (MXN).'}</p>
       `;
 
       orderSummary.innerHTML = summaryHTML;
@@ -992,6 +1028,7 @@ if (!user) {
       if (!deliveryOptions || deliveryOptions.hasAttribute('data-checkout-init')) return;
       deliveryOptions.setAttribute('data-checkout-init', 'true');
       initInvoiceToggle();
+      await cargarTasaCambio();
       console.log('🚀 initCheckout iniciado');
 
       // Primero renderizar el resumen del pedido
@@ -1226,11 +1263,20 @@ if (!user) {
             return;
           }
 
-          const cartCurrency = cart.currency || 'MXN';
-          const subtotal = cart.total;
+          const cartCurrency = monedaElegida();
+          const subtotal = cart.items.reduce(
+            (suma: number, item: any) => suma + aMonedaElegida(item.price, item.currency) * item.quantity,
+            0
+          );
           const discountAmount = appliedDiscount?.amount || 0;
           const subtotalAfterDiscount = subtotal - discountAmount;
-          const shipping = getShippingCost(deliveryMethod, subtotalAfterDiscount);
+          const shipping = aMonedaElegida(
+            getShippingCost(
+              deliveryMethod,
+              monedaElegida() === 'MXN' ? subtotalAfterDiscount : subtotalAfterDiscount * tasaCambio
+            ),
+            'MXN'
+          );
           const tax = (subtotalAfterDiscount + shipping) * 0.16;
           const total = subtotalAfterDiscount + shipping + tax;
 
@@ -1259,7 +1305,7 @@ if (!user) {
             },
             body: JSON.stringify({
               ...checkoutData,
-              currency: 'MXN',
+              currency: monedaElegida(),
               billing: getBillingData(),
               items: cart.items,
               shippingMethod: deliveryMethod,
