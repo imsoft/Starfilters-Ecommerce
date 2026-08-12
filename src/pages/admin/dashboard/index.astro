@@ -10,6 +10,8 @@ import {
   getProductImages
 } from "@/lib/database";
 import { getExchangeRate } from "@/lib/currency-service";
+import { getBindInventoryByCode } from "@/lib/bind";
+import { query } from "@/config/database";
 
 // Verificar que el usuario es administrador
 const { redirect } = await requireAdmin(Astro.cookies);
@@ -122,6 +124,43 @@ const formatCurrency = (amount: number): string => {
     style: 'currency',
     currency: 'MXN'
   }).format(amount);
+};
+
+// El inventario real vive en BIND: products.stock local se queda en cero y el
+// dashboard mostraba "Sin Stock" en productos que sí tienen existencias. Mismo
+// criterio que /admin/products y que la tienda (mapa cacheado 5 minutos).
+const codigosPorProducto = new Map<number, string[]>();
+try {
+  const ids = recentProducts.map((p: any) => p.id).filter(Boolean);
+  if (ids.length > 0) {
+    const filas = await query(
+      `SELECT product_id, bind_code FROM filter_category_variants
+       WHERE product_id IN (${ids.map(() => '?').join(',')})
+         AND bind_code IS NOT NULL AND is_active = 1`,
+      ids
+    ) as Array<{ product_id: number; bind_code: string }>;
+    for (const fila of filas) {
+      const lista = codigosPorProducto.get(fila.product_id) || [];
+      lista.push(String(fila.bind_code).trim().toUpperCase());
+      codigosPorProducto.set(fila.product_id, lista);
+    }
+  }
+} catch (error) {
+  console.error('❌ No se pudieron cargar los códigos BIND de los tamaños:', error);
+}
+
+const inventarioBind = await getBindInventoryByCode().catch(() => null);
+
+const stockDeProducto = (product: any): number => {
+  if (inventarioBind) {
+    const codigos = new Set<string>(codigosPorProducto.get(product.id) || []);
+    if (product.bind_code) codigos.add(String(product.bind_code).trim().toUpperCase());
+    const reconocidos = [...codigos].filter((c) => inventarioBind.has(c));
+    if (reconocidos.length > 0) {
+      return reconocidos.reduce((suma, c) => suma + (inventarioBind.get(c) ?? 0), 0);
+    }
+  }
+  return Number(product.stock) || 0;
 };
 
 // Función para obtener estado del producto basado en stock
@@ -251,7 +290,8 @@ const getProductStatus = (stock: number) => {
             <tbody class="divide-y divide-border">
               {recentProducts.length > 0 ? (
                 recentProducts.map((product) => {
-                  const status = getProductStatus(product.stock);
+                  const stockReal = stockDeProducto(product);
+                  const status = getProductStatus(stockReal);
                   return (
                     <tr>
                       <td class="px-6 py-4 whitespace-nowrap">
@@ -274,7 +314,7 @@ const getProductStatus = (stock: number) => {
                         </div>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{formatCurrency(product.price)}</td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{product.stock}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{stockReal}</td>
                       <td class="px-6 py-4 whitespace-nowrap">
                         <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${status.class}`}>
                           {status.label}

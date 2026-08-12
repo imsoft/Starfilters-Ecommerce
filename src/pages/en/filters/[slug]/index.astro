@@ -25,8 +25,10 @@ if (!category) {
 const variants = await getCategoryVariants(category.id);
 const images = await getCategoryImages(category.id);
 
-// Filter only active variants with stock
-const activeVariants = variants.filter(v => v.is_active && v.stock > 0);
+// Only active variants. NOT filtered by stock: the variants' local column is
+// always 0 (the admin saves it that way because the real inventory lives in
+// BIND), and filtering by it left the page with no sizes at all.
+const activeVariants = variants.filter(v => v.is_active);
 
 // Get current exchange rate
 const exchangeRate = await getExchangeRate();
