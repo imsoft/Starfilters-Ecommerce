@@ -2,6 +2,7 @@
 import { getLangFromUrl } from "@/i18n/utils";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import {
+  getProductVariants,
   getParentCategories,
   getChildCategories,
   getCategoryBySlug,
@@ -11,6 +12,7 @@ import { getProductsByFilterCategory } from "@/lib/product-service";
 import { getProductImages } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 import { getExchangeRate } from "@/lib/currency-service";
+import { getBindInventoryByCode } from "@/lib/bind";
 import {
   getProductPriceAndCurrency,
   formatPriceByCurrency,
@@ -111,11 +113,37 @@ const products = await Promise.all(
       price: finalPrice,
       currency: finalCurrency,
       stock: product.stock || 0,
+      bindCodes: [
+        (product as any).bind_code,
+        ...((await getProductVariants(product.id, product.filter_category_id ?? null))
+          .filter((v) => v.is_active && v.bind_code)
+          .map((v) => v.bind_code as string)),
+      ]
+        .filter(Boolean)
+        .map((c) => String(c).trim().toUpperCase()),
       imageUrl,
       nominal_size: product.nominal_size || undefined,
     };
   })
 );
+
+// La existencia que se muestra viene de BIND, no de products.stock: esa
+// columna local nunca se sincroniza y deja todo en cero, así que la tienda
+// marcaba "Agotado" productos que en BIND sí tienen inventario.
+// getBindInventoryByCode cachea 5 minutos, así que no pesa en cada visita.
+const inventarioBind = await getBindInventoryByCode().catch(() => null);
+
+const hayExistencia = (producto: { stock: number; bindCodes: string[] }): boolean => {
+  if (inventarioBind && producto.bindCodes.length > 0) {
+    const total = producto.bindCodes.reduce(
+      (suma, codigo) => suma + (inventarioBind.get(codigo) ?? 0),
+      0
+    );
+    // Solo se confía en BIND si reconoció alguno de los códigos
+    if (producto.bindCodes.some((c) => inventarioBind.has(c))) return total > 0;
+  }
+  return producto.stock > 0;
+};
 
 const formatPrice = (price: number, currency: "MXN" | "USD") =>
   formatPriceByCurrency(price, currency);
@@ -267,14 +295,14 @@ const subheading = selected
                 <p class="text-sm font-semibold text-foreground">
                   {formatPrice(product.price, product.currency)}
                 </p>
-                {product.stock > 0 ? (
+                {hayExistencia(product) ? (
                   <span class="text-xs text-green-600 font-medium">{t.inStock}</span>
                 ) : (
                   <span class="text-xs text-red-500 font-medium">{t.outOfStock}</span>
                 )}
               </div>
               <div class="mt-auto pt-3">
-                {product.stock > 0 ? (
+                {hayExistencia(product) ? (
                   <button
                     type="button"
                     class="add-to-cart-btn w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"

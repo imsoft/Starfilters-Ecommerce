@@ -10,6 +10,7 @@ import { getProductVariants, getCategoryById, getChildCategories } from "@/lib/f
 import type { FilterCategoryVariant } from "@/lib/filter-category-service";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getExchangeRate } from "@/lib/currency-service";
+import { getBindInventoryByCode } from "@/lib/bind";
 import { getProductName, getProductDescription, getProductCategory, getProductPriceAndCurrency, formatPriceByCurrency, getCategoryName } from "@/lib/i18n-helpers";
 import { getWhatsAppNumber } from "@/lib/site-settings-service";
 
@@ -116,6 +117,23 @@ if (product.filter_category_id) {
     }
   } catch (error) {
     console.error('Error obteniendo la categoría para las migas de pan:', error);
+  }
+}
+
+// Disponibilidad real (BIND), para que Google no anuncie como agotado algo que
+// sí hay: products.stock local casi siempre está en cero.
+const codigosBind = [
+  (product as any).bind_code,
+  ...categoryVariants.filter((v) => v.bind_code).map((v) => v.bind_code as string),
+]
+  .filter(Boolean)
+  .map((c) => String(c).trim().toUpperCase());
+
+let hayExistencia = product.stock > 0;
+if (codigosBind.length > 0) {
+  const inventarioBind = await getBindInventoryByCode().catch(() => null);
+  if (inventarioBind && codigosBind.some((c) => inventarioBind.has(c))) {
+    hayExistencia = codigosBind.reduce((s, c) => s + (inventarioBind.get(c) ?? 0), 0) > 0;
   }
 }
 
@@ -502,7 +520,7 @@ const benefitsList = parseListField(product.benefits);
     product={{
       price: product.price,
       currency: 'MXN',
-      availability: product.stock > 0 ? 'in stock' : 'out of stock',
+      availability: hayExistencia ? 'in stock' : 'out of stock',
       brand: 'Star Filters'
     }}
   />
