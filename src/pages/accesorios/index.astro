@@ -90,7 +90,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
   />
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
 
-  <div class="bg-background py-24">
+  <div class="bg-background pt-24 pb-12">
     <!-- Breadcrumb -->
     <div class="mx-auto max-w-xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
       <nav class="mb-8" aria-label="Breadcrumb">
@@ -256,7 +256,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
           </div>
 
           {products.length === 0 && (
-            <div class="text-center py-24 border-2 border-dashed border-border rounded-xl">
+            <div class="text-center py-16 border-2 border-dashed border-border rounded-xl">
               <svg class="mx-auto h-12 w-12 text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
