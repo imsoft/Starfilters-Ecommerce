@@ -4,7 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
-import { getHeroImageUrl, getHeroImageFallbackUrl } from "@/lib/image-utils";
+import { getHeroImageUrl } from "@/lib/image-utils";
 
 export const prerender = false;
 
@@ -62,10 +62,11 @@ const formatDate = (date: Date) =>
   <article class="bg-background pt-12">
     <div>
       {caseStudy.featured_image ? (
-        <div class="h-56 sm:h-96 overflow-hidden">
-          <!-- Si el escalado por IA no está disponible (cuota agotada), se
-               cae a la versión sin IA en vez de dejar la foto rota -->
-          <img src={getHeroImageUrl(caseStudy.featured_image)} data-fallback={getHeroImageFallbackUrl(caseStudy.featured_image)} onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.src=this.dataset.fallback}" alt={title} class="h-full w-full object-cover" />
+        <!-- La foto se muestra completa: las del cliente vienen en cualquier
+             proporción (hay verticales) y el banner recortado a 3:1 se comía
+             la mayor parte de la imagen. object-contain la centra sin cortar. -->
+        <div class="flex justify-center bg-muted">
+          <img src={getHeroImageUrl(caseStudy.featured_image)} alt={title} loading="eager" fetchpriority="high" decoding="async" class="max-h-[22rem] w-auto max-w-full object-contain sm:max-h-[30rem]" />
         </div>
       ) : (
         <div class="h-40 bg-gradient-to-br from-primary/10 to-primary/5"></div>

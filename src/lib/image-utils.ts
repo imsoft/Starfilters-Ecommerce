@@ -26,56 +26,33 @@ export function getHighQualityImageUrl(
 }
 
 /**
- * URL para imágenes de banner a todo lo ancho (heros de casos de éxito, etc.).
+ * URL para la foto de portada de un caso de éxito.
  *
- * Varias fotos del cliente están subidas pequeñas (la del caso de Guadalajara
- * mide 765px) y el hero las estira a ~1900px. Medido sobre esa foto, escalando
- * cada opción al tamaño en que se muestra:
+ * Antes esto forzaba un banner de 1920x640 (c_fill) y encima pasaba la foto por
+ * el escalado con IA de Cloudinary (e_upscale). Con las fotos que sube el
+ * cliente eso salía mal por partida doble: la del caso de Guadalajara mide
+ * 391x528 —es VERTICAL—, así que el recorte a 3:1 tiraba la mayor parte de la
+ * imagen y ampliaba el resto casi 5x; de ahí que se viera "con zoom". Y
+ * e_upscale añadía cerca de un segundo de espera y duplicaba el peso.
  *
- *   sin transformar ....................... nitidez 253
- *   c_fill + e_sharpen (lo que había) ......         98   ← peor que no tocarla
- *   e_upscale (IA de Cloudinary) ..........         415
- *   e_upscale + e_sharpen:100 .............       ~1000
- *
- * De ahí que se use el escalado por IA y después el enfoque. No sustituye a
- * subir una foto grande, pero la diferencia es visible.
+ * Ahora se sirve la foto completa, sin recortar y sin ampliarla por encima de
+ * su tamaño original (c_limit). La página la centra y la muestra entera, sea
+ * horizontal o vertical.
  */
 export function getHeroImageUrl(
   url: string | null | undefined,
-  options?: { width?: number; height?: number }
-): string {
-  return construirHero(url, options, true);
-}
-
-/**
- * Misma imagen sin el escalado por IA. e_upscale es un complemento con cuota
- * mensual: si se agota, esa URL falla y hay que poder caer a esta.
- */
-export function getHeroImageFallbackUrl(
-  url: string | null | undefined,
-  options?: { width?: number; height?: number }
-): string {
-  return construirHero(url, options, false);
-}
-
-function construirHero(
-  url: string | null | undefined,
-  options: { width?: number; height?: number } | undefined,
-  conIA: boolean
+  options?: { width?: number }
 ): string {
   if (!url) return '';
   if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
 
-  const width = options?.width ?? 1920;
-  const height = options?.height ?? 640;
+  const width = options?.width ?? 1200;
 
   const uploadIndex = url.indexOf('/upload/') + '/upload/'.length;
   const before = url.slice(0, uploadIndex);
   const after = url.slice(uploadIndex);
 
-  // c_fill + g_auto recorta hacia la zona relevante de la foto
-  const encuadre = `c_fill,g_auto,w_${width},h_${height},e_sharpen:100,q_auto:best,f_auto`;
-  return conIA ? `${before}e_upscale/${encuadre}/${after}` : `${before}${encuadre}/${after}`;
+  return `${before}c_limit,w_${width},q_auto,f_auto/${after}`;
 }
 
 // Helper function to get appropriate placeholder image based on product category
