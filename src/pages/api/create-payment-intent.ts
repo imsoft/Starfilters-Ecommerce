@@ -67,18 +67,23 @@ async function resolveStockAndBindTarget(
       const bindProductsResult = await getBindProducts({ page: 1, pageSize: 1000 });
 
       if (bindProductsResult.success && bindProductsResult.data) {
+        // BIND devuelve los campos capitalizados (Code, SKU, ID, Inventory).
+        // Comparar solo contra p.code/p.sku/p.id nunca encontraba el producto:
+        // el stock caía al local (siempre 0) y el pago se rechazaba por
+        // "Stock insuficiente", además de dejar bindTarget nulo, con lo que la
+        // venta tampoco descontaba inventario en BIND.
+        const buscado = code.toUpperCase();
+        const igual = (valor: unknown) => String(valor ?? '').trim().toUpperCase() === buscado;
         const bindProduct = bindProductsResult.data.find(
-          (p: any) => p.code?.toUpperCase() === code.toUpperCase() ||
-                     p.sku?.toUpperCase() === code.toUpperCase() ||
-                     p.id?.toUpperCase() === code.toUpperCase()
-        );
+          (p: any) => igual(p.Code ?? p.code) || igual(p.SKU ?? p.sku) || igual(p.ID ?? p.id)
+        ) as any;
 
         if (bindProduct) {
-          bindTarget = bindProduct.id || null;
-          let bindStock = bindProduct.inventory || (bindProduct as any).Inventory || 0;
+          bindTarget = bindProduct.ID ?? bindProduct.id ?? null;
+          let bindStock = Number(bindProduct.Inventory ?? bindProduct.inventory ?? 0) || 0;
 
-          if (bindProduct.id && (!bindStock || bindStock === 0)) {
-            const productDetails = await getBindProductById(bindProduct.id);
+          if (bindTarget && (!bindStock || bindStock === 0)) {
+            const productDetails = await getBindProductById(bindTarget);
             if (productDetails.success && productDetails.data) {
               const bindData = productDetails.data as any;
               bindStock = bindData.CurrentInventory ?? bindData.currentInventory ?? bindData.Inventory ?? bindStock ?? 0;
