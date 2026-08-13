@@ -2,8 +2,7 @@
 import { Button } from "../ui/button";
 import UserDropdown from "../ui/UserDropdown.astro";
 import CartIcon from "../ui/CartIcon.astro";
-import LanguageSelector from "./LanguageSelector";
-import CurrencySelector from "./CurrencySelector.astro";
+import RegionSelector from "./RegionSelector.astro";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import { isUserAdmin, getUserById } from '@/lib/database';
@@ -176,10 +175,8 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
 
         <!-- Controles del lado derecho - idioma, carrito, usuario -->
         <div class="hidden lg:flex lg:flex-1 lg:items-center lg:gap-x-1 lg:justify-end">
-          <LanguageSelector client:load />
-
-          <!-- Moneda: independiente del idioma -->
-          <CurrencySelector />
+          <!-- Idioma y moneda en un solo menú -->
+          <RegionSelector />
 
           <!-- Ícono carrito (siempre visible) -->
           <CartIcon />
@@ -345,14 +342,9 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
                 )}
               </div>
 
-              <!-- Selectores de idioma y moneda en móvil -->
-              <div class="py-4 flex items-center gap-2">
-                <span class="text-sm text-muted-foreground">{lang === 'en' ? 'Language:' : 'Idioma:'}</span>
-                <LanguageSelector client:load />
-              </div>
-              <div class="pb-4 flex items-center gap-2">
-                <span class="text-sm text-muted-foreground">{lang === 'en' ? 'Currency:' : 'Moneda:'}</span>
-                <CurrencySelector />
+              <!-- Idioma y moneda en un solo menú -->
+              <div class="py-4">
+                <RegionSelector />
               </div>
 
               <div class="py-6">

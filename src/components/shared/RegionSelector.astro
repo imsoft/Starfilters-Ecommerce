@@ -1,0 +1,193 @@
+---
+import { getMoneda } from "@/lib/currency-preference";
+import { getLangFromUrl } from "@/i18n/utils";
+
+// Idioma y moneda en un solo control del header: antes eran dos menús seguidos
+// ("MX ⌄  MXN ⌄") y se leían como si uno dependiera del otro. Ahora el botón
+// resume la elección ("MX / MXN") y al abrirse muestra los dos grupos con su
+// título, para que quede claro que son decisiones separadas.
+const lang = getLangFromUrl(Astro.url);
+const moneda = getMoneda(Astro.cookies, lang);
+
+const t = {
+  es: { idioma: "Idioma", moneda: "Moneda", abrir: "Cambiar idioma y moneda" },
+  en: { idioma: "Language", moneda: "Currency", abrir: "Change language and currency" },
+}[lang === "en" ? "en" : "es"];
+
+const idiomas = [
+  { code: "es", etiqueta: "Español", corto: "MX", bandera: "🇲🇽" },
+  { code: "en", etiqueta: "English", corto: "US", bandera: "🇺🇸" },
+];
+const monedas = [
+  { code: "MXN", etiqueta: lang === "en" ? "Mexican peso" : "Peso mexicano" },
+  { code: "USD", etiqueta: lang === "en" ? "US dollar" : "Dólar estadounidense" },
+];
+
+const idiomaActual = idiomas.find((i) => i.code === lang) || idiomas[0];
+---
+
+<div class="relative" data-region>
+  <button
+    type="button"
+    data-region-toggle
+    aria-haspopup="true"
+    aria-expanded="false"
+    aria-label={t.abrir}
+    class="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
+  >
+    <span class="text-base leading-none">{idiomaActual.bandera}</span>
+    <span class="whitespace-nowrap">{idiomaActual.corto} / {moneda}</span>
+    <svg
+      data-region-chevron
+      class="h-4 w-4 transition-transform"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+    </svg>
+  </button>
+
+  <div
+    data-region-panel
+    hidden
+    class="absolute right-0 z-50 mt-2 w-56 rounded-md border border-border bg-background py-1 shadow-lg"
+    role="menu"
+  >
+    <p class="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {t.idioma}
+    </p>
+    {
+      idiomas.map((idioma) => (
+        <button
+          type="button"
+          data-region-lang={idioma.code}
+          role="menuitem"
+          class:list={[
+            "flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors hover:bg-muted",
+            lang === idioma.code ? "font-medium text-foreground" : "text-muted-foreground",
+          ]}
+        >
+          <span class="text-base leading-none">{idioma.bandera}</span>
+          <span>{idioma.etiqueta}</span>
+          {lang === idioma.code && (
+            <svg class="ml-auto h-4 w-4 text-primary" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          )}
+        </button>
+      ))
+    }
+
+    <div class="my-1 border-t border-border"></div>
+
+    <p class="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {t.moneda}
+    </p>
+    {
+      monedas.map((m) => (
+        <button
+          type="button"
+          data-region-currency={m.code}
+          role="menuitem"
+          class:list={[
+            "flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors hover:bg-muted",
+            moneda === m.code ? "font-medium text-foreground" : "text-muted-foreground",
+          ]}
+        >
+          <span class="w-8 text-left font-mono text-xs">{m.code}</span>
+          <span>{m.etiqueta}</span>
+          {moneda === m.code && (
+            <svg class="ml-auto h-4 w-4 text-primary" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          )}
+        </button>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  import { traducirRuta } from "@/lib/route-translations";
+
+  // Todo con listeners delegados en document: los <script> de componente corren
+  // una sola vez por sesión con el ClientRouter, y volver a enlazar por nodo ya
+  // dejó controles muertos tras una transición en este proyecto.
+  const cerrarTodos = (excepto?: Element | null) => {
+    document.querySelectorAll<HTMLElement>("[data-region]").forEach((raiz) => {
+      if (raiz === excepto) return;
+      raiz.querySelector<HTMLElement>("[data-region-panel]")?.setAttribute("hidden", "");
+      raiz.querySelector<HTMLElement>("[data-region-toggle]")?.setAttribute("aria-expanded", "false");
+      raiz.querySelector<HTMLElement>("[data-region-chevron]")?.classList.remove("rotate-180");
+    });
+  };
+
+  document.addEventListener("click", (e) => {
+    const objetivo = e.target as HTMLElement | null;
+    if (!objetivo) return;
+
+    const raiz = objetivo.closest<HTMLElement>("[data-region]");
+    if (!raiz) {
+      cerrarTodos();
+      return;
+    }
+
+    // Abrir / cerrar
+    if (objetivo.closest("[data-region-toggle]")) {
+      const panel = raiz.querySelector<HTMLElement>("[data-region-panel]");
+      const boton = raiz.querySelector<HTMLElement>("[data-region-toggle]");
+      const chevron = raiz.querySelector<HTMLElement>("[data-region-chevron]");
+      if (!panel) return;
+      const estabaAbierto = !panel.hasAttribute("hidden");
+      cerrarTodos(raiz);
+      if (estabaAbierto) {
+        panel.setAttribute("hidden", "");
+        boton?.setAttribute("aria-expanded", "false");
+        chevron?.classList.remove("rotate-180");
+      } else {
+        panel.removeAttribute("hidden");
+        boton?.setAttribute("aria-expanded", "true");
+        chevron?.classList.add("rotate-180");
+      }
+      return;
+    }
+
+    // Idioma: se conserva la página y los parámetros de la URL
+    const botonIdioma = objetivo.closest<HTMLElement>("[data-region-lang]");
+    if (botonIdioma) {
+      const destino = botonIdioma.dataset.regionLang === "en" ? "en" : "es";
+      const nueva = traducirRuta(window.location.pathname, destino);
+      if (nueva === window.location.pathname) {
+        cerrarTodos();
+        return;
+      }
+      const query = window.location.search;
+      const unir = nueva.includes("?") && query ? "&" + query.slice(1) : query;
+      window.location.href = nueva + unir;
+      return;
+    }
+
+    // Moneda: los precios se arman en el servidor, así que va en cookie y se
+    // recarga la misma página
+    const botonMoneda = objetivo.closest<HTMLElement>("[data-region-currency]");
+    if (botonMoneda) {
+      const elegida = botonMoneda.dataset.regionCurrency === "USD" ? "USD" : "MXN";
+      document.cookie = `moneda=${elegida}; path=/; max-age=31536000; samesite=lax`;
+      window.location.reload();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") cerrarTodos();
+  });
+</script>
