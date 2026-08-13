@@ -42,8 +42,10 @@ const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   <div class="mx-auto max-w-7xl px-4 lg:px-6">
     <div class="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
-      <!-- Video Short - izquierda -->
-      <div class="w-full max-w-xs flex-shrink-0 mx-auto lg:mx-0">
+      <!-- Video Short - izquierda en escritorio, al final en móvil.
+           Apilado, el video quedaba antes que el título y las cifras y se leía
+           como si colgara de la sección anterior; cierra mejor la sección. -->
+      <div class="order-2 w-full max-w-xs flex-shrink-0 mx-auto lg:order-1 lg:mx-0">
         <div
           id={`video-${videoId}`}
           class="video-container relative overflow-hidden rounded-2xl shadow-xl bg-black cursor-pointer aspect-[9/16]"
@@ -67,7 +69,7 @@ const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
       </div>
 
       <!-- Stats - derecha -->
-      <div class="flex-1 flex flex-col gap-8">
+      <div class="order-1 flex-1 flex flex-col gap-8 lg:order-2">
         <h2 class="text-4xl font-bold tracking-tight text-balance text-foreground text-center sm:text-5xl">
           {t('stats.title')}
         </h2>
