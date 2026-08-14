@@ -52,9 +52,10 @@ const dinero = (n: number, m: string) =>
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Actualizar precios desde BIND</h1>
         <p class="mt-2 text-sm text-gray-600 max-w-3xl">
-          El sitio guarda sus propios precios; de BIND solo se lee el inventario. Aquí se
-          comparan los dos: la última columna ya trae el precio de BIND, y puedes editarlo
-          antes de aplicar si quieres otro. Nada cambia hasta que confirmes.
+          Vienen marcados todos los precios de BIND listos para aplicarse: revisa y dale a
+          "Aplicar seleccionados". Puedes editar cualquier precio antes, en la última columna.
+          Las filas en rojo quedan sin marcar a propósito, porque cambian mucho.
+          Nada cambia hasta que confirmes.
         </p>
       </div>
       <a
@@ -161,6 +162,7 @@ const dinero = (n: number, m: string) =>
                         type="checkbox"
                         name="aplicar"
                         value={`${f.origen}:${f.id}`}
+                        checked={!grande}
                         class="h-4 w-4 rounded border-gray-300 text-blue-600"
                         data-fila
                       />
@@ -213,8 +215,8 @@ const dinero = (n: number, m: string) =>
 
         <p class="mt-3 text-xs text-gray-500">
           Se aplica lo que quede escrito en "Precio a aplicar", no necesariamente el de
-          BIND. Las filas en rojo cambian de moneda o se mueven más de 25%: revísalas con
-          calma, puede ser que el dato equivocado esté en BIND.
+          BIND. Las filas en rojo cambian de moneda o se mueven más de 25%, así que hay que
+          marcarlas a mano: puede ser que el dato equivocado esté en BIND, no en el sitio.
         </p>
       </form>
     )}
