@@ -457,6 +457,30 @@ export const ensureVariantProductColumn = (): Promise<void> => {
         console.log('✅ Columna filter_category_variants.product_id creada');
       }
 
+      // air_flow (el "CFM" del formulario). Si la columna no existe, el INSERT
+      // y el UPDATE caen a una variante de respaldo que guarda todo lo demás y
+      // descarta ese dato SIN AVISAR: el cliente escribía el CFM, guardaba, y
+      // volvía a aparecer vacío. Se crea aquí para que ese camino no se use.
+      const colFlujo = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'filter_category_variants'
+           AND COLUMN_NAME = 'air_flow'`
+      ) as any[];
+      if (!colFlujo[0] || Number(colFlujo[0].n) === 0) {
+        await query('ALTER TABLE filter_category_variants ADD COLUMN air_flow VARCHAR(255) NULL');
+        console.log('✅ Columna filter_category_variants.air_flow creada');
+      }
+
+      const colCodigoProd = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'filter_category_variants'
+           AND COLUMN_NAME = 'product_code'`
+      ) as any[];
+      if (!colCodigoProd[0] || Number(colCodigoProd[0].n) === 0) {
+        await query('ALTER TABLE filter_category_variants ADD COLUMN product_code VARCHAR(100) NULL');
+        console.log('✅ Columna filter_category_variants.product_code creada');
+      }
+
       // Etiqueta del tamaño en inglés (los manómetros usan texto, no medidas)
       const colEn = await query(
         `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
@@ -676,7 +700,10 @@ export const addCategoryVariant = async (variantData: Partial<FilterCategoryVari
     } catch (error: any) {
       // Si falla porque la columna air_flow no existe, intentar sin ella
       if (error.code === 'ER_BAD_FIELD_ERROR' && error.sqlMessage?.includes('air_flow')) {
-        console.log('⚠️ Columna air_flow no existe, agregando sin ella...');
+        console.error(
+          '⚠️ La columna air_flow no existe: se guarda el tamaño SIN el flujo de aire (CFM). ' +
+          'Debería haberla creado ensureVariantProductColumn; revisa la base de datos.'
+        );
         const result = await query(
           `INSERT INTO filter_category_variants (
             category_id, bind_code, product_code, nominal_size, nominal_size_en, real_size, price, currency, price_usd, stock, is_active
@@ -743,7 +770,10 @@ export const updateCategoryVariant = async (id: number, variantData: Partial<Fil
     } catch (error: any) {
       // Si falla porque la columna air_flow no existe, intentar sin ella
       if (error.code === 'ER_BAD_FIELD_ERROR' && error.sqlMessage?.includes('air_flow')) {
-        console.log('⚠️ Columna air_flow no existe, actualizando sin ella...');
+        console.error(
+          '⚠️ La columna air_flow no existe: se actualiza el tamaño SIN el flujo de aire (CFM). ' +
+          'Debería haberla creado ensureVariantProductColumn; revisa la base de datos.'
+        );
         await query(
           `UPDATE filter_category_variants SET
             bind_code = ?, product_code = ?, nominal_size = ?, nominal_size_en = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
