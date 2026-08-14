@@ -32,6 +32,7 @@ export interface Product {
   currency?: 'MXN' | 'USD';
   price_usd?: number | null;
   nominal_size?: string | null;
+  nominal_size_en?: string | null;
   real_size?: string | null;
   category: string;
   category_en?: string;
@@ -204,6 +205,7 @@ export const getProductByUuid = async (uuid: string): Promise<Product | null> =>
       fcv.bind_code as bind_code,
       NULL as sku,
       fcv.nominal_size as nominal_size,
+      fcv.nominal_size_en as nominal_size_en,
       fcv.real_size as real_size,
       CONCAT(fc.name, ' - ', fcv.nominal_size) as name,
       CONCAT(COALESCE(fc.name_en, fc.name), ' - ', fcv.nominal_size) as name_en,

@@ -4,6 +4,7 @@ interface Props {
   name: string;
   initialSizes?: Array<{
     nominal_size: string;
+    nominal_size_en?: string | null;
     real_size: string;
     price: number;
     currency: 'MXN' | 'USD';
@@ -46,6 +47,9 @@ const normalizedSizes = initialSizes.map(size => ({
             Medida Nominal / Tamaño / Capacidad
           </th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+            Medida Nominal (inglés)
+          </th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
             Medida Real / Dimensiones
           </th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
@@ -78,6 +82,15 @@ const normalizedSizes = initialSizes.map(size => ({
                   data-field="nominal_size"
                   value={size.nominal_size}
                   placeholder='Ej: 9.125" x 9.125" o "Modelo A" o "5 Litros"'
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <input
+                  type="text"
+                  data-field="nominal_size_en"
+                  value={size.nominal_size_en || ''}
+                  placeholder="Solo si es texto. Ej: Digital - Range 0 - 30 Pa"
                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </td>
@@ -163,7 +176,7 @@ const normalizedSizes = initialSizes.map(size => ({
           ))
         ) : (
           <tr data-empty-row>
-            <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">
+            <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">
               No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.
             </td>
           </tr>
@@ -205,6 +218,7 @@ const normalizedSizes = initialSizes.map(size => ({
 
         rows.forEach(function(row, index) {
           var nominalInput = row.querySelector('[data-field="nominal_size"]');
+          var nominalEnInput = row.querySelector('[data-field="nominal_size_en"]');
           var realInput = row.querySelector('[data-field="real_size"]');
           var priceInput = row.querySelector('[data-field="price"]');
           var currencySelect = row.querySelector('[data-field="currency"]');
@@ -226,6 +240,7 @@ const normalizedSizes = initialSizes.map(size => ({
           // Incluir todas las filas, incluso si algunos campos están vacíos
           var sizeData = {
             nominal_size: nominalInput.value || '',
+            nominal_size_en: nominalEnInput ? nominalEnInput.value || '' : '',
             real_size: realInput.value || '',
             price: parseFloat(priceInput.value) || 0,
             currency: currencySelect.value || 'MXN',
@@ -245,7 +260,7 @@ const normalizedSizes = initialSizes.map(size => ({
         if (tbody.querySelectorAll('tr[data-row-index]').length === 0) {
           var emptyRow = document.createElement('tr');
           emptyRow.setAttribute('data-empty-row', '');
-          emptyRow.innerHTML = '<td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.</td>';
+          emptyRow.innerHTML = '<td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">No hay tamaños agregados. Haz clic en "Agregar Tamaño" para comenzar.</td>';
           tbody.appendChild(emptyRow);
         }
       }
@@ -279,6 +294,18 @@ const normalizedSizes = initialSizes.map(size => ({
         } finally {
           refreshButton.disabled = false;
         }
+      }
+
+      // Recalcular el JSON justo antes de enviar. La página de edición tenía su
+      // propia copia de esta función y machacaba el campo oculto con una
+      // versión incompleta: se perdían air_flow y la etiqueta en inglés en cada
+      // guardado. El JSON lo arma solo este componente, que conoce las columnas.
+      var formularioPadre = container.closest('form');
+      if (formularioPadre && !formularioPadre.hasAttribute('data-sizes-submit-init')) {
+        formularioPadre.setAttribute('data-sizes-submit-init', 'true');
+        formularioPadre.addEventListener('submit', function() {
+          updateJson();
+        });
       }
 
       function removeRow(row) {
@@ -315,6 +342,9 @@ const normalizedSizes = initialSizes.map(size => ({
         newRow.innerHTML =
           '<td class="px-4 py-3 whitespace-nowrap">' +
             '<input type="text" data-field="nominal_size" placeholder=\'Ej: 9.125" x 9.125" o "Modelo A" o "5 Litros"\' class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
+          '</td>' +
+          '<td class="px-4 py-3 whitespace-nowrap">' +
+            '<input type="text" data-field="nominal_size_en" placeholder="Solo si es texto. Ej: Digital - Range 0 - 30 Pa" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +
           '</td>' +
           '<td class="px-4 py-3 whitespace-nowrap">' +
             '<input type="text" data-field="real_size" placeholder=\'Ej: 231 x 231 mm o "Grande" o "1.2m x 2.0m"\' class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />' +

@@ -311,6 +311,17 @@ function parseListField(field: string | null | undefined): string[] {
   return field.split('\n').filter(item => item && item.trim());
 }
 
+// Medida nominal en el idioma de la página. Las medidas son números y no se
+// traducen, pero en productos como los manómetros la "medida" es texto
+// ("Digital - Rango 0 - 30 pascales") y en /en se leía en español. Si no hay
+// traducción cargada se usa el español, que es mejor que dejarlo vacío.
+function nominalEnIdioma(
+  nominal: string | null | undefined,
+  nominalEn: string | null | undefined
+): string | null | undefined {
+  return lang === 'en' && nominalEn?.trim() ? nominalEn : nominal;
+}
+
 // Formato "tamaño nominal / tamaño real" para opciones del select
 function sizeOptionLabel(nominal: string | null | undefined, real: string | null | undefined): string {
   const n = nominal?.trim();
@@ -377,7 +388,7 @@ if (categoryVariants.length > 0) {
     if (isCurrentProduct && !currentProductAdded) {
       sizeOptions.unshift({
         value: product.uuid,
-        label: sizeOptionLabel(product.nominal_size, product.real_size),
+        label: sizeOptionLabel(nominalEnIdioma(product.nominal_size, product.nominal_size_en), product.real_size),
         price: productPriceFinal,
         currency: finalCurrency,
         stock: product.stock,
@@ -409,7 +420,7 @@ if (categoryVariants.length > 0) {
     
     sizeOptions.push({
       value: variantProduct?.uuid || `variant-${variant.id}`,
-      label: sizeOptionLabel(variant.nominal_size, variant.real_size),
+      label: sizeOptionLabel(nominalEnIdioma(variant.nominal_size, variant.nominal_size_en), variant.real_size),
       price: variantPrice,
       currency: variantCurrency,
       stock: variant.stock,
@@ -437,7 +448,7 @@ if (categoryVariants.length > 0) {
   if (currentSizeKey && !addedSizes.has(currentSizeKey)) {
     sizeOptions.push({
       value: product.uuid,
-      label: sizeOptionLabel(product.nominal_size, product.real_size),
+      label: sizeOptionLabel(nominalEnIdioma(product.nominal_size, product.nominal_size_en), product.real_size),
       price: productPriceFinal,
       currency: finalCurrency,
       stock: product.stock,
@@ -465,7 +476,7 @@ if (categoryVariants.length > 0) {
     
     sizeOptions.push({
       value: variant.uuid,
-      label: sizeOptionLabel(variant.nominal_size, variant.real_size),
+      label: sizeOptionLabel(nominalEnIdioma(variant.nominal_size, variant.nominal_size_en), variant.real_size),
       price: variantFinalPrice,
       currency: variantFinalCurrency,
       stock: variant.stock,

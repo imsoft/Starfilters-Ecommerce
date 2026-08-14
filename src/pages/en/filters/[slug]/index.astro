@@ -178,7 +178,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                   data-bind-code={variant.bind_code}
                 >
                   <div class="flex-1">
-                    <p class="font-medium text-foreground">{variant.nominal_size}</p>
+                    <p class="font-medium text-foreground">{variant.nominal_size_en?.trim() || variant.nominal_size}</p>
                     <p class="text-sm text-muted-foreground">Actual size: {variant.real_size}</p>
                     <p class="text-xs text-green-600 font-medium mt-1">
                       Available

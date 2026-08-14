@@ -82,7 +82,7 @@ if (Astro.request.method === "POST") {
       // Procesar tabla de tamaños
       const sizesJson = formData.get("product_sizes") as string;
       console.log('📦 JSON recibido del formulario (raw):', sizesJson);
-      let sizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code?: string | null; air_flow?: string}> = [];
+      let sizes: Array<{nominal_size: string; nominal_size_en?: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code?: string | null; air_flow?: string}> = [];
       if (sizesJson) {
         try {
           const parsed = JSON.parse(sizesJson);
@@ -221,6 +221,7 @@ if (Astro.request.method === "POST") {
               bind_code: size.bind_code?.trim() || null,
               air_flow: size.air_flow?.trim() || null,
               nominal_size: size.nominal_size?.trim() || '',
+              nominal_size_en: size.nominal_size_en?.trim() || null,
               real_size: size.real_size?.trim() || '',
               price: size.price || 0,
               currency: size.currency || 'MXN',
@@ -354,7 +355,7 @@ function textToArray(text: string | null | undefined): string[] {
 
 // Preparar tamaños para la tabla
 // Cargar variantes de categoría si existe filter_category_id
-let productSizes: Array<{nominal_size: string; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; air_flow?: string}> = [];
+let productSizes: Array<{nominal_size: string; nominal_size_en?: string | null; real_size: string; price: number; currency: 'MXN' | 'USD'; bind_code: string; air_flow?: string}> = [];
 
 if (product.filter_category_id) {
   try {
@@ -367,6 +368,7 @@ if (product.filter_category_id) {
       // Usar las variantes de categoría
       productSizes = activeVariants.map(v => ({
         nominal_size: v.nominal_size || '',
+        nominal_size_en: v.nominal_size_en || '',
         real_size: v.real_size || '',
         price: v.price || 0,
         currency: (v.currency as 'MXN' | 'USD') || 'MXN',
@@ -1195,37 +1197,10 @@ console.log('📦 Tamaños preparados:', productSizes.length);
       productForm.addEventListener('submit', function(e) {
         console.log('📝 Formulario enviándose...');
 
-        // Asegurar que el JSON de tamaños esté actualizado antes de enviar
-        var sizesTable = document.querySelector('[data-sizes-table]');
-        if (sizesTable) {
-          var jsonInput = sizesTable.querySelector('[data-sizes-json]');
-          var tbody = sizesTable.querySelector('[data-sizes-tbody]');
-          if (jsonInput && tbody) {
-            var rows = tbody.querySelectorAll('tr[data-row-index]');
-            var sizes = [];
-
-            rows.forEach(function(row) {
-              var nominalInput = row.querySelector('[data-field="nominal_size"]');
-              var realInput = row.querySelector('[data-field="real_size"]');
-              var priceInput = row.querySelector('[data-field="price"]');
-              var currencySelect = row.querySelector('[data-field="currency"]');
-              var bindCodeInput = row.querySelector('[data-field="bind_code"]');
-
-              if (nominalInput && realInput && priceInput && currencySelect && bindCodeInput) {
-                sizes.push({
-                  nominal_size: nominalInput.value || '',
-                  real_size: realInput.value || '',
-                  price: parseFloat(priceInput.value) || 0,
-                  currency: currencySelect.value || 'MXN',
-                  bind_code: bindCodeInput.value || ''
-                });
-              }
-            });
-
-            jsonInput.value = JSON.stringify(sizes);
-            console.log('📦 JSON actualizado antes de enviar:', sizes.length, 'filas');
-          }
-        }
+        // El JSON de tamaños lo mantiene al día ProductSizesTable, que también
+        // lo recalcula al enviar. Aquí había una copia de esa lógica a la que
+        // le faltaban columnas (air_flow y la etiqueta en inglés), y como se
+        // ejecutaba después, borraba esos datos en cada guardado.
       });
     }
   });

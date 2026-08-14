@@ -48,6 +48,10 @@ export interface FilterCategoryVariant {
   product_code?: string | null;
   air_flow?: string | null;
   nominal_size: string;
+  // Etiqueta en inglés. La medida nominal suele ser un número ("24 x 24 x 15")
+  // y no necesita traducción, pero en productos como los manómetros es texto
+  // ("Digital - Rango 0 - 30 pascales") y en /en se veía en español.
+  nominal_size_en?: string | null;
   real_size: string;
   price: number;
   currency?: 'MXN' | 'USD';
@@ -453,6 +457,17 @@ export const ensureVariantProductColumn = (): Promise<void> => {
         console.log('✅ Columna filter_category_variants.product_id creada');
       }
 
+      // Etiqueta del tamaño en inglés (los manómetros usan texto, no medidas)
+      const colEn = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'filter_category_variants'
+           AND COLUMN_NAME = 'nominal_size_en'`
+      ) as any[];
+      if (!colEn[0] || Number(colEn[0].n) === 0) {
+        await query('ALTER TABLE filter_category_variants ADD COLUMN nominal_size_en VARCHAR(255) NULL');
+        console.log('✅ Columna filter_category_variants.nominal_size_en creada');
+      }
+
       // Reemplazar el índice único global de bind_code por uno por producto
       const uniques = await query(
         `SELECT INDEX_NAME AS name, COUNT(*) AS cols
@@ -534,6 +549,7 @@ const normalizeVariant = (v: any): FilterCategoryVariant => ({
   product_code: v.product_code || null,
   air_flow: v.air_flow !== undefined ? v.air_flow : null,
   nominal_size: v.nominal_size || '',
+  nominal_size_en: v.nominal_size_en !== undefined ? v.nominal_size_en : null,
   real_size: v.real_size || '',
   price: v.price || 0,
   currency: v.currency || 'MXN',
@@ -636,8 +652,8 @@ export const addCategoryVariant = async (variantData: Partial<FilterCategoryVari
     try {
       const result = await query(
         `INSERT INTO filter_category_variants (
-          category_id, product_id, bind_code, product_code, air_flow, nominal_size, real_size, price, currency, price_usd, stock, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          category_id, product_id, bind_code, product_code, air_flow, nominal_size, nominal_size_en, real_size, price, currency, price_usd, stock, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           variantData.category_id,
           variantData.product_id ?? null,
@@ -645,6 +661,7 @@ export const addCategoryVariant = async (variantData: Partial<FilterCategoryVari
           variantData.product_code || null,
           variantData.air_flow || null,
           variantData.nominal_size,
+          variantData.nominal_size_en || null,
           variantData.real_size,
           variantData.price,
           variantData.currency || 'MXN',
@@ -662,13 +679,14 @@ export const addCategoryVariant = async (variantData: Partial<FilterCategoryVari
         console.log('⚠️ Columna air_flow no existe, agregando sin ella...');
         const result = await query(
           `INSERT INTO filter_category_variants (
-            category_id, bind_code, product_code, nominal_size, real_size, price, currency, price_usd, stock, is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            category_id, bind_code, product_code, nominal_size, nominal_size_en, real_size, price, currency, price_usd, stock, is_active
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             variantData.category_id,
             variantData.bind_code,
             variantData.product_code || null,
             variantData.nominal_size,
+            variantData.nominal_size_en || null,
             variantData.real_size,
             variantData.price,
             variantData.currency || 'MXN',
@@ -702,7 +720,7 @@ export const updateCategoryVariant = async (id: number, variantData: Partial<Fil
       await query(
         `UPDATE filter_category_variants SET
           product_id = COALESCE(?, product_id),
-          bind_code = ?, product_code = ?, air_flow = ?, nominal_size = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
+          bind_code = ?, product_code = ?, air_flow = ?, nominal_size = ?, nominal_size_en = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
         WHERE id = ?`,
         [
           variantData.product_id ?? null,
@@ -710,6 +728,7 @@ export const updateCategoryVariant = async (id: number, variantData: Partial<Fil
           variantData.product_code || null,
           variantData.air_flow || null,
           variantData.nominal_size,
+          variantData.nominal_size_en || null,
           variantData.real_size,
           variantData.price,
           variantData.currency || 'MXN',
@@ -727,12 +746,13 @@ export const updateCategoryVariant = async (id: number, variantData: Partial<Fil
         console.log('⚠️ Columna air_flow no existe, actualizando sin ella...');
         await query(
           `UPDATE filter_category_variants SET
-            bind_code = ?, product_code = ?, nominal_size = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
+            bind_code = ?, product_code = ?, nominal_size = ?, nominal_size_en = ?, real_size = ?, price = ?, currency = ?, price_usd = ?, stock = ?, is_active = ?
           WHERE id = ?`,
           [
             variantData.bind_code,
             variantData.product_code || null,
             variantData.nominal_size,
+            variantData.nominal_size_en || null,
             variantData.real_size,
             variantData.price,
             variantData.currency || 'MXN',
