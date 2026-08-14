@@ -651,3 +651,44 @@ export const getBindInventoryByCode = async (
     return null;
   }
 };
+
+/**
+ * Precio de BIND por código, en pesos.
+ *
+ * IMPORTANTE: /api/ProductsPriceAndInventory devuelve el precio **ya convertido
+ * a MXN**, aunque el producto esté capturado en dólares. Se comprobó contra el
+ * catálogo real comparando con /api/Products/{id}, que sí da el precio nativo:
+ *
+ *   VENT7   lista 17.11      nativo 1 USD      → 17.11x
+ *   BFIL1   lista 72,389.03  nativo 4,231 USD  → 17.11x
+ *   B952    lista 1,131      nativo 1,131 MXN  → 1.00x
+ *
+ * Es decir, el `CurrencyCode` del detalle dice en qué moneda se captura el
+ * producto, NO en qué moneda viene el precio de la lista. Tomarlo como moneda
+ * de la lista habría multiplicado los precios por 17.
+ */
+export interface PrecioBind {
+  precio: number;
+  moneda: 'MXN';
+}
+
+export const getBindPreciosPorCodigo = async (
+  codigos: string[]
+): Promise<Map<string, PrecioBind>> => {
+  const resultado = new Map<string, PrecioBind>();
+  const buscados = new Set(codigos.map((c) => String(c).trim().toUpperCase()).filter(Boolean));
+  if (buscados.size === 0) return resultado;
+
+  const lista = await getBindProducts({ page: 1, pageSize: 5000 });
+  if (!lista.success || !lista.data) return resultado;
+
+  for (const bp of lista.data as any[]) {
+    const codigo = String(bp.Code ?? bp.code ?? '').trim().toUpperCase();
+    if (!codigo || !buscados.has(codigo)) continue;
+    const precio = Number(bp.Price ?? bp.price ?? 0) || 0;
+    if (precio > 0) resultado.set(codigo, { precio, moneda: 'MXN' });
+  }
+
+  console.log(`💲 Precios de BIND resueltos: ${resultado.size} de ${buscados.size} códigos`);
+  return resultado;
+};

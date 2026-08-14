@@ -1,0 +1,228 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { requireAdmin } from "@/lib/auth-utils";
+import { compararPreciosConBind, aplicarPreciosDeBind } from "@/lib/bind-price-sync";
+
+export const prerender = false;
+
+const { redirect } = await requireAdmin(Astro.cookies);
+if (redirect) {
+  return Astro.redirect(redirect);
+}
+
+let aplicados = 0;
+let fallidos: string[] = [];
+let seAplico = false;
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const seleccion = formData
+    .getAll('aplicar')
+    .map((v) => String(v).split(':'))
+    .filter((p) => p.length === 2 && (p[0] === 'variante' || p[0] === 'producto'))
+    .map((p) => ({ origen: p[0] as 'variante' | 'producto', id: Number(p[1]) }))
+    .filter((s) => Number.isFinite(s.id));
+
+  const resultado = await aplicarPreciosDeBind(seleccion);
+  aplicados = resultado.aplicados;
+  fallidos = resultado.fallidos;
+  seAplico = true;
+}
+
+const comparacion = await compararPreciosConBind();
+const { diferentes, iguales, sinPrecioEnBind, sinCodigoBind } = comparacion;
+
+const dinero = (n: number, m: string) =>
+  `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${m}`;
+---
+
+<AdminLayout title="Precios desde BIND">
+  <div class="px-4 sm:px-6 lg:px-8 py-8">
+    <div class="sm:flex sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Actualizar precios desde BIND</h1>
+        <p class="mt-2 text-sm text-gray-600 max-w-3xl">
+          El sitio guarda sus propios precios; de BIND solo se lee el inventario. Aquí se
+          comparan los dos y tú decides qué aplicar. Nada cambia hasta que confirmes.
+        </p>
+      </div>
+      <a
+        href="/admin/products"
+        class="mt-4 sm:mt-0 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+      >
+        Volver a Productos
+      </a>
+    </div>
+
+    {seAplico && (
+      <div class={`mt-6 rounded-md p-4 ${fallidos.length ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
+        <p class="text-sm font-medium text-gray-900">
+          {aplicados > 0
+            ? `✅ ${aplicados} precio(s) actualizado(s) desde BIND.`
+            : 'No se actualizó ningún precio.'}
+        </p>
+        {fallidos.length > 0 && (
+          <ul class="mt-2 list-disc pl-5 text-sm text-gray-700">
+            {fallidos.map((f) => <li>{f}</li>)}
+          </ul>
+        )}
+      </div>
+    )}
+
+    <dl class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <div class="rounded-lg bg-white p-4 shadow ring-1 ring-gray-200">
+        <dt class="text-sm text-gray-500">Con diferencia</dt>
+        <dd class="mt-1 text-2xl font-semibold text-gray-900">{diferentes.length}</dd>
+      </div>
+      <div class="rounded-lg bg-white p-4 shadow ring-1 ring-gray-200">
+        <dt class="text-sm text-gray-500">Ya coinciden</dt>
+        <dd class="mt-1 text-2xl font-semibold text-gray-900">{iguales}</dd>
+      </div>
+      <div class="rounded-lg bg-white p-4 shadow ring-1 ring-gray-200">
+        <dt class="text-sm text-gray-500">Sin precio en BIND</dt>
+        <dd class="mt-1 text-2xl font-semibold text-gray-900">{sinPrecioEnBind.length}</dd>
+      </div>
+      <div class="rounded-lg bg-white p-4 shadow ring-1 ring-gray-200">
+        <dt class="text-sm text-gray-500">Sin código BIND</dt>
+        <dd class="mt-1 text-2xl font-semibold text-gray-900">{sinCodigoBind}</dd>
+      </div>
+    </dl>
+
+    {diferentes.length === 0 ? (
+      <div class="mt-8 rounded-lg border border-gray-200 bg-white p-8 text-center">
+        <p class="text-sm text-gray-600">
+          Todos los precios con código BIND coinciden. No hay nada que actualizar.
+        </p>
+      </div>
+    ) : (
+      <form method="POST" class="mt-8">
+        <div class="mb-4 flex items-center gap-3">
+          <button
+            type="button"
+            data-marcar-todos
+            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          >
+            Marcar todos
+          </button>
+          <button
+            type="button"
+            data-desmarcar-todos
+            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          >
+            Desmarcar todos
+          </button>
+          <button
+            type="submit"
+            data-aplicar
+            class="ml-auto rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+          >
+            Aplicar seleccionados
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 w-10"></th>
+                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Producto / Tamaño</th>
+                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Código</th>
+                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Precio en el sitio</th>
+                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Precio en BIND</th>
+                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              {diferentes.map((f) => {
+                const grande = f.cambiaMoneda || Math.abs(f.diferenciaPct ?? 0) >= 25;
+                return (
+                  <tr class={grande ? 'bg-red-50' : ''}>
+                    <td class="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        name="aplicar"
+                        value={`${f.origen}:${f.id}`}
+                        class="h-4 w-4 rounded border-gray-300 text-blue-600"
+                        data-fila
+                      />
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900">
+                      {f.nombre || '(sin nombre)'}
+                      <span class="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                        {f.origen}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 font-mono text-xs text-gray-600">{f.codigo}</td>
+                    <td class="px-4 py-3 text-right text-sm text-gray-900">
+                      {dinero(f.precioSitio, f.monedaSitio)}
+                    </td>
+                    <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                      {dinero(f.precioBind, f.monedaBind)}
+                    </td>
+                    <td class="px-4 py-3 text-right text-sm">
+                      {f.cambiaMoneda ? (
+                        <span class="font-semibold text-red-700">
+                          cambia de {f.monedaSitio} a {f.monedaBind}
+                        </span>
+                      ) : (
+                        <span class={Math.abs(f.diferenciaPct ?? 0) >= 25 ? 'font-semibold text-red-700' : 'text-gray-700'}>
+                          {(f.diferenciaPct ?? 0) > 0 ? '+' : ''}{(f.diferenciaPct ?? 0).toFixed(1)}%
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-3 text-xs text-gray-500">
+          Las filas en rojo cambian de moneda o se mueven más de 25%. Revísalas con calma
+          antes de aplicarlas: puede ser que el dato equivocado esté en BIND.
+        </p>
+      </form>
+    )}
+
+    {sinPrecioEnBind.length > 0 && (
+      <div class="mt-8 rounded-lg border border-gray-200 bg-white p-4">
+        <h2 class="text-sm font-semibold text-gray-900">Sin precio en BIND</h2>
+        <p class="mt-1 text-xs text-gray-500">
+          Estos códigos están en el sitio pero BIND no devolvió un precio para ellos, así
+          que no hay con qué compararlos.
+        </p>
+        <p class="mt-2 font-mono text-xs text-gray-600">{sinPrecioEnBind.join(', ')}</p>
+      </div>
+    )}
+  </div>
+</AdminLayout>
+
+<script>
+  // Listener delegado: sobrevive a las transiciones de página
+  document.addEventListener('click', (e) => {
+    const objetivo = e.target as HTMLElement | null;
+    if (!objetivo) return;
+
+    if (objetivo.closest('[data-marcar-todos]') || objetivo.closest('[data-desmarcar-todos]')) {
+      const marcar = Boolean(objetivo.closest('[data-marcar-todos]'));
+      document
+        .querySelectorAll<HTMLInputElement>('input[data-fila]')
+        .forEach((c) => { c.checked = marcar; });
+      return;
+    }
+
+    // Confirmación antes de tocar precios publicados
+    const aplicar = objetivo.closest('[data-aplicar]');
+    if (aplicar) {
+      const n = document.querySelectorAll<HTMLInputElement>('input[data-fila]:checked').length;
+      if (n === 0) {
+        e.preventDefault();
+        alert('No seleccionaste ningún precio.');
+        return;
+      }
+      if (!confirm(`Se van a cambiar ${n} precio(s) del sitio por los de BIND. ¿Continuar?`)) {
+        e.preventDefault();
+      }
+    }
+  });
+</script>
