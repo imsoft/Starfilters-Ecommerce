@@ -4,6 +4,7 @@ import { createProduct } from '@/lib/product-service';
 import { generateUUID } from '@/lib/database';
 import { getFilterCategoryIdByName, createCategory } from '@/lib/filter-category-service';
 
+import { requireAdminApi } from '@/lib/auth-utils';
 // Función helper para normalizar listas separadas por comas
 // Maneja tanto "item1, item2" como "item1,item2" y los normaliza
 function normalizeCommaSeparatedList(value: string): string {
@@ -14,7 +15,10 @@ function normalizeCommaSeparatedList(value: string): string {
     .join(', ');
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const noAutorizado = await requireAdminApi(cookies);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;

@@ -6,6 +6,14 @@ import CustomModal from "@/components/shared/CustomModal.astro";
 import { getOrders, getOrderItems } from "@/lib/database";
 import type { Order, OrderItem } from "@/lib/database";
 
+import { requireAdmin } from "@/lib/auth-utils";
+
+// Solo administradores: esta página se podía abrir sin haber iniciado sesión.
+const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+if (redirigirSiNoEsAdmin) {
+  return Astro.redirect(redirigirSiNoEsAdmin);
+}
+
 // Obtener todas las órdenes con logs para debug y manejo de errores
 let allOrders: Order[] = [];
 

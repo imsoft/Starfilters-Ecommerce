@@ -2,7 +2,11 @@ import type { APIRoute } from 'astro';
 import { updateOrderStatus, getOrderById, getOrderItems } from '@/lib/database';
 import { sendEmail, createOrderStatusUpdateEmail } from '@/lib/email';
 
-export const POST: APIRoute = async ({ request }) => {
+import { requireAdminApi } from '@/lib/auth-utils';
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const noAutorizado = await requireAdminApi(cookies);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { orderId, status, trackingNumber } = await request.json();
 

@@ -3,6 +3,13 @@ import AdminLayout from "@/layouts/adminLayout.astro";
 import { Button } from "@/components/ui/button";
 import { getPortfolioProjectByUuid, updatePortfolioProject } from "@/lib/database";
 
+import { requireAdmin } from "@/lib/auth-utils";
+
+// Solo administradores: esta página se podía abrir sin haber iniciado sesión.
+const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+if (redirigirSiNoEsAdmin) {
+  return Astro.redirect(redirigirSiNoEsAdmin);
+}
 const { uuid } = Astro.params;
 if (!uuid) return Astro.redirect('/admin/portfolio');
 
@@ -42,6 +49,7 @@ if (!project) return Astro.redirect('/admin/portfolio');
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
 import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
+
 ---
 
 <AdminLayout title="Editar Proyecto">

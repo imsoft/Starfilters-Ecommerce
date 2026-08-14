@@ -5,6 +5,14 @@ import AdminFilters from "@/components/shared/AdminFilters.astro";
 import { getAllBlogPosts } from "@/lib/database";
 import type { BlogPost } from "@/lib/database";
 
+import { requireAdmin } from "@/lib/auth-utils";
+
+// Solo administradores: esta página se podía abrir sin haber iniciado sesión.
+const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+if (redirigirSiNoEsAdmin) {
+  return Astro.redirect(redirigirSiNoEsAdmin);
+}
+
 // Obtener mensajes de la URL
 const url = new URL(Astro.request.url);
 const success = url.searchParams.get('success');

@@ -5,6 +5,14 @@ import { getOrderByUuid, getOrderItems, updateOrderStatus } from "@/lib/database
 import { sendEmail, createOrderStatusUpdateEmail } from "@/lib/email";
 import type { Order, OrderItem } from "@/lib/database";
 
+import { requireAdmin } from "@/lib/auth-utils";
+
+// Solo administradores: esta página se podía abrir sin haber iniciado sesión.
+const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+if (redirigirSiNoEsAdmin) {
+  return Astro.redirect(redirigirSiNoEsAdmin);
+}
+
 const { id } = Astro.params;
 
 if (!id) {

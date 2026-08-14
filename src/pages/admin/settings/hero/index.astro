@@ -1,4 +1,12 @@
 ---
+import { requireAdmin } from "@/lib/auth-utils";
+
+// Solo administradores: esta página se podía abrir sin haber iniciado sesión.
+const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+if (redirigirSiNoEsAdmin) {
+  return Astro.redirect(redirigirSiNoEsAdmin);
+}
+
 export const prerender = false;
 // La configuración del Hero fue eliminada. El video está hardcodeado en el sitio.
 return Astro.redirect('/admin/dashboard', 301);

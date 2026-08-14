@@ -5,6 +5,13 @@ import { BlogImageUploader } from "@/components/ui/BlogImageUploader";
 import { BlogContentEditor } from "@/components/ui/BlogContentEditor";
 import { getBlogPostByUuid, updateBlogPost, generateSlug } from "@/lib/database";
 
+import { requireAdmin } from "@/lib/auth-utils";
+
+// Solo administradores: esta página se podía abrir sin haber iniciado sesión.
+const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+if (redirigirSiNoEsAdmin) {
+  return Astro.redirect(redirigirSiNoEsAdmin);
+}
 const { id } = Astro.params;
 
 // Obtener el artículo por UUID (incluir borradores para admin)
@@ -81,6 +88,7 @@ if (Astro.request.method === 'POST') {
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
 import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
+
 ---
 
 <AdminLayout title="Editar Artículo">

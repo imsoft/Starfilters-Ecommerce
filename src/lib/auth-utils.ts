@@ -110,3 +110,20 @@ export const authMiddleware = (cookies: any, redirectTo?: string) => {
     user
   };
 };
+
+/**
+ * Guarda para rutas de API que solo debe usar el administrador.
+ *
+ * Devuelve una respuesta 401 si no hay sesión de admin, o null si puede seguir.
+ * Las páginas usan requireAdmin (que redirige); una API tiene que contestar con
+ * un código, no con un redirect.
+ */
+export const requireAdminApi = async (cookies: any): Promise<Response | null> => {
+  const { isAdmin } = await requireAdmin(cookies);
+  if (isAdmin) return null;
+
+  return new Response(
+    JSON.stringify({ success: false, error: 'No autorizado' }),
+    { status: 401, headers: { 'Content-Type': 'application/json' } }
+  );
+};

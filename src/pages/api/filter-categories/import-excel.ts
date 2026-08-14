@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import * as XLSX from 'xlsx';
 import { createCategory } from '@/lib/filter-category-service';
 
+import { requireAdminApi } from '@/lib/auth-utils';
 // Función helper para crear slug desde nombre
 function createSlug(name: string): string {
   return name
@@ -12,7 +13,10 @@ function createSlug(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const noAutorizado = await requireAdminApi(cookies);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;

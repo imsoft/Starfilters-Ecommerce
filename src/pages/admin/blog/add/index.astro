@@ -6,6 +6,13 @@ import { BlogContentEditor } from "@/components/ui/BlogContentEditor";
 import { createBlogPost, generateSlug } from "@/lib/database";
 import FormPersistence from "@/components/admin/FormPersistence.astro";
 
+import { requireAdmin } from "@/lib/auth-utils";
+
+// Solo administradores: esta página se podía abrir sin haber iniciado sesión.
+const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+if (redirigirSiNoEsAdmin) {
+  return Astro.redirect(redirigirSiNoEsAdmin);
+}
 // Manejar envío del formulario
 if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
@@ -103,6 +110,7 @@ const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
 const errorDetails = url.searchParams.get('details');
 import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
+
 ---
 
 <AdminLayout title="Nuevo Artículo">

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { query } from '@/config/database';
 import bcrypt from 'bcryptjs';
+import { getAuthenticatedUser } from '@/lib/auth-utils';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -17,18 +18,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Obtener el usuario actual de las cookies
-    const authToken = cookies.get('auth_token')?.value;
-    if (!authToken) {
+    // Sesión. Antes se leía la cookie 'auth_token' (el nombre real es
+    // 'auth-token', con guion), así que nunca coincidía y cambiar la contraseña
+    // siempre mandaba a /login. Además se descodificaba el token sin verificar
+    // la firma: bastaba con inventarse una cookie para elegir a qué cuenta
+    // apuntaba. getAuthenticatedUser lee la cookie correcta y valida la firma.
+    const usuario = getAuthenticatedUser(cookies);
+    if (!usuario) {
       return new Response(null, {
         status: 302,
         headers: { Location: '/login?error=unauthorized' }
       });
     }
-
-    // Decodificar el token para obtener el email
-    const tokenData = JSON.parse(Buffer.from(authToken.split('.')[1], 'base64').toString());
-    const email = tokenData.email;
+    const email = usuario.email;
 
     // Obtener el usuario de la base de datos
     const [user] = await query(

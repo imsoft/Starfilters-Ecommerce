@@ -1,7 +1,11 @@
 import type { APIRoute } from 'astro';
 import { uploadProductImage, uploadBlogImage, uploadUserImage, uploadGeneralImage } from '@/lib/cloudinary';
 
-export const POST: APIRoute = async ({ request }) => {
+import { requireAdminApi } from '@/lib/auth-utils';
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const noAutorizado = await requireAdminApi(cookies);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;

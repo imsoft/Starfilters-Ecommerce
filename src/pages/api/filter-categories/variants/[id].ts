@@ -1,10 +1,14 @@
 import type { APIRoute } from 'astro';
 import { deleteCategoryVariant } from '@/lib/filter-category-service';
 
+import { requireAdminApi } from '@/lib/auth-utils';
 /**
  * DELETE - Eliminar una variante de una categoría
  */
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, cookies }) => {
+  const noAutorizado = await requireAdminApi(cookies);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const id = parseInt(params.id || '0');
 
