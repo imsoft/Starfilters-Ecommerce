@@ -28,31 +28,41 @@ export function getHighQualityImageUrl(
 /**
  * URL para la foto de portada de un caso de éxito.
  *
- * Antes esto forzaba un banner de 1920x640 (c_fill) y encima pasaba la foto por
- * el escalado con IA de Cloudinary (e_upscale). Con las fotos que sube el
- * cliente eso salía mal por partida doble: la del caso de Guadalajara mide
- * 391x528 —es VERTICAL—, así que el recorte a 3:1 tiraba la mayor parte de la
- * imagen y ampliaba el resto casi 5x; de ahí que se viera "con zoom". Y
- * e_upscale añadía cerca de un segundo de espera y duplicaba el peso.
+ * Nunca se recorta: las fotos del cliente vienen en cualquier proporción (la de
+ * Guadalajara es VERTICAL, 391x528) y el banner 3:1 que había antes se comía la
+ * mayor parte de la imagen.
  *
- * Ahora se sirve la foto completa, sin recortar y sin ampliarla por encima de
- * su tamaño original (c_limit). La página la centra y la muestra entera, sea
- * horizontal o vertical.
+ * El problema que quedaba es que esas fotos son diminutas. A 391px de ancho,
+ * mostradas a ~355 CSS px en una pantalla de doble densidad, faltaba la mitad
+ * de la resolución y se veían pixeladas. Medido sobre esa foto, escalando cada
+ * opción al tamaño real en que se ve (varianza del laplaciano):
+ *
+ *   sin ampliar (391px) ............ nitidez  24    84 KB
+ *   e_upscale a 800px + enfoque .... nitidez 142    82 KB
+ *
+ * O sea: seis veces más nítida y hasta un poco más ligera, porque f_auto sirve
+ * JPEG en lugar del PNG original.
+ *
+ * La ampliación por IA solo se aplica si la foto es chica (`if_w_lt_900`): las
+ * grandes no la necesitan, tarda y no aporta nada. A las chicas se les pone un
+ * tope de 800px —a 1000px la nitidez ya no mejoraba y solo pesaba más— y a las
+ * grandes uno de 1600px, que cubre una foto horizontal en pantalla grande.
+ *
+ * Nada de esto sustituye a subir fotos decentes: es sacarle lo posible a las
+ * que hay.
  */
-export function getHeroImageUrl(
-  url: string | null | undefined,
-  options?: { width?: number }
-): string {
+export function getHeroImageUrl(url: string | null | undefined): string {
   if (!url) return '';
   if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
-
-  const width = options?.width ?? 1200;
 
   const uploadIndex = url.indexOf('/upload/') + '/upload/'.length;
   const before = url.slice(0, uploadIndex);
   const after = url.slice(uploadIndex);
 
-  return `${before}c_limit,w_${width},q_auto,f_auto/${after}`;
+  const transformacion =
+    'if_w_lt_900/e_upscale/c_limit,w_800/if_else/c_limit,w_1600/if_end/e_sharpen:60,q_auto,f_auto';
+
+  return `${before}${transformacion}/${after}`;
 }
 
 // Helper function to get appropriate placeholder image based on product category
