@@ -64,6 +64,7 @@ if (Astro.request.method === 'POST') {
 
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <AdminLayout title="Nuevo Caso de Éxito">
@@ -98,6 +99,7 @@ const error = url.searchParams.get('error');
       <!-- Imagen destacada -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-4">Imagen Destacada</h2>
+          <ConsejoImagen zona="casoPortada" class="mb-4" />
         <div id="image-preview-wrap" class="hidden mb-4">
           <img id="image-preview" src="" alt="Preview" class="h-48 w-full object-cover rounded-lg" />
         </div>
@@ -269,6 +271,7 @@ const error = url.searchParams.get('error');
       <!-- Galería de imágenes -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-1">Galería de Imágenes</h2>
+          <ConsejoImagen zona="casoGaleria" class="mb-4" />
         <p class="text-sm text-muted-foreground mb-4">Sube varias fotos del proyecto. Se mostrarán como galería en la página pública.</p>
 
         <div id="gallery-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4"></div>

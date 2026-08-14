@@ -1,12 +1,14 @@
 ---
 // Componente simplificado para la creación de categorías/productos
 // Guarda las imágenes temporalmente hasta que se cree el registro
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <div class="space-y-8">
   <!-- Imagen Principal -->
   <div class="rounded-lg border border-gray-200 bg-white p-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Imagen Principal</h3>
+    <ConsejoImagen zona="categoria" class="mb-4" />
     <p class="text-sm text-gray-600 mb-4">
       Esta imagen se mostrará como la imagen principal de la categoría.
     </p>

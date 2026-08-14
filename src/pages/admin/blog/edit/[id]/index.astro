@@ -80,6 +80,7 @@ if (Astro.request.method === 'POST') {
 // Obtener mensajes de la URL
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <AdminLayout title="Editar Artículo">
@@ -381,6 +382,7 @@ const error = url.searchParams.get('error');
         <!-- Imagen destacada -->
         <div class="rounded-lg border border-border bg-background p-6">
           <h2 class="text-lg font-semibold text-foreground mb-4">Imagen Destacada</h2>
+          <ConsejoImagen zona="blog" class="mb-4" />
 
           <BlogImageUploader
             client:load

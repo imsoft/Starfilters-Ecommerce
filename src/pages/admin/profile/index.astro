@@ -72,6 +72,7 @@ const getRoleText = (role: string): string => {
       return role;
   }
 };
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <AdminLayout title="Mi Perfil">
@@ -172,6 +173,8 @@ const getRoleText = (role: string): string => {
                   </svg>
                 </button>
               </div>
+
+              <ConsejoImagen zona="perfil" class="mb-4 w-full" />
               
               <!-- Input oculto para subir imagen -->
               <input

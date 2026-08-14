@@ -10,6 +10,7 @@ const { productId, productName } = Astro.props;
 
 // Obtener imágenes del producto
 const updatedImages = await getProductImages(productId);
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <div class="space-y-6">
@@ -17,6 +18,8 @@ const updatedImages = await getProductImages(productId);
     <h3 class="text-lg font-semibold text-foreground">Imágenes del Producto</h3>
     <span class="text-sm text-muted-foreground">{updatedImages.length} imagen(es)</span>
   </div>
+
+  <ConsejoImagen zona="producto" class="mb-4" />
 
   <!-- Formulario para agregar nueva imagen -->
   <form method="POST" class="bg-muted p-4 rounded-lg space-y-4">

@@ -38,6 +38,7 @@ if (Astro.request.method === 'POST') {
 
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <AdminLayout title="Nuevo Proyecto">
@@ -73,6 +74,7 @@ const error = url.searchParams.get('error');
       <!-- Imagen -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-4">Imagen del Proyecto</h2>
+        <ConsejoImagen zona="portafolio" class="mb-4" />
         <div id="image-preview-wrap" class="hidden mb-4">
           <img id="image-preview" src="" alt="Preview" class="h-48 w-full object-cover rounded-lg" />
         </div>

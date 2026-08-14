@@ -17,12 +17,14 @@ const primaryImage = allImages.find(img => img.is_primary);
 const carouselImages = allImages.filter(img => !img.is_primary);
 console.log('🖼️ [ProductImageManagerEdit] Imagen principal:', primaryImage ? 'Sí' : 'No');
 console.log('🖼️ [ProductImageManagerEdit] Imágenes de carrusel:', carouselImages.length);
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <div class="space-y-8">
   <!-- Imagen Principal -->
   <div class="rounded-lg border border-gray-200 bg-white p-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Imagen Principal</h3>
+    <ConsejoImagen zona="producto" class="mb-4" />
     <p class="text-sm text-gray-600 mb-4">
       Esta imagen se mostrará como la imagen principal del producto.
     </p>

@@ -42,6 +42,7 @@ if (Astro.request.method === 'POST') {
 
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <AdminLayout title="Nuevo Testimonio">
@@ -137,6 +138,7 @@ const error = url.searchParams.get('error');
       <!-- Logo de la empresa -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-2">Logo de la Empresa</h2>
+        <ConsejoImagen zona="testimonioLogo" class="mb-4" />
         <p class="text-sm text-muted-foreground mb-4">Aparece junto al nombre del cliente en la tarjeta del testimonio.</p>
         <div id="logo-preview-wrap" class="hidden mb-4">
           <img id="logo-preview" src="" alt="Logo preview" class="h-16 object-contain rounded border border-border p-2 bg-white" />
@@ -156,6 +158,7 @@ const error = url.searchParams.get('error');
       <!-- Imagen del proyecto -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-2">Imagen del Proyecto <span class="text-sm font-normal text-muted-foreground">(opcional)</span></h2>
+        <ConsejoImagen zona="testimonioProyecto" class="mb-4" />
         <p class="text-sm text-muted-foreground mb-4">Se muestra en la parte superior de la tarjeta del testimonio para mostrar el trabajo realizado.</p>
         <div id="project-preview-wrap" class="hidden mb-4">
           <img id="project-preview" src="" alt="Project preview" class="h-40 w-full object-cover rounded-lg" />

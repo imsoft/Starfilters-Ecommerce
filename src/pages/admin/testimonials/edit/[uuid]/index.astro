@@ -45,6 +45,7 @@ if (!testimonial) return Astro.redirect('/admin/testimonials');
 
 const url = new URL(Astro.request.url);
 const error = url.searchParams.get('error');
+import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 ---
 
 <AdminLayout title="Editar Testimonio">
@@ -137,6 +138,7 @@ const error = url.searchParams.get('error');
       <!-- Logo de la empresa -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-2">Logo de la Empresa</h2>
+        <ConsejoImagen zona="testimonioLogo" class="mb-4" />
         <p class="text-sm text-muted-foreground mb-4">Aparece junto al nombre del cliente.</p>
         <div id="logo-preview-wrap" class={testimonial.company_logo_url ? '' : 'hidden'}>
           <img id="logo-preview" src={testimonial.company_logo_url || ''} alt="Logo" class="h-16 object-contain rounded border border-border p-2 bg-white mb-3" />
@@ -158,6 +160,7 @@ const error = url.searchParams.get('error');
       <!-- Imagen del proyecto -->
       <div class="rounded-lg border border-border bg-background p-6">
         <h2 class="text-lg font-semibold text-foreground mb-2">Imagen del Proyecto <span class="text-sm font-normal text-muted-foreground">(opcional)</span></h2>
+        <ConsejoImagen zona="testimonioProyecto" class="mb-4" />
         <p class="text-sm text-muted-foreground mb-4">Se muestra en la parte superior de la tarjeta del testimonio.</p>
         <div id="project-preview-wrap" class={testimonial.project_image_url ? '' : 'hidden'}>
           <img id="project-preview" src={testimonial.project_image_url || ''} alt="Proyecto" class="h-40 w-full object-cover rounded-lg mb-3" />

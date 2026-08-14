@@ -200,7 +200,7 @@ export function BlogImageUploader({ blogId, initialImage, onImageChange }: BlogI
             />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            JPG, JPEG, PNG, GIF, WEBP hasta 5MB. Recomendado: 1200x630px
+            JPG, JPEG, PNG, GIF, WEBP hasta 5MB. Recomendado: 1200 × 800 px (horizontal)
           </p>
         </div>
       )}
