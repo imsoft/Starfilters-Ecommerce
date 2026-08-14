@@ -153,7 +153,7 @@ const normalizedSizes = initialSizes.map(size => ({
                     type="button"
                     data-refresh-stock
                     class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200"
-                    title="Actualizar stock desde Bind"
+                    title="Traer stock y precio desde Bind"
                   >
                     <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -266,7 +266,54 @@ const normalizedSizes = initialSizes.map(size => ({
       }
       
       // Función para buscar stock desde Bind
-      async function fetchStockFromBind(bindCode, stockElement, refreshButton) {
+      // Pone el precio de BIND en el campo. El precio manda desde BIND, pero el
+      // input sigue siendo editable: si el administrador ya escribió uno
+      // distinto no se le pisa, se le ofrece cambiarlo con un clic.
+      function aplicarPrecioDeBind(fila, precio, forzar) {
+        if (!fila || precio === undefined || precio === null || isNaN(precio)) return;
+        var input = fila.querySelector('[data-field="price"]');
+        var selMoneda = fila.querySelector('[data-field="currency"]');
+        if (!input) return;
+
+        var contenedor = input.parentElement;
+        var aviso = contenedor.querySelector('[data-precio-bind]');
+        if (!aviso) {
+          aviso = document.createElement('p');
+          aviso.setAttribute('data-precio-bind', '');
+          contenedor.appendChild(aviso);
+        }
+
+        function ponerPrecio() {
+          input.value = Number(precio).toFixed(2);
+          // BIND entrega el precio de lista en pesos
+          if (selMoneda) selMoneda.value = 'MXN';
+          aviso.textContent = 'Precio de BIND';
+          aviso.className = 'mt-1 text-xs text-green-700';
+          updateJson();
+        }
+
+        var actual = parseFloat(input.value);
+        var vacio = !input.value || isNaN(actual) || actual === 0;
+
+        if (forzar || vacio) { ponerPrecio(); return; }
+
+        if (Math.abs(actual - precio) < 0.01) {
+          aviso.textContent = 'Igual que BIND';
+          aviso.className = 'mt-1 text-xs text-gray-500';
+          return;
+        }
+
+        aviso.className = 'mt-1 text-xs text-amber-700';
+        aviso.textContent = 'BIND: $' + Number(precio).toFixed(2) + ' ';
+        var usar = document.createElement('button');
+        usar.type = 'button';
+        usar.textContent = 'usar';
+        usar.className = 'underline font-semibold';
+        usar.addEventListener('click', function (e) { e.preventDefault(); ponerPrecio(); });
+        aviso.appendChild(usar);
+      }
+
+      async function fetchStockFromBind(bindCode, stockElement, refreshButton, forzarPrecio) {
         if (!bindCode || !bindCode.trim()) {
           stockElement.textContent = '—';
           return;
@@ -283,6 +330,7 @@ const normalizedSizes = initialSizes.map(size => ({
           if (result.success && result.data && result.data.inventory !== undefined) {
             stockElement.textContent = result.data.inventory.toString();
             stockElement.className = 'text-sm font-medium text-gray-700 min-w-[60px]';
+            aplicarPrecioDeBind(stockElement.closest('tr'), result.data.price, forzarPrecio);
           } else {
             stockElement.textContent = 'N/A';
             stockElement.className = 'text-sm font-medium text-gray-400 min-w-[60px]';
@@ -370,7 +418,7 @@ const normalizedSizes = initialSizes.map(size => ({
           '<td class="px-4 py-3 whitespace-nowrap">' +
             '<div class="flex items-center gap-2">' +
               '<span data-field="stock" class="text-sm font-medium text-gray-700 min-w-[60px]">—</span>' +
-              '<button type="button" data-refresh-stock class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200" title="Actualizar stock desde Bind">' +
+              '<button type="button" data-refresh-stock class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200" title="Traer stock y precio desde Bind">' +
                 '<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
                   '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />' +
                 '</svg>' +
@@ -434,7 +482,7 @@ const normalizedSizes = initialSizes.map(size => ({
             e.preventDefault();
             var bindCode = bindCodeInput.value.trim();
             if (bindCode) {
-              fetchStockFromBind(bindCode, stockElement, refreshButton);
+              fetchStockFromBind(bindCode, stockElement, refreshButton, true);
             }
           });
         }
@@ -512,7 +560,7 @@ const normalizedSizes = initialSizes.map(size => ({
             e.preventDefault();
             var bindCode = bindCodeInput.value.trim();
             if (bindCode) {
-              fetchStockFromBind(bindCode, stockElement, refreshButton);
+              fetchStockFromBind(bindCode, stockElement, refreshButton, true);
             }
           });
         }
