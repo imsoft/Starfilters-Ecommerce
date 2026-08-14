@@ -127,12 +127,19 @@ export const compararPreciosConBind = async (): Promise<ComparacionPrecios> => {
   return { diferentes, iguales, sinPrecioEnBind, sinCodigoBind };
 };
 
+/** Tope de cordura: por encima de esto seguro es un dedazo, no un precio */
+const PRECIO_MAXIMO = 10_000_000;
+
 /**
- * Aplica los precios de BIND a las filas seleccionadas.
- * Se vuelve a consultar BIND: no se confía en lo que venga del formulario.
+ * Aplica precios a las filas seleccionadas.
+ *
+ * El formulario propone el precio de BIND, pero el administrador puede
+ * cambiarlo antes de aplicar: manda mandar lo que venga en el campo. Solo se
+ * comprueba que sea un número positivo y razonable; si no lo es, se usa el de
+ * BIND en vez de guardar una cifra inválida.
  */
 export const aplicarPreciosDeBind = async (
-  seleccion: Array<{ origen: 'variante' | 'producto'; id: number }>
+  seleccion: Array<{ origen: 'variante' | 'producto'; id: number; precio?: number }>
 ): Promise<{ aplicados: number; fallidos: string[] }> => {
   if (seleccion.length === 0) return { aplicados: 0, fallidos: [] };
 
@@ -148,16 +155,23 @@ export const aplicarPreciosDeBind = async (
       fallidos.push(`${sel.origen} ${sel.id} (ya no difiere de BIND)`);
       continue;
     }
+    const propuesto = Number(sel.precio);
+    const valido = Number.isFinite(propuesto) && propuesto > 0 && propuesto <= PRECIO_MAXIMO;
+    const precio = valido ? Number(propuesto.toFixed(2)) : fila.precioBind;
+    if (!valido && sel.precio !== undefined) {
+      fallidos.push(`${fila.codigo} (precio inválido, se aplicó el de BIND)`);
+    }
+
     try {
       if (fila.origen === 'variante') {
         await query(
           'UPDATE filter_category_variants SET price = ?, currency = ?, price_usd = ? WHERE id = ?',
-          [fila.precioBind, 'MXN', null, fila.id]
+          [precio, 'MXN', null, fila.id]
         );
       } else {
         await query(
           'UPDATE products SET price = ?, currency = ?, price_usd = ? WHERE id = ?',
-          [fila.precioBind, 'MXN', null, fila.id]
+          [precio, 'MXN', null, fila.id]
         );
       }
       aplicados++;

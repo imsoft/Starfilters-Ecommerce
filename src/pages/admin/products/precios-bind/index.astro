@@ -20,7 +20,17 @@ if (Astro.request.method === 'POST') {
     .getAll('aplicar')
     .map((v) => String(v).split(':'))
     .filter((p) => p.length === 2 && (p[0] === 'variante' || p[0] === 'producto'))
-    .map((p) => ({ origen: p[0] as 'variante' | 'producto', id: Number(p[1]) }))
+    .map((p) => {
+      const origen = p[0] as 'variante' | 'producto';
+      const id = Number(p[1]);
+      // El precio propuesto es el de BIND, pero el administrador pudo cambiarlo
+      const escrito = formData.get(`precio:${origen}:${id}`);
+      // Se conserva el signo: quitarlo convertía "-50" en 50 y lo daba por
+      // bueno. Un negativo debe rechazarse, no corregirse solo.
+      const precio =
+        escrito === null ? undefined : Number(String(escrito).trim().replace(/[^\d.\-]/g, ''));
+      return { origen, id, precio };
+    })
     .filter((s) => Number.isFinite(s.id));
 
   const resultado = await aplicarPreciosDeBind(seleccion);
@@ -43,7 +53,8 @@ const dinero = (n: number, m: string) =>
         <h1 class="text-2xl font-bold text-gray-900">Actualizar precios desde BIND</h1>
         <p class="mt-2 text-sm text-gray-600 max-w-3xl">
           El sitio guarda sus propios precios; de BIND solo se lee el inventario. Aquí se
-          comparan los dos y tú decides qué aplicar. Nada cambia hasta que confirmes.
+          comparan los dos: la última columna ya trae el precio de BIND, y puedes editarlo
+          antes de aplicar si quieres otro. Nada cambia hasta que confirmes.
         </p>
       </div>
       <a
@@ -58,7 +69,7 @@ const dinero = (n: number, m: string) =>
       <div class={`mt-6 rounded-md p-4 ${fallidos.length ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
         <p class="text-sm font-medium text-gray-900">
           {aplicados > 0
-            ? `✅ ${aplicados} precio(s) actualizado(s) desde BIND.`
+            ? `✅ ${aplicados} precio(s) actualizado(s).`
             : 'No se actualizó ningún precio.'}
         </p>
         {fallidos.length > 0 && (
@@ -106,6 +117,13 @@ const dinero = (n: number, m: string) =>
           </button>
           <button
             type="button"
+            data-restaurar-bind
+            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          >
+            Restaurar precios de BIND
+          </button>
+          <button
+            type="button"
             data-desmarcar-todos
             class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
           >
@@ -130,6 +148,7 @@ const dinero = (n: number, m: string) =>
                 <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Precio en el sitio</th>
                 <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Precio en BIND</th>
                 <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Diferencia</th>
+                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Precio a aplicar (MXN)</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -170,6 +189,21 @@ const dinero = (n: number, m: string) =>
                         </span>
                       )}
                     </td>
+                    <td class="px-4 py-3">
+                      <div class="relative w-36">
+                        <span class="absolute left-2 top-2 text-sm text-gray-500">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          name={`precio:${f.origen}:${f.id}`}
+                          value={f.precioBind.toFixed(2)}
+                          data-precio
+                          data-sugerido={f.precioBind.toFixed(2)}
+                          class="w-full rounded-md border border-gray-300 py-2 pl-6 pr-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -178,8 +212,9 @@ const dinero = (n: number, m: string) =>
         </div>
 
         <p class="mt-3 text-xs text-gray-500">
-          Las filas en rojo cambian de moneda o se mueven más de 25%. Revísalas con calma
-          antes de aplicarlas: puede ser que el dato equivocado esté en BIND.
+          Se aplica lo que quede escrito en "Precio a aplicar", no necesariamente el de
+          BIND. Las filas en rojo cambian de moneda o se mueven más de 25%: revísalas con
+          calma, puede ser que el dato equivocado esté en BIND.
         </p>
       </form>
     )}
@@ -203,6 +238,13 @@ const dinero = (n: number, m: string) =>
     const objetivo = e.target as HTMLElement | null;
     if (!objetivo) return;
 
+    if (objetivo.closest('[data-restaurar-bind]')) {
+      document.querySelectorAll<HTMLInputElement>('input[data-precio]').forEach((i) => {
+        i.value = i.dataset.sugerido || i.value;
+      });
+      return;
+    }
+
     if (objetivo.closest('[data-marcar-todos]') || objetivo.closest('[data-desmarcar-todos]')) {
       const marcar = Boolean(objetivo.closest('[data-marcar-todos]'));
       document
@@ -220,7 +262,11 @@ const dinero = (n: number, m: string) =>
         alert('No seleccionaste ningún precio.');
         return;
       }
-      if (!confirm(`Se van a cambiar ${n} precio(s) del sitio por los de BIND. ¿Continuar?`)) {
+      const editados = [...document.querySelectorAll<HTMLInputElement>('input[data-fila]:checked')]
+        .map((c) => c.closest('tr')?.querySelector<HTMLInputElement>('input[data-precio]'))
+        .filter((i): i is HTMLInputElement => Boolean(i) && i!.value !== i!.dataset.sugerido).length;
+      const detalle = editados > 0 ? ` (${editados} con precio modificado a mano)` : '';
+      if (!confirm(`Se van a cambiar ${n} precio(s) del sitio${detalle}. ¿Continuar?`)) {
         e.preventDefault();
       }
     }
