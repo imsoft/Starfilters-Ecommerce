@@ -10,6 +10,7 @@
  */
 import type { APIRoute } from 'astro';
 import { query } from '@/config/database';
+import { ensureProductColumns } from '@/lib/product-service';
 import { cotizarEnvio, armarPaquete, pakkeConfigurado, PAQUETE_POR_DEFECTO } from '@/lib/pakke';
 import type { Paquete } from '@/lib/pakke';
 
@@ -43,6 +44,11 @@ export const POST: APIRoute = async ({ request }) => {
       // No es un error del comprador: el checkout seguirá con la tarifa fija.
       return json({ opciones: [], motivo: 'pakke-no-configurado' });
     }
+
+    // Las columnas package_* se crean al vuelo (igual que el resto del catálogo).
+    // Sin esto, en una base donde nadie ha guardado un producto todavía, el
+    // SELECT de abajo fallaría y no se podría cotizar.
+    await ensureProductColumns();
 
     // Medidas reales de los productos del carrito. Los que aún no las tengan
     // capturadas entran con el paquete por defecto.

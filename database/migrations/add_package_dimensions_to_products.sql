@@ -6,6 +6,11 @@
 --
 -- Se dejan NULL a propósito: mientras un producto no las tenga, la cotización
 -- usa el paquete por defecto configurado en las variables PAKKE_DEFAULT_*.
+--
+-- OPCIONAL: la aplicación crea estas columnas sola (ensureProductColumns en
+-- lib/product-service.ts) la primera vez que se guarda un producto o se pide
+-- una cotización. Este archivo sirve para adelantarlo en un despliegue.
+-- Si ya existen, MySQL responde "Duplicate column name" y no pasa nada.
 
 ALTER TABLE products ADD COLUMN package_weight_kg DECIMAL(8,3) NULL COMMENT 'Peso del paquete en kg';
 ALTER TABLE products ADD COLUMN package_length_cm DECIMAL(8,2) NULL COMMENT 'Largo del paquete en cm';
