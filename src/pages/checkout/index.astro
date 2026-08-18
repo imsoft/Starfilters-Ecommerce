@@ -1,5 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { DELIVERY_OPTIONS } from "@/lib/delivery-options";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { REGIMENES_FISCALES, USOS_CFDI, etiquetaSat } from "@/lib/sat-catalogs";
 
@@ -12,7 +13,7 @@ if (!user) {
 
 <WebsiteLayout title="Checkout">
   <div class="bg-background">
-    <main class="mx-auto max-w-7xl px-4 pt-16 pb-24 sm:px-6 lg:px-8">
+    <main class="section-pb mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-2xl lg:max-w-none">
         <h1 class="sr-only">Checkout</h1>
   
@@ -46,69 +47,28 @@ if (!user) {
             <div class="mt-10 border-t border-border pt-10">
               <h2 class="text-lg font-medium text-foreground">Método de entrega</h2>
               <div class="mt-4 space-y-3" id="delivery-options">
-                <!-- Opción 1: Recoger en GDL -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="pickup-gdl" class="sr-only" id="delivery-pickup-gdl" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">Recoger en Guadalajara</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Siguiente día a partir de las 11am</span>
-                       <span class="mt-1 text-xs text-muted-foreground"><a href="https://maps.app.goo.gl/KKZgepi4V65VYg8E9" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">Cto. San Eduardo 88-Int. 4, San Juan de Ocotán, 45019 Zapopan, Jal.</a></span>
+                {DELIVERY_OPTIONS.map((option) => (
+                  <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
+                    <input type="radio" name="delivery-method" value={option.value} class="sr-only" id={`delivery-${option.value}`} />
+                    <span class="flex flex-1">
+                      <span class="flex flex-col">
+                        <span class="block text-sm font-medium text-foreground">{option.label['es']}</span>
+                        <span class="mt-1 flex items-center text-sm text-muted-foreground">{option.days['es']}</span>
+                        {option.address && (
+                          <span class="mt-1 text-xs text-muted-foreground"><a href={option.address.mapUrl} target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">{option.address.text}</a></span>
+                        )}
+                        {option.note && (
+                          <span class="mt-1 text-xs text-muted-foreground">{option.note['es']}</span>
+                        )}
+                      </span>
                     </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Gratis</span>
-                </label>
-
-                <!-- Opción 2: Recoger en CDMX -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="pickup-cdmx" class="sr-only" id="delivery-pickup-cdmx" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">Recoger en Ciudad de México</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Máximo 6–7 días hábiles</span>
-                       <span class="mt-1 text-xs text-muted-foreground"><a href="https://maps.app.goo.gl/EUg7SsAdrbB5FLUL6" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">Ventura G.Tena 250, Asturias, Cuauhtémoc, 06890 Ciudad de México, CDMX</a></span>
-                    </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Gratis</span>
-                </label>
-
-                <!-- Opción 3: Entrega zona metropolitana GDL -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="metro-gdl" class="sr-only" id="delivery-metro-gdl" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">Entrega zona metropolitana GDL</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Máximo 2 días hábiles</span>
-                      <span class="mt-1 text-xs text-muted-foreground">Gratis en compras de $5,000 MXN o más</span>
-                    </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-metro-gdl">$250.00</span>
-                </label>
-
-                <!-- Opción 4: Entrega zona metropolitana CDMX -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="metro-cdmx" class="sr-only" id="delivery-metro-cdmx" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">Entrega zona metropolitana CDMX</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Máximo 8 días hábiles</span>
-                      <span class="mt-1 text-xs text-muted-foreground">Gratis en compras de $5,000 MXN o más</span>
-                    </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-metro-cdmx">$250.00</span>
-                </label>
-
-                <!-- Opción 5: Envío por paquetería -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="paqueteria" class="sr-only" id="delivery-paqueteria" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">Envío por paquetería</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Tiempo según paquetería seleccionada</span>
-                    </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-paqueteria">$350.00</span>
-                </label>
+                    {option.cost === 0 ? (
+                      <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Gratis</span>
+                    ) : (
+                      <span class="ml-4 shrink-0 text-sm font-medium" id={`price-${option.value}`}>${option.cost.toFixed(2)}</span>
+                    )}
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -367,6 +327,14 @@ if (!user) {
   </div>
   
   <script>
+    import {
+      DELIVERY_OPTIONS,
+      FREE_SHIPPING_THRESHOLD,
+      getShippingCost,
+      getDeliveryLabel,
+      isPickupMethod,
+    } from "@/lib/delivery-options";
+    import type { DeliveryMethod } from "@/lib/delivery-options";
     // Función para obtener carrito desde localStorage (cliente)
     function getCartFromStorage() {
       try {
@@ -453,26 +421,6 @@ if (!user) {
       return origen === 'USD' ? monto * tasaCambio : monto / tasaCambio;
     };
 
-    const FREE_SHIPPING_THRESHOLD = 5000;
-
-    // Calcular costo de envío según método y subtotal
-    function getShippingCost(method: string, subtotalMXN: number): number {
-      switch (method) {
-        case 'pickup-gdl':
-        case 'pickup-cdmx':
-          return 0;
-        case 'metro-gdl':
-        case 'metro-cdmx':
-          return subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250;
-        case 'paqueteria':
-          // El envío nacional siempre se cobra; el umbral de envío gratis solo
-          // aplica a las entregas metropolitanas.
-          return 350;
-        default:
-          return 0;
-      }
-    }
-
     // Obtener método de entrega seleccionado
     function getSelectedDeliveryMethod(): string {
       const selected = document.querySelector('input[name="delivery-method"]:checked') as HTMLInputElement;
@@ -484,7 +432,7 @@ if (!user) {
       const section = document.getElementById('shipping-info-section');
       const fields = document.getElementById('shipping-address-fields');
       const addressInputs = fields?.querySelectorAll('input:not([readonly])') as NodeListOf<HTMLInputElement>;
-      const isPickup = method === 'pickup-gdl' || method === 'pickup-cdmx';
+      const isPickup = isPickupMethod(method as DeliveryMethod);
 
       if (!section) return;
 
@@ -499,22 +447,16 @@ if (!user) {
 
     // Actualizar precios dinámicos de opciones de entrega
     function updateDeliveryPrices(subtotal: number) {
-      const metroGdlEl = document.getElementById('price-metro-gdl');
-      const metroCdmxEl = document.getElementById('price-metro-cdmx');
-      const paqueteriaEl = document.getElementById('price-paqueteria');
-      const isFree = subtotal >= FREE_SHIPPING_THRESHOLD;
-
-      if (metroGdlEl) {
-        metroGdlEl.textContent = isFree ? 'Gratis' : '$250.00';
-        metroGdlEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
-      }
-      if (metroCdmxEl) {
-        metroCdmxEl.textContent = isFree ? 'Gratis' : '$250.00';
-        metroCdmxEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
-      }
-      if (paqueteriaEl) {
-        paqueteriaEl.textContent = '$350.00';
-        paqueteriaEl.className = 'ml-4 shrink-0 text-sm font-medium';
+      // Recorre la fuente única: si mañana se agrega una opción de entrega,
+      // su precio se actualiza aquí sin tocar este código.
+      for (const option of DELIVERY_OPTIONS) {
+        if (option.cost === 0) continue;
+        const el = document.getElementById(`price-${option.value}`);
+        if (!el) continue;
+        const cost = getShippingCost(option.value, subtotal);
+        const isFree = cost === 0;
+        el.textContent = isFree ? 'Gratis' : `$${cost.toFixed(2)}`;
+        el.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
       }
     }
 
@@ -907,14 +849,7 @@ if (!user) {
       // Actualizar precios de opciones de entrega
       updateDeliveryPrices(subtotalAfterDiscount);
 
-      const deliveryLabels: Record<string, string> = {
-        'pickup-gdl': 'Recoger en GDL',
-        'pickup-cdmx': 'Recoger en CDMX',
-        'metro-gdl': 'Entrega zona metropolitana GDL',
-        'metro-cdmx': 'Entrega zona metropolitana CDMX',
-        'paqueteria': 'Envío por paquetería',
-      };
-      const deliveryLabel = deliveryMethod ? (deliveryLabels[deliveryMethod] || 'Envío') : 'Selecciona método de entrega';
+      const deliveryLabel = deliveryMethod ? (getDeliveryLabel(deliveryMethod as DeliveryMethod) || 'Envío') : 'Selecciona método de entrega';
 
       // Renderizar resumen
       let summaryHTML = `
@@ -1080,7 +1015,7 @@ if (!user) {
         if (isInfoConfirmed) return; // No modificar si ya confirmó
         
         const deliveryMethod = getSelectedDeliveryMethod();
-        const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
+        const isPickup = isPickupMethod(deliveryMethod as DeliveryMethod);
         
         if (!deliveryMethod) {
           confirmBtn.disabled = true;
@@ -1145,7 +1080,7 @@ if (!user) {
       // Función para confirmar la información
       async function confirmInfo() {
         const deliveryMethod = getSelectedDeliveryMethod();
-        const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
+        const isPickup = isPickupMethod(deliveryMethod as DeliveryMethod);
         const email = (document.getElementById('email-address') as HTMLInputElement)?.value;
         const firstName = (document.getElementById('first-name') as HTMLInputElement)?.value;
         const lastName = (document.getElementById('last-name') as HTMLInputElement)?.value;
@@ -1187,15 +1122,14 @@ if (!user) {
         isInfoConfirmed = true;
         
         // Construir resumen de información confirmada
-        const deliveryLabels: Record<string, string> = {
-          'pickup-gdl': '📍 Recoger en Guadalajara',
-          'pickup-cdmx': '📍 Recoger en Ciudad de México',
-          'metro-gdl': '🚚 Entrega zona metropolitana GDL',
-          'metro-cdmx': '🚚 Entrega zona metropolitana CDMX',
-          'paqueteria': '📦 Envío por paquetería',
+        // Icono por método; el nombre sale de la fuente única.
+        const deliveryIcons: Record<string, string> = {
+          'pickup-gdl': '📍', 'pickup-cdmx': '📍',
+          'metro-gdl': '🚚', 'metro-cdmx': '🚚',
+          'paqueteria': '📦',
         };
         
-        let summaryHTML = `<p><strong>Entrega:</strong> ${deliveryLabels[deliveryMethod] || deliveryMethod}</p>`;
+        let summaryHTML = `<p><strong>Entrega:</strong> ${deliveryIcons[deliveryMethod] || ''} ${getDeliveryLabel(deliveryMethod as DeliveryMethod) || deliveryMethod}</p>`;
         
         if (!isPickup) {
           const address = (document.getElementById('address') as HTMLInputElement)?.value;
@@ -1393,7 +1327,7 @@ if (!user) {
           // Llevar al usuario al siguiente paso: el formulario queda debajo del
           // pliegue y no era evidente que faltaba llenar envío, facturación y
           // pago después de elegir la entrega.
-          const isPickup = method === 'pickup-gdl' || method === 'pickup-cdmx';
+          const isPickup = isPickupMethod(method as DeliveryMethod);
           const siguiente = isPickup
             ? document.getElementById('billing-section') || document.getElementById('confirm-section')
             : document.getElementById('shipping-info-section');
