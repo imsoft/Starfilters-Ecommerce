@@ -511,19 +511,19 @@ if (!user) {
             (o: any, i: number) => `
             <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
               <span class="flex items-center gap-2">
-                <input type="radio" name="pakke-service" value="${o.serviceId}" data-total="${o.total}" data-courier="${o.courierName}" ${i === 0 ? 'checked' : ''} />
+                <input type="radio" name="pakke-service" value="${o.serviceId}" data-total="${o.subtotal}" data-courier="${o.courierName}" ${i === 0 ? 'checked' : ''} />
                 <span>
                   <span class="font-medium text-foreground">${o.courierName}</span>
                   <span class="block text-xs text-muted-foreground">${o.diasTexto || ''}</span>
                 </span>
               </span>
-              <span class="font-medium text-foreground">$${Number(o.total).toFixed(2)}</span>
+              <span class="font-medium text-foreground">$${Number(o.subtotal).toFixed(2)}</span>
             </label>`
           )
           .join('');
 
         const primera = opciones[0];
-        tarifaPakke = { serviceId: primera.serviceId, courierName: primera.courierName, total: Number(primera.total) };
+        tarifaPakke = { serviceId: primera.serviceId, courierName: primera.courierName, total: Number(primera.subtotal) };
 
         lista.querySelectorAll('input[name="pakke-service"]').forEach((r) => {
           r.addEventListener('change', () => {

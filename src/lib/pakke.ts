@@ -46,8 +46,15 @@ export interface OpcionEnvio {
   courierName: string;
   serviceId: string;
   serviceName: string;
-  /** Precio final con IVA, en MXN */
+  /** Precio final CON IVA, en MXN. Solo informativo. */
   total: number;
+  /**
+   * Precio SIN IVA. Es el que usa el checkout: ahí el IVA se calcula sobre
+   * (productos + envío), igual que con las tarifas fijas de $250/$350. Si se
+   * usara `total`, que ya trae IVA, al comprador se le cobraría el 16% dos
+   * veces sobre el envío.
+   */
+  subtotal: number;
   /** Texto listo para mostrar: "3-5 días hab." */
   diasTexto: string;
   diasEstimados: number | null;
@@ -133,12 +140,16 @@ export const cotizarEnvio = async (
         serviceId: String(o.CourierServiceId ?? ''),
         serviceName: String(o.CourierServiceName ?? ''),
         total: Number(o.TotalPrice ?? o.ShipmentAmount ?? 0) || 0,
+        subtotal:
+          Number(o.ShipmentSubtotalAmount) ||
+          // Si Pakke no desglosa, se despeja el IVA del total.
+          Math.round(((Number(o.TotalPrice ?? o.ShipmentAmount ?? 0) || 0) / 1.16) * 100) / 100,
         diasTexto: String(o.DeliveryDays ?? ''),
         diasEstimados: Number(o.EstimatedDeliveryDays) || null,
         mejorOpcion: Boolean(o.BestOption),
       }))
-      .filter((o) => o.total > 0 && o.serviceId)
-      .sort((a, b) => a.total - b.total);
+      .filter((o) => o.subtotal > 0 && o.serviceId)
+      .sort((a, b) => a.subtotal - b.subtotal);
   } catch (error: any) {
     const motivo = error?.name === 'AbortError' ? 'se agotó el tiempo de espera' : error?.message;
     console.error('❌ Error cotizando con Pakke:', motivo);
