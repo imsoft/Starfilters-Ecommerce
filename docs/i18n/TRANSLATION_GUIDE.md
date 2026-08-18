@@ -1,5 +1,10 @@
 # Guía de Traducción de Contenido
 
+> **⚠️ Obsoleto.** El script `scripts/translate-existing-content.js` que describe esta
+> guía ya no existe. Hoy las traducciones se cargan desde el admin, en los campos `_en`
+> de cada producto y artículo. Verifica la paridad ES/EN con `pnpm check:i18n`.
+> Se conserva como referencia de la estructura de datos.
+
 ## 📝 Agregar Nuevas Traducciones
 
 ### Para Productos

@@ -147,7 +147,7 @@ npm install
 
 ### 3. Configurar Variables de Entorno
 ```bash
-cp env.example .env
+cp .env.example .env
 ```
 
 Edita el archivo `.env` con tus configuraciones:
@@ -252,9 +252,10 @@ node scripts/create-admin.js              # Crear administrador
 node scripts/reset-admin-password.js      # Resetear contraseña admin
 
 # Verificación
-./scripts/check-product-images.sh <product_id>      # Verificar imágenes de producto
-./scripts/check-category-images.sh <category_id>    # Verificar imágenes de categoría
-./scripts/check-image-tables.sh                     # Verificar tablas de imágenes
+node scripts/check-db.js                  # Revisar estado de la base de datos
+node scripts/check-hero.js                # Diagnosticar configuración del Hero
+node scripts/smoke-crawl.mjs              # Recorrer todas las rutas ES/EN
+pnpm check:i18n                           # Verificar paridad de contenido ES/EN
 ```
 
 ## 🌐 Despliegue

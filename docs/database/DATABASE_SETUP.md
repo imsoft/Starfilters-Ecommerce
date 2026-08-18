@@ -15,7 +15,7 @@
 
 1. **Copia el archivo de ejemplo:**
    ```bash
-   cp env.example .env
+   cp .env.example .env
    ```
 
 2. **Edita el archivo `.env` con tus datos de Hostinger:**
@@ -55,7 +55,7 @@
 ### 5. Probar la Conexión
 
 ```bash
-node scripts/test-db-connection.js
+node scripts/check-db.js
 ```
 
 ## 🗂️ Estructura de la Base de Datos

@@ -1,239 +1,496 @@
--- Script SQL para crear las tablas de la base de datos Star Filters
--- Ejecuta este script en phpMyAdmin de Hostinger
+-- =============================================================================
+-- Esquema completo de la base de datos — StarFilters E-commerce
+--
+-- Generado con `mysqldump --no-data` a partir de la base de datos de desarrollo.
+-- Para regenerarlo tras aplicar migraciones:
+--
+--   mysqldump --no-data --skip-comments --compact -u USER -p DB > database/schema.sql
+--
+-- Las migraciones incrementales viven en database/ (columnas sueltas) y en
+-- database/migrations/ (tablas nuevas y reestructuraciones).
+-- =============================================================================
 
--- Crear base de datos (opcional, si no existe)
--- CREATE DATABASE IF NOT EXISTS starfilters_ecommerce_db;
--- USE starfilters_ecommerce_db;
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
 
--- Tabla de productos
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE `admin_users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `full_name` varchar(255) DEFAULT NULL,
+  `profile_image` varchar(500) DEFAULT NULL,
+  `role` enum('admin','editor') DEFAULT 'editor',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `uuid_2` (`uuid`),
+  KEY `idx_admin_users_uuid` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `benefits` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `text_es` varchar(255) NOT NULL,
+  `text_en` varchar(255) NOT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `blog_posts` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `content` longtext,
+  `excerpt` text,
+  `featured_image` varchar(500) DEFAULT NULL,
+  `featured_image_url` varchar(500) DEFAULT NULL,
+  `author` varchar(100) DEFAULT 'Admin',
+  `author_id` int DEFAULT NULL,
+  `category` varchar(100) DEFAULT 'General',
+  `status` enum('published','draft','archived') DEFAULT 'draft',
+  `publish_date` timestamp NULL DEFAULT NULL,
+  `meta_title` varchar(255) DEFAULT NULL,
+  `meta_description` text,
+  `tags` varchar(500) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `title_en` varchar(255) DEFAULT NULL,
+  `slug_en` varchar(255) DEFAULT NULL,
+  `content_en` longtext,
+  `excerpt_en` text,
+  `meta_title_en` varchar(255) DEFAULT NULL,
+  `meta_description_en` text,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `uuid_2` (`uuid`),
+  KEY `idx_blog_posts_status` (`status`),
+  KEY `idx_blog_posts_slug` (`slug`),
+  KEY `idx_blog_posts_uuid` (`uuid`),
+  KEY `idx_blog_posts_slug_en` (`slug_en`),
+  KEY `author_id` (`author_id`),
+  CONSTRAINT `blog_posts_ibfk_1` FOREIGN KEY (`author_id`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `cart` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `user_id` int DEFAULT NULL,
+  `session_id` varchar(255) DEFAULT NULL,
+  `product_id` int NOT NULL,
+  `quantity` int NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `idx_cart_user_id` (`user_id`),
+  KEY `idx_cart_session_id` (`session_id`),
+  KEY `idx_cart_product_id` (`product_id`),
+  CONSTRAINT `cart_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `cart_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `case_studies` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `title` varchar(500) NOT NULL,
+  `title_en` varchar(500) DEFAULT NULL,
+  `industry` varchar(255) NOT NULL,
+  `industry_en` varchar(255) DEFAULT NULL,
+  `excerpt` text,
+  `excerpt_en` text,
+  `challenge` text,
+  `challenge_en` text,
+  `solution` text,
+  `solution_en` text,
+  `results` text,
+  `results_en` text,
+  `client_name` varchar(255) DEFAULT NULL,
+  `featured_image` varchar(1000) DEFAULT NULL,
+  `gallery_images` text,
+  `tags` varchar(500) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `slug` (`slug`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `categories` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `slug` varchar(100) NOT NULL,
+  `description` text,
+  `parent_id` int DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `slug` (`slug`),
+  KEY `idx_categories_parent_id` (`parent_id`),
+  KEY `idx_categories_status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `checkout_drafts` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `user_id` int DEFAULT NULL,
+  `payload` json NOT NULL,
+  `payment_intent_id` varchar(100) DEFAULT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `discount_code_usage` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `discount_code_id` int NOT NULL,
+  `order_id` int NOT NULL,
+  `user_id` int DEFAULT NULL,
+  `discount_amount` decimal(10,2) NOT NULL,
+  `used_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_discount_code` (`discount_code_id`),
+  KEY `idx_order` (`order_id`),
+  KEY `idx_user` (`user_id`),
+  CONSTRAINT `discount_code_usage_ibfk_1` FOREIGN KEY (`discount_code_id`) REFERENCES `discount_codes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `discount_code_usage_ibfk_2` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `discount_code_usage_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `discount_codes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `discount_type` enum('percentage','fixed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage',
+  `discount_value` decimal(10,2) NOT NULL,
+  `min_purchase_amount` decimal(10,2) DEFAULT NULL,
+  `max_discount_amount` decimal(10,2) DEFAULT NULL,
+  `usage_limit` int DEFAULT NULL,
+  `usage_count` int DEFAULT '0',
+  `start_date` datetime DEFAULT NULL,
+  `end_date` datetime DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`),
+  KEY `idx_code` (`code`),
+  KEY `idx_active` (`is_active`),
+  KEY `idx_dates` (`start_date`,`end_date`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `filter_categories` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `parent_id` int DEFAULT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name_en` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `description_en` text COLLATE utf8mb4_unicode_ci,
+  `main_image` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `efficiency` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `efficiency_en` text COLLATE utf8mb4_unicode_ci,
+  `efficiency_class` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `characteristics` text COLLATE utf8mb4_unicode_ci,
+  `characteristics_en` text COLLATE utf8mb4_unicode_ci,
+  `typical_installation` text COLLATE utf8mb4_unicode_ci,
+  `typical_installation_en` text COLLATE utf8mb4_unicode_ci,
+  `applications` text COLLATE utf8mb4_unicode_ci,
+  `applications_en` text COLLATE utf8mb4_unicode_ci,
+  `benefits` text COLLATE utf8mb4_unicode_ci,
+  `benefits_en` text COLLATE utf8mb4_unicode_ci,
+  `max_temperature` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `frame_material` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('active','inactive','draft') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`),
+  KEY `idx_slug` (`slug`),
+  KEY `idx_status` (`status`),
+  KEY `idx_parent_id` (`parent_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `filter_category_images` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `category_id` int NOT NULL,
+  `image_url` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `alt_text` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_primary` tinyint(1) DEFAULT '0',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_category` (`category_id`),
+  KEY `idx_primary` (`is_primary`),
+  CONSTRAINT `filter_category_images_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `filter_categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `filter_category_variants` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `category_id` int NOT NULL,
+  `bind_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `product_code` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `nominal_size` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `real_size` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `stock` int DEFAULT '0',
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `currency` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'MXN',
+  `price_usd` decimal(10,2) DEFAULT NULL,
+  `product_id` int DEFAULT NULL,
+  `nominal_size_en` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `air_flow` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_fcv_product_bind` (`product_id`,`bind_code`),
+  KEY `idx_category` (`category_id`),
+  KEY `idx_bind_code` (`bind_code`),
+  KEY `idx_active` (`is_active`),
+  KEY `idx_fcv_product` (`product_id`),
+  CONSTRAINT `filter_category_variants_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `filter_categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `order_items` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `order_id` int NOT NULL,
+  `product_id` int DEFAULT NULL,
+  `quantity` int NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `product_name` varchar(255) NOT NULL,
+  `image_url` varchar(500) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `uuid_2` (`uuid`),
+  KEY `idx_order_items_order_id` (`order_id`),
+  KEY `idx_order_items_product_id` (`product_id`),
+  KEY `idx_order_items_uuid` (`uuid`),
+  CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `orders` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `user_id` int DEFAULT NULL,
+  `order_number` varchar(50) NOT NULL,
+  `customer_name` varchar(255) NOT NULL,
+  `customer_email` varchar(255) NOT NULL,
+  `customer_phone` varchar(20) DEFAULT NULL,
+  `total_amount` decimal(10,2) NOT NULL,
+  `status` enum('pending','processing','shipped','delivered','cancelled') DEFAULT 'pending',
+  `shipping_address` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `stripe_payment_intent_id` varchar(100) DEFAULT NULL,
+  `billing_data` json DEFAULT NULL,
+  `currency` varchar(3) NOT NULL DEFAULT 'MXN',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order_number` (`order_number`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `uuid_2` (`uuid`),
+  UNIQUE KEY `idx_orders_stripe_pi` (`stripe_payment_intent_id`),
+  KEY `idx_orders_status` (`status`),
+  KEY `idx_orders_created_at` (`created_at`),
+  KEY `idx_orders_uuid` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `portfolio_projects` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `title_en` varchar(255) DEFAULT NULL,
+  `description` text NOT NULL,
+  `description_en` text,
+  `image_url` varchar(500) NOT NULL,
+  `link_url` varchar(500) DEFAULT NULL,
+  `sort_order` int DEFAULT '0',
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `product_images` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `product_id` int NOT NULL,
+  `image_url` varchar(500) NOT NULL,
+  `alt_text` varchar(255) DEFAULT NULL,
+  `sort_order` int DEFAULT '0',
+  `is_primary` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `idx_product_images_product_id` (`product_id`),
+  CONSTRAINT `product_images_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `product_reviews` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `product_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `rating` int NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `comment` text,
+  `status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `idx_reviews_product_id` (`product_id`),
+  KEY `idx_reviews_user_id` (`user_id`),
+  CONSTRAINT `product_reviews_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `product_reviews_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `product_reviews_chk_1` CHECK (((`rating` >= 1) and (`rating` <= 5)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `products` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `bind_id` varchar(100) DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` text,
+  `price` decimal(10,2) NOT NULL,
+  `category` varchar(100) DEFAULT NULL,
+  `tags` varchar(500) DEFAULT NULL,
+  `dimensions` varchar(100) DEFAULT NULL,
+  `weight` varchar(100) DEFAULT NULL,
+  `material` varchar(255) DEFAULT NULL,
+  `warranty` varchar(100) DEFAULT NULL,
+  `stock` int DEFAULT '0',
+  `status` enum('active','inactive','draft') DEFAULT 'draft',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `name_en` varchar(255) DEFAULT NULL,
+  `description_en` text,
+  `category_en` varchar(100) DEFAULT NULL,
+  `filter_category_id` int DEFAULT NULL,
+  `product_type` varchar(20) NOT NULL DEFAULT 'filter',
+  `initial_pressure_drop` varchar(100) DEFAULT NULL,
+  `recommended_final_pressure_drop` varchar(100) DEFAULT NULL,
+  `currency` varchar(3) NOT NULL DEFAULT 'MXN',
+  `price_usd` decimal(10,2) DEFAULT NULL,
+  `nominal_size` varchar(100) DEFAULT NULL,
+  `real_size` varchar(100) DEFAULT NULL,
+  `bind_code` varchar(50) DEFAULT NULL,
+  `sku` varchar(100) DEFAULT NULL,
+  `product_code` varchar(100) DEFAULT NULL,
+  `air_flow` varchar(100) DEFAULT NULL,
+  `efficiency` text,
+  `efficiency_en` text,
+  `efficiency_class` varchar(100) DEFAULT NULL,
+  `characteristics` text,
+  `characteristics_en` text,
+  `frame_material` varchar(255) DEFAULT NULL,
+  `max_temperature` varchar(100) DEFAULT NULL,
+  `typical_installation` text,
+  `typical_installation_en` text,
+  `applications` text,
+  `applications_en` text,
+  `benefits` text,
+  `benefits_en` text,
+  `nominal_size_en` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `uuid_2` (`uuid`),
+  KEY `idx_products_status` (`status`),
+  KEY `idx_products_category` (`category`),
+  KEY `idx_products_uuid` (`uuid`),
+  KEY `idx_products_category_en` (`category_en`),
+  KEY `idx_bind_id` (`bind_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `site_settings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `setting_key` varchar(100) NOT NULL,
+  `setting_value` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `setting_key` (`setting_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `testimonials` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `body` text NOT NULL,
+  `body_en` text,
+  `author` varchar(255) NOT NULL,
+  `role` varchar(255) NOT NULL,
+  `role_en` varchar(255) DEFAULT NULL,
+  `company_logo_url` varchar(500) DEFAULT NULL,
+  `project_image_url` varchar(500) DEFAULT NULL,
+  `sort_order` int DEFAULT '0',
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `first_name` varchar(100) NOT NULL,
+  `last_name` varchar(100) NOT NULL,
+  `company` varchar(150) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `address` text,
+  `city` varchar(100) DEFAULT NULL,
+  `postal_code` varchar(20) DEFAULT NULL,
+  `country` varchar(100) DEFAULT 'México',
+  `status` enum('active','inactive','pending') DEFAULT 'pending',
+  `email_verified` tinyint(1) DEFAULT '0',
+  `verification_token` varchar(255) DEFAULT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_token_expires` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `uuid_2` (`uuid`),
+  KEY `idx_users_email` (`email`),
+  KEY `idx_users_status` (`status`),
+  KEY `idx_users_verification_token` (`verification_token`),
+  KEY `idx_users_reset_token` (`reset_token`),
+  KEY `idx_users_uuid` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `wishlist` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `user_id` int NOT NULL,
+  `product_id` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `user_product` (`user_id`,`product_id`),
+  KEY `idx_wishlist_user_id` (`user_id`),
+  KEY `idx_wishlist_product_id` (`product_id`),
+  CONSTRAINT `wishlist_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `wishlist_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- -----------------------------------------------------------------------------
+-- Productos asociados a un código de descuento.
+-- La consulta src/lib/discount-codes.ts la usa, pero la migración
+-- database/add_discount_code_products.sql aún no se había aplicado a la base de
+-- desarrollo, así que se incluye aquí para que el esquema quede completo.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS discount_code_products (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    category VARCHAR(100),
-    stock INT DEFAULT 0,
-    image_url VARCHAR(500),
-    status ENUM('active', 'inactive', 'draft') DEFAULT 'draft',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Tabla de órdenes
-CREATE TABLE IF NOT EXISTS orders (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    order_number VARCHAR(50) UNIQUE NOT NULL,
-    customer_name VARCHAR(255) NOT NULL,
-    customer_email VARCHAR(255) NOT NULL,
-    customer_phone VARCHAR(20),
-    total_amount DECIMAL(10, 2) NOT NULL,
-    status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
-    shipping_address TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Tabla de items de órdenes
-CREATE TABLE IF NOT EXISTS order_items (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    order_id INT NOT NULL,
+    discount_code_id INT NOT NULL,
     product_id INT NOT NULL,
-    quantity INT NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
-    product_name VARCHAR(255) NOT NULL,
-    image_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-);
-
--- Tabla de artículos del blog
-CREATE TABLE IF NOT EXISTS blog_posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL,
-    content LONGTEXT,
-    excerpt TEXT,
-    featured_image VARCHAR(500),
-    author VARCHAR(100) DEFAULT 'Admin',
-    category VARCHAR(100) DEFAULT 'General',
-    status ENUM('published', 'draft', 'archived', 'scheduled') DEFAULT 'draft',
-    publish_date TIMESTAMP NULL,
-    meta_title VARCHAR(255),
-    meta_description TEXT,
-    tags VARCHAR(500),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Tabla de usuarios del sitio web
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
-    address TEXT,
-    city VARCHAR(100),
-    postal_code VARCHAR(20),
-    country VARCHAR(100) DEFAULT 'México',
-    status ENUM('active', 'inactive', 'pending') DEFAULT 'pending',
-    email_verified BOOLEAN DEFAULT FALSE,
-    verification_token VARCHAR(255),
-    reset_token VARCHAR(255),
-    reset_token_expires TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Tabla de usuarios administradores
-CREATE TABLE IF NOT EXISTS admin_users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255),
-    role ENUM('admin', 'editor') DEFAULT 'editor',
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Insertar datos de ejemplo
-INSERT INTO products (name, description, price, category, stock, image_url, status) VALUES
-('Filtro de Aire Premium', 'Filtro de aire de alta calidad para mejor rendimiento del motor', 29.99, 'Filtros de Aire', 50, '/images/filtro-aire-premium.jpg', 'active'),
-('Filtro de Aceite Standard', 'Filtro de aceite estándar para mantenimiento regular', 15.99, 'Filtros de Aceite', 100, '/images/filtro-aceite-standard.jpg', 'active'),
-('Filtro de Combustible', 'Filtro de combustible para protección del sistema de inyección', 24.99, 'Filtros de Combustible', 75, '/images/filtro-combustible.jpg', 'active');
-
-INSERT INTO blog_posts (title, slug, content, excerpt, featured_image, author, status, meta_title, meta_description, tags) VALUES
-('Guía Completa de Mantenimiento de Filtros', 'guia-mantenimiento-filtros', '<h1>Guía Completa de Mantenimiento de Filtros</h1><p>Los filtros son componentes esenciales...</p>', 'Aprende todo sobre el mantenimiento correcto de los filtros de tu vehículo', '/images/guia-mantenimiento.jpg', 'Admin', 'published', 'Guía de Mantenimiento de Filtros', 'Guía completa para el mantenimiento de filtros automotrices', 'mantenimiento, filtros, automotriz'),
-('Tipos de Filtros y Sus Funciones', 'tipos-filtros-funciones', '<h1>Tipos de Filtros y Sus Funciones</h1><p>Existen diferentes tipos de filtros...</p>', 'Conoce los diferentes tipos de filtros y sus funciones específicas', '/images/tipos-filtros.jpg', 'Admin', 'published', 'Tipos de Filtros Automotrices', 'Información sobre los diferentes tipos de filtros automotrices', 'filtros, tipos, automotriz');
-
--- Crear índices para mejorar el rendimiento
-CREATE INDEX idx_products_status ON products(status);
-CREATE INDEX idx_products_category ON products(category);
-CREATE INDEX idx_products_uuid ON products(uuid);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_created_at ON orders(created_at);
-CREATE INDEX idx_orders_uuid ON orders(uuid);
-CREATE INDEX idx_blog_posts_status ON blog_posts(status);
-CREATE INDEX idx_blog_posts_slug ON blog_posts(slug);
-CREATE INDEX idx_blog_posts_uuid ON blog_posts(uuid);
-CREATE INDEX idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX idx_order_items_product_id ON order_items(product_id);
-CREATE INDEX idx_order_items_uuid ON order_items(uuid);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_users_verification_token ON users(verification_token);
-CREATE INDEX idx_users_reset_token ON users(reset_token);
-CREATE INDEX idx_users_uuid ON users(uuid);
-CREATE INDEX idx_admin_users_uuid ON admin_users(uuid);
-
--- Tabla de categorías
-CREATE TABLE IF NOT EXISTS categories (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT,
-    parent_id INT DEFAULT NULL,
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
-);
-
--- Tabla de imágenes de productos
-CREATE TABLE IF NOT EXISTS product_images (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    product_id INT NOT NULL,
-    image_url VARCHAR(500) NOT NULL,
-    alt_text VARCHAR(255),
-    sort_order INT DEFAULT 0,
-    is_primary BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-);
-
--- Tabla de reseñas de productos
-CREATE TABLE IF NOT EXISTS product_reviews (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    product_id INT NOT NULL,
-    user_id INT NOT NULL,
-    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
-    title VARCHAR(255),
-    comment TEXT,
-    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_discount_product (discount_code_id, product_id),
+    FOREIGN KEY (discount_code_id) REFERENCES discount_codes(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    INDEX idx_discount_code_id (discount_code_id),
+    INDEX idx_product_id (product_id)
 );
 
--- Tabla de lista de deseos
-CREATE TABLE IF NOT EXISTS wishlist (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    user_id INT NOT NULL,
-    product_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY user_product (user_id, product_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-);
-
--- Tabla de carrito de compras
-CREATE TABLE IF NOT EXISTS cart (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL,
-    user_id INT DEFAULT NULL,
-    session_id VARCHAR(255),
-    product_id INT NOT NULL,
-    quantity INT NOT NULL DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-);
-
--- Crear índices adicionales para las nuevas tablas
-CREATE INDEX idx_categories_parent_id ON categories(parent_id);
-CREATE INDEX idx_categories_status ON categories(status);
-CREATE INDEX idx_categories_slug ON categories(slug);
-CREATE INDEX idx_categories_uuid ON categories(uuid);
-
-CREATE INDEX idx_product_images_product_id ON product_images(product_id);
-CREATE INDEX idx_product_images_uuid ON product_images(uuid);
-
-CREATE INDEX idx_reviews_product_id ON product_reviews(product_id);
-CREATE INDEX idx_reviews_user_id ON product_reviews(user_id);
-CREATE INDEX idx_reviews_status ON product_reviews(status);
-CREATE INDEX idx_reviews_uuid ON product_reviews(uuid);
-
-CREATE INDEX idx_wishlist_user_id ON wishlist(user_id);
-CREATE INDEX idx_wishlist_product_id ON wishlist(product_id);
-CREATE INDEX idx_wishlist_uuid ON wishlist(uuid);
-
-CREATE INDEX idx_cart_user_id ON cart(user_id);
-CREATE INDEX idx_cart_session_id ON cart(session_id);
-CREATE INDEX idx_cart_product_id ON cart(product_id);
-CREATE INDEX idx_cart_uuid ON cart(uuid);
-
--- Insertar categorías básicas
-INSERT INTO categories (uuid, name, slug, description) VALUES
-(UUID(), 'Filtros de Aire', 'filtros-aire', 'Filtros para el sistema de admisión de aire'),
-(UUID(), 'Filtros de Aceite', 'filtros-aceite', 'Filtros para el sistema de lubricación'),
-(UUID(), 'Filtros de Combustible', 'filtros-combustible', 'Filtros para el sistema de combustible'),
-(UUID(), 'Filtros de Cabina', 'filtros-cabina', 'Filtros para el aire acondicionado y cabina'),
-(UUID(), 'Cuartos Limpios', 'cuartos-limpios', 'Sistemas y equipos para cuartos limpios'),
-(UUID(), 'Accesorios', 'accesorios', 'Accesorios y repuestos'),
-(UUID(), 'Servicios', 'servicios', 'Servicios de mantenimiento e instalación');
+SET FOREIGN_KEY_CHECKS = 1;

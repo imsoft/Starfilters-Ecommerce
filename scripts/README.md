@@ -1,116 +1,68 @@
-# Scripts de Utilidades y Deployment
+# Scripts
 
-Este directorio contiene scripts útiles para administrar el VPS, la base de datos y el sistema.
+Utilidades de administración para la base de datos, el contenido y los assets del
+sitio. Todos los scripts de Node leen la conexión desde las variables de entorno
+de `.env`, así que ejecútalos desde la raíz del proyecto.
 
-## 🚀 Scripts de Deployment VPS
+## 👤 Usuarios y administradores
 
-### `vps-update-all.sh`
-Script completo e interactivo para actualizar el VPS con todas las mejoras.
-- Actualiza código desde GitHub
-- Ejecuta scripts SQL necesarios
-- Reconstruye la aplicación
-- Reinicia PM2
+| Script | Qué hace |
+| --- | --- |
+| `create-admin.js` | Crea un usuario administrador. |
+| `reset-admin-password.js` | Restablece la contraseña de un administrador. |
+| `activate-user.js` | Activa una cuenta de usuario. |
+| `seed-admin-team.js` | Carga el equipo que se muestra en el admin. |
 
-**Uso:**
-```bash
-./scripts/vps-update-all.sh
-```
+### Traducciones
 
-### `update-filter-categories-db.sh`
-Actualiza la base de datos con los campos necesarios para filter categories.
-- Verifica que la BD existe
-- Agrega campos faltantes de forma segura
+| Script | Qué hace |
+| --- | --- |
+| `traducir-tamanos.js` | Rellena al inglés los nombres de tamaños/variantes (`nominal_size_en`). Simula por defecto; `--aplicar` escribe. Solo toca filas vacías y omite lo que traduciría a medias. |
 
-**Uso:**
-```bash
-./scripts/update-filter-categories-db.sh
-```
+## 🔍 Diagnóstico (solo lectura)
 
-### `check-database-name.sh`
-Verifica el nombre correcto de la base de datos.
+| Script | Qué hace |
+| --- | --- |
+| `check-db.js` | Revisa el estado general de la base de datos y sus tablas. |
+| `check-hero.js` | Verifica la configuración del Hero en `site_settings`. |
+| `categorias-arbol.js` | Imprime el árbol de categorías con su jerarquía. |
+| `smoke-crawl.mjs` | Recorre todas las rutas ES/EN y reporta las que fallan. |
+| `check-i18n-parity.mjs` | Compara el contenido ES contra EN (`pnpm check:i18n`). |
 
-**Uso:**
-```bash
-./scripts/check-database-name.sh
-```
+Corre `smoke-crawl.mjs` y `check:i18n` antes de cada despliegue.
 
-## 🔧 Scripts de Diagnóstico y Fix
+## 🌱 Seeds y contenido
 
-### `fix-server-start.sh`
-Corrige problemas de inicio del servidor usando server.js.
+| Script | Qué hace |
+| --- | --- |
+| `seed-webshop-categories.js` | Carga las familias de producto del webshop. |
+| `seed-filter-type-categories.js` | Carga los tipos de filtro. |
+| `seed-case-study-pharma.js` | Caso de éxito de ejemplo (anonimizado). |
+| `seed-test-product.js` | Producto de prueba para desarrollo. |
+| `init-home-tables.js` | Crea `benefits` y `testimonials` si faltan. Es idempotente; **sin estas tablas el home se corta**. |
 
-### `fix-pm2-start.sh`
-Corrige problemas de PM2 con configuración correcta.
+## 🗂️ Catálogo
 
-### `fix-app-crashing.sh`
-Diagnostica por qué la aplicación se está cayendo.
+| Script | Qué hace |
+| --- | --- |
+| `set-category-parent.js` | Reasigna el padre de una categoría. |
+| `assign-variant.js` | Asigna un tamaño/variante a un producto. |
+| `generate-excel-templates.js` | Genera las plantillas de importación masiva. |
 
-### `check-nginx-config.sh`
-Verifica la configuración de Nginx y el estado de la aplicación.
+## 🎨 Assets
 
-### `diagnose-502.sh`
-Diagnostica errores 502 Bad Gateway.
+| Script | Qué hace |
+| --- | --- |
+| `generate-favicons.mjs` | Genera los favicons a partir del logo. |
+| `generate-og-image.mjs` | Genera la imagen Open Graph por defecto. |
 
-### `quick-fix-502.sh`
-Solución rápida para errores 502.
+## 🚀 Deployment
 
-### `fix-order-items-query.sh`
-Corrige el error de query en order_items.
+Ver [`deployment/README.md`](deployment/README.md) y la guía
+[`docs/DEPLOY_VPS_PASO_A_PASO.md`](../docs/DEPLOY_VPS_PASO_A_PASO.md).
 
-## 📊 Scripts de Base de Datos
+## 📦 `archive/`
 
-### `export-database-structure.sh`
-Exporta la estructura completa de la base de datos.
-
-**Uso:**
-```bash
-./scripts/export-database-structure.sh
-```
-
-### `show-database-info.sh`
-Muestra información clave de la base de datos.
-
-### `show-all-tables-structure.sh`
-Muestra la estructura de todas las tablas.
-
-## 👤 Scripts de Usuarios
-
-### `create-admin.js`
-Crear un usuario administrador.
-
-**Uso:**
-```bash
-node scripts/create-admin.js
-```
-
-### `reset-admin-password.js`
-Restablecer contraseña de administrador.
-
-**Uso:**
-```bash
-node scripts/reset-admin-password.js
-```
-
-### `activate-user.js`
-Activar un usuario.
-
-**Uso:**
-```bash
-node scripts/activate-user.js
-```
-
-## 🛠️ Scripts de Utilidades
-
-### `edit-env-vps.sh`
-Editar archivo .env en el VPS de forma segura.
-
-### `fix-vps-complete.sh`
-Script completo para arreglar problemas comunes en el VPS.
-
----
-
-## 📝 Notas
-
-- Todos los scripts de bash deben tener permisos de ejecución: `chmod +x script.sh`
-- Los scripts de Node.js requieren variables de entorno en `.env`
-- Los scripts de SQL verifican si los cambios ya existen antes de aplicarlos
+Migraciones y correcciones de un solo uso que **ya se aplicaron** a la base de datos.
+Se conservan como registro de cómo llegó el esquema a su estado actual; no hace falta
+volver a ejecutarlas. El SQL equivalente vive en [`database/`](../database/).

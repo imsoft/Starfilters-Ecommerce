@@ -128,4 +128,3 @@ Si necesitas más de 2 idiomas en el futuro, considera:
 
 Para preguntas o problemas, consulta:
 - `database/add_i18n_to_products_and_blog.sql` - Script SQL original
-- `scripts/add-i18n-fields.js` - Script de migración
