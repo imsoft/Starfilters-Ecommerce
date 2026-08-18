@@ -33,6 +33,19 @@ const APLICAR = process.argv.includes('--aplicar');
  * que dejar el nombre en español. Aquí se prefiere no traducir a traducir mal.
  */
 const TRADUCCIONES = [
+  // Unidades de presión y accesorios de manómetro. Van primero porque son
+  // frases completas y deben ganar sobre las palabras sueltas de abajo.
+  ['pulgadas de columna de agua', 'inches of water column'],
+  ['columna de agua', 'water column'],
+  ['con alarma', 'with alarm'],
+  ['sin alarma', 'without alarm'],
+  ['con imán', 'with magnet'],
+  ['con iman', 'with magnet'],
+  ['pascales', 'pascals'],
+  ['pascal', 'pascal'],
+  ['alarma', 'alarm'],
+  ['agua', 'water'],
+  ['columna', 'column'],
   ['rango de presión', 'pressure range'],
   ['rango de presion', 'pressure range'],
   ['filtro de bolsa', 'bag filter'],
