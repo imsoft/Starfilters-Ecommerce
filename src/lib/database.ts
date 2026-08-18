@@ -41,6 +41,12 @@ export interface Product {
   tags?: string;
   dimensions?: string | null;
   weight?: string | null;
+  // Medidas del paquete ya empacado, para cotizar envíos con Pakke. Las de
+  // arriba son texto libre heredado ("231 x 231 mm") y no sirven para calcular.
+  package_weight_kg?: number | null;
+  package_length_cm?: number | null;
+  package_width_cm?: number | null;
+  package_height_cm?: number | null;
   material?: string | null;
   warranty?: string | null;
   // Campos técnicos

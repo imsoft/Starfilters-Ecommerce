@@ -70,6 +70,17 @@ if (!user) {
                   </label>
                 ))}
               </div>
+
+              <!-- Live carrier rates (Pakke). Filled in when the customer picks
+                   "Carrier Shipping" and types a postal code. If Pakke does not
+                   answer, this stays hidden and the flat rate applies. -->
+              <div id="pakke-panel" class="mt-4 hidden rounded-lg border border-border bg-muted/40 p-4">
+                <p class="text-sm font-medium text-foreground">Available carriers</p>
+                <p id="pakke-estado" class="mt-1 text-sm text-muted-foreground">
+                  Enter your postal code to see the options and their prices.
+                </p>
+                <div id="pakke-opciones" class="mt-3 space-y-2"></div>
+              </div>
             </div>
 
             <!-- Shipping Information (only for options that require an address) -->
@@ -422,6 +433,117 @@ if (!user) {
       const valor = cookie?.split('=')[1]?.toUpperCase();
       return valor === 'USD' || valor === 'MXN' ? valor : 'USD';
     };
+
+
+    // ---------------------------------------------------------------------
+    // Cotización de paqueterías con Pakke.
+    //
+    // "Envío por paquetería" tenía una tarifa fija de $350 sin relación con el
+    // destino ni el volumen. Ahora se piden las tarifas reales al escribir el
+    // código postal. Si Pakke no contesta, `tarifaPakke` se queda en null y
+    // todo el checkout sigue funcionando con la tarifa fija de siempre.
+    // ---------------------------------------------------------------------
+    let tarifaPakke: { serviceId: string; courierName: string; total: number } | null = null;
+    let ultimoCpCotizado = '';
+
+    /** Costo de envío considerando la paquetería elegida por el comprador. */
+    function costoEnvio(method: string, subtotalMXN: number): number {
+      if (method === 'paqueteria' && tarifaPakke) return tarifaPakke.total;
+      return getShippingCost(method as DeliveryMethod, subtotalMXN);
+    }
+
+    function itemsParaCotizar() {
+      const cart = getCartFromStorage();
+      return (cart?.items || []).map((i: any) => ({
+        uuid: i.uuid || i.id || i.productId,
+        cantidad: i.quantity || 1,
+      }));
+    }
+
+    async function cotizarPaqueteria(forzar = false) {
+      const panel = document.getElementById('pakke-panel');
+      const estado = document.getElementById('pakke-estado');
+      const lista = document.getElementById('pakke-opciones');
+      if (!panel || !estado || !lista) return;
+
+      if (getSelectedDeliveryMethod() !== 'paqueteria') {
+        panel.classList.add('hidden');
+        return;
+      }
+      panel.classList.remove('hidden');
+
+      const cpInput = document.getElementById('postal-code') as HTMLInputElement | null;
+      const cp = (cpInput?.value || '').trim();
+
+      if (!/^\d{5}$/.test(cp)) {
+        estado.textContent = 'Enter your postal code to see the options and their prices.';
+        lista.innerHTML = '';
+        tarifaPakke = null;
+        ultimoCpCotizado = '';
+        renderOrderSummary();
+        return;
+      }
+      if (cp === ultimoCpCotizado && !forzar) return;
+
+      estado.textContent = 'Looking up carriers…';
+      lista.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/cotizar-envio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigoPostal: cp, items: itemsParaCotizar() }),
+        });
+        const datos = await res.json();
+        const opciones = Array.isArray(datos?.opciones) ? datos.opciones : [];
+        ultimoCpCotizado = cp;
+
+        if (opciones.length === 0) {
+          estado.textContent = 'No live quote available right now; the standard rate applies.';
+          tarifaPakke = null;
+          renderOrderSummary();
+          return;
+        }
+
+        estado.textContent = '';
+        lista.innerHTML = opciones
+          .map(
+            (o: any, i: number) => `
+            <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
+              <span class="flex items-center gap-2">
+                <input type="radio" name="pakke-service" value="${o.serviceId}" data-total="${o.total}" data-courier="${o.courierName}" ${i === 0 ? 'checked' : ''} />
+                <span>
+                  <span class="font-medium text-foreground">${o.courierName}</span>
+                  <span class="block text-xs text-muted-foreground">${o.diasTexto || ''}</span>
+                </span>
+              </span>
+              <span class="font-medium text-foreground">$${Number(o.total).toFixed(2)}</span>
+            </label>`
+          )
+          .join('');
+
+        const primera = opciones[0];
+        tarifaPakke = { serviceId: primera.serviceId, courierName: primera.courierName, total: Number(primera.total) };
+
+        lista.querySelectorAll('input[name="pakke-service"]').forEach((r) => {
+          r.addEventListener('change', () => {
+            const el = r as HTMLInputElement;
+            tarifaPakke = {
+              serviceId: el.value,
+              courierName: el.dataset.courier || '',
+              total: Number(el.dataset.total) || 0,
+            };
+            renderOrderSummary();
+          });
+        });
+
+        renderOrderSummary();
+      } catch {
+        estado.textContent = 'No live quote available right now; the standard rate applies.';
+        tarifaPakke = null;
+        renderOrderSummary();
+      }
+    }
 
     function getSelectedDeliveryMethod(): string {
       const selected = document.querySelector('input[name="delivery-method"]:checked') as HTMLInputElement;
@@ -1298,11 +1420,24 @@ if (!user) {
       });
 
       // Delivery method radio button listeners
+      // Al escribir el código postal se piden las tarifas reales. Se espera a
+      // que deje de teclear para no lanzar una petición por cada dígito.
+      const cpInput = document.getElementById('postal-code');
+      if (cpInput) {
+        let cpTimer: any = null;
+        cpInput.addEventListener('input', () => {
+          clearTimeout(cpTimer);
+          cpTimer = setTimeout(() => cotizarPaqueteria(), 600);
+        });
+      }
+
       const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
       deliveryRadios.forEach(radio => {
         radio.addEventListener('change', () => {
           const method = (radio as HTMLInputElement).value;
           toggleShippingFields(method);
+          if (method !== 'paqueteria') tarifaPakke = null;
+          cotizarPaqueteria();
           renderOrderSummary();
           
           if (isInfoConfirmed) {

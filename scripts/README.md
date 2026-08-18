@@ -56,6 +56,22 @@ Corre `smoke-crawl.mjs` y `check:i18n` antes de cada despliegue.
 | `generate-favicons.mjs` | Genera los favicons a partir del logo. |
 | `generate-og-image.mjs` | Genera la imagen Open Graph por defecto. |
 
+## 📦 Envíos (Pakke)
+
+La cotización de paqueterías vive en `src/lib/pakke.ts` y se expone al checkout
+por `/api/cotizar-envio`. Requiere estas variables en el `.env`:
+
+| Variable | Para qué |
+| --- | --- |
+| `PAKKE_API_KEY` | Token del perfil de Pakke (Mi perfil → API Key → Generar). Va sin "Bearer" y caduca al regenerarse. |
+| `PAKKE_ENV` | `production` usa la API real; cualquier otro valor usa el entorno de pruebas. |
+| `PAKKE_ZIP_FROM` | CP del almacén de origen (Zapopan, 45019). |
+| `PAKKE_DEFAULT_*` | Caja por defecto para productos sin medidas capturadas. |
+
+Sin `PAKKE_API_KEY` el checkout no falla: mantiene la tarifa fija de $350.
+Las medidas de cada producto se capturan en el admin, en la sección
+"Envío / Medidas del paquete".
+
 ## 🚀 Deployment
 
 Ver [`deployment/README.md`](deployment/README.md) y la guía
