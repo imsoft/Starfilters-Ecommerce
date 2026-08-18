@@ -6,6 +6,10 @@ import { getLangFromUrl } from "@/i18n/utils";
 // ("MX ⌄  MXN ⌄") y se leían como si uno dependiera del otro. Ahora el botón
 // resume la elección ("MX / MXN") y al abrirse muestra los dos grupos con su
 // título, para que quede claro que son decisiones separadas.
+//
+// El botón NO lleva bandera: Windows no tiene glifos de banderas emoji y las
+// degrada a las letras de su código regional, así que 🇲🇽 se veía como "MX" y el
+// botón terminaba leyéndose "MX MX / MXN". El código corto ya dice la región.
 const lang = getLangFromUrl(Astro.url);
 const moneda = getMoneda(Astro.cookies, lang);
 
@@ -35,7 +39,6 @@ const idiomaActual = idiomas.find((i) => i.code === lang) || idiomas[0];
     aria-label={t.abrir}
     class="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
   >
-    <span class="text-base leading-none">{idiomaActual.bandera}</span>
     <span class="whitespace-nowrap">{idiomaActual.corto} / {moneda}</span>
     <svg
       data-region-chevron

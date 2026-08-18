@@ -4,7 +4,7 @@ import SEO from "@/components/shared/SEO.astro";
 import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
-import { getHeroImageUrl } from "@/lib/image-utils";
+import { getHeroImageUrl, getHeroPlaceholderUrl } from "@/lib/image-utils";
 
 export const prerender = false;
 
@@ -60,58 +60,79 @@ const formatDate = (date: Date) =>
   <!-- pt-12: el navbar es absolute y mide 104px, y <main> solo aporta 64px.
        Sin esto la foto de portada quedaba 40px por debajo de la barra. -->
   <article class="bg-background pt-12">
-    <div>
-      {caseStudy.featured_image ? (
-        <!-- La foto se muestra completa: las del cliente vienen en cualquier
-             proporción (hay verticales) y el banner recortado a 3:1 se comía
-             la mayor parte de la imagen. object-contain la centra sin cortar. -->
-        <div class="flex justify-center bg-muted">
-          <img src={getHeroImageUrl(caseStudy.featured_image)} alt={title} loading="eager" fetchpriority="high" decoding="async" class="max-h-[22rem] w-auto max-w-full object-contain sm:max-h-[30rem]" />
-        </div>
-      ) : (
-        <div class="h-40 bg-gradient-to-br from-primary/10 to-primary/5"></div>
-      )}
-      <div class="bg-primary/5 border-b border-border">
-        <div class="max-w-4xl mx-auto px-6 py-8">
-          <div class="flex flex-wrap items-center gap-3 mb-3">
+    <!-- Two-column header: the photo no longer spans the full width with grey
+         bands on each side, and the title fits on the same screen. On mobile the
+         columns stack (photo first, details below). -->
+    <div class="mx-auto max-w-6xl px-6 section-pb pt-6">
+      <nav class="mb-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <a href="/en" class="hover:text-foreground transition-colors">Home</a>
+        <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <a href="/en/success-cases" class="hover:text-foreground transition-colors">Success Cases</a>
+        <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <span class="text-foreground font-medium">{title}</span>
+      </nav>
+
+      <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,24rem)_1fr] lg:gap-12">
+        {caseStudy.featured_image ? (
+          <!-- The background is the blurred thumbnail (~1 KB): it shows instantly and
+               the full photo covers it once loaded, with no JavaScript involved. -->
+          <figure
+            class="overflow-hidden rounded-2xl border border-border bg-muted shadow-sm"
+            style={getHeroPlaceholderUrl(caseStudy.featured_image)
+              ? `background-image:url('${getHeroPlaceholderUrl(caseStudy.featured_image)}');background-size:cover;background-position:center;`
+              : undefined}
+          >
+            <img
+              src={getHeroImageUrl(caseStudy.featured_image)}
+              alt={title}
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              class="block h-auto w-full"
+            />
+          </figure>
+        ) : (
+          <div class="aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5"></div>
+        )}
+
+        <div>
+          <div class="flex flex-wrap items-center gap-3">
             <span class="inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
               {industry}
             </span>
             {caseStudy.client_name && (
-              <span class="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground">{caseStudy.client_name}</span>
+              <span class="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground">{caseStudy.client_name}</span>
             )}
-            <span class="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground">{formatDate(caseStudy.created_at)}</span>
+            <span class="text-xs font-medium text-muted-foreground">{formatDate(caseStudy.created_at)}</span>
           </div>
-          <h1 class="text-3xl sm:text-4xl font-bold text-foreground leading-tight">{title}</h1>
-          {excerpt && <p class="mt-3 text-lg text-muted-foreground max-w-2xl">{excerpt}</p>}
+
+          <h1 class="mt-4 text-3xl font-bold leading-tight text-foreground sm:text-4xl">
+            {title}
+          </h1>
+
+          {excerpt && (
+            <p class="mt-4 text-lg leading-relaxed text-muted-foreground">{excerpt}</p>
+          )}
+
+          {tags.length > 0 && (
+            <div class="mt-6 flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span class="inline-flex items-center rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
 
-    <div class="border-b border-border bg-primary/10">
-      <div class="mx-auto max-w-4xl px-6 py-3">
-        <nav class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <a href="/en" class="hover:text-foreground transition-colors">Home</a>
-          <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-          </svg>
-          <a href="/en/success-cases" class="hover:text-foreground transition-colors">Success Cases</a>
-          <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-          </svg>
-          <span class="text-foreground font-medium">{title}</span>
-        </nav>
-      </div>
-    </div>
 
     <div class="mx-auto max-w-4xl px-6 py-16">
-      {tags.length > 0 && (
-        <div class="flex flex-wrap gap-2 mb-10">
-          {tags.map((tag) => (
-            <span class="inline-flex items-center rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground">{tag}</span>
-          ))}
-        </div>
-      )}
 
       <div class="space-y-14">
         {challenge && (

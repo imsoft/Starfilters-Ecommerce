@@ -1,4 +1,6 @@
 import { createPaymentIntent } from './stripe';
+import { getShippingCost, getDeliveryDays } from './delivery-options';
+import type { DeliveryMethod } from './delivery-options';
 import { getCart } from './cart';
 import type { CartItem } from './cart';
 import { getExchangeRate } from './currency-service';
@@ -40,8 +42,9 @@ export interface DiscountData {
   amount: number;
 }
 
-// Tipos de método de entrega
-export type DeliveryMethod = 'standard' | 'express' | 'pickup-gdl' | 'pickup-cdmx' | 'metro-gdl' | 'metro-cdmx' | 'paqueteria';
+// Los métodos de entrega, sus tiempos y sus costos viven en delivery-options.ts
+// (fuente única compartida con el checkout ES/EN).
+export type { DeliveryMethod };
 
 // Interface para datos de envío
 export interface ShippingData {
@@ -50,30 +53,12 @@ export interface ShippingData {
   days: string;
 }
 
-// Umbral para envío gratis (MXN)
-const FREE_SHIPPING_THRESHOLD = 5000;
-
 // Calcular costos de envío
-export const calculateShipping = (method: DeliveryMethod, subtotalMXN: number = 0): ShippingData => {
-  switch (method) {
-    case 'pickup-gdl':
-      return { method, cost: 0, days: 'Recoger en sucursal GDL' };
-    case 'pickup-cdmx':
-      return { method, cost: 0, days: 'Recoger en sucursal CDMX' };
-    case 'metro-gdl':
-      return { method, cost: subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250, days: '1-3 días hábiles' };
-    case 'metro-cdmx':
-      return { method, cost: subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250, days: '1-3 días hábiles' };
-    case 'paqueteria':
-      // El envío nacional por paquetería NUNCA es gratis: el umbral de $5,000
-      // solo aplica a las entregas en zona metropolitana.
-      return { method, cost: 350, days: '4-10 días hábiles' };
-    case 'express':
-      return { method, cost: 16.00, days: '2-5 días hábiles' };
-    default:
-      return { method: 'standard', cost: 0, days: '4-10 días hábiles' };
-  }
-};
+export const calculateShipping = (method: DeliveryMethod, subtotalMXN: number = 0): ShippingData => ({
+  method,
+  cost: getShippingCost(method, subtotalMXN),
+  days: getDeliveryDays(method),
+});
 
 // Calcular impuestos (IVA 16% en México)
 export const calculateTax = (subtotal: number): number => {

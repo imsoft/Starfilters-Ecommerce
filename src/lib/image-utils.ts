@@ -65,6 +65,29 @@ export function getHeroImageUrl(url: string | null | undefined): string {
   return `${before}${transformacion}/${after}`;
 }
 
+/**
+ * Miniatura borrosa de la foto de portada, para pintarla mientras carga la real.
+ *
+ * `getHeroImageUrl` aplica `e_upscale` (ampliación por IA de Cloudinary), que es
+ * lo que hace que la PRIMERA carga de cada foto tarde varios segundos: hasta que
+ * el CDN no la cachea, el navegador se queda con el hueco en blanco y el cliente
+ * lo lee como "la página no carga".
+ *
+ * Esta versión pesa ~1 KB y se sirve al instante porque no lleva upscale. Va
+ * como `background-image` del contenedor: cuando la foto definitiva termina de
+ * cargar, se pinta encima y tapa la borrosa sin necesidad de JavaScript.
+ */
+export function getHeroPlaceholderUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return '';
+
+  const uploadIndex = url.indexOf('/upload/') + '/upload/'.length;
+  const before = url.slice(0, uploadIndex);
+  const after = url.slice(uploadIndex);
+
+  return `${before}c_limit,w_32,e_blur:400,q_30,f_auto/${after}`;
+}
+
 // Helper function to get appropriate placeholder image based on product category
 export function getProductPlaceholderImage(category?: string): string {
   if (!category) return '/images/products/placeholder-product.svg';

@@ -1,5 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { DELIVERY_OPTIONS } from "@/lib/delivery-options";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { REGIMENES_FISCALES, USOS_CFDI, etiquetaSat } from "@/lib/sat-catalogs";
 
@@ -12,7 +13,7 @@ if (!user) {
 
 <WebsiteLayout title="Checkout">
   <div class="bg-background">
-    <main class="mx-auto max-w-7xl px-4 pt-16 pb-24 sm:px-6 lg:px-8">
+    <main class="section-pb mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-2xl lg:max-w-none">
         <h1 class="sr-only">Checkout</h1>
   
@@ -46,69 +47,39 @@ if (!user) {
             <div class="mt-10 border-t border-border pt-10">
               <h2 class="text-lg font-medium text-foreground">Delivery Method</h2>
               <div class="mt-4 space-y-3" id="delivery-options">
-                <!-- Option 1: Pick up in GDL -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="pickup-gdl" class="sr-only" id="delivery-pickup-gdl" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">Pick up in Guadalajara</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Next day from 11am</span>
-                      <span class="mt-1 text-xs text-muted-foreground"><a href="https://maps.app.goo.gl/KKZgepi4V65VYg8E9" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">Cto. San Eduardo 88-Int. 4, San Juan de Ocotán, 45019 Zapopan, Jal.</a></span>
+                {DELIVERY_OPTIONS.map((option) => (
+                  <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
+                    <input type="radio" name="delivery-method" value={option.value} class="sr-only" id={`delivery-${option.value}`} />
+                    <span class="flex flex-1">
+                      <span class="flex flex-col">
+                        <span class="block text-sm font-medium text-foreground">{option.label['en']}</span>
+                        <span class="mt-1 flex items-center text-sm text-muted-foreground">{option.days['en']}</span>
+                        {option.address && (
+                          <span class="mt-1 text-xs text-muted-foreground"><a href={option.address.mapUrl} target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">{option.address.text}</a></span>
+                        )}
+                        {option.note && (
+                          <span class="mt-1 text-xs text-muted-foreground">{option.note['en']}</span>
+                        )}
+                      </span>
                     </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Free</span>
-                </label>
+                    {option.cost === 0 ? (
+                      <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Free</span>
+                    ) : (
+                      <span class="ml-4 shrink-0 text-sm font-medium" id={`price-${option.value}`}>${option.cost.toFixed(2)}</span>
+                    )}
+                  </label>
+                ))}
+              </div>
 
-                <!-- Option 2: Pick up in CDMX -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="pickup-cdmx" class="sr-only" id="delivery-pickup-cdmx" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">Pick up in Mexico City</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Up to 6–7 business days</span>
-                      <span class="mt-1 text-xs text-muted-foreground"><a href="https://maps.app.goo.gl/EUg7SsAdrbB5FLUL6" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">Ventura G.Tena 250, Asturias, Cuauhtémoc, 06890 Ciudad de México, CDMX</a></span>
-                    </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Free</span>
-                </label>
-
-                <!-- Option 3: Metro GDL delivery -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="metro-gdl" class="sr-only" id="delivery-metro-gdl" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">GDL Metro Area Delivery</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Up to 2 business days</span>
-                      <span class="mt-1 text-xs text-muted-foreground">Free on orders of $5,000 MXN or more</span>
-                    </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-metro-gdl">$250.00</span>
-                </label>
-
-                <!-- Option 4: Metro CDMX delivery -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="metro-cdmx" class="sr-only" id="delivery-metro-cdmx" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">CDMX Metro Area Delivery</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Up to 8 business days</span>
-                      <span class="mt-1 text-xs text-muted-foreground">Free on orders of $5,000 MXN or more</span>
-                    </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-metro-cdmx">$250.00</span>
-                </label>
-
-                <!-- Option 5: Shipping carrier -->
-                <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                  <input type="radio" name="delivery-method" value="paqueteria" class="sr-only" id="delivery-paqueteria" />
-                  <span class="flex flex-1">
-                    <span class="flex flex-col">
-                      <span class="block text-sm font-medium text-foreground">Carrier Shipping</span>
-                      <span class="mt-1 flex items-center text-sm text-muted-foreground">Delivery time depends on carrier</span>
-                    </span>
-                  </span>
-                  <span class="ml-4 shrink-0 text-sm font-medium" id="price-paqueteria">$350.00</span>
-                </label>
+              <!-- Live carrier rates (Pakke). Filled in when the customer picks
+                   "Carrier Shipping" and types a postal code. If Pakke does not
+                   answer, this stays hidden and the flat rate applies. -->
+              <div id="pakke-panel" class="mt-4 hidden rounded-lg border border-border bg-muted/40 p-4">
+                <p class="text-sm font-medium text-foreground">Available carriers</p>
+                <p id="pakke-estado" class="mt-1 text-sm text-muted-foreground">
+                  Enter your postal code to see the options and their prices.
+                </p>
+                <div id="pakke-opciones" class="mt-3 space-y-2"></div>
               </div>
             </div>
 
@@ -367,6 +338,14 @@ if (!user) {
   </div>
   
   <script>
+    import {
+      DELIVERY_OPTIONS,
+      FREE_SHIPPING_THRESHOLD,
+      getShippingCost,
+      getDeliveryLabel,
+      isPickupMethod,
+    } from "@/lib/delivery-options";
+    import type { DeliveryMethod } from "@/lib/delivery-options";
     // Function to get cart from localStorage (client-side)
     function getCartFromStorage() {
       try {
@@ -455,22 +434,114 @@ if (!user) {
       return valor === 'USD' || valor === 'MXN' ? valor : 'USD';
     };
 
-    const FREE_SHIPPING_THRESHOLD = 5000;
 
-    function getShippingCost(method: string, subtotalMXN: number): number {
-      switch (method) {
-        case 'pickup-gdl':
-        case 'pickup-cdmx':
-          return 0;
-        case 'metro-gdl':
-        case 'metro-cdmx':
-          return subtotalMXN >= FREE_SHIPPING_THRESHOLD ? 0 : 250;
-        case 'paqueteria':
-          // El envío nacional siempre se cobra; el umbral de envío gratis solo
-          // aplica a las entregas metropolitanas.
-          return 350;
-        default:
-          return 0;
+    // ---------------------------------------------------------------------
+    // Cotización de paqueterías con Pakke.
+    //
+    // "Envío por paquetería" tenía una tarifa fija de $350 sin relación con el
+    // destino ni el volumen. Ahora se piden las tarifas reales al escribir el
+    // código postal. Si Pakke no contesta, `tarifaPakke` se queda en null y
+    // todo el checkout sigue funcionando con la tarifa fija de siempre.
+    // ---------------------------------------------------------------------
+    let tarifaPakke: { serviceId: string; courierName: string; total: number } | null = null;
+    let ultimoCpCotizado = '';
+
+    /** Costo de envío considerando la paquetería elegida por el comprador. */
+    function costoEnvio(method: string, subtotalMXN: number): number {
+      if (method === 'paqueteria' && tarifaPakke) return tarifaPakke.total;
+      return getShippingCost(method as DeliveryMethod, subtotalMXN);
+    }
+
+    function itemsParaCotizar() {
+      const cart = getCartFromStorage();
+      return (cart?.items || []).map((i: any) => ({
+        uuid: i.uuid || i.id || i.productId,
+        cantidad: i.quantity || 1,
+      }));
+    }
+
+    async function cotizarPaqueteria(forzar = false) {
+      const panel = document.getElementById('pakke-panel');
+      const estado = document.getElementById('pakke-estado');
+      const lista = document.getElementById('pakke-opciones');
+      if (!panel || !estado || !lista) return;
+
+      if (getSelectedDeliveryMethod() !== 'paqueteria') {
+        panel.classList.add('hidden');
+        return;
+      }
+      panel.classList.remove('hidden');
+
+      const cpInput = document.getElementById('postal-code') as HTMLInputElement | null;
+      const cp = (cpInput?.value || '').trim();
+
+      if (!/^\d{5}$/.test(cp)) {
+        estado.textContent = 'Enter your postal code to see the options and their prices.';
+        lista.innerHTML = '';
+        tarifaPakke = null;
+        ultimoCpCotizado = '';
+        renderOrderSummary();
+        return;
+      }
+      if (cp === ultimoCpCotizado && !forzar) return;
+
+      estado.textContent = 'Looking up carriers…';
+      lista.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/cotizar-envio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigoPostal: cp, items: itemsParaCotizar() }),
+        });
+        const datos = await res.json();
+        const opciones = Array.isArray(datos?.opciones) ? datos.opciones : [];
+        ultimoCpCotizado = cp;
+
+        if (opciones.length === 0) {
+          estado.textContent = 'No live quote available right now; the standard rate applies.';
+          tarifaPakke = null;
+          renderOrderSummary();
+          return;
+        }
+
+        estado.textContent = '';
+        lista.innerHTML = opciones
+          .map(
+            (o: any, i: number) => `
+            <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
+              <span class="flex items-center gap-2">
+                <input type="radio" name="pakke-service" value="${o.serviceId}" data-total="${o.total}" data-courier="${o.courierName}" ${i === 0 ? 'checked' : ''} />
+                <span>
+                  <span class="font-medium text-foreground">${o.courierName}</span>
+                  <span class="block text-xs text-muted-foreground">${o.diasTexto || ''}</span>
+                </span>
+              </span>
+              <span class="font-medium text-foreground">$${Number(o.total).toFixed(2)}</span>
+            </label>`
+          )
+          .join('');
+
+        const primera = opciones[0];
+        tarifaPakke = { serviceId: primera.serviceId, courierName: primera.courierName, total: Number(primera.total) };
+
+        lista.querySelectorAll('input[name="pakke-service"]').forEach((r) => {
+          r.addEventListener('change', () => {
+            const el = r as HTMLInputElement;
+            tarifaPakke = {
+              serviceId: el.value,
+              courierName: el.dataset.courier || '',
+              total: Number(el.dataset.total) || 0,
+            };
+            renderOrderSummary();
+          });
+        });
+
+        renderOrderSummary();
+      } catch {
+        estado.textContent = 'No live quote available right now; the standard rate applies.';
+        tarifaPakke = null;
+        renderOrderSummary();
       }
     }
 
@@ -483,7 +554,7 @@ if (!user) {
       const section = document.getElementById('shipping-info-section');
       const fields = document.getElementById('shipping-address-fields');
       const addressInputs = fields?.querySelectorAll('input:not([readonly])') as NodeListOf<HTMLInputElement>;
-      const isPickup = method === 'pickup-gdl' || method === 'pickup-cdmx';
+      const isPickup = isPickupMethod(method as DeliveryMethod);
 
       if (!section) return;
 
@@ -497,21 +568,16 @@ if (!user) {
     }
 
     function updateDeliveryPrices(subtotal: number) {
-      const metroGdlEl = document.getElementById('price-metro-gdl');
-      const metroCdmxEl = document.getElementById('price-metro-cdmx');
-      const paqueteriaEl = document.getElementById('price-paqueteria');
-      const isFree = subtotal >= FREE_SHIPPING_THRESHOLD;
-      if (metroGdlEl) {
-        metroGdlEl.textContent = isFree ? 'Free' : '$250.00';
-        metroGdlEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
-      }
-      if (metroCdmxEl) {
-        metroCdmxEl.textContent = isFree ? 'Free' : '$250.00';
-        metroCdmxEl.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
-      }
-      if (paqueteriaEl) {
-        paqueteriaEl.textContent = '$350.00';
-        paqueteriaEl.className = 'ml-4 shrink-0 text-sm font-medium';
+      // Recorre la fuente única: si mañana se agrega una opción de entrega,
+      // su precio se actualiza aquí sin tocar este código.
+      for (const option of DELIVERY_OPTIONS) {
+        if (option.cost === 0) continue;
+        const el = document.getElementById(`price-${option.value}`);
+        if (!el) continue;
+        const cost = getShippingCost(option.value, subtotal);
+        const isFree = cost === 0;
+        el.textContent = isFree ? 'Free' : `$${cost.toFixed(2)}`;
+        el.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
       }
     }
 
@@ -906,14 +972,7 @@ if (!user) {
 
       updateDeliveryPrices(subtotalAfterDiscount);
 
-      const deliveryLabels: Record<string, string> = {
-        'pickup-gdl': 'Pick up in GDL',
-        'pickup-cdmx': 'Pick up in CDMX',
-        'metro-gdl': 'GDL Metro Area Delivery',
-        'metro-cdmx': 'CDMX Metro Area Delivery',
-        'paqueteria': 'Carrier Shipping',
-      };
-      const deliveryLabel = deliveryMethod ? (deliveryLabels[deliveryMethod] || 'Shipping') : 'Select delivery method';
+      const deliveryLabel = deliveryMethod ? (getDeliveryLabel(deliveryMethod as DeliveryMethod, 'en') || 'Shipping') : 'Select delivery method';
 
       // Render summary
       let summaryHTML = `
@@ -1078,7 +1137,7 @@ if (!user) {
         if (isInfoConfirmed) return;
         
         const deliveryMethod = getSelectedDeliveryMethod();
-        const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
+        const isPickup = isPickupMethod(deliveryMethod as DeliveryMethod);
         
         if (!deliveryMethod) {
           confirmBtn.disabled = true;
@@ -1139,7 +1198,7 @@ if (!user) {
       // Function to confirm information
       async function confirmInfo() {
         const deliveryMethod = getSelectedDeliveryMethod();
-        const isPickup = deliveryMethod === 'pickup-gdl' || deliveryMethod === 'pickup-cdmx';
+        const isPickup = isPickupMethod(deliveryMethod as DeliveryMethod);
         const email = (document.getElementById('email-address') as HTMLInputElement)?.value;
         const firstName = (document.getElementById('first-name') as HTMLInputElement)?.value;
         const lastName = (document.getElementById('last-name') as HTMLInputElement)?.value;
@@ -1177,15 +1236,14 @@ if (!user) {
 
         isInfoConfirmed = true;
         
-        const deliveryLabels: Record<string, string> = {
-          'pickup-gdl': '📍 Pick up in Guadalajara',
-          'pickup-cdmx': '📍 Pick up in Mexico City',
-          'metro-gdl': '🚚 GDL metro area delivery',
-          'metro-cdmx': '🚚 CDMX metro area delivery',
-          'paqueteria': '📦 Parcel shipping',
+        // Icon per method; the name comes from the single source.
+        const deliveryIcons: Record<string, string> = {
+          'pickup-gdl': '📍', 'pickup-cdmx': '📍',
+          'metro-gdl': '🚚', 'metro-cdmx': '🚚',
+          'paqueteria': '📦',
         };
         
-        let summaryHTML = `<p><strong>Delivery:</strong> ${deliveryLabels[deliveryMethod] || deliveryMethod}</p>`;
+        let summaryHTML = `<p><strong>Delivery:</strong> ${deliveryIcons[deliveryMethod] || ''} ${getDeliveryLabel(deliveryMethod as DeliveryMethod, 'en') || deliveryMethod}</p>`;
         
         if (!isPickup) {
           const address = (document.getElementById('address') as HTMLInputElement)?.value;
@@ -1362,11 +1420,24 @@ if (!user) {
       });
 
       // Delivery method radio button listeners
+      // Al escribir el código postal se piden las tarifas reales. Se espera a
+      // que deje de teclear para no lanzar una petición por cada dígito.
+      const cpInput = document.getElementById('postal-code');
+      if (cpInput) {
+        let cpTimer: any = null;
+        cpInput.addEventListener('input', () => {
+          clearTimeout(cpTimer);
+          cpTimer = setTimeout(() => cotizarPaqueteria(), 600);
+        });
+      }
+
       const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
       deliveryRadios.forEach(radio => {
         radio.addEventListener('change', () => {
           const method = (radio as HTMLInputElement).value;
           toggleShippingFields(method);
+          if (method !== 'paqueteria') tarifaPakke = null;
+          cotizarPaqueteria();
           renderOrderSummary();
           
           if (isInfoConfirmed) {
@@ -1378,7 +1449,7 @@ if (!user) {
           // Take the user to the next step: the rest of the form sits below the
           // fold and it wasn't obvious that shipping, billing and payment were
           // still pending after choosing a delivery method.
-          const isPickup = method === 'pickup-gdl' || method === 'pickup-cdmx';
+          const isPickup = isPickupMethod(method as DeliveryMethod);
           const siguiente = isPickup
             ? document.getElementById('billing-section') || document.getElementById('confirm-section')
             : document.getElementById('shipping-info-section');

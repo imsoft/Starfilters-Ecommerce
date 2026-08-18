@@ -89,14 +89,14 @@ VALUES ('nuevo@ejemplo.com', 'hash_de_contraseña', 'Nombre', 'Apellido', 'activ
 
 ### **6. Scripts Útiles**
 
-#### **Probar conexión:**
+#### **Probar conexión y revisar el estado de la BD:**
 ```bash
-node --loader ts-node/esm scripts/test-db-connection.js
+node scripts/check-db.js
 ```
 
-#### **Crear usuario de prueba:**
+#### **Crear un administrador:**
 ```bash
-node scripts/create-test-user-simple.js
+node scripts/create-admin.js
 ```
 
 #### **Ver estadísticas de la base de datos:**
@@ -141,9 +141,10 @@ SELECT
 mysql -u root starfilters_ecommerce_db < database/schema.sql
 ```
 
-#### **Usuario de prueba no funciona:**
+#### **Usuario no funciona:**
 ```bash
-node scripts/create-test-user-simple.js
+node scripts/activate-user.js        # activar una cuenta
+node scripts/reset-admin-password.js # resetear contraseña de admin
 ```
 
 ### **9. Próximos Pasos**

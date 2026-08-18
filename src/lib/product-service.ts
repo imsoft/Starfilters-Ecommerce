@@ -49,6 +49,13 @@ const COLUMNAS_PRODUCTO: Array<{ nombre: string; ddl: string }> = [
   { nombre: 'applications_en', ddl: 'TEXT NULL' },
   { nombre: 'benefits', ddl: 'TEXT NULL' },
   { nombre: 'benefits_en', ddl: 'TEXT NULL' },
+  // Medidas del paquete para cotizar envíos con Pakke. Las columnas viejas
+  // `weight` y `dimensions` son VARCHAR de texto libre ("23", "231 x 231 mm")
+  // y no sirven para calcular tarifas; estas son numéricas.
+  { nombre: 'package_weight_kg', ddl: 'DECIMAL(8,3) NULL' },
+  { nombre: 'package_length_cm', ddl: 'DECIMAL(8,2) NULL' },
+  { nombre: 'package_width_cm', ddl: 'DECIMAL(8,2) NULL' },
+  { nombre: 'package_height_cm', ddl: 'DECIMAL(8,2) NULL' },
 ];
 
 let columnasProductoAsguradas: Promise<void> | null = null;
@@ -287,6 +294,11 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
       { field: 'applications_en', dbColumn: 'applications_en' },
       { field: 'benefits', dbColumn: 'benefits' },
       { field: 'benefits_en', dbColumn: 'benefits_en' },
+      // Medidas del paquete (Pakke)
+      { field: 'package_weight_kg', dbColumn: 'package_weight_kg' },
+      { field: 'package_length_cm', dbColumn: 'package_length_cm' },
+      { field: 'package_width_cm', dbColumn: 'package_width_cm' },
+      { field: 'package_height_cm', dbColumn: 'package_height_cm' },
     ];
 
     for (const { field, dbColumn } of optionalFields) {

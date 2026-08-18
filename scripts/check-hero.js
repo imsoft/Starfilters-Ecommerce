@@ -36,7 +36,7 @@ async function main() {
   ))[0].n > 0;
   if (!exists) {
     console.log('❌ La tabla site_settings NO existe. Por eso no se guarda el video del Hero.');
-    console.log('   Solución: crear la tabla (migrations/add_site_settings.sql).');
+    console.log('   Solución: crear la tabla (database/migrations/add_site_settings.sql).');
     await connection.end();
     process.exit(1);
   }

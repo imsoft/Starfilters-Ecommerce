@@ -571,7 +571,6 @@ node server.js
 ## 📚 DOCUMENTACIÓN ADICIONAL
 
 - Ver `docs/deployment/VPS_HOSTINGER_PASO_A_PASO.md` para guía más detallada
-- Ver `scripts/vps-update-all.sh` para script de actualización automática
 
 ---
 

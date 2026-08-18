@@ -4,7 +4,7 @@
 
 ### 1. **Configuración Básica Correcta**
 - ✅ Instalación correcta del SDK de Stripe
-- ✅ Variables de entorno configuradas (`env.example`)
+- ✅ Variables de entorno configuradas (`.env.example`)
 - ✅ Uso de Payment Intents (recomendado por Stripe)
 - ✅ Implementación de PaymentElement
 - ✅ Manejo de webhooks
