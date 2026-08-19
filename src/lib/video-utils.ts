@@ -44,6 +44,43 @@ export function getYouTubeThumbnail(id: string): string {
   return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
 }
 
+/**
+ * Mejor miniatura disponible del video, resuelta en el servidor.
+ *
+ * YouTube solo genera `maxresdefault.jpg` si el video se subió en alta
+ * resolución; para los demás responde 404. Pedirla desde el navegador y caer
+ * al respaldo funciona, pero deja un 404 en cada carga y un parpadeo mientras
+ * se cambia la imagen. Aquí se comprueba una vez del lado del servidor y se
+ * recuerda el resultado, así el navegador recibe directo una URL que existe.
+ *
+ * Si la comprobación falla (sin red, YouTube lento), se devuelve `hqdefault`,
+ * que YouTube genera siempre.
+ */
+const miniaturasResueltas = new Map<string, string>();
+
+export async function getBestYouTubeThumbnail(id: string): Promise<string> {
+  if (!id) return '';
+  const cacheada = miniaturasResueltas.get(id);
+  if (cacheada) return cacheada;
+
+  const maxres = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+  const hq = getYouTubeThumbnail(id);
+
+  let elegida = hq;
+  try {
+    const control = new AbortController();
+    const timeout = setTimeout(() => control.abort(), 3000);
+    const res = await fetch(maxres, { method: 'HEAD', signal: control.signal });
+    clearTimeout(timeout);
+    if (res.ok) elegida = maxres;
+  } catch {
+    // Se queda con hqdefault: existe siempre.
+  }
+
+  miniaturasResueltas.set(id, elegida);
+  return elegida;
+}
+
 /** Indica si la URL es un video servido por Cloudinary. */
 export function isCloudinaryVideo(url: string | null | undefined): boolean {
   if (!url) return false;

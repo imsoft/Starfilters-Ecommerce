@@ -1,4 +1,5 @@
 ---
+import { getBestYouTubeThumbnail, getYouTubeThumbnail } from "@/lib/video-utils";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
 const lang = getLangFromUrl(Astro.url);
@@ -35,7 +36,11 @@ const stats = [
 ];
 
 const videoId = 'EziLQznVOZ0';
-const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+// Igual que en VideoSection: la miniatura se resuelve en el servidor. Antes
+// se pedía maxresdefault a ciegas y sin respaldo, así que bastaba cambiar el
+// video por uno sin esa versión para dejar la imagen rota.
+const thumbnailUrl = await getBestYouTubeThumbnail(videoId);
+const thumbnailFallback = getYouTubeThumbnail(videoId);
 ---
 
 <div id="stats-section" class="section-y bg-primary/10">
@@ -54,6 +59,7 @@ const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
         >
           <img
             src={thumbnailUrl}
+            onerror={`this.onerror=null;this.src='${thumbnailFallback}'`}
             alt="Star Filters"
             class="absolute inset-0 h-full w-full object-cover"
             loading="lazy"

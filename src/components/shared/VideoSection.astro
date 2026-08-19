@@ -1,4 +1,5 @@
 ---
+import { getBestYouTubeThumbnail, getYouTubeThumbnail } from "@/lib/video-utils";
 interface Props {
   videoId: string;
   title: string;
@@ -8,8 +9,10 @@ interface Props {
 }
 
 const { videoId, title, isShort = false, noPadding = false, size = 'lg' } = Astro.props;
-const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-const thumbnailFallback = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+// Se resuelve en el servidor cuál miniatura existe: así el navegador no pide
+// una URL que da 404 y no hay parpadeo al cambiarla.
+const thumbnailUrl = await getBestYouTubeThumbnail(videoId);
+const thumbnailFallback = getYouTubeThumbnail(videoId);
 const uid = `video-${videoId}`;
 
 const sizeClass = isShort ? 'max-w-sm' : noPadding ? '' : size === 'sm' ? 'max-w-xl' : size === 'md' ? 'max-w-2xl' : 'max-w-4xl';
