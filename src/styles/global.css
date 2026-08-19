@@ -262,35 +262,40 @@
   --footer-space: 3rem;       /* 48px — separación propia del footer */
 }
 
-/* Padding vertical estándar de una sección. */
-.section-y {
-  padding-block: var(--section-space);
-}
-
-/* Solo arriba o solo abajo, para secciones consecutivas que no deben duplicar aire. */
-.section-pt {
-  padding-block-start: var(--section-space);
-}
-
-.section-pb {
-  padding-block-end: var(--section-space);
-}
-
-/* Separación del pie respecto al contenido de la página. */
-.footer-pt {
-  padding-block-start: var(--footer-space);
-}
-
-@media (min-width: 1024px) {
+/* Van en la capa `components` para que una utilidad de Tailwind puesta en el
+   mismo elemento (por ejemplo `py-10`) siga ganando: fuera de capa, estas
+   reglas vencían a las utilidades y esas clases quedaban muertas. */
+@layer components {
+  /* Padding vertical estándar de una sección. */
   .section-y {
-    padding-block: var(--section-space-lg);
+    padding-block: var(--section-space);
   }
 
+  /* Solo arriba o solo abajo, para secciones consecutivas que no deben duplicar aire. */
   .section-pt {
-    padding-block-start: var(--section-space-lg);
+    padding-block-start: var(--section-space);
   }
 
   .section-pb {
-    padding-block-end: var(--section-space-lg);
+    padding-block-end: var(--section-space);
+  }
+
+  /* Separación del pie respecto al contenido de la página. */
+  .footer-pt {
+    padding-block-start: var(--footer-space);
+  }
+
+  @media (min-width: 1024px) {
+    .section-y {
+      padding-block: var(--section-space-lg);
+    }
+
+    .section-pt {
+      padding-block-start: var(--section-space-lg);
+    }
+
+    .section-pb {
+      padding-block-end: var(--section-space-lg);
+    }
   }
 }

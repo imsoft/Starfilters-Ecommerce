@@ -401,7 +401,8 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
         typical_installation = ?, typical_installation_en = ?,
         initial_pressure_drop = ?, recommended_final_pressure_drop = ?,
         applications = ?, applications_en = ?,
-        benefits = ?, benefits_en = ?
+        benefits = ?, benefits_en = ?,
+        package_weight_kg = ?, package_length_cm = ?, package_width_cm = ?, package_height_cm = ?
       WHERE id = ?`,
       [
         productData.product_type || 'filter',
@@ -445,6 +446,10 @@ export const updateProduct = async (id: number, productData: Partial<Product>): 
         productData.applications_en || null,
         productData.benefits || null,
         productData.benefits_en || null,
+        productData.package_weight_kg ?? null,
+        productData.package_length_cm ?? null,
+        productData.package_width_cm ?? null,
+        productData.package_height_cm ?? null,
         id,
       ]
     );

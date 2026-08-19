@@ -56,29 +56,34 @@ export function getYouTubeThumbnail(id: string): string {
  * Si la comprobación falla (sin red, YouTube lento), se devuelve `hqdefault`,
  * que YouTube genera siempre.
  */
-const miniaturasResueltas = new Map<string, string>();
+const miniaturasResueltas = new Map<string, Promise<string>>();
 
 export async function getBestYouTubeThumbnail(id: string): Promise<string> {
   if (!id) return '';
-  const cacheada = miniaturasResueltas.get(id);
-  if (cacheada) return cacheada;
+
+  // Se guarda la promesa, no el resultado: si dos visitas piden la misma
+  // miniatura a la vez, comparten una sola consulta en lugar de lanzar dos.
+  const enCurso = miniaturasResueltas.get(id);
+  if (enCurso) return enCurso;
 
   const maxres = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
   const hq = getYouTubeThumbnail(id);
 
-  let elegida = hq;
-  try {
+  const promesa = (async () => {
     const control = new AbortController();
     const timeout = setTimeout(() => control.abort(), 3000);
-    const res = await fetch(maxres, { method: 'HEAD', signal: control.signal });
-    clearTimeout(timeout);
-    if (res.ok) elegida = maxres;
-  } catch {
-    // Se queda con hqdefault: existe siempre.
-  }
+    try {
+      const res = await fetch(maxres, { method: 'HEAD', signal: control.signal });
+      return res.ok ? maxres : hq;
+    } catch {
+      return hq; // hqdefault existe siempre
+    } finally {
+      clearTimeout(timeout);
+    }
+  })();
 
-  miniaturasResueltas.set(id, elegida);
-  return elegida;
+  miniaturasResueltas.set(id, promesa);
+  return promesa;
 }
 
 /** Indica si la URL es un video servido por Cloudinary. */

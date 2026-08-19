@@ -539,7 +539,7 @@ if (!user) {
                   <span class="block text-xs text-muted-foreground">${o.diasTexto || ''}</span>
                 </span>
               </span>
-              <span class="font-medium text-foreground">$${Number(o.subtotal).toFixed(2)}</span>
+              <span class="font-medium text-foreground">${formatPrice(aUSD(Number(o.subtotal), 'MXN'), monedaElegida())}</span>
             </label>`
           )
           .join('');
@@ -1000,7 +1000,7 @@ if (!user) {
         ? subtotalAfterDiscount
         : subtotalAfterDiscount * tasaCambio;
       const shipping = deliveryMethod
-        ? aUSD(getShippingCost(deliveryMethod, subtotalMXN), 'MXN')
+        ? aUSD(costoEnvio(deliveryMethod, subtotalMXN), 'MXN')
         : 0;
       // VAT also applies to shipping (same rule as the server).
       const tax = (subtotalAfterDiscount + shipping) * 0.16;
@@ -1190,6 +1190,17 @@ if (!user) {
           const state = (document.getElementById('state') as HTMLInputElement)?.value?.trim();
           const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value?.trim();
 
+          // With carrier shipping we cannot continue until there is a rate:
+          // the summary does not include shipping yet, so the charge would be
+          // higher than the total the buyer is looking at.
+          if (envioPorCalcular(deliveryMethod)) {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = estadoPakke === 'cargando'
+              ? 'Calculating shipping…'
+              : 'Enter your postal code to calculate shipping';
+            return;
+          }
+
           if (address && city && state && postalCode) {
             confirmBtn.disabled = false;
             confirmBtn.textContent = 'Confirm information and continue to payment';
@@ -1351,7 +1362,7 @@ if (!user) {
           const discountAmount = aUSD(appliedDiscount?.amount || 0, cart.currency);
           const subtotalAfterDiscount = subtotal - discountAmount;
           const shipping = aUSD(
-            getShippingCost(
+            costoEnvio(
               deliveryMethod,
               monedaElegida() === 'MXN' ? subtotalAfterDiscount : subtotalAfterDiscount * tasaCambio
             ),
@@ -1477,6 +1488,10 @@ if (!user) {
           if (method !== 'paqueteria') {
             tarifaPakke = null;
             estadoPakke = 'sin-cp';
+            // También se olvida el último CP cotizado: si no, al volver a
+            // elegir paquetería la cotización se saltaba por "ya es el mismo
+            // CP" y el envío se quedaba en cero.
+            ultimoCpCotizado = '';
           }
           cotizarPaqueteria();
           renderOrderSummary();

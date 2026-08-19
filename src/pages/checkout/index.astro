@@ -538,7 +538,7 @@ if (!user) {
                   <span class="block text-xs text-muted-foreground">${o.diasTexto || ''}</span>
                 </span>
               </span>
-              <span class="font-medium text-foreground">$${Number(o.subtotal).toFixed(2)}</span>
+              <span class="font-medium text-foreground">${formatPrice(aMonedaElegida(Number(o.subtotal), 'MXN'), monedaElegida())}</span>
             </label>`
           )
           .join('');
@@ -1191,6 +1191,17 @@ if (!user) {
           const state = (document.getElementById('state') as HTMLInputElement)?.value?.trim();
           const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value?.trim();
 
+          // Con paquetería no se puede continuar mientras no haya tarifa: el
+          // resumen aún no incluye el envío y el cobro saldría más alto que el
+          // total que el comprador tiene enfrente.
+          if (envioPorCalcular(deliveryMethod)) {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = estadoPakke === 'cargando'
+              ? 'Calculando el envío…'
+              : 'Escribe tu código postal para calcular el envío';
+            return;
+          }
+
           if (address && city && state && postalCode) {
             confirmBtn.disabled = false;
             confirmBtn.textContent = 'Confirmar información y continuar al pago';
@@ -1489,6 +1500,10 @@ if (!user) {
           if (method !== 'paqueteria') {
             tarifaPakke = null;
             estadoPakke = 'sin-cp';
+            // También se olvida el último CP cotizado: si no, al volver a
+            // elegir paquetería la cotización se saltaba por "ya es el mismo
+            // CP" y el envío se quedaba en cero.
+            ultimoCpCotizado = '';
           }
           cotizarPaqueteria();
           renderOrderSummary();

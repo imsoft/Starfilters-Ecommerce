@@ -402,8 +402,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           shippingOverrideMXN = elegido.subtotal;
         }
       } catch (error: any) {
-        // Si la cotización falla aquí, se cae a la tarifa fija de siempre.
         console.error('⚠️ No se pudo recotizar el envío al cobrar:', error?.message);
+      }
+
+      // Si el comprador eligió una paquetería y aquí no se pudo confirmar el
+      // precio, se detiene el cobro. Antes se caía a la tarifa fija de $350,
+      // que podía ser mayor que la que el comprador vio y aceptó.
+      if (shippingOverrideMXN === null && body.shippingServiceId) {
+        return new Response(
+          JSON.stringify({
+            error: 'No pudimos confirmar el costo de envío. Vuelve a intentarlo en un momento.',
+            code: 'shipping_quote_unavailable',
+          }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
       }
     }
 

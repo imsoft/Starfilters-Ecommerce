@@ -13,6 +13,31 @@ import { cotizarEnvio, armarPaqueteDesdeBD, pakkeConfigurado } from '@/lib/pakke
 
 export const prerender = false;
 
+/**
+ * Límite por IP. Cotizar cuesta: cada llamada consume una petición contra
+ * Pakke y una consulta a la base. Sin freno, este endpoint es público y
+ * cualquiera podría dispararlo en bucle. Un comprador real cotiza unas pocas
+ * veces mientras corrige su código postal.
+ */
+const LIMITE_POR_MINUTO = 20;
+const visitas = new Map<string, number[]>();
+
+const dentroDelLimite = (ip: string): boolean => {
+  const ahora = Date.now();
+  const haceUnMinuto = ahora - 60_000;
+  const previas = (visitas.get(ip) || []).filter((t) => t > haceUnMinuto);
+  previas.push(ahora);
+  visitas.set(ip, previas);
+
+  // Limpieza ocasional para que el mapa no crezca sin fin.
+  if (visitas.size > 5000) {
+    for (const [k, v] of visitas) {
+      if (v.every((t) => t <= haceUnMinuto)) visitas.delete(k);
+    }
+  }
+  return previas.length <= LIMITE_POR_MINUTO;
+};
+
 interface ItemEntrada {
   uuid?: string;
   id?: number;
@@ -20,7 +45,7 @@ interface ItemEntrada {
   quantity?: number;
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   const json = (cuerpo: unknown, status = 200) =>
     new Response(JSON.stringify(cuerpo), {
       status,
@@ -28,6 +53,11 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
   try {
+    const ip = clientAddress || request.headers.get('x-forwarded-for') || 'desconocida';
+    if (!dentroDelLimite(ip)) {
+      return json({ opciones: [], motivo: 'demasiadas-peticiones' }, 429);
+    }
+
     const body = await request.json().catch(() => ({}));
     const codigoPostal = String(body?.codigoPostal ?? body?.postalCode ?? '').trim();
     const items: ItemEntrada[] = Array.isArray(body?.items) ? body.items : [];

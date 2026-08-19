@@ -189,6 +189,17 @@ export const armarPaquete = (
     alto += H * cantidad;
   }
 
+  // Las paqueterías rechazan bultos desproporcionados: 10 piezas de 30 cm
+  // darían una caja de 3 metros y la cotización volvería vacía, dejando al
+  // comprador con la tarifa fija. Pasado el tope se reparte el alto sobrante
+  // a lo ancho, que es lo que se haría de verdad al empacar en varias cajas.
+  const ALTO_MAXIMO_CM = 150;
+  if (alto > ALTO_MAXIMO_CM) {
+    const cajas = Math.ceil(alto / ALTO_MAXIMO_CM);
+    alto = Math.ceil(alto / cajas);
+    ancho = ancho * cajas;
+  }
+
   return sanear({ Length: largo, Width: ancho, Height: alto, Weight: peso });
 };
 
