@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { cotizarEnvio, armarPaqueteDesdeBD, pakkeConfigurado } from '@/lib/pakke';
 import { createCheckoutPaymentIntent, validateCheckoutData, type CheckoutData, type BillingData, type DiscountData, type DeliveryMethod, type ResolvedCartItem } from '@/lib/payment-utils';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { getProductByUuid, getProductPrimaryImage } from '@/lib/database';
@@ -380,6 +381,32 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       hasDiscount: !!discountData
     });
 
+    // Envío por paquetería: el servidor vuelve a cotizar con Pakke en vez de
+    // creerle el precio al navegador. Si se tomara el del cliente, cualquiera
+    // podría pedir el envío en cero; y si se usara la tarifa fija de $350, se
+    // cobraría algo distinto de lo que el comprador vio y aceptó.
+    let shippingOverrideMXN: number | null = null;
+    if (shippingMethodFromBody === 'paqueteria' && pakkeConfigurado()) {
+      try {
+        const { paquete } = await armarPaqueteDesdeBD(
+          resolvedItems.map((item: any) => ({
+            uuid: item.uuid,
+            cantidad: Number(item.quantity) || 1,
+          }))
+        );
+        const opciones = await cotizarEnvio(String(checkoutData.postalCode || ''), paquete);
+        if (opciones.length > 0) {
+          // Sin servicio elegido se toma la más barata, que es la que el
+          // checkout preselecciona.
+          const elegido = opciones.find((o) => o.serviceId === body.shippingServiceId) || opciones[0];
+          shippingOverrideMXN = elegido.subtotal;
+        }
+      } catch (error: any) {
+        // Si la cotización falla aquí, se cae a la tarifa fija de siempre.
+        console.error('⚠️ No se pudo recotizar el envío al cobrar:', error?.message);
+      }
+    }
+
     let result;
     try {
       result = await createCheckoutPaymentIntent(
@@ -388,7 +415,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         user.id,
         discountData,
         resolvedItems,
-        chargeCurrency
+        chargeCurrency,
+        shippingOverrideMXN
       );
 
       console.log('✅ Payment Intent creado exitosamente:', {

@@ -191,3 +191,59 @@ export const armarPaquete = (
 
   return sanear({ Length: largo, Width: ancho, Height: alto, Weight: peso });
 };
+
+/**
+ * Arma el paquete leyendo las medidas de cada producto en la base de datos.
+ *
+ * La usan las DOS rutas que cotizan: la que consulta el checkout mientras el
+ * comprador elige, y la que recotiza el servidor al cobrar. Si cada una armara
+ * el bulto por su cuenta, el precio mostrado y el cobrado podrían no coincidir.
+ *
+ * Solo servidor: importa la base de datos.
+ */
+export const armarPaqueteDesdeBD = async (
+  items: Array<{ uuid?: string | null; cantidad: number }>
+): Promise<{ paquete: Paquete; sinMedidas: number }> => {
+  const { query } = await import('@/config/database');
+  const { ensureProductColumns } = await import('@/lib/product-service');
+  await ensureProductColumns();
+
+  const uuids = items.map((i) => i.uuid).filter(Boolean) as string[];
+  const porUuid = new Map<string, Partial<Paquete>>();
+
+  if (uuids.length > 0) {
+    const filas = (await query(
+      `SELECT uuid, package_length_cm, package_width_cm, package_height_cm, package_weight_kg
+         FROM products
+        WHERE uuid IN (${uuids.map(() => '?').join(',')})`,
+      uuids
+    )) as any[];
+
+    for (const f of filas) {
+      // Solo cuenta como "con medidas" si trae al menos el peso: una fila con
+      // las cuatro columnas vacías equivale a no tener nada capturado.
+      const tieneAlgo =
+        Number(f.package_weight_kg) > 0 ||
+        Number(f.package_length_cm) > 0 ||
+        Number(f.package_width_cm) > 0 ||
+        Number(f.package_height_cm) > 0;
+      if (!tieneAlgo) continue;
+
+      porUuid.set(String(f.uuid), {
+        Length: Number(f.package_length_cm) || PAQUETE_POR_DEFECTO.Length,
+        Width: Number(f.package_width_cm) || PAQUETE_POR_DEFECTO.Width,
+        Height: Number(f.package_height_cm) || PAQUETE_POR_DEFECTO.Height,
+        Weight: Number(f.package_weight_kg) || PAQUETE_POR_DEFECTO.Weight,
+      });
+    }
+  }
+
+  const paquete = armarPaquete(
+    items.map((i) => ({
+      cantidad: i.cantidad,
+      paquete: i.uuid ? porUuid.get(i.uuid) : null,
+    }))
+  );
+
+  return { paquete, sinMedidas: uuids.filter((u) => !porUuid.has(u)).length };
+};

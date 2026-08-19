@@ -444,10 +444,28 @@ if (!user) {
     // ---------------------------------------------------------------------
     let tarifaPakke: { serviceId: string; courierName: string; total: number } | null = null;
     let ultimoCpCotizado = '';
+    /**
+     * En qué punto va la cotización:
+     *   sin-cp    falta el código postal → no se puede saber el precio todavía
+     *   cargando  se está preguntando a Pakke
+     *   ok        hay tarifa elegida
+     *   fallback  Pakke no dio opciones → se cobra la tarifa fija de siempre
+     */
+    let estadoPakke: 'sin-cp' | 'cargando' | 'ok' | 'fallback' = 'sin-cp';
+
+    /** true cuando el envío aún no se puede cifrar y no debe mostrarse un monto. */
+    function envioPorCalcular(method: string): boolean {
+      return method === 'paqueteria' && (estadoPakke === 'sin-cp' || estadoPakke === 'cargando');
+    }
 
     /** Costo de envío considerando la paquetería elegida por el comprador. */
     function costoEnvio(method: string, subtotalMXN: number): number {
-      if (method === 'paqueteria' && tarifaPakke) return tarifaPakke.total;
+      if (method === 'paqueteria') {
+        if (estadoPakke === 'ok' && tarifaPakke) return tarifaPakke.total;
+        // Sin código postal no se sabe cuánto cuesta: mostrar la tarifa fija
+        // aquí seria anunciar un precio que cambia en cuanto la escriben.
+        if (estadoPakke !== 'fallback') return 0;
+      }
       return getShippingCost(method as DeliveryMethod, subtotalMXN);
     }
 
@@ -479,6 +497,7 @@ if (!user) {
         lista.innerHTML = '';
         tarifaPakke = null;
         ultimoCpCotizado = '';
+        estadoPakke = 'sin-cp';
         renderOrderSummary();
         return;
       }
@@ -486,6 +505,8 @@ if (!user) {
 
       estado.textContent = 'Buscando paqueterías…';
       lista.innerHTML = '';
+      estadoPakke = 'cargando';
+      renderOrderSummary();
 
       try {
         const res = await fetch('/api/cotizar-envio', {
@@ -500,6 +521,7 @@ if (!user) {
         if (opciones.length === 0) {
           estado.textContent = 'No hay cotización disponible ahora; se aplica la tarifa estándar.';
           tarifaPakke = null;
+          estadoPakke = 'fallback';
           renderOrderSummary();
           return;
         }
@@ -523,6 +545,7 @@ if (!user) {
 
         const primera = opciones[0];
         tarifaPakke = { serviceId: primera.serviceId, courierName: primera.courierName, total: Number(primera.subtotal) };
+        estadoPakke = 'ok';
 
         lista.querySelectorAll('input[name="pakke-service"]').forEach((r) => {
           r.addEventListener('change', () => {
@@ -538,6 +561,7 @@ if (!user) {
 
         renderOrderSummary();
       } catch {
+        estadoPakke = 'fallback';
         estado.textContent = 'No hay cotización disponible ahora; se aplica la tarifa estándar.';
         tarifaPakke = null;
         renderOrderSummary();
@@ -571,11 +595,23 @@ if (!user) {
     function updateDeliveryPrices(subtotal: number) {
       // Recorre la fuente única: si mañana se agrega una opción de entrega,
       // su precio se actualiza aquí sin tocar este código.
+      const metodoActual = getSelectedDeliveryMethod();
       for (const option of DELIVERY_OPTIONS) {
         if (option.cost === 0) continue;
         const el = document.getElementById(`price-${option.value}`);
         if (!el) continue;
-        const cost = getShippingCost(option.value, subtotal);
+
+        // Con paquetería el precio depende del destino: mientras no se sepa,
+        // se dice de dónde va a salir en vez de anunciar la tarifa fija.
+        if (option.value === 'paqueteria' && envioPorCalcular(metodoActual)) {
+          el.textContent = estadoPakke === 'cargando' ? 'Calculando…' : 'Se calcula con tu CP';
+          el.className = 'ml-4 shrink-0 text-sm font-medium text-muted-foreground';
+          continue;
+        }
+
+        const cost = option.value === 'paqueteria' && estadoPakke === 'ok' && tarifaPakke
+          ? tarifaPakke.total
+          : getShippingCost(option.value, subtotal);
         const isFree = cost === 0;
         el.textContent = isFree ? 'Gratis' : `$${cost.toFixed(2)}`;
         el.className = `ml-4 shrink-0 text-sm font-medium ${isFree ? 'text-green-600' : ''}`;
@@ -993,7 +1029,7 @@ if (!user) {
       summaryHTML += `
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">${deliveryLabel}</dt>
-          <dd class="text-sm font-medium ${shipping === 0 && deliveryMethod ? 'text-green-600' : 'text-foreground'}">${shipping === 0 && deliveryMethod ? 'Gratis' : formatPrice(shipping, cartCurrency)}</dd>
+          <dd class="text-sm font-medium ${envioPorCalcular(deliveryMethod) ? 'text-muted-foreground' : (shipping === 0 && deliveryMethod ? 'text-green-600' : 'text-foreground')}">${envioPorCalcular(deliveryMethod) ? (estadoPakke === 'cargando' ? 'Calculando…' : 'Se calcula con tu CP') : (shipping === 0 && deliveryMethod ? 'Gratis' : formatPrice(shipping, cartCurrency))}</dd>
         </div>
         <div class="flex items-center justify-between">
           <dt class="text-sm text-muted-foreground">Impuestos (IVA 16%)</dt>
@@ -1365,6 +1401,8 @@ if (!user) {
               billing: getBillingData(),
               items: cart.items,
               shippingMethod: deliveryMethod,
+              // Cuál paquetería eligió: el servidor recotiza y cobra esa misma.
+              shippingServiceId: tarifaPakke?.serviceId || null,
               discountCode: appliedDiscount ? {
                 code: appliedDiscount.code,
                 discountCodeId: appliedDiscount.discountCodeId,
@@ -1448,7 +1486,10 @@ if (!user) {
         radio.addEventListener('change', () => {
           const method = (radio as HTMLInputElement).value;
           toggleShippingFields(method);
-          if (method !== 'paqueteria') tarifaPakke = null;
+          if (method !== 'paqueteria') {
+            tarifaPakke = null;
+            estadoPakke = 'sin-cp';
+          }
           cotizarPaqueteria();
           renderOrderSummary();
           

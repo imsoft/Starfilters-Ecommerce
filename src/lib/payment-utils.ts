@@ -77,7 +77,14 @@ export const calculateOrderTotal = async (
   cartItems: CartItem[],
   shippingMethod: DeliveryMethod,
   discountAmount: number = 0,
-  targetCurrency: 'MXN' | 'USD' = 'MXN'
+  targetCurrency: 'MXN' | 'USD' = 'MXN',
+  /**
+   * Tarifa de envío en MXN y SIN IVA que ya cotizó el servidor con Pakke.
+   * Solo aplica a 'paqueteria': ahí el precio depende del destino y del bulto,
+   * así que la tarifa fija no sirve. Nunca se toma del navegador —el servidor
+   * vuelve a cotizar— porque si no, cualquiera podría pedir envío en cero.
+   */
+  shippingOverrideMXN?: number | null
 ): Promise<{
   subtotal: number;
   discount: number;
@@ -112,7 +119,10 @@ export const calculateOrderTotal = async (
   const subtotalEnMXN = targetCurrency === 'MXN'
     ? subtotalAfterDiscount
     : subtotalAfterDiscount * (exchangeRate || 1);
-  const shippingMXN = calculateShipping(shippingMethod, subtotalEnMXN).cost;
+  const shippingMXN =
+    shippingMethod === 'paqueteria' && typeof shippingOverrideMXN === 'number' && shippingOverrideMXN >= 0
+      ? shippingOverrideMXN
+      : calculateShipping(shippingMethod, subtotalEnMXN).cost;
   const shipping = convertir(shippingMXN, 'MXN');
 
   // El flete es un servicio gravado: el IVA se calcula sobre mercancía + envío.
@@ -144,7 +154,9 @@ export const createCheckoutPaymentIntent = async (
   discountData?: DiscountData,
   cartItems?: ResolvedCartItem[], // Items con precios resueltos en el servidor
   // Moneda del cobro: la decide el idioma del sitio (español MXN, inglés USD)
-  chargeCurrency: 'MXN' | 'USD' = 'MXN'
+  chargeCurrency: 'MXN' | 'USD' = 'MXN',
+  /** Tarifa de paquetería en MXN sin IVA, ya cotizada por el servidor. */
+  shippingOverrideMXN?: number | null
 ): Promise<{ client_secret: string; payment_intent_id: string; order_total: number; currency: 'MXN' | 'USD' }> => {
   try {
     // Obtener items del carrito: primero del parámetro, luego de getCart() como fallback
@@ -164,7 +176,7 @@ export const createCheckoutPaymentIntent = async (
 
     // Totales ya en la moneda del cobro
     const discountAmount = discountData?.amount || 0;
-    const orderTotals = await calculateOrderTotal(items, shippingMethod, discountAmount, chargeCurrency);
+    const orderTotals = await calculateOrderTotal(items, shippingMethod, discountAmount, chargeCurrency, shippingOverrideMXN);
 
     // Guardar el carrito completo como borrador en la BD. El metadata de
     // Stripe limita cada valor a 500 caracteres, así que el carrito

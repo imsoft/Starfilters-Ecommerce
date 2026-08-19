@@ -9,10 +9,7 @@
  * bloquea una compra porque la paquetería no conteste.
  */
 import type { APIRoute } from 'astro';
-import { query } from '@/config/database';
-import { ensureProductColumns } from '@/lib/product-service';
-import { cotizarEnvio, armarPaquete, pakkeConfigurado, PAQUETE_POR_DEFECTO } from '@/lib/pakke';
-import type { Paquete } from '@/lib/pakke';
+import { cotizarEnvio, armarPaqueteDesdeBD, pakkeConfigurado } from '@/lib/pakke';
 
 export const prerender = false;
 
@@ -45,44 +42,11 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ opciones: [], motivo: 'pakke-no-configurado' });
     }
 
-    // Las columnas package_* se crean al vuelo (igual que el resto del catálogo).
-    // Sin esto, en una base donde nadie ha guardado un producto todavía, el
-    // SELECT de abajo fallaría y no se podría cotizar.
-    await ensureProductColumns();
-
-    // Medidas reales de los productos del carrito. Los que aún no las tengan
-    // capturadas entran con el paquete por defecto.
-    const uuids = items.map((i) => i.uuid).filter(Boolean) as string[];
-    const porUuid = new Map<string, Partial<Paquete>>();
-
-    if (uuids.length > 0) {
-      const filas = (await query(
-        `SELECT uuid, package_length_cm, package_width_cm, package_height_cm, package_weight_kg
-           FROM products
-          WHERE uuid IN (${uuids.map(() => '?').join(',')})`,
-        uuids
-      )) as any[];
-
-      for (const f of filas) {
-        porUuid.set(String(f.uuid), {
-          Length: Number(f.package_length_cm) || PAQUETE_POR_DEFECTO.Length,
-          Width: Number(f.package_width_cm) || PAQUETE_POR_DEFECTO.Width,
-          Height: Number(f.package_height_cm) || PAQUETE_POR_DEFECTO.Height,
-          Weight: Number(f.package_weight_kg) || PAQUETE_POR_DEFECTO.Weight,
-        });
-      }
-    }
-
-    const paquete = armarPaquete(
-      items.map((i) => ({
-        cantidad: Number(i.cantidad ?? i.quantity ?? 1),
-        paquete: i.uuid ? porUuid.get(i.uuid) : null,
-      }))
+    // El bulto se arma en un solo lugar (lib/pakke) para que la cotización que
+    // ve el comprador y la que recalcula el servidor al cobrar coincidan.
+    const { paquete, sinMedidas } = await armarPaqueteDesdeBD(
+      items.map((i) => ({ uuid: i.uuid, cantidad: Number(i.cantidad ?? i.quantity ?? 1) }))
     );
-
-    // Cuántos productos van con medidas inventadas: sirve para avisar en el
-    // admin que faltan datos, sin estorbar al comprador.
-    const sinMedidas = uuids.filter((u) => !porUuid.has(u)).length;
 
     const opciones = await cotizarEnvio(codigoPostal, paquete, { valorAsegurado });
 
