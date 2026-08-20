@@ -486,22 +486,42 @@ if (!user) {
     }
 
     /**
-     * Palabras con las que una paquetería vende entrega en un día.
-     * Si el servicio promete eso pero Pakke estima 3 días o más, el
-     * nombre contradice al tiempo y se oculta: 99M se anuncia como "Día
-     * siguiente" con un estimado de 3-5 días hábiles, y alguien que compra
+     * Plazo que promete el NOMBRE del servicio, en días hábiles, o null si no
+     * promete ninguno ("Regular", "Express Saver", "Servicio Terrestre"…).
+     */
+    function plazoPrometido(serviceName: string): number | null {
+      const n = String(serviceName || '').toLowerCase();
+      if (/mismo d[ií]a|same[- ]?day/.test(n)) return 0;
+      if (/d[ií]a siguiente|next[- ]?day|overnight|24\s*h/.test(n)) return 1;
+      const m = n.match(/(\d+)\s*(d[ií]as?|days?)\b/);
+      return m ? Number(m[1]) : null;
+    }
+
+    /**
+     * Segunda línea de cada paquetería: "Servicio · tiempo".
+     *
+     * El nombre se oculta cuando promete un plazo que el estimado de Pakke no
+     * respalda. Pasa hoy con 99M, que se vende como "Día siguiente" mientras
+     * Pakke estima 3-5 días hábiles para ese mismo registro: quien compra
      * esperando mañana y recibe en cinco reclama a Star Filters, no a Pakke.
      *
-     * DHL y FedEx no caen aquí: sus servicios exprés estiman 2 días, que es
-     * el día de recolección más el de entrega, así que el nombre sí cuadra.
+     * Se tolera un día de diferencia porque el estimado incluye la recolección
+     * en el almacén: los servicios exprés de DHL y FedEx prometen un día y
+     * estiman dos (recolección + entrega), y ahí el nombre sí cuadra.
+     *
+     * Los nombres que no prometen plazo nunca se ocultan: no hay nada que
+     * contradecir y sirven para distinguir dos servicios de la misma
+     * paquetería (los dos DHL salen al mismo precio).
      */
-    const PROMESAS_DE_UN_DIA = /d[ií]a siguiente|next[- ]?day|overnight|24\s*h/i;
-    const DIAS_QUE_CONTRADICEN = 3;
+    const DIAS_DE_RECOLECCION = 1;
 
     function detallePaqueteria(o: any): string {
-      const dias = Number(o.diasEstimados);
-      const prometeUnDia = PROMESAS_DE_UN_DIA.test(String(o.serviceName || ''));
-      const contradice = prometeUnDia && Number.isFinite(dias) && dias >= DIAS_QUE_CONTRADICEN;
+      const estimado = Number(o.diasEstimados);
+      const prometido = plazoPrometido(o.serviceName);
+      const contradice =
+        prometido !== null &&
+        Number.isFinite(estimado) &&
+        estimado > prometido + DIAS_DE_RECOLECCION;
 
       const partes = contradice ? [o.diasTexto] : [o.serviceName, o.diasTexto];
       return partes.map((t) => String(t || '').trim()).filter(Boolean).join(' · ');
