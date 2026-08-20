@@ -485,6 +485,18 @@ if (!user) {
       }));
     }
 
+    /**
+     * Segunda línea de cada paquetería: "Servicio · tiempo".
+     *
+     * El nombre del servicio hace falta porque una misma paquetería ofrece
+     * varios: DHL aparecía dos veces, con el mismo precio y sin nada que las
+     * distinguiera. Cualquiera de los dos datos puede venir vacío desde Pakke,
+     * así que se unen solo los que existan.
+     */
+    function detallePaqueteria(o: any): string {
+      return [o.serviceName, o.diasTexto].map((t) => String(t || '').trim()).filter(Boolean).join(' · ');
+    }
+
     async function cotizarPaqueteria(forzar = false) {
       const panel = document.getElementById('pakke-panel');
       const estado = document.getElementById('pakke-estado');
@@ -543,7 +555,7 @@ if (!user) {
                 <input type="radio" name="pakke-service" value="${o.serviceId}" data-total="${o.subtotal}" data-courier="${o.courierName}" ${i === 0 ? 'checked' : ''} />
                 <span>
                   <span class="font-medium text-foreground">${o.courierName}</span>
-                  <span class="block text-xs text-muted-foreground">${o.diasTexto || ''}</span>
+                  <span class="block text-xs text-muted-foreground">${detallePaqueteria(o)}</span>
                 </span>
               </span>
               <span class="font-medium text-foreground">${formatPrice(aUSD(Number(o.subtotal), 'MXN'), monedaElegida())}</span>
