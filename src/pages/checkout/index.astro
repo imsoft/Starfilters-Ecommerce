@@ -1,6 +1,11 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import { DELIVERY_OPTIONS } from "@/lib/delivery-options";
+import { pakkeConfigurado } from "@/lib/pakke";
+
+// Con Pakke activo, la paquetería no tiene precio fijo: mostrar los $350
+// de entrada anunciaría una tarifa que nunca se cobra.
+const cotizaEnVivo = pakkeConfigurado();
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { REGIMENES_FISCALES, USOS_CFDI, etiquetaSat } from "@/lib/sat-catalogs";
 
@@ -62,7 +67,9 @@ if (!user) {
                         )}
                       </span>
                     </span>
-                    {option.cost === 0 ? (
+                    {option.value === 'paqueteria' && cotizaEnVivo ? (
+                      <span class="ml-4 shrink-0 text-sm font-medium text-muted-foreground" id={`price-${option.value}`}>Se calcula con tu CP</span>
+                    ) : option.cost === 0 ? (
                       <span class="ml-4 shrink-0 text-sm font-medium text-green-600">Gratis</span>
                     ) : (
                       <span class="ml-4 shrink-0 text-sm font-medium" id={`price-${option.value}`}>${option.cost.toFixed(2)}</span>
@@ -595,15 +602,16 @@ if (!user) {
     function updateDeliveryPrices(subtotal: number) {
       // Recorre la fuente única: si mañana se agrega una opción de entrega,
       // su precio se actualiza aquí sin tocar este código.
-      const metodoActual = getSelectedDeliveryMethod();
       for (const option of DELIVERY_OPTIONS) {
         if (option.cost === 0) continue;
         const el = document.getElementById(`price-${option.value}`);
         if (!el) continue;
 
-        // Con paquetería el precio depende del destino: mientras no se sepa,
-        // se dice de dónde va a salir en vez de anunciar la tarifa fija.
-        if (option.value === 'paqueteria' && envioPorCalcular(metodoActual)) {
+        // Con paquetería el precio depende del destino. Mientras no haya tarifa
+        // se dice de dónde saldrá, aunque la opción no esté seleccionada: los
+        // $350 son solo el respaldo de cuando Pakke no responde, y anunciarlos
+        // de entrada promete una tarifa que casi nunca se cobra.
+        if (option.value === 'paqueteria' && estadoPakke !== 'ok' && estadoPakke !== 'fallback') {
           el.textContent = estadoPakke === 'cargando' ? 'Calculando…' : 'Se calcula con tu CP';
           el.className = 'ml-4 shrink-0 text-sm font-medium text-muted-foreground';
           continue;
