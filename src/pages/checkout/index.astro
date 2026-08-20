@@ -485,15 +485,25 @@ if (!user) {
     }
 
     /**
-     * Segunda línea de cada paquetería: "Servicio · tiempo".
+     * Palabras con las que una paquetería vende entrega en un día.
+     * Si el servicio promete eso pero Pakke estima 3 días o más, el
+     * nombre contradice al tiempo y se oculta: 99M se anuncia como "Día
+     * siguiente" con un estimado de 3-5 días hábiles, y alguien que compra
+     * esperando mañana y recibe en cinco reclama a Star Filters, no a Pakke.
      *
-     * El nombre del servicio hace falta porque una misma paquetería ofrece
-     * varios: DHL aparecía dos veces, con el mismo precio y sin nada que las
-     * distinguiera. Cualquiera de los dos datos puede venir vacío desde Pakke,
-     * así que se unen solo los que existan.
+     * DHL y FedEx no caen aquí: sus servicios exprés estiman 2 días, que es
+     * el día de recolección más el de entrega, así que el nombre sí cuadra.
      */
+    const PROMESAS_DE_UN_DIA = /d[ií]a siguiente|next[- ]?day|overnight|24\s*h/i;
+    const DIAS_QUE_CONTRADICEN = 3;
+
     function detallePaqueteria(o: any): string {
-      return [o.serviceName, o.diasTexto].map((t) => String(t || '').trim()).filter(Boolean).join(' · ');
+      const dias = Number(o.diasEstimados);
+      const prometeUnDia = PROMESAS_DE_UN_DIA.test(String(o.serviceName || ''));
+      const contradice = prometeUnDia && Number.isFinite(dias) && dias >= DIAS_QUE_CONTRADICEN;
+
+      const partes = contradice ? [o.diasTexto] : [o.serviceName, o.diasTexto];
+      return partes.map((t) => String(t || '').trim()).filter(Boolean).join(' · ');
     }
 
     async function cotizarPaqueteria(forzar = false) {
