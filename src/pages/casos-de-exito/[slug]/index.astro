@@ -1,7 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
-import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 import { getHeroImageUrl, getHeroPlaceholderUrl } from "@/lib/image-utils";
@@ -326,10 +325,4 @@ const sidebarWhatsappUrl = `https://wa.me/${sidebarWhatsappNumber}?text=${encode
     });
   </script>
 
-  <SplitCTA
-    badge="Ingeniería Especializada"
-    title="¿Tienes un reto similar?"
-    description="Nuestros ingenieros están listos para analizar tu caso y proponer la solución de filtración más eficiente para tu proceso e industria."
-    whatsappMessage="Hola, leí uno de sus casos de éxito y me gustaría que me ayuden con un reto de filtración similar."
-  />
 </WebsiteLayout>
