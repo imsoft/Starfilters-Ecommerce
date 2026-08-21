@@ -193,24 +193,24 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
       <!-- Contadores: además de informar, filtran la tabla al hacer clic.
            Miden trabajo pendiente, no totales históricos. -->
       <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <button type="button" data-contador data-status="" class="rounded-lg border-2 border-foreground bg-background p-4 text-left transition-colors hover:bg-muted">
-          <p class="mb-1.5 text-[13px] font-semibold text-foreground">Todas</p>
+        <button type="button" data-contador data-status="" class="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-muted">
+          <p class="mb-1.5 text-sm font-semibold text-foreground">Todas</p>
           <p class="text-2xl font-bold text-foreground">{totalOrders}</p>
         </button>
         <button type="button" data-contador data-status="pending" class="rounded-lg border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
-          <p class="mb-1.5 text-[13px] font-semibold text-muted-foreground">Por preparar</p>
+          <p class="mb-1.5 text-sm font-semibold text-muted-foreground">Por preparar</p>
           <p class="text-2xl font-bold text-foreground">{porPreparar}</p>
         </button>
         <button type="button" data-contador data-status="shipped" class="rounded-lg border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
-          <p class="mb-1.5 text-[13px] font-semibold text-muted-foreground">En tránsito</p>
+          <p class="mb-1.5 text-sm font-semibold text-muted-foreground">En tránsito</p>
           <p class="text-2xl font-bold text-foreground">{enTransito}</p>
         </button>
         <button type="button" data-contador data-status="delivered" class="rounded-lg border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
-          <p class="mb-1.5 text-[13px] font-semibold text-muted-foreground">Entregadas</p>
+          <p class="mb-1.5 text-sm font-semibold text-muted-foreground">Entregadas</p>
           <p class="text-2xl font-bold text-foreground">{completedOrders}</p>
         </button>
         <div class={`rounded-lg border p-4 ${estancadas > 0 ? 'border-red-200 bg-red-50' : 'border-border bg-background'}`}>
-          <p class={`mb-1.5 text-[13px] font-semibold ${estancadas > 0 ? 'text-red-800' : 'text-muted-foreground'}`}>Sin avanzar +2 días</p>
+          <p class={`mb-1.5 text-sm font-semibold ${estancadas > 0 ? 'text-red-800' : 'text-muted-foreground'}`}>Sin avanzar +2 días</p>
           <p class={`text-2xl font-bold ${estancadas > 0 ? 'text-red-800' : 'text-foreground'}`}>{estancadas}</p>
         </div>
       </div>
@@ -517,9 +517,11 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
         contadores.forEach((otro) => {
           const activo = otro === boton;
           otro.classList.toggle('border-2', activo);
-          otro.classList.toggle('border-foreground', activo);
+          otro.classList.toggle('border-primary', activo);
+          otro.classList.toggle('bg-primary/5', activo);
           otro.classList.toggle('border', !activo);
           otro.classList.toggle('border-border', !activo);
+          otro.classList.toggle('bg-background', !activo);
         });
         filterOrders();
       });

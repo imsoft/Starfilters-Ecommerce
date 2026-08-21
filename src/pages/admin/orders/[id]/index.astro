@@ -237,23 +237,23 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
     </div>
 
     <!-- Franja de operación: lo que decide el trabajo, antes que el detalle -->
-    <div class="mb-7 grid grid-cols-2 overflow-hidden rounded-xl border border-border lg:grid-cols-4">
+    <div class="mb-7 grid grid-cols-2 overflow-hidden rounded-lg border border-border lg:grid-cols-4">
       <div class="border-b border-r border-border p-4 lg:border-b-0">
-        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Entrega</p>
+        <p class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Entrega</p>
         <p class="text-sm font-semibold text-foreground">{etiquetaEntrega}</p>
       </div>
       <div class="border-b border-border p-4 lg:border-b-0 lg:border-r">
-        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Plazo prometido</p>
+        <p class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Plazo prometido</p>
         <p class="text-sm font-semibold text-foreground">{plazoEntrega || '—'}</p>
       </div>
       <div class="border-r border-border p-4">
-        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Factura</p>
+        <p class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Factura</p>
         <p class={`text-sm font-semibold ${requiereFactura ? (cfdiTimbrado ? 'text-green-700' : 'text-amber-700') : 'text-foreground'}`}>
           {requiereFactura ? (cfdiTimbrado ? 'Timbrada' : 'Sí, CFDI pendiente') : 'No solicitó'}
         </p>
       </div>
       <div class="p-4">
-        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Total cobrado</p>
+        <p class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total cobrado</p>
         <p class="text-sm font-semibold text-foreground">{formatCurrency(order.total_amount, order.currency)}</p>
       </div>
     </div>
@@ -263,8 +263,8 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
       <div class="space-y-6">
 
         <!-- Seguimiento -->
-        <div class="rounded-xl border border-border p-6">
-          <h2 class="mb-6 text-[17px] font-bold tracking-tight text-foreground">Seguimiento</h2>
+        <div class="rounded-lg border border-border p-6">
+          <h2 class="mb-6 text-lg font-semibold text-foreground">Seguimiento</h2>
 
           {cancelada ? (
             <div class="rounded-lg bg-red-50 p-4">
@@ -274,16 +274,16 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
           ) : (
             <div>
               {hitos.map((hito, i) => (
-                <div class="grid grid-cols-[28px_1fr] gap-4">
+                <div class="grid grid-cols-[1.5rem_1fr] gap-4">
                   <div class="flex flex-col items-center">
                     {hito.cumplido ? (
-                      <span class="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-full bg-green-500">
+                      <span class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-500">
                         <svg class="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"></path>
                         </svg>
                       </span>
                     ) : (
-                      <span class="h-[26px] w-[26px] flex-shrink-0 rounded-full border-2 border-border bg-background"></span>
+                      <span class="h-6 w-6 flex-shrink-0 rounded-full border-2 border-border bg-background"></span>
                     )}
                     {i < hitos.length - 1 && (
                       <span class={`w-0.5 flex-1 ${hito.cumplido ? 'bg-green-500' : 'bg-border'}`} style="min-height: 26px;"></span>
@@ -291,7 +291,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
                   </div>
                   <div class={i < hitos.length - 1 ? 'pb-5' : ''}>
                     <p class={`text-sm font-semibold ${hito.cumplido ? 'text-foreground' : 'text-muted-foreground'}`}>{hito.titulo}</p>
-                    <p class="mt-0.5 text-[13px] text-muted-foreground">
+                    <p class="mt-0.5 text-sm text-muted-foreground">
                       {hito.fecha ? hito.fecha : hito.cumplido ? hito.detalle : 'Pendiente'}
                       {hito.porQuien && ` · ${hito.porQuien}`}
                     </p>
@@ -303,7 +303,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
 
           {order.tracking_number && (
             <div class="mt-5 rounded-lg bg-muted p-4">
-              <p class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Guía</p>
+              <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guía</p>
               <p class="mt-1.5 text-sm font-semibold text-foreground">
                 {order.shipping_carrier ? `${order.shipping_carrier} · ` : ''}{order.tracking_number}
               </p>
@@ -313,9 +313,9 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
 
         <!-- Siguiente paso -->
         {siguientePaso && (
-          <form method="POST" class="rounded-xl border-2 border-foreground p-6">
-            <p class="mb-1 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Siguiente paso</p>
-            <h2 class="mb-1.5 text-lg font-bold tracking-tight text-foreground">{siguientePaso.titulo}</h2>
+          <form method="POST" class="rounded-lg border border-primary bg-primary/5 p-6">
+            <p class="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Siguiente paso</p>
+            <h2 class="mb-1.5 text-lg font-semibold text-foreground">{siguientePaso.titulo}</h2>
             <p class="mb-5 text-sm leading-relaxed text-muted-foreground">{siguientePaso.explicacion}</p>
 
             <input type="hidden" name="status" value={siguientePaso.estado} />
@@ -323,7 +323,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
             {necesitaGuia && siguientePaso.estado === 'shipped' && (
               <div class="mb-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                 <div>
-                  <label for="carrier" class="mb-1.5 block text-[13px] font-semibold text-foreground">Paquetería</label>
+                  <label for="carrier" class="mb-1.5 block text-sm font-semibold text-foreground">Paquetería</label>
                   <input
                     type="text"
                     id="carrier"
@@ -334,7 +334,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
                   />
                 </div>
                 <div>
-                  <label for="tracking_number" class="mb-1.5 block text-[13px] font-semibold text-foreground">Número de guía</label>
+                  <label for="tracking_number" class="mb-1.5 block text-sm font-semibold text-foreground">Número de guía</label>
                   <input
                     type="text"
                     id="tracking_number"
@@ -353,7 +353,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
             </label>
 
             <div class="flex flex-wrap gap-2.5">
-              <button type="submit" class="rounded-md bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-90">
+              <button type="submit" class="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
                 {siguientePaso.boton}
               </button>
             </div>
@@ -362,8 +362,8 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
 
         <!-- Correcciones: regresar o cancelar -->
         {!cancelada && (
-          <div class="rounded-xl border border-border p-5">
-            <p class="mb-3.5 text-[13px] font-semibold text-foreground">¿Marcaste algo por error?</p>
+          <div class="rounded-lg border border-border p-5">
+            <p class="mb-3.5 text-sm font-semibold text-foreground">¿Marcaste algo por error?</p>
             <div class="flex flex-wrap gap-2.5">
               {order.status !== 'pending' && (
                 <form method="POST">
@@ -388,8 +388,8 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
         )}
 
         <!-- Productos -->
-        <div class="rounded-xl border border-border p-6">
-          <h2 class="mb-4 text-[17px] font-bold tracking-tight text-foreground">Qué se prepara</h2>
+        <div class="rounded-lg border border-border p-6">
+          <h2 class="mb-4 text-lg font-semibold text-foreground">Qué se prepara</h2>
           {orderItems.length === 0 ? (
             <p class="py-6 text-center text-sm text-muted-foreground">Esta orden no tiene productos registrados.</p>
           ) : (
@@ -403,9 +403,9 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
                   )}
                   <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold text-foreground">{item.product_name}</p>
-                    <p class="mt-0.5 text-[13px] text-muted-foreground">{formatCurrency(item.price, order.currency)} c/u</p>
+                    <p class="mt-0.5 text-sm text-muted-foreground">{formatCurrency(item.price, order.currency)} c/u</p>
                   </div>
-                  <p class="text-[15px] font-bold text-foreground">×{item.quantity}</p>
+                  <p class="text-base font-semibold text-foreground">×{item.quantity}</p>
                 </div>
               ))}
             </div>
@@ -416,23 +416,23 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
       <!-- Columna lateral -->
       <div class="space-y-4">
 
-        <div class="overflow-hidden rounded-xl border border-border">
-          <div class="bg-foreground px-4 py-3.5">
-            <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-background">
+        <div class="overflow-hidden rounded-lg border border-border">
+          <div class="border-b border-border bg-muted px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {esRecoger ? 'Recoge en' : 'Enviar a'}
             </p>
           </div>
           <div class="p-4">
             {esRecoger ? (
-              <p class="text-[13px] leading-relaxed text-muted-foreground">{direccionSucursal || 'Sucursal no registrada'}</p>
+              <p class="text-sm leading-relaxed text-muted-foreground">{direccionSucursal || 'Sucursal no registrada'}</p>
             ) : (
               <div>
                 <p class="mb-1.5 text-sm font-semibold text-foreground">{order.customer_name}</p>
-                <p class="text-[13px] leading-relaxed text-muted-foreground">{order.shipping_address || 'Sin dirección registrada'}</p>
+                <p class="text-sm leading-relaxed text-muted-foreground">{order.shipping_address || 'Sin dirección registrada'}</p>
               </div>
             )}
             {order.customer_phone && (
-              <p class="mt-3 text-[13px] text-muted-foreground">{order.customer_phone}</p>
+              <p class="mt-3 text-sm text-muted-foreground">{order.customer_phone}</p>
             )}
           </div>
         </div>
@@ -440,7 +440,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
         {requiereFactura ? (
           <div class={`overflow-hidden rounded-xl border ${cfdiTimbrado ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
             <div class={`border-b px-4 py-3.5 ${cfdiTimbrado ? 'border-green-200' : 'border-amber-200'}`}>
-              <p class={`text-[11px] font-bold uppercase tracking-[0.12em] ${cfdiTimbrado ? 'text-green-800' : 'text-amber-800'}`}>
+              <p class={`text-xs font-semibold uppercase tracking-wider ${cfdiTimbrado ? 'text-green-800' : 'text-amber-800'}`}>
                 {cfdiTimbrado ? 'Factura timbrada' : 'Requiere factura'}
               </p>
             </div>
@@ -448,7 +448,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
               {billingFields.map((field) => (
                 <div class="flex justify-between gap-3">
                   <span class={`text-xs ${cfdiTimbrado ? 'text-green-900' : 'text-amber-900'}`}>{field.label}</span>
-                  <span class="text-right text-[13px] font-semibold text-foreground">{field.value}</span>
+                  <span class="text-right text-sm font-semibold text-foreground">{field.value}</span>
                 </div>
               ))}
 
@@ -459,7 +459,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
                     <form method="POST">
                       <input type="hidden" name="accion" value="cfdi" />
                       <input type="hidden" name="timbrado" value="0" />
-                      <button type="submit" class="w-full rounded-md border border-green-300 bg-white px-4 py-2 text-[13px] font-semibold text-green-800 transition-colors hover:bg-green-100">
+                      <button type="submit" class="w-full rounded-md border border-green-300 bg-white px-4 py-2 text-sm font-semibold text-green-800 transition-colors hover:bg-green-100">
                         Marcar como pendiente
                       </button>
                     </form>
@@ -468,7 +468,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
                   <form method="POST">
                     <input type="hidden" name="accion" value="cfdi" />
                     <input type="hidden" name="timbrado" value="1" />
-                    <button type="submit" class="w-full rounded-md bg-amber-600 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-amber-700">
+                    <button type="submit" class="w-full rounded-md bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700">
                       Marcar CFDI como timbrado
                     </button>
                   </form>
@@ -477,18 +477,18 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
             </div>
           </div>
         ) : (
-          <div class="rounded-xl border border-border p-4">
-            <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Facturación</p>
-            <p class="text-[13px] leading-relaxed text-muted-foreground">Este pedido no solicitó factura.</p>
+          <div class="rounded-lg border border-border p-4">
+            <p class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Facturación</p>
+            <p class="text-sm leading-relaxed text-muted-foreground">Este pedido no solicitó factura.</p>
           </div>
         )}
 
-        <div class="rounded-xl border border-border p-4">
-          <p class="mb-3 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Resumen</p>
+        <div class="rounded-lg border border-border p-4">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Resumen</p>
           <div class="space-y-2.5">
             <div class="flex justify-between">
-              <span class="text-[13px] text-muted-foreground">Productos</span>
-              <span class="text-[13px] text-foreground">{formatCurrency(subtotal, order.currency)}</span>
+              <span class="text-sm text-muted-foreground">Productos</span>
+              <span class="text-sm text-foreground">{formatCurrency(subtotal, order.currency)}</span>
             </div>
             <div class="flex justify-between border-t border-border pt-2.5">
               <span class="text-sm font-bold text-foreground">Total cobrado</span>
