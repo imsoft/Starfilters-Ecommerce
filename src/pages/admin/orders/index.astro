@@ -6,6 +6,7 @@ import CustomModal from "@/components/shared/CustomModal.astro";
 import { getOrders, getOrderItems } from "@/lib/database";
 import type { Order, OrderItem } from "@/lib/database";
 import { getDeliveryLabel, isPickupMethod } from "@/lib/delivery-options";
+import { ESTADOS, infoEstado, siguientePaso, necesitaGuia as requiereGuia } from "@/lib/order-status-ui";
 import type { DeliveryMethod } from "@/lib/delivery-options";
 
 import { requireAdmin } from "@/lib/auth-utils";
@@ -62,41 +63,11 @@ function formatCurrency(amount: number, currency: string = 'MXN'): string {
   }).format(amount) + ` ${moneda}`;
 }
 
-// Función para obtener el color del badge según el estado
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'processing':
-      return 'bg-blue-100 text-blue-800';
-    case 'shipped':
-      return 'bg-purple-100 text-purple-800';
-    case 'delivered':
-      return 'bg-green-100 text-green-800';
-    case 'cancelled':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-}
-
-// Función para obtener el texto del estado
-function getStatusText(status: string): string {
-  switch (status) {
-    case 'pending':
-      return 'Pendiente';
-    case 'processing':
-      return 'En Proceso';
-    case 'shipped':
-      return 'Enviado';
-    case 'delivered':
-      return 'Entregado';
-    case 'cancelled':
-      return 'Cancelado';
-    default:
-      return status;
-  }
-}
+// El color y la etiqueta del estado vienen de order-status-ui, la misma fuente
+// que usa el detalle: antes esta pantalla decía "En Proceso" y la otra "En
+// preparación" para el mismo estado.
+const getStatusColor = (status: string) => infoEstado(status).badge;
+const getStatusText = (status: string) => infoEstado(status).etiqueta;
 
 // Obtener conteo de productos para todas las órdenes con manejo de errores mejorado
 const orderProductCounts = new Map<number, number>();
@@ -154,6 +125,15 @@ const ordersEnriquecidas = allOrders
       requiereFactura: Boolean(order.billing_data),
       diasSinAvanzar: dias,
       estancada: enCurso && dias >= DIAS_PARA_ALERTA,
+      // El mismo cálculo que usa el detalle, para que las dos pantallas
+      // ofrezcan exactamente la misma acción.
+      siguiente: siguientePaso(order.status, {
+        esRecoger: metodo ? isPickupMethod(metodo) : false,
+        necesitaGuia: requiereGuia(metodo),
+      }),
+      // Un envío por paquetería no se puede despachar desde la lista: primero
+      // hay que capturar la guía, y eso vive en el detalle.
+      pideGuiaPrimero: requiereGuia(metodo) && order.status === 'processing',
     };
   })
   .sort((a, b) => {
@@ -162,6 +142,13 @@ const ordersEnriquecidas = allOrders
     // Dentro del mismo estado, lo más viejo primero: es lo que urge.
     return new Date(a.order.created_at).getTime() - new Date(b.order.created_at).getTime();
   });
+
+// Opciones del modal de estado, desde la fuente única.
+const opcionesEstado = Object.entries(ESTADOS).map(([clave, info]) => ({
+  clave,
+  etiqueta: info.etiqueta,
+  significa: info.significa,
+}));
 
 const porPreparar = allOrders.filter((o) => o.status === 'pending' || o.status === 'processing').length;
 const enTransito = allOrders.filter((o) => o.status === 'shipped').length;
@@ -257,13 +244,14 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
                 <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Entrega</th>
                 <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Factura</th>
                 <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Siguiente paso</th>
                 <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody id="orders-table-body" class="divide-y divide-border">
               {allOrders.length === 0 ? (
                 <tr>
-                  <td colspan="8" class="px-6 py-12 text-center">
+                  <td colspan="9" class="px-6 py-12 text-center">
                     <div class="flex flex-col items-center">
                       <svg class="h-12 w-12 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -274,7 +262,7 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
                   </td>
                 </tr>
               ) : (
-                ordersEnriquecidas.map(({ order, etiquetaEntrega, esRecoger, requiereFactura, estancada, diasSinAvanzar }) => (
+                ordersEnriquecidas.map(({ order, etiquetaEntrega, esRecoger, requiereFactura, estancada, diasSinAvanzar, siguiente, pideGuiaPrimero }) => (
                   <tr
                     class="hover:bg-muted/50"
                     data-order-row
@@ -339,6 +327,38 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
                       <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
                         {getStatusText(order.status)}
                       </span>
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap">
+                      {siguiente ? (
+                        pideGuiaPrimero ? (
+                          <a
+                            href={`/admin/orders/${order.uuid}`}
+                            class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+                            title="Falta capturar la paquetería y el número de guía"
+                          >
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                            </svg>
+                            Capturar guía
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            class="avanzar-btn inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+                            data-order-id={order.id}
+                            data-order-number={order.order_number}
+                            data-next-status={siguiente.estado}
+                            data-next-label={siguiente.boton}
+                          >
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            {siguiente.boton}
+                          </button>
+                        )
+                      ) : (
+                        <span class="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td class="px-3 py-4 whitespace-nowrap text-sm font-medium">
                       <div class="flex space-x-1">
@@ -433,20 +453,30 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
           <input type="hidden" name="orderId" id="dialog-order-id" />
           
           <div>
-            <label class="block text-sm font-medium text-foreground mb-2">Nuevo Estado</label>
+            <label class="block text-sm font-medium text-foreground mb-2">Nuevo estado</label>
             <select
               name="newStatus"
               id="dialog-new-status"
               class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               required
             >
-              <option value="pending">Pendiente</option>
-              <option value="processing">En Proceso</option>
-              <option value="shipped">Enviado</option>
-              <option value="delivered">Entregado</option>
-              <option value="cancelled">Cancelado</option>
+              {opcionesEstado.map((opcion) => (
+                <option value={opcion.clave} data-significa={opcion.significa}>{opcion.etiqueta}</option>
+              ))}
             </select>
+            <!-- Qué significa el estado elegido: cinco opciones sin explicación
+                 obligaban a adivinar la diferencia entre "Pendiente" y "En
+                 preparación". -->
+            <p id="dialog-status-help" class="mt-2 text-xs text-muted-foreground"></p>
           </div>
+
+          <label class="flex items-start gap-2.5 text-sm text-foreground">
+            <input type="checkbox" id="dialog-notify" checked class="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+            <span>
+              Avisar por correo
+              <span class="block text-xs text-muted-foreground">Al cliente y a los correos de notificaciones. Desmárcalo si solo estás corrigiendo.</span>
+            </span>
+          </label>
 
           <div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
             <button
@@ -554,6 +584,7 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
           dialogOrderInfo.textContent = `Orden: ${orderNumber}`;
           dialogOrderId.value = orderId;
           dialogNewStatus.value = currentStatus;
+          actualizarAyuda();
           console.log('✅ Abriendo modal');
           
           // Mostrar modal personalizado
@@ -569,6 +600,14 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
     });
 
     console.log(`✅ ${document.querySelectorAll('.change-status-btn').length} botones de cambio de estado encontrados`);
+
+    const ayuda = document.getElementById('dialog-status-help');
+    function actualizarAyuda() {
+      if (!ayuda || !dialogNewStatus) return;
+      const opcion = dialogNewStatus.selectedOptions[0];
+      ayuda.textContent = opcion?.getAttribute('data-significa') || '';
+    }
+    dialogNewStatus?.addEventListener('change', actualizarAyuda);
 
     // Cerrar modal
     const dialogCancel = document.getElementById('status-dialog-cancel');
@@ -613,7 +652,8 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
           },
           body: JSON.stringify({
             orderId: parseInt(orderId as string),
-            status: newStatus
+            status: newStatus,
+            notify: (document.getElementById('dialog-notify') as HTMLInputElement)?.checked ?? true
           })
         });
 
@@ -631,6 +671,58 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
         console.error('Error:', error);
         alert('Error al actualizar el estado de la orden');
       }
+    });
+  });
+</script>
+
+<script>
+  // Avanzar un pedido al siguiente paso sin salir de la lista.
+  //
+  // Es el caso común: surtir, despachar, cerrar. Antes había que entrar al
+  // detalle o abrir un modal y elegir el estado a mano de una lista de cinco,
+  // sin saber cuál tocaba.
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.avanzar-btn').forEach((boton) => {
+      boton.addEventListener('click', async () => {
+        const orderId = boton.getAttribute('data-order-id');
+        const numero = boton.getAttribute('data-order-number');
+        const estado = boton.getAttribute('data-next-status');
+        const etiqueta = boton.getAttribute('data-next-label');
+        if (!orderId || !estado) return;
+
+        // Se pregunta si avisar, en vez de decidirlo por el admin: hay
+        // correcciones que no ameritan molestar al cliente.
+        const avisar = window.confirm(
+          `${etiqueta} — pedido ${numero}\n\n` +
+          'Aceptar: se guarda y se manda el aviso por correo al cliente y al equipo.\n' +
+          'Cancelar: se guarda sin mandar ningún aviso.'
+        );
+
+        const textoOriginal = boton.innerHTML;
+        boton.setAttribute('disabled', 'true');
+        boton.textContent = 'Guardando…';
+
+        try {
+          const respuesta = await fetch('/api/orders/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: parseInt(orderId), status: estado, notify: avisar })
+          });
+
+          if (respuesta.ok) {
+            window.location.reload();
+            return;
+          }
+          const datos = await respuesta.json().catch(() => ({}));
+          alert(datos.error || 'No se pudo actualizar el pedido.');
+        } catch (error) {
+          console.error('Error avanzando el pedido:', error);
+          alert('No se pudo actualizar el pedido.');
+        }
+
+        boton.removeAttribute('disabled');
+        boton.innerHTML = textoOriginal;
+      });
     });
   });
 </script>

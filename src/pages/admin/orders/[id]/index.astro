@@ -4,6 +4,7 @@ import { getOrderByUuid, getOrderItems, getOrderStatusHistory, setOrderCfdiStamp
 import { changeOrderStatus } from "@/lib/order-status";
 import { getDeliveryOption, getDeliveryLabel, isPickupMethod } from "@/lib/delivery-options";
 import { getOrderNotificationEmails } from "@/lib/site-settings-service";
+import { infoEstado, siguientePaso as calcularSiguientePaso, necesitaGuia as requiereGuia } from "@/lib/order-status-ui";
 import type { DeliveryMethod } from "@/lib/delivery-options";
 import { requireAdmin } from "@/lib/auth-utils";
 
@@ -108,15 +109,7 @@ function formatCurrency(amount: number, currency: string = 'MXN'): string {
   }).format(amount) + ` ${moneda}`;
 }
 
-const ESTADOS: Record<string, { texto: string; badge: string }> = {
-  pending:    { texto: 'Pendiente',      badge: 'bg-yellow-100 text-yellow-800' },
-  processing: { texto: 'En preparación', badge: 'bg-blue-100 text-blue-800' },
-  shipped:    { texto: 'Enviado',        badge: 'bg-purple-100 text-purple-800' },
-  delivered:  { texto: 'Entregado',      badge: 'bg-green-100 text-green-800' },
-  cancelled:  { texto: 'Cancelado',      badge: 'bg-red-100 text-red-800' },
-};
-
-const estadoActual = ESTADOS[order.status] || { texto: order.status, badge: 'bg-gray-100 text-gray-800' };
+const estadoActual = infoEstado(order.status);
 const cancelada = order.status === 'cancelled';
 
 // --- Entrega ----------------------------------------------------------------
@@ -130,7 +123,7 @@ const plazoEntrega = opcionEntrega?.days.es || '';
 const direccionSucursal = opcionEntrega?.address?.text || '';
 // Solo la paquetería nacional necesita guía; el reparto propio y las
 // recolecciones no tienen número que capturar.
-const necesitaGuia = metodo === 'paqueteria';
+const necesitaGuia = requiereGuia(metodo);
 
 // --- Seguimiento ------------------------------------------------------------
 // Solo se guarda el estado actual y su fecha de cambio, así que el hito
@@ -172,32 +165,8 @@ const cfdiTimbrado = Boolean(order.cfdi_stamped_at);
 const correosAviso = await getOrderNotificationEmails();
 
 // --- Siguiente paso ---------------------------------------------------------
-const SIGUIENTE: Record<string, { estado: string; titulo: string; boton: string; explicacion: string }> = {
-  pending: {
-    estado: 'processing',
-    titulo: 'Marcar en preparación',
-    boton: 'Empezar a preparar',
-    explicacion: 'Avisa al cliente y al equipo que ya se está surtiendo el pedido.',
-  },
-  processing: {
-    estado: 'shipped',
-    titulo: esRecoger ? 'Marcar como listo para recoger' : 'Marcar como enviado',
-    boton: esRecoger ? 'Marcar listo' : 'Confirmar envío',
-    explicacion: esRecoger
-      ? 'Avisa al cliente que ya puede pasar por su pedido a la sucursal.'
-      : necesitaGuia
-        ? 'El aviso al cliente lleva la paquetería y el número de guía.'
-        : 'Avisa al cliente que su pedido va en camino.',
-  },
-  shipped: {
-    estado: 'delivered',
-    titulo: 'Cerrar el pedido',
-    boton: 'Marcar como entregado',
-    explicacion: 'Cierra el pedido y confirma que el cliente ya lo recibió.',
-  },
-};
+const siguientePaso = cancelada ? null : calcularSiguientePaso(order.status, { esRecoger, necesitaGuia });
 
-const siguientePaso = cancelada ? null : SIGUIENTE[order.status] || null;
 
 const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quantity, 0);
 ---
@@ -227,7 +196,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
       <div>
         <div class="mb-1.5 flex flex-wrap items-center gap-2.5">
           <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{order.order_number}</h1>
-          <span class={`rounded-full px-3 py-1 text-xs font-semibold ${estadoActual.badge}`}>{estadoActual.texto}</span>
+          <span class={`rounded-full px-3 py-1 text-xs font-semibold ${estadoActual.badge}`}>{estadoActual.etiqueta}</span>
         </div>
         <p class="text-sm text-muted-foreground">
           {order.customer_name} · {order.customer_email}{order.customer_phone && ` · ${order.customer_phone}`}
