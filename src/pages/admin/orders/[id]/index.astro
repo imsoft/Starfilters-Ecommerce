@@ -3,6 +3,7 @@ import AdminLayout from "@/layouts/adminLayout.astro";
 import { getOrderByUuid, getOrderItems, getOrderStatusHistory, setOrderCfdiStamped } from "@/lib/database";
 import { changeOrderStatus } from "@/lib/order-status";
 import { getDeliveryOption, getDeliveryLabel, isPickupMethod } from "@/lib/delivery-options";
+import { getOrderNotificationEmails } from "@/lib/site-settings-service";
 import type { DeliveryMethod } from "@/lib/delivery-options";
 import { requireAdmin } from "@/lib/auth-utils";
 
@@ -51,7 +52,7 @@ if (Astro.request.method === 'POST') {
     newStatus: nuevoEstado,
     carrier: carrier !== null ? String(carrier).trim() : undefined,
     trackingNumber: trackingNumber !== null ? String(trackingNumber).trim() : undefined,
-    notifyCustomer: avisar,
+    notify: avisar,
     changedBy: [adminUser?.firstName, adminUser?.lastName].filter(Boolean).join(' ') || adminUser?.email || null,
   });
 
@@ -166,29 +167,33 @@ const hitos = [
 
 const cfdiTimbrado = Boolean(order.cfdi_stamped_at);
 
+// Quiénes reciben el aviso al avanzar el pedido, para decirlo en la pantalla y
+// no dejar al admin adivinando a dónde va el correo.
+const correosAviso = await getOrderNotificationEmails();
+
 // --- Siguiente paso ---------------------------------------------------------
 const SIGUIENTE: Record<string, { estado: string; titulo: string; boton: string; explicacion: string }> = {
   pending: {
     estado: 'processing',
     titulo: 'Marcar en preparación',
     boton: 'Empezar a preparar',
-    explicacion: 'Avisa al cliente que ya se está surtiendo su pedido.',
+    explicacion: 'Avisa al equipo que ya se está surtiendo el pedido.',
   },
   processing: {
     estado: 'shipped',
     titulo: esRecoger ? 'Marcar como listo para recoger' : 'Marcar como enviado',
     boton: esRecoger ? 'Marcar listo' : 'Confirmar envío',
     explicacion: esRecoger
-      ? 'Avisa al cliente que ya puede pasar por su pedido a la sucursal.'
+      ? 'Avisa al equipo que el pedido ya está listo para que el cliente pase por él.'
       : necesitaGuia
-        ? 'Se le manda al cliente un correo con la paquetería y el número de guía.'
-        : 'Avisa al cliente que su pedido va en camino.',
+        ? 'El aviso al equipo lleva la paquetería y el número de guía.'
+        : 'Avisa al equipo que el pedido salió a entrega.',
   },
   shipped: {
     estado: 'delivered',
     titulo: 'Cerrar el pedido',
     boton: 'Marcar como entregado',
-    explicacion: 'Confirma que el cliente ya recibió su pedido.',
+    explicacion: 'Cierra el pedido y avisa al equipo que el cliente ya lo recibió.',
   },
 };
 
@@ -347,10 +352,17 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
               </div>
             )}
 
-            <label class="mb-5 flex items-center gap-2.5 text-sm text-foreground">
+            <label class="mb-2 flex items-center gap-2.5 text-sm text-foreground">
               <input type="checkbox" name="notify" checked class="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
-              Avisarle a {order.customer_name.split(' ')[0]} por correo
+              Avisar por correo al equipo
             </label>
+            <p class="mb-5 text-xs text-muted-foreground">
+              {correosAviso.length > 0
+                ? `Se enviará a ${correosAviso.join(', ')}.`
+                : 'No hay correos configurados todavía.'}
+              {' '}
+              <a href="/admin/settings/notificaciones" class="font-medium text-primary hover:underline">Editar destinatarios</a>
+            </p>
 
             <div class="flex flex-wrap gap-2.5">
               <button type="submit" class="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
@@ -382,7 +394,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
               </form>
             </div>
             <p class="mt-3 text-xs text-muted-foreground">
-              Regresar un paso no le manda correo al cliente. Cancelar sí le avisa.
+              Regresar un paso no manda aviso. Cancelar sí avisa al equipo.
             </p>
           </div>
         )}

@@ -16,6 +16,44 @@ export interface OrderNotificationExtras {
   internalNote?: string;
 }
 
+/**
+ * Paleta de los correos
+ *
+ * Los correos traían su propio azul (#155DFC), Arial y grises de otra escala,
+ * así que no se parecían al sitio. Estos valores son los tokens de global.css
+ * traducidos a hex: los clientes de correo no entienden oklch ni variables CSS.
+ *   --primary   oklch(0.623 0.214 259.815) → #3b82f6
+ *   --foreground oklch(0.141 0.005 285.823) → #09090b
+ *   --muted-foreground oklch(0.552 0.016 285.938) → #71717a
+ *   --border    oklch(0.92 0.004 286.32)   → #e4e4e7
+ *   --muted     oklch(0.967 0.001 286.375) → #f4f4f5
+ */
+const BRAND = {
+  primary: '#3b82f6',
+  primaryHover: '#2563eb',
+  primaryTint: '#eff6ff',
+  primaryDeep: '#1e40af',
+  accent: '#dbeafe',
+  foreground: '#09090b',
+  mutedForeground: '#71717a',
+  border: '#e4e4e7',
+  muted: '#f4f4f5',
+  background: '#ffffff',
+};
+
+// El stack del sitio, pero sin ui-sans-serif ni system-ui: varios clientes de
+// correo no los resuelven y caen a Times.
+const EMAIL_FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+// Los mismos colores que el panel usa para el estado de una orden.
+const ESTADO_BADGE: Record<string, { bg: string; fg: string }> = {
+  pending:    { bg: '#fef9c3', fg: '#854d0e' },
+  processing: { bg: '#dbeafe', fg: '#1e40af' },
+  shipped:    { bg: '#f3e8ff', fg: '#6b21a8' },
+  delivered:  { bg: '#dcfce7', fg: '#166534' },
+  cancelled:  { bg: '#fee2e2', fg: '#991b1b' },
+};
+
 // MySQL devuelve las columnas DECIMAL como CADENA, no como número. Llamar
 // .toFixed() sobre ellas lanza "total.toFixed is not a function" y tumbaba el
 // correo de cambio de estado en todos los casos. Se normaliza aquí, que es
@@ -174,21 +212,21 @@ export const createOrderConfirmationEmail = (
     rights: 'Todos los derechos reservados.',
   };
   // Paleta de colores de la aplicación
-  const color50 = '#EFF6FF';
-  const color100 = '#DBEAFE';
-  const color500 = '#2B7FFF';
-  const color600 = '#155DFC';
-  const color700 = '#1447E6';
+  const color50 = BRAND.primaryTint;
+  const color100 = BRAND.accent;
+  const color500 = BRAND.primary;
+  const color600 = BRAND.primary;
+  const color700 = BRAND.primaryHover;
   
   const subject = t.subject(orderNumber);
   
   const itemsList = items.map(item => `
     <tr>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+      <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border};">
         <strong>${item.name}</strong><br>
-        <span style="color: #6b7280; font-size: 14px;">${t.quantity}: ${item.quantity}</span>
+        <span style="color: ${BRAND.mutedForeground}; font-size: 14px;">${t.quantity}: ${item.quantity}</span>
       </td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+      <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border}; text-align: right;">
         $${money(Number(item.price) * item.quantity)}
       </td>
     </tr>
@@ -204,7 +242,7 @@ export const createOrderConfirmationEmail = (
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
@@ -228,7 +266,7 @@ export const createOrderConfirmationEmail = (
         .button:hover {
           background-color: ${color700};
         }
-        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: ${BRAND.mutedForeground}; }
       </style>
     </head>
     <body>
@@ -250,9 +288,9 @@ export const createOrderConfirmationEmail = (
           <h3>${t.products}:</h3>
           <table class="order-items">
             <thead>
-              <tr style="background-color: #f3f4f6;">
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">${t.product}</th>
-                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">${t.total}</th>
+              <tr style="background-color: ${BRAND.muted};">
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid ${BRAND.border};">${t.product}</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid ${BRAND.border};">${t.total}</th>
               </tr>
             </thead>
             <tbody>
@@ -351,10 +389,10 @@ export const createPasswordResetEmail = (
     rights: 'Todos los derechos reservados.',
   };
   // Paleta de colores de la aplicación
-  const color50 = '#EFF6FF';
-  const color100 = '#DBEAFE';
-  const color600 = '#155DFC';
-  const color700 = '#1447E6';
+  const color50 = BRAND.primaryTint;
+  const color100 = BRAND.accent;
+  const color600 = BRAND.primary;
+  const color700 = BRAND.primaryHover;
   
   const subject = t.subject;
   const siteUrl = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
@@ -367,7 +405,7 @@ export const createPasswordResetEmail = (
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
@@ -388,7 +426,7 @@ export const createPasswordResetEmail = (
           background-color: ${color700};
         }
         .warning { color: #ef4444; font-size: 14px; margin-top: 20px; }
-        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: ${BRAND.mutedForeground}; }
       </style>
     </head>
     <body>
@@ -457,9 +495,9 @@ export const createVerificationEmail = (
   verifyUrl: string,
   lang: 'es' | 'en' = 'es'
 ): EmailData => {
-  const color50 = '#EFF6FF';
-  const color600 = '#155DFC';
-  const color700 = '#1447E6';
+  const color50 = BRAND.primaryTint;
+  const color600 = BRAND.primary;
+  const color700 = BRAND.primaryHover;
 
   const isEn = lang === 'en';
   const subject = isEn ? 'Verify your account - Star Filters' : 'Verifica tu cuenta - Star Filters';
@@ -484,7 +522,7 @@ export const createVerificationEmail = (
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
@@ -504,7 +542,7 @@ export const createVerificationEmail = (
         .button:hover {
           background-color: ${color700};
         }
-        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: ${BRAND.mutedForeground}; }
       </style>
     </head>
     <body>
@@ -526,7 +564,7 @@ export const createVerificationEmail = (
             ${verifyUrl}
           </p>
 
-          <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">${ignore}</p>
+          <p style="font-size: 14px; color: ${BRAND.mutedForeground}; margin-top: 20px;">${ignore}</p>
         </div>
         <div class="footer">
           <p>© ${new Date().getFullYear()} Star Filters. ${isEn ? 'All rights reserved.' : 'Todos los derechos reservados.'}</p>
@@ -570,20 +608,20 @@ export const createNewOrderNotificationEmail = (
   extras: OrderNotificationExtras = {}
 ): EmailData => {
   // Paleta de colores de la aplicación
-  const color50 = '#EFF6FF';
-  const color100 = '#DBEAFE';
-  const color600 = '#155DFC';
-  const color700 = '#1447E6';
+  const color50 = BRAND.primaryTint;
+  const color100 = BRAND.accent;
+  const color600 = BRAND.primary;
+  const color700 = BRAND.primaryHover;
   
   const subject = `Nueva Orden #${orderNumber} - Star Filters`;
   
   const itemsList = items.map(item => `
     <tr>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+      <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border};">
         <strong>${item.name}</strong><br>
-        <span style="color: #6b7280; font-size: 14px;">Cantidad: ${item.quantity}</span>
+        <span style="color: ${BRAND.mutedForeground}; font-size: 14px;">Cantidad: ${item.quantity}</span>
       </td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+      <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border}; text-align: right;">
         $${money(Number(item.price) * item.quantity)}
       </td>
     </tr>
@@ -640,7 +678,7 @@ export const createNewOrderNotificationEmail = (
               ${billingFields.map((field) => `
                 <tr>
                   <td style="padding: 6px 0; color: #78350F; font-size: 14px; vertical-align: top; width: 45%;">${escapeHtml(field.label)}</td>
-                  <td style="padding: 6px 0; color: #1f2937; font-size: 14px; font-weight: bold;">${escapeHtml(field.value as string)}</td>
+                  <td style="padding: 6px 0; color: ${BRAND.foreground}; font-size: 14px; font-weight: bold;">${escapeHtml(field.value as string)}</td>
                 </tr>`).join('')}
             </table>
           </div>`
@@ -668,7 +706,7 @@ export const createNewOrderNotificationEmail = (
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
@@ -693,7 +731,7 @@ export const createNewOrderNotificationEmail = (
         .button:hover {
           background-color: ${color700};
         }
-        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: ${BRAND.mutedForeground}; }
       </style>
     </head>
     <body>
@@ -722,9 +760,9 @@ export const createNewOrderNotificationEmail = (
           <h3>Productos:</h3>
           <table class="order-items">
             <thead>
-              <tr style="background-color: #f3f4f6;">
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Producto</th>
-                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Total</th>
+              <tr style="background-color: ${BRAND.muted};">
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid ${BRAND.border};">Producto</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid ${BRAND.border};">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -806,15 +844,20 @@ export const createOrderStatusUpdateEmail = (
   trackingNumber?: string,
   currency: 'MXN' | 'USD' = 'MXN',
   // Idioma del cliente. Los pedidos hechos en /en recibían el aviso en español.
-  lang: 'es' | 'en' = 'es'
+  lang: 'es' | 'en' = 'es',
+  // A quién va dirigido. El mismo aviso no se puede escribir igual para el
+  // comprador ("tu pedido va en camino") que para el equipo, que necesita
+  // saber de quién es el pedido y entrar al panel.
+  destinatario: 'cliente' | 'equipo' = 'cliente'
 ): EmailData => {
+  const paraEquipo = destinatario === 'equipo';
   // Paleta de colores de la aplicación
-  const color50 = '#EFF6FF';
-  const color100 = '#DBEAFE';
-  const color500 = '#2B7FFF';
-  const color600 = '#155DFC';
-  const color700 = '#1447E6';
-  const color800 = '#193CB8';
+  const color50 = BRAND.primaryTint;
+  const color100 = BRAND.accent;
+  const color500 = BRAND.primary;
+  const color600 = BRAND.primary;
+  const color700 = BRAND.primaryHover;
+  const color800 = BRAND.primaryDeep;
 
   const isEn = lang === 'en';
   const t = isEn ? {
@@ -871,17 +914,17 @@ export const createOrderStatusUpdateEmail = (
     shipped: {
       title: 'Your order is on its way',
       message: 'Your order has shipped. ' + (trackingNumber ? `Tracking number: ${trackingNumber}` : ''),
-      color: '#10b981'
+      color: primaryColor
     },
     delivered: {
       title: 'Your order has been delivered',
       message: 'Your order has arrived. We hope everything is just right.',
-      color: '#059669'
+      color: primaryColor
     },
     cancelled: {
       title: 'Your order has been cancelled',
       message: 'Your order has been cancelled. If you have any questions, please get in touch.',
-      color: '#ef4444'
+      color: primaryColor
     }
   } : {
     processing: {
@@ -892,17 +935,17 @@ export const createOrderStatusUpdateEmail = (
     shipped: {
       title: '¡Tu pedido ha sido enviado!',
       message: 'Tu pedido está en camino. ' + (trackingNumber ? `Número de rastreo: ${trackingNumber}` : ''),
-      color: '#10b981'
+      color: primaryColor
     },
     delivered: {
       title: '¡Tu pedido ha sido entregado!',
       message: 'Tu pedido ha llegado a su destino. ¡Esperamos que disfrutes tus productos!',
-      color: '#059669'
+      color: primaryColor
     },
     cancelled: {
       title: 'Tu pedido ha sido cancelado',
       message: 'Tu pedido ha sido cancelado. Si tienes alguna pregunta, por favor contáctanos.',
-      color: '#ef4444'
+      color: primaryColor
     }
   };
 
@@ -914,15 +957,20 @@ export const createOrderStatusUpdateEmail = (
     color: primaryColor
   };
 
-  const subject = t.subject(orderNumber);
+  // El chip del estado usa los mismos colores que el panel.
+  const badge = ESTADO_BADGE[newStatus] || { bg: BRAND.accent, fg: BRAND.primaryDeep };
+
+  const subject = paraEquipo
+    ? `Pedido #${orderNumber} → ${estadoLegible(newStatus)} (${customerName})`
+    : t.subject(orderNumber);
   
   const itemsList = items.map(item => `
     <tr>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+      <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border};">
         <strong>${item.name}</strong><br>
-        <span style="color: #6b7280; font-size: 14px;">${t.quantity}: ${item.quantity}</span>
+        <span style="color: ${BRAND.mutedForeground}; font-size: 14px;">${t.quantity}: ${item.quantity}</span>
       </td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+      <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border}; text-align: right;">
         $${money(Number(item.price) * item.quantity)}
       </td>
     </tr>
@@ -938,21 +986,22 @@ export const createOrderStatusUpdateEmail = (
       <meta charset="utf-8">
       <title>${subject}</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: ${statusInfo.color}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
         .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
-        .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .content { background-color: ${BRAND.muted}; padding: 30px; border-radius: 0 0 8px 8px; }
         .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
         .status-badge { 
           display: inline-block; 
-          padding: 8px 16px; 
-          background-color: ${statusInfo.color}; 
-          color: white !important; 
-          border-radius: 20px; 
-          font-weight: bold;
+          padding: 6px 14px; 
+          background-color: ${badge.bg}; 
+          color: ${badge.fg} !important; 
+          border-radius: 9999px; 
+          font-weight: 600;
+          font-size: 14px;
           margin: 10px 0;
         }
         .button { 
@@ -969,18 +1018,18 @@ export const createOrderStatusUpdateEmail = (
         .button:hover {
           background-color: ${color700};
         }
-        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: ${BRAND.mutedForeground}; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
           <img src="${logoUrl}" alt="Star Filters" class="header-logo" />
-          <h1>${statusInfo.title}</h1>
+          <h1>${paraEquipo ? `Pedido #${orderNumber}` : statusInfo.title}</h1>
         </div>
         <div class="content">
-          <h2>${t.greeting(customerName)}</h2>
-          <p>${statusInfo.message}</p>
+          <h2>${paraEquipo ? `Pedido de ${customerName}` : t.greeting(customerName)}</h2>
+          <p>${paraEquipo ? `Este pedido pasó a <strong>${estadoLegible(newStatus)}</strong>.` : statusInfo.message}</p>
           
           <div class="order-info">
             <h3>${t.orderDetails}</h3>
@@ -993,9 +1042,9 @@ export const createOrderStatusUpdateEmail = (
           <h3>${t.products}:</h3>
           <table class="order-items">
             <thead>
-              <tr style="background-color: #f3f4f6;">
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">${t.product}</th>
-                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">${t.total}</th>
+              <tr style="background-color: ${BRAND.muted};">
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid ${BRAND.border};">${t.product}</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid ${BRAND.border};">${t.total}</th>
               </tr>
             </thead>
             <tbody>
@@ -1008,7 +1057,7 @@ export const createOrderStatusUpdateEmail = (
           </div>
           
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${siteUrl}/orders" class="button">${t.viewOrders}</a>
+            <a href="${paraEquipo ? `${siteUrl}/admin/orders` : `${siteUrl}/orders`}" class="button">${paraEquipo ? 'Ver la orden en el panel' : t.viewOrders}</a>
           </div>
         </div>
         <div class="footer">
@@ -1020,11 +1069,11 @@ export const createOrderStatusUpdateEmail = (
   `;
   
   const text = `
-    ${statusInfo.title}
+    ${paraEquipo ? `Pedido #${orderNumber} → ${estadoLegible(newStatus)}` : statusInfo.title}
     
-    ${t.greeting(customerName)}
+    ${paraEquipo ? `Pedido de ${customerName}` : t.greeting(customerName)}
     
-    ${statusInfo.message}
+    ${paraEquipo ? `Este pedido pasó a ${estadoLegible(newStatus)}.` : statusInfo.message}
     
     ${t.orderDetails}:
     ${t.orderNumber}: ${orderNumber}

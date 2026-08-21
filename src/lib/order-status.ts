@@ -15,6 +15,7 @@ import {
   recordOrderStatusChange,
 } from './database';
 import { sendEmail, createOrderStatusUpdateEmail } from './email';
+import { getOrderNotificationEmails } from './site-settings-service';
 
 export const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const;
 
@@ -29,9 +30,9 @@ export interface ChangeOrderStatusInput {
   // Solo aplican al pasar a "enviado" por paquetería.
   carrier?: string | null;
   trackingNumber?: string | null;
-  // Permite guardar el avance sin avisarle al cliente (por ejemplo, al
-  // corregir un estado que se marcó por error).
-  notifyCustomer?: boolean;
+  // Manda el aviso del cambio a los correos de /admin/settings/notificaciones.
+  // Puede apagarse al corregir un estado que se marcó por error.
+  notify?: boolean;
   // Quién hizo el cambio, para el historial. "Sistema" cuando no viene de una
   // persona.
   changedBy?: string | null;
@@ -49,7 +50,7 @@ export const changeOrderStatus = async ({
   newStatus,
   carrier,
   trackingNumber,
-  notifyCustomer = true,
+  notify = true,
   changedBy,
 }: ChangeOrderStatusInput): Promise<ChangeOrderStatusResult> => {
   if (!isOrderStatus(newStatus)) {
@@ -89,7 +90,15 @@ export const changeOrderStatus = async ({
     console.error('⚠️ No se pudo registrar el cambio en el historial:', error);
   }
 
-  if (!notifyCustomer) {
+  if (!notify) {
+    return { ok: true, emailSent: false };
+  }
+
+  // El aviso va a la lista interna de /admin/settings/notificaciones, no al
+  // comprador: es el equipo el que da seguimiento a los pedidos.
+  const destinatarios = await getOrderNotificationEmails();
+  if (destinatarios.length === 0) {
+    console.log('⚠️ Sin correos de notificación configurados; no se avisa el cambio de estado');
     return { ok: true, emailSent: false };
   }
 
@@ -124,16 +133,17 @@ export const changeOrderStatus = async ({
       // La guía recién capturada gana sobre la que ya tenía la orden.
       trackingNumber ?? order.tracking_number ?? undefined,
       order.currency,
-      // Se le escribe en el idioma en el que compró.
-      order.customer_language === 'en' ? 'en' : 'es'
+      // El aviso interno va siempre en español, que es el idioma del equipo.
+      'es',
+      'equipo'
     );
 
-    emailData.to = order.customer_email;
+    emailData.to = destinatarios;
     emailSent = await sendEmail(emailData);
 
     console.log(emailSent
-      ? `✅ Email de cambio de estado enviado al comprador (${oldStatus} → ${newStatus})`
-      : '⚠️ No se pudo enviar el email de cambio de estado');
+      ? `✅ Aviso de cambio de estado enviado a ${destinatarios.length} destinatario(s) (${oldStatus} → ${newStatus})`
+      : '⚠️ No se pudo enviar el aviso de cambio de estado');
   } catch (error) {
     console.error('⚠️ Error enviando el email de cambio de estado:', error);
   }

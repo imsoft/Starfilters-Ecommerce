@@ -7,7 +7,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (noAutorizado) return noAutorizado;
 
   try {
-    const { orderId, status, trackingNumber, carrier, notifyCustomer } = await request.json();
+    const { orderId, status, trackingNumber, carrier, notify } = await request.json();
 
     if (!orderId || !status) {
       return new Response(JSON.stringify({ error: 'Faltan parámetros requeridos' }), {
@@ -21,7 +21,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       newStatus: status,
       trackingNumber,
       carrier,
-      notifyCustomer,
+      notify,
     });
 
     if (!resultado.ok) {
