@@ -177,23 +177,23 @@ const SIGUIENTE: Record<string, { estado: string; titulo: string; boton: string;
     estado: 'processing',
     titulo: 'Marcar en preparación',
     boton: 'Empezar a preparar',
-    explicacion: 'Avisa al equipo que ya se está surtiendo el pedido.',
+    explicacion: 'Avisa al cliente y al equipo que ya se está surtiendo el pedido.',
   },
   processing: {
     estado: 'shipped',
     titulo: esRecoger ? 'Marcar como listo para recoger' : 'Marcar como enviado',
     boton: esRecoger ? 'Marcar listo' : 'Confirmar envío',
     explicacion: esRecoger
-      ? 'Avisa al equipo que el pedido ya está listo para que el cliente pase por él.'
+      ? 'Avisa al cliente que ya puede pasar por su pedido a la sucursal.'
       : necesitaGuia
-        ? 'El aviso al equipo lleva la paquetería y el número de guía.'
-        : 'Avisa al equipo que el pedido salió a entrega.',
+        ? 'El aviso al cliente lleva la paquetería y el número de guía.'
+        : 'Avisa al cliente que su pedido va en camino.',
   },
   shipped: {
     estado: 'delivered',
     titulo: 'Cerrar el pedido',
     boton: 'Marcar como entregado',
-    explicacion: 'Cierra el pedido y avisa al equipo que el cliente ya lo recibió.',
+    explicacion: 'Cierra el pedido y confirma que el cliente ya lo recibió.',
   },
 };
 
@@ -354,15 +354,21 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
 
             <label class="mb-2 flex items-center gap-2.5 text-sm text-foreground">
               <input type="checkbox" name="notify" checked class="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
-              Avisar por correo al equipo
+              Avisar por correo
             </label>
-            <p class="mb-5 text-xs text-muted-foreground">
-              {correosAviso.length > 0
-                ? `Se enviará a ${correosAviso.join(', ')}.`
-                : 'No hay correos configurados todavía.'}
-              {' '}
-              <a href="/admin/settings/notificaciones" class="font-medium text-primary hover:underline">Editar destinatarios</a>
-            </p>
+            <ul class="mb-5 space-y-1 text-xs text-muted-foreground">
+              <li>
+                Al cliente: <span class="font-medium text-foreground">{order.customer_email}</span>
+              </li>
+              <li>
+                Al equipo:{' '}
+                {correosAviso.length > 0
+                  ? <span class="font-medium text-foreground">{correosAviso.join(', ')}</span>
+                  : <span>sin correos configurados</span>}
+                {' · '}
+                <a href="/admin/settings/notificaciones" class="font-medium text-primary hover:underline">Editar</a>
+              </li>
+            </ul>
 
             <div class="flex flex-wrap gap-2.5">
               <button type="submit" class="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
@@ -394,7 +400,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
               </form>
             </div>
             <p class="mt-3 text-xs text-muted-foreground">
-              Regresar un paso no manda aviso. Cancelar sí avisa al equipo.
+              Regresar un paso no manda ningún aviso. Cancelar sí avisa al cliente y al equipo.
             </p>
           </div>
         )}

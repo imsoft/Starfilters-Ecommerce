@@ -42,7 +42,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       message: resultado.reason === 'unchanged'
         ? 'El estado ya es el mismo'
         : 'Estado actualizado correctamente',
-      emailSent: resultado.emailSent ?? false,
+      customerEmailSent: resultado.customerEmailSent ?? false,
+      teamEmailSent: resultado.teamEmailSent ?? false,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

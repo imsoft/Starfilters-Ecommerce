@@ -30,8 +30,9 @@ export interface ChangeOrderStatusInput {
   // Solo aplican al pasar a "enviado" por paquetería.
   carrier?: string | null;
   trackingNumber?: string | null;
-  // Manda el aviso del cambio a los correos de /admin/settings/notificaciones.
-  // Puede apagarse al corregir un estado que se marcó por error.
+  // Manda el aviso del cambio al comprador y a los correos de
+  // /admin/settings/notificaciones. Puede apagarse al corregir un estado que se
+  // marcó por error.
   notify?: boolean;
   // Quién hizo el cambio, para el historial. "Sistema" cuando no viene de una
   // persona.
@@ -42,7 +43,10 @@ export interface ChangeOrderStatusResult {
   ok: boolean;
   // 'not_found' | 'invalid_status' | 'unchanged' | 'update_failed'
   reason?: string;
-  emailSent?: boolean;
+  // Se informan por separado: puede salir el del comprador y fallar el del
+  // equipo, o al revés.
+  customerEmailSent?: boolean;
+  teamEmailSent?: boolean;
 }
 
 export const changeOrderStatus = async ({
@@ -91,62 +95,101 @@ export const changeOrderStatus = async ({
   }
 
   if (!notify) {
-    return { ok: true, emailSent: false };
+    return { ok: true, customerEmailSent: false, teamEmailSent: false };
   }
 
-  // El aviso va a la lista interna de /admin/settings/notificaciones, no al
-  // comprador: es el equipo el que da seguimiento a los pedidos.
-  const destinatarios = await getOrderNotificationEmails();
-  if (destinatarios.length === 0) {
-    console.log('⚠️ Sin correos de notificación configurados; no se avisa el cambio de estado');
-    return { ok: true, emailSent: false };
-  }
+  // Dos avisos con el mismo hecho, escritos para quien los lee: al comprador
+  // en su idioma ("tu pedido va en camino") y al equipo en español, diciendo
+  // de quién es el pedido y con el enlace al panel.
+  //
+  // Ninguno de los dos tumba el cambio de estado: la orden ya avanzó y un
+  // fallo de Resend no debe deshacerlo ni provocar un reintento del webhook.
+  let customerEmailSent = false;
+  let teamEmailSent = false;
 
-  // El correo nunca tumba el cambio de estado: la orden ya avanzó y un fallo
-  // de Resend no debe deshacerlo ni provocar un reintento.
-  let emailSent = false;
   try {
     const items = await getOrderItems(orderId);
 
-    const orderDate = order.created_at
-      ? new Date(order.created_at).toLocaleDateString('es-MX', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-      : new Date().toLocaleDateString('es-MX');
+    const lineas = items.map((item) => ({
+      name: item.product_name,
+      quantity: item.quantity,
+      price: item.price,
+    }));
 
-    const emailData = createOrderStatusUpdateEmail(
-      order.customer_name,
-      order.order_number,
-      oldStatus,
-      newStatus,
-      orderDate,
-      items.map((item) => ({
-        name: item.product_name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-      order.total_amount,
-      // La guía recién capturada gana sobre la que ya tenía la orden.
-      trackingNumber ?? order.tracking_number ?? undefined,
-      order.currency,
-      // El aviso interno va siempre en español, que es el idioma del equipo.
-      'es',
-      'equipo'
-    );
+    // La guía recién capturada gana sobre la que ya tenía la orden.
+    const guia = trackingNumber ?? order.tracking_number ?? undefined;
 
-    emailData.to = destinatarios;
-    emailSent = await sendEmail(emailData);
+    const fechaEn = (locale: string) =>
+      order.created_at
+        ? new Date(order.created_at).toLocaleDateString(locale, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : new Date().toLocaleDateString(locale);
 
-    console.log(emailSent
-      ? `✅ Aviso de cambio de estado enviado a ${destinatarios.length} destinatario(s) (${oldStatus} → ${newStatus})`
-      : '⚠️ No se pudo enviar el aviso de cambio de estado');
+    const idiomaCliente = order.customer_language === 'en' ? 'en' : 'es';
+
+    // --- Al comprador -------------------------------------------------------
+    if (order.customer_email) {
+      try {
+        const paraCliente = createOrderStatusUpdateEmail(
+          order.customer_name,
+          order.order_number,
+          oldStatus,
+          newStatus,
+          fechaEn(idiomaCliente === 'en' ? 'en-US' : 'es-MX'),
+          lineas,
+          order.total_amount,
+          guia,
+          order.currency,
+          idiomaCliente,
+          'cliente'
+        );
+        paraCliente.to = order.customer_email;
+        customerEmailSent = await sendEmail(paraCliente);
+        console.log(customerEmailSent
+          ? `✅ Aviso enviado al comprador (${oldStatus} → ${newStatus})`
+          : '⚠️ No se pudo enviar el aviso al comprador');
+      } catch (error) {
+        console.error('⚠️ Error enviando el aviso al comprador:', error);
+      }
+    }
+
+    // --- Al equipo ----------------------------------------------------------
+    const destinatarios = await getOrderNotificationEmails();
+    if (destinatarios.length === 0) {
+      console.log('⚠️ Sin correos en /admin/settings/notificaciones; no se avisa al equipo');
+    } else {
+      try {
+        const paraEquipo = createOrderStatusUpdateEmail(
+          order.customer_name,
+          order.order_number,
+          oldStatus,
+          newStatus,
+          fechaEn('es-MX'),
+          lineas,
+          order.total_amount,
+          guia,
+          order.currency,
+          // El equipo lee en español, sin importar el idioma de la compra.
+          'es',
+          'equipo'
+        );
+        paraEquipo.to = destinatarios;
+        teamEmailSent = await sendEmail(paraEquipo);
+        console.log(teamEmailSent
+          ? `✅ Aviso enviado a ${destinatarios.length} destinatario(s) del equipo (${oldStatus} → ${newStatus})`
+          : '⚠️ No se pudo enviar el aviso al equipo');
+      } catch (error) {
+        console.error('⚠️ Error enviando el aviso al equipo:', error);
+      }
+    }
   } catch (error) {
-    console.error('⚠️ Error enviando el email de cambio de estado:', error);
+    console.error('⚠️ Error preparando los avisos de cambio de estado:', error);
   }
 
-  return { ok: true, emailSent };
+  return { ok: true, customerEmailSent, teamEmailSent };
 };
