@@ -40,7 +40,7 @@ if (Astro.request.method === "POST") {
           const resetUrl = `${getPublicOrigin(Astro.request)}/en/reset-password?token=${resetToken}`;
           
           // Crear email
-          const emailData = createPasswordResetEmail(user.first_name, resetUrl);
+          const emailData = createPasswordResetEmail(user.first_name, resetUrl, 'en');
           emailData.to = email;
           
           // Enviar email

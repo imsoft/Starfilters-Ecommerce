@@ -102,10 +102,12 @@ async function sendOrderEmails(
   currency: 'MXN' | 'USD' = 'MXN',
   // Datos fiscales y de entrega para el correo interno. El flujo legacy no los
   // tiene y manda el correo sin ellos.
-  extras: OrderNotificationExtras = {}
+  extras: OrderNotificationExtras = {},
+  // Idioma del comprador. El correo interno siempre va en español.
+  lang: 'es' | 'en' = 'es'
 ) {
   try {
-    const orderDate = new Date().toLocaleDateString('es-MX', {
+    const orderDate = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -120,7 +122,8 @@ async function sendOrderEmails(
       totalMXN,
       items,
       shippingAddress,
-      currency
+      currency,
+      lang
     );
     emailData.to = customerEmail;
 
@@ -221,6 +224,8 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     // Forma de entrega elegida: el panel la necesita para saber si se prepara
     // un envío o el cliente pasa a recoger.
     delivery_method: draft.shippingMethod || null,
+    // Idioma de la compra, para que los avisos posteriores salgan en su idioma.
+    customer_language: checkout.lang === 'en' ? 'en' : 'es',
     // La moneda real del cargo, tal como la reporta Stripe
     currency: String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD',
   });
@@ -293,7 +298,8 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
       billing: checkout.billing ?? null,
       deliveryMethod: draft.shippingMethod ?? null,
       customerPhone: checkout.phone || null,
-    }
+    },
+    checkout.lang === 'en' ? 'en' : 'es'
   );
 }
 

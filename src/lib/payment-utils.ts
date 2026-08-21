@@ -33,6 +33,9 @@ export interface CheckoutData {
   company?: string;
   apartment?: string;
   billing?: BillingData | null;
+  // Idioma en el que se hizo la compra. El webhook corre después del pago y no
+  // sabe de qué página vino, así que el idioma tiene que viajar con el pedido.
+  lang?: 'es' | 'en';
 }
 
 // Interface para datos de descuento

@@ -1,6 +1,6 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
-import { getOrderByUuid, getOrderItems } from "@/lib/database";
+import { getOrderByUuid, getOrderItems, getOrderStatusHistory, setOrderCfdiStamped } from "@/lib/database";
 import { changeOrderStatus } from "@/lib/order-status";
 import { getDeliveryOption, getDeliveryLabel, isPickupMethod } from "@/lib/delivery-options";
 import type { DeliveryMethod } from "@/lib/delivery-options";
@@ -9,7 +9,7 @@ import { requireAdmin } from "@/lib/auth-utils";
 export const prerender = false;
 
 // Solo administradores: la comprobación va ANTES de procesar el POST.
-const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+const { redirect: redirigirSiNoEsAdmin, user: adminUser } = await requireAdmin(Astro.cookies);
 if (redirigirSiNoEsAdmin) {
   return Astro.redirect(redirigirSiNoEsAdmin);
 }
@@ -31,6 +31,15 @@ let errorAccion: string | null = null;
 
 if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
+
+  // Timbrado del CFDI: es una acción aparte, no un cambio de estado del pedido.
+  const accion = String(formData.get('accion') || '');
+  if (accion === 'cfdi') {
+    const timbrado = formData.get('timbrado') === '1';
+    await setOrderCfdiStamped(order.id, timbrado);
+    return Astro.redirect(`/admin/orders/${id}?ok=1`);
+  }
+
   const nuevoEstado = String(formData.get('status') || '');
   const carrier = formData.get('carrier');
   const trackingNumber = formData.get('tracking_number');
@@ -43,6 +52,7 @@ if (Astro.request.method === 'POST') {
     carrier: carrier !== null ? String(carrier).trim() : undefined,
     trackingNumber: trackingNumber !== null ? String(trackingNumber).trim() : undefined,
     notifyCustomer: avisar,
+    changedBy: [adminUser?.firstName, adminUser?.lastName].filter(Boolean).join(' ') || adminUser?.email || null,
   });
 
   if (resultado.ok) {
@@ -127,20 +137,34 @@ const necesitaGuia = metodo === 'paqueteria';
 const ORDEN_ESTADOS = ['pending', 'processing', 'shipped', 'delivered'];
 const indiceActual = ORDEN_ESTADOS.indexOf(order.status);
 
+// Historial real: cada avance guarda cuándo y quién lo marcó. Los pedidos
+// anteriores a esta tabla no tienen filas, así que su seguimiento solo puede
+// fechar el primer hito y el actual.
+const historial = await getOrderStatusHistory(order.id);
+const historialPorEstado = new Map(historial.map((fila) => [fila.to_status, fila]));
+
 const hitos = [
   { clave: 'pending',    titulo: 'Pago confirmado',  detalle: 'Orden creada e inventario descontado' },
   { clave: 'processing', titulo: 'En preparación',   detalle: 'Se está surtiendo del almacén' },
   { clave: 'shipped',    titulo: esRecoger ? 'Listo para recoger' : 'Enviado', detalle: esRecoger ? 'El cliente puede pasar por él' : 'Salió a entrega' },
   { clave: 'delivered',  titulo: 'Entregado',        detalle: 'Pedido cerrado' },
-].map((hito, i) => ({
-  ...hito,
-  cumplido: !cancelada && i <= indiceActual,
-  esActual: !cancelada && i === indiceActual,
-  // El primer hito ocurrió al crearse la orden; el actual, en el último cambio.
-  fecha: i === 0
-    ? formatDate(order.created_at)
-    : (!cancelada && i === indiceActual ? formatDate(order.updated_at) : ''),
-}));
+].map((hito, i) => {
+  const fila = historialPorEstado.get(hito.clave);
+  const cumplido = !cancelada && i <= indiceActual;
+  return {
+    ...hito,
+    cumplido,
+    // El pago no pasa por el historial: ocurrió al crearse la orden.
+    fecha: i === 0
+      ? formatDate(order.created_at)
+      : fila
+        ? formatDate(fila.created_at)
+        : (cumplido && i === indiceActual ? formatDate(order.updated_at) : ''),
+    porQuien: fila?.changed_by || null,
+  };
+});
+
+const cfdiTimbrado = Boolean(order.cfdi_stamped_at);
 
 // --- Siguiente paso ---------------------------------------------------------
 const SIGUIENTE: Record<string, { estado: string; titulo: string; boton: string; explicacion: string }> = {
@@ -224,8 +248,8 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
       </div>
       <div class="border-r border-border p-4">
         <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Factura</p>
-        <p class={`text-sm font-semibold ${requiereFactura ? 'text-amber-700' : 'text-foreground'}`}>
-          {requiereFactura ? 'Sí, requiere CFDI' : 'No solicitó'}
+        <p class={`text-sm font-semibold ${requiereFactura ? (cfdiTimbrado ? 'text-green-700' : 'text-amber-700') : 'text-foreground'}`}>
+          {requiereFactura ? (cfdiTimbrado ? 'Timbrada' : 'Sí, CFDI pendiente') : 'No solicitó'}
         </p>
       </div>
       <div class="p-4">
@@ -269,6 +293,7 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
                     <p class={`text-sm font-semibold ${hito.cumplido ? 'text-foreground' : 'text-muted-foreground'}`}>{hito.titulo}</p>
                     <p class="mt-0.5 text-[13px] text-muted-foreground">
                       {hito.fecha ? hito.fecha : hito.cumplido ? hito.detalle : 'Pendiente'}
+                      {hito.porQuien && ` · ${hito.porQuien}`}
                     </p>
                   </div>
                 </div>
@@ -413,17 +438,42 @@ const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quan
         </div>
 
         {requiereFactura ? (
-          <div class="overflow-hidden rounded-xl border border-amber-200 bg-amber-50">
-            <div class="border-b border-amber-200 px-4 py-3.5">
-              <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-amber-800">Requiere factura</p>
+          <div class={`overflow-hidden rounded-xl border ${cfdiTimbrado ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
+            <div class={`border-b px-4 py-3.5 ${cfdiTimbrado ? 'border-green-200' : 'border-amber-200'}`}>
+              <p class={`text-[11px] font-bold uppercase tracking-[0.12em] ${cfdiTimbrado ? 'text-green-800' : 'text-amber-800'}`}>
+                {cfdiTimbrado ? 'Factura timbrada' : 'Requiere factura'}
+              </p>
             </div>
             <div class="space-y-2.5 p-4">
               {billingFields.map((field) => (
                 <div class="flex justify-between gap-3">
-                  <span class="text-xs text-amber-900">{field.label}</span>
+                  <span class={`text-xs ${cfdiTimbrado ? 'text-green-900' : 'text-amber-900'}`}>{field.label}</span>
                   <span class="text-right text-[13px] font-semibold text-foreground">{field.value}</span>
                 </div>
               ))}
+
+              <div class={`border-t pt-3 ${cfdiTimbrado ? 'border-green-200' : 'border-amber-200'}`}>
+                {cfdiTimbrado ? (
+                  <div>
+                    <p class="mb-2.5 text-xs text-green-900">Timbrada el {formatDate(order.cfdi_stamped_at!)}</p>
+                    <form method="POST">
+                      <input type="hidden" name="accion" value="cfdi" />
+                      <input type="hidden" name="timbrado" value="0" />
+                      <button type="submit" class="w-full rounded-md border border-green-300 bg-white px-4 py-2 text-[13px] font-semibold text-green-800 transition-colors hover:bg-green-100">
+                        Marcar como pendiente
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  <form method="POST">
+                    <input type="hidden" name="accion" value="cfdi" />
+                    <input type="hidden" name="timbrado" value="1" />
+                    <button type="submit" class="w-full rounded-md bg-amber-600 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-amber-700">
+                      Marcar CFDI como timbrado
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         ) : (

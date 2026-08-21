@@ -12,6 +12,7 @@ import {
   getOrderItems,
   updateOrderStatus,
   updateOrderShipping,
+  recordOrderStatusChange,
 } from './database';
 import { sendEmail, createOrderStatusUpdateEmail } from './email';
 
@@ -31,6 +32,9 @@ export interface ChangeOrderStatusInput {
   // Permite guardar el avance sin avisarle al cliente (por ejemplo, al
   // corregir un estado que se marcó por error).
   notifyCustomer?: boolean;
+  // Quién hizo el cambio, para el historial. "Sistema" cuando no viene de una
+  // persona.
+  changedBy?: string | null;
 }
 
 export interface ChangeOrderStatusResult {
@@ -46,6 +50,7 @@ export const changeOrderStatus = async ({
   carrier,
   trackingNumber,
   notifyCustomer = true,
+  changedBy,
 }: ChangeOrderStatusInput): Promise<ChangeOrderStatusResult> => {
   if (!isOrderStatus(newStatus)) {
     return { ok: false, reason: 'invalid_status' };
@@ -75,6 +80,13 @@ export const changeOrderStatus = async ({
   const actualizado = await updateOrderStatus(orderId, newStatus);
   if (!actualizado) {
     return { ok: false, reason: 'update_failed' };
+  }
+
+  // El historial no debe tumbar el cambio: la orden ya avanzó.
+  try {
+    await recordOrderStatusChange(orderId, oldStatus, newStatus, changedBy);
+  } catch (error) {
+    console.error('⚠️ No se pudo registrar el cambio en el historial:', error);
   }
 
   if (!notifyCustomer) {
@@ -111,7 +123,9 @@ export const changeOrderStatus = async ({
       order.total_amount,
       // La guía recién capturada gana sobre la que ya tenía la orden.
       trackingNumber ?? order.tracking_number ?? undefined,
-      order.currency
+      order.currency,
+      // Se le escribe en el idioma en el que compró.
+      order.customer_language === 'en' ? 'en' : 'es'
     );
 
     emailData.to = order.customer_email;

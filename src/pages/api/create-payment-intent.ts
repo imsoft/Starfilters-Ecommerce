@@ -105,6 +105,21 @@ async function resolveStockAndBindTarget(
   return { stock, bindTarget };
 }
 
+// El idioma del comprador: lo manda el checkout o, en su defecto, se lee de la
+// URL desde la que se envió el formulario (/en/checkout → inglés).
+const idiomaDeLaCompra = (desdeBody: unknown, referer: string | null): 'es' | 'en' => {
+  if (desdeBody === 'en' || desdeBody === 'es') return desdeBody;
+  if (referer) {
+    try {
+      const ruta = new URL(referer).pathname;
+      if (ruta === '/en' || ruta.startsWith('/en/')) return 'en';
+    } catch {
+      // Un referer ilegible no es motivo para fallar: se queda en español.
+    }
+  }
+  return 'es';
+};
+
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     // Verificar autenticación
@@ -131,6 +146,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       company: body.company,
       apartment: body.apartment,
       billing: sanitizeBilling(body.billing),
+      // De qué versión del sitio vino la compra, para escribirle al cliente en
+      // ese idioma. Se prefiere lo que mande el checkout; si no, se deduce de
+      // la página desde la que se envió. Si nada llega, español.
+      lang: idiomaDeLaCompra(body.lang, request.headers.get('referer')),
     };
 
     // Moneda del cobro: la manda el checkout según su idioma (español MXN,

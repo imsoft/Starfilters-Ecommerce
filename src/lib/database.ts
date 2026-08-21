@@ -152,6 +152,13 @@ export interface Order {
   // Paquetería y guía: solo aplican a la entrega por paquetería nacional.
   shipping_carrier?: string | null;
   tracking_number?: string | null;
+  // Cuándo se timbró el CFDI. NULL = la factura sigue pendiente. Sin esto,
+  // "requiere factura" se quedaba encendido para siempre.
+  cfdi_stamped_at?: Date | null;
+  // Idioma en el que el cliente compró, para escribirle en ese idioma. Se
+  // captura en el checkout: el webhook corre después y no sabe de qué página
+  // vino la compra.
+  customer_language?: 'es' | 'en' | null;
   // Moneda del cobro: sin ella un total de 2,000 es ambiguo (¿pesos o dólares?)
   currency?: 'MXN' | 'USD';
   created_at: Date;
@@ -588,6 +595,8 @@ export const ensureOrdersDeliveryColumns = (): Promise<void> => {
         { nombre: 'delivery_method', definicion: 'VARCHAR(32) NULL' },
         { nombre: 'shipping_carrier', definicion: 'VARCHAR(64) NULL' },
         { nombre: 'tracking_number', definicion: 'VARCHAR(64) NULL' },
+        { nombre: 'cfdi_stamped_at', definicion: 'DATETIME NULL' },
+        { nombre: 'customer_language', definicion: "VARCHAR(2) NULL" },
       ];
 
       for (const columna of columnas) {
@@ -615,8 +624,8 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
   await ensureOrdersDeliveryColumns();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data, currency, delivery_method, shipping_carrier, tracking_number)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data, currency, delivery_method, shipping_carrier, tracking_number, customer_language)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -633,7 +642,8 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
     order.currency || 'MXN',
     order.delivery_method || null,
     order.shipping_carrier || null,
-    order.tracking_number || null
+    order.tracking_number || null,
+    order.customer_language || null
   ]) as any;
   return result.insertId;
 };
@@ -651,6 +661,79 @@ export const updateOrderShipping = async (
     [datos.carrier || null, datos.trackingNumber || null, id]
   ) as any;
   return result.affectedRows > 0;
+};
+
+/**
+ * Marca (o desmarca) el CFDI de una orden como timbrado.
+ */
+export const setOrderCfdiStamped = async (id: number, timbrado: boolean): Promise<boolean> => {
+  await ensureOrdersDeliveryColumns();
+  const result = await query(
+    'UPDATE orders SET cfdi_stamped_at = ? WHERE id = ?',
+    [timbrado ? new Date() : null, id]
+  ) as any;
+  return result.affectedRows > 0;
+};
+
+/**
+ * Historial de estados de una orden.
+ *
+ * Antes solo se guardaba el estado actual, así que el seguimiento del panel
+ * podía poner fecha al último paso pero no a los anteriores: no había forma de
+ * saber cuándo ni quién marcó cada avance.
+ */
+export interface OrderStatusHistoryRow {
+  id: number;
+  order_id: number;
+  from_status: string | null;
+  to_status: string;
+  changed_by: string | null;
+  created_at: Date;
+}
+
+let orderStatusHistoryEnsured: Promise<void> | null = null;
+
+export const ensureOrderStatusHistoryTable = (): Promise<void> => {
+  if (!orderStatusHistoryEnsured) {
+    orderStatusHistoryEnsured = (async () => {
+      await query(`
+        CREATE TABLE IF NOT EXISTS order_status_history (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          order_id INT NOT NULL,
+          from_status VARCHAR(20) NULL,
+          to_status VARCHAR(20) NOT NULL,
+          changed_by VARCHAR(160) NULL,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_order_status_history_order (order_id)
+        )
+      `);
+    })().catch((error) => {
+      orderStatusHistoryEnsured = null;
+      throw error;
+    });
+  }
+  return orderStatusHistoryEnsured;
+};
+
+export const recordOrderStatusChange = async (
+  orderId: number,
+  fromStatus: string | null,
+  toStatus: string,
+  changedBy?: string | null
+): Promise<void> => {
+  await ensureOrderStatusHistoryTable();
+  await query(
+    'INSERT INTO order_status_history (order_id, from_status, to_status, changed_by) VALUES (?, ?, ?, ?)',
+    [orderId, fromStatus, toStatus, changedBy || null]
+  );
+};
+
+export const getOrderStatusHistory = async (orderId: number): Promise<OrderStatusHistoryRow[]> => {
+  await ensureOrderStatusHistoryTable();
+  return await query(
+    'SELECT * FROM order_status_history WHERE order_id = ? ORDER BY created_at ASC, id ASC',
+    [orderId]
+  ) as OrderStatusHistoryRow[];
 };
 
 export const getOrderByPaymentIntentId = async (paymentIntentId: string): Promise<Order | null> => {

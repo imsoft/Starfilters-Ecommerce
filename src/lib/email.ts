@@ -137,8 +137,42 @@ export const createOrderConfirmationEmail = (
   items: Array<{ name: string; quantity: number; price: number }>,
   shippingAddress: string,
   // Los pedidos pueden cobrarse en pesos o en dólares
-  currency: 'MXN' | 'USD' = 'MXN'
+  currency: 'MXN' | 'USD' = 'MXN',
+  // Idioma del cliente: quien compraba en /en recibía la confirmación en español.
+  lang: 'es' | 'en' = 'es'
 ): EmailData => {
+  const isEn = lang === 'en';
+  const t = isEn ? {
+    subject: (n: string) => `Order confirmation #${n} - Star Filters`,
+    thanks: 'Thank you for your order',
+    confirmed: 'Your order is confirmed and we are getting it ready.',
+    greeting: (name: string) => `Hi ${name},`,
+    orderDetails: 'Order details',
+    orderNumber: 'Order number',
+    date: 'Date',
+    products: 'Products',
+    product: 'Product',
+    total: 'Total',
+    quantity: 'Quantity',
+    shippingAddress: 'Shipping address',
+    viewOrders: 'View my orders',
+    rights: 'All rights reserved.',
+  } : {
+    subject: (n: string) => `Confirmación de Pedido #${n} - Star Filters`,
+    thanks: '¡Gracias por tu compra!',
+    confirmed: 'Tu pedido ha sido confirmado y se está procesando.',
+    greeting: (name: string) => `Hola ${name},`,
+    orderDetails: 'Detalles del Pedido',
+    orderNumber: 'Número de Pedido',
+    date: 'Fecha',
+    products: 'Productos',
+    product: 'Producto',
+    total: 'Total',
+    quantity: 'Cantidad',
+    shippingAddress: 'Dirección de Envío',
+    viewOrders: 'Ver Mis Pedidos',
+    rights: 'Todos los derechos reservados.',
+  };
   // Paleta de colores de la aplicación
   const color50 = '#EFF6FF';
   const color100 = '#DBEAFE';
@@ -146,13 +180,13 @@ export const createOrderConfirmationEmail = (
   const color600 = '#155DFC';
   const color700 = '#1447E6';
   
-  const subject = `Confirmación de Pedido #${orderNumber} - Star Filters`;
+  const subject = t.subject(orderNumber);
   
   const itemsList = items.map(item => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
         <strong>${item.name}</strong><br>
-        <span style="color: #6b7280; font-size: 14px;">Cantidad: ${item.quantity}</span>
+        <span style="color: #6b7280; font-size: 14px;">${t.quantity}: ${item.quantity}</span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
         $${money(Number(item.price) * item.quantity)}
@@ -201,24 +235,24 @@ export const createOrderConfirmationEmail = (
       <div class="container">
         <div class="header">
           <img src="${logoUrl}" alt="Star Filters" class="header-logo" />
-          <h1>¡Gracias por tu compra!</h1>
+          <h1>${t.thanks}</h1>
         </div>
         <div class="content">
-          <h2>Hola ${customerName},</h2>
-          <p>Tu pedido ha sido confirmado y se está procesando.</p>
+          <h2>${t.greeting(customerName)}</h2>
+          <p>${t.confirmed}</p>
           
           <div class="order-info">
-            <h3>Detalles del Pedido</h3>
-            <p><strong>Número de Pedido:</strong> ${orderNumber}</p>
-            <p><strong>Fecha:</strong> ${orderDate}</p>
+            <h3>${t.orderDetails}</h3>
+            <p><strong>${t.orderNumber}:</strong> ${orderNumber}</p>
+            <p><strong>${t.date}:</strong> ${orderDate}</p>
           </div>
           
-          <h3>Productos:</h3>
+          <h3>${t.products}:</h3>
           <table class="order-items">
             <thead>
               <tr style="background-color: #f3f4f6;">
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Producto</th>
-                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Total</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">${t.product}</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">${t.total}</th>
               </tr>
             </thead>
             <tbody>
@@ -227,22 +261,22 @@ export const createOrderConfirmationEmail = (
           </table>
           
           <div class="total">
-            <p>Total: $${money(total)} ${currency}</p>
+            <p>${t.total}: $${money(total)} ${currency}</p>
           </div>
           
           <div class="shipping">
-            <h4>Dirección de Envío:</h4>
+            <h4>${t.shippingAddress}:</h4>
             <p>${shippingAddress}</p>
           </div>
           
           <p>Te notificaremos cuando tu pedido sea enviado.</p>
           
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${siteUrl}/orders" class="button">Ver Mis Pedidos</a>
+            <a href="${siteUrl}/orders" class="button">${t.viewOrders}</a>
           </div>
         </div>
         <div class="footer">
-          <p>© ${new Date().getFullYear()} Star Filters. Todos los derechos reservados.</p>
+          <p>© ${new Date().getFullYear()} Star Filters. ${t.rights}</p>
         </div>
       </div>
     </body>
@@ -250,21 +284,21 @@ export const createOrderConfirmationEmail = (
   `;
   
   const text = `
-    ¡Gracias por tu compra!
+    ${t.thanks}
     
-    Hola ${customerName},
+    ${t.greeting(customerName)}
     
-    Tu pedido ha sido confirmado:
+    ${t.confirmed}
     
-    Número de Pedido: ${orderNumber}
-    Fecha: ${orderDate}
+    ${t.orderNumber}: ${orderNumber}
+    ${t.date}: ${orderDate}
     
-    Productos:
+    ${t.products}:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
-    Total: $${money(total)} ${currency}
+    ${t.total}: $${money(total)} ${currency}
     
-    Dirección de Envío:
+    ${t.shippingAddress}:
     ${shippingAddress}
     
     Te notificaremos cuando tu pedido sea enviado.
@@ -281,14 +315,48 @@ export const createOrderConfirmationEmail = (
 };
 
 // Template para email de reset de contraseña
-export const createPasswordResetEmail = (userFirstName: string, resetUrl: string): EmailData => {
+export const createPasswordResetEmail = (
+  userFirstName: string,
+  resetUrl: string,
+  // Quien pedía su contraseña desde /en/forgot-password recibía el correo en
+  // español: esta plantilla era la única de cuenta sin idioma.
+  lang: 'es' | 'en' = 'es'
+): EmailData => {
+  const isEn = lang === 'en';
+  const t = isEn ? {
+    subject: 'Reset your password - Star Filters',
+    heading: 'Reset your password',
+    greeting: (name: string) => `Hi ${name},`,
+    intro: 'We received a request to change your Star Filters password.',
+    cta: 'Click the button below to set a new one:',
+    button: 'Change password',
+    copyLink: 'Or copy and paste this link into your browser:',
+    expires: 'This link expires in 1 hour',
+    onceOnly: 'It can only be used once',
+    ignore: 'If you did not request this, you can ignore this email',
+    plainCta: 'Use this link to set a new password:',
+    rights: 'All rights reserved.',
+  } : {
+    subject: 'Recuperar contraseña - Star Filters',
+    heading: 'Recuperar Contraseña',
+    greeting: (name: string) => `Hola ${name},`,
+    intro: 'Recibimos una solicitud para cambiar tu contraseña en Star Filters.',
+    cta: 'Haz clic en el siguiente botón para crear una nueva contraseña:',
+    button: 'Cambiar Contraseña',
+    copyLink: 'O copia y pega este enlace en tu navegador:',
+    expires: 'Este enlace expira en 1 hora',
+    onceOnly: 'Solo puede usarse una vez',
+    ignore: 'Si no solicitaste este cambio, ignora este email',
+    plainCta: 'Usa este enlace para crear una nueva contraseña:',
+    rights: 'Todos los derechos reservados.',
+  };
   // Paleta de colores de la aplicación
   const color50 = '#EFF6FF';
   const color100 = '#DBEAFE';
   const color600 = '#155DFC';
   const color700 = '#1447E6';
   
-  const subject = 'Recuperar contraseña - Star Filters';
+  const subject = t.subject;
   const siteUrl = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
@@ -327,18 +395,18 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
       <div class="container">
         <div class="header">
           <img src="${logoUrl}" alt="Star Filters" class="header-logo" />
-          <h1>Recuperar Contraseña</h1>
+          <h1>${t.heading}</h1>
         </div>
         <div class="content">
-          <h2>Hola ${userFirstName},</h2>
-          <p>Recibimos una solicitud para cambiar tu contraseña en Star Filters.</p>
-          <p>Haz clic en el siguiente botón para crear una nueva contraseña:</p>
+          <h2>${t.greeting(userFirstName)}</h2>
+          <p>${t.intro}</p>
+          <p>${t.cta}</p>
           
           <div style="text-align: center;">
-            <a href="${resetUrl}" class="button">Cambiar Contraseña</a>
+            <a href="${resetUrl}" class="button">${t.button}</a>
           </div>
           
-          <p>O copia y pega este enlace en tu navegador:</p>
+          <p>${t.copyLink}</p>
           <p style="word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px;">
             ${resetUrl}
           </p>
@@ -346,14 +414,14 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
           <div class="warning">
             <p><strong>⚠️ Importante:</strong></p>
             <ul>
-              <li>Este enlace expira en 1 hora</li>
-              <li>Solo puede usarse una vez</li>
-              <li>Si no solicitaste este cambio, ignora este email</li>
+              <li>${t.expires}</li>
+              <li>${t.onceOnly}</li>
+              <li>${t.ignore}</li>
             </ul>
           </div>
         </div>
         <div class="footer">
-          <p>© ${new Date().getFullYear()} Star Filters. Todos los derechos reservados.</p>
+          <p>© ${new Date().getFullYear()} Star Filters. ${t.rights}</p>
         </div>
       </div>
     </body>
@@ -361,11 +429,11 @@ export const createPasswordResetEmail = (userFirstName: string, resetUrl: string
   `;
   
   const text = `
-    Hola ${userFirstName},
+    ${t.greeting(userFirstName)}
     
-    Recibimos una solicitud para cambiar tu contraseña en Star Filters.
+    ${t.intro}
     
-    Usa este enlace para crear una nueva contraseña:
+    ${t.plainCta}
     ${resetUrl}
     
     Este enlace expira en 1 hora y solo puede usarse una vez.
@@ -736,7 +804,9 @@ export const createOrderStatusUpdateEmail = (
   items: Array<{ name: string; quantity: number; price: number }>,
   total: number,
   trackingNumber?: string,
-  currency: 'MXN' | 'USD' = 'MXN'
+  currency: 'MXN' | 'USD' = 'MXN',
+  // Idioma del cliente. Los pedidos hechos en /en recibían el aviso en español.
+  lang: 'es' | 'en' = 'es'
 ): EmailData => {
   // Paleta de colores de la aplicación
   const color50 = '#EFF6FF';
@@ -745,11 +815,75 @@ export const createOrderStatusUpdateEmail = (
   const color600 = '#155DFC';
   const color700 = '#1447E6';
   const color800 = '#193CB8';
+
+  const isEn = lang === 'en';
+  const t = isEn ? {
+    subject: (n: string) => `Order #${n} update - Star Filters`,
+    greeting: (name: string) => `Hi ${name},`,
+    orderDetails: 'Order details',
+    orderNumber: 'Order number',
+    date: 'Date',
+    status: 'Status',
+    tracking: 'Tracking number',
+    products: 'Products',
+    product: 'Product',
+    total: 'Total',
+    quantity: 'Quantity',
+    viewOrders: 'View my orders',
+    rights: 'All rights reserved.',
+  } : {
+    subject: (n: string) => `Actualización de Pedido #${n} - Star Filters`,
+    greeting: (name: string) => `Hola ${name},`,
+    orderDetails: 'Detalles del Pedido',
+    orderNumber: 'Número de Pedido',
+    date: 'Fecha',
+    status: 'Estado',
+    tracking: 'Número de Rastreo',
+    products: 'Productos',
+    product: 'Producto',
+    total: 'Total',
+    quantity: 'Cantidad',
+    viewOrders: 'Ver Mis Pedidos',
+    rights: 'Todos los derechos reservados.',
+  };
+
+  // Los estados también se traducen: "SHIPPED" en un correo en español se leía
+  // como error del sistema.
+  const ESTADO_TEXTO: Record<string, { es: string; en: string }> = {
+    pending:    { es: 'Pendiente',   en: 'Pending' },
+    processing: { es: 'En proceso',  en: 'Processing' },
+    shipped:    { es: 'Enviado',     en: 'Shipped' },
+    delivered:  { es: 'Entregado',   en: 'Delivered' },
+    cancelled:  { es: 'Cancelado',   en: 'Cancelled' },
+  };
+  const estadoLegible = (estado: string) =>
+    ESTADO_TEXTO[estado] ? ESTADO_TEXTO[estado][isEn ? 'en' : 'es'] : estado;
   
   // Color primary para botones y elementos principales
   const primaryColor = color600;
   
-  const statusMessages: Record<string, { title: string; message: string; color: string }> = {
+  const statusMessages: Record<string, { title: string; message: string; color: string }> = isEn ? {
+    processing: {
+      title: 'Your order is being prepared',
+      message: 'Your order is confirmed and we are getting it ready to ship.',
+      color: primaryColor
+    },
+    shipped: {
+      title: 'Your order is on its way',
+      message: 'Your order has shipped. ' + (trackingNumber ? `Tracking number: ${trackingNumber}` : ''),
+      color: '#10b981'
+    },
+    delivered: {
+      title: 'Your order has been delivered',
+      message: 'Your order has arrived. We hope everything is just right.',
+      color: '#059669'
+    },
+    cancelled: {
+      title: 'Your order has been cancelled',
+      message: 'Your order has been cancelled. If you have any questions, please get in touch.',
+      color: '#ef4444'
+    }
+  } : {
     processing: {
       title: 'Tu pedido está siendo procesado',
       message: 'Tu pedido ha sido confirmado y está siendo preparado para el envío.',
@@ -773,18 +907,20 @@ export const createOrderStatusUpdateEmail = (
   };
 
   const statusInfo = statusMessages[newStatus] || {
-    title: 'Actualización de tu pedido',
-    message: `El estado de tu pedido ha cambiado de "${oldStatus}" a "${newStatus}".`,
+    title: isEn ? 'Your order was updated' : 'Actualización de tu pedido',
+    message: isEn
+      ? `Your order changed from "${estadoLegible(oldStatus)}" to "${estadoLegible(newStatus)}".`
+      : `El estado de tu pedido ha cambiado de "${estadoLegible(oldStatus)}" a "${estadoLegible(newStatus)}".`,
     color: primaryColor
   };
 
-  const subject = `Actualización de Pedido #${orderNumber} - Star Filters`;
+  const subject = t.subject(orderNumber);
   
   const itemsList = items.map(item => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
         <strong>${item.name}</strong><br>
-        <span style="color: #6b7280; font-size: 14px;">Cantidad: ${item.quantity}</span>
+        <span style="color: #6b7280; font-size: 14px;">${t.quantity}: ${item.quantity}</span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
         $${money(Number(item.price) * item.quantity)}
@@ -843,23 +979,23 @@ export const createOrderStatusUpdateEmail = (
           <h1>${statusInfo.title}</h1>
         </div>
         <div class="content">
-          <h2>Hola ${customerName},</h2>
+          <h2>${t.greeting(customerName)}</h2>
           <p>${statusInfo.message}</p>
           
           <div class="order-info">
-            <h3>Detalles del Pedido</h3>
-            <p><strong>Número de Pedido:</strong> ${orderNumber}</p>
-            <p><strong>Fecha:</strong> ${orderDate}</p>
-            <p><strong>Estado:</strong> <span class="status-badge">${newStatus.toUpperCase()}</span></p>
-            ${trackingNumber ? `<p><strong>Número de Rastreo:</strong> ${trackingNumber}</p>` : ''}
+            <h3>${t.orderDetails}</h3>
+            <p><strong>${t.orderNumber}:</strong> ${orderNumber}</p>
+            <p><strong>${t.date}:</strong> ${orderDate}</p>
+            <p><strong>${t.status}:</strong> <span class="status-badge">${estadoLegible(newStatus)}</span></p>
+            ${trackingNumber ? `<p><strong>${t.tracking}:</strong> ${trackingNumber}</p>` : ''}
           </div>
           
-          <h3>Productos:</h3>
+          <h3>${t.products}:</h3>
           <table class="order-items">
             <thead>
               <tr style="background-color: #f3f4f6;">
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Producto</th>
-                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Total</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">${t.product}</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">${t.total}</th>
               </tr>
             </thead>
             <tbody>
@@ -868,15 +1004,15 @@ export const createOrderStatusUpdateEmail = (
           </table>
           
           <div style="text-align: right; margin-top: 20px;">
-            <p style="font-size: 18px; font-weight: bold;">Total: $${money(total)} ${currency}</p>
+            <p style="font-size: 18px; font-weight: bold;">${t.total}: $${money(total)} ${currency}</p>
           </div>
           
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${siteUrl}/orders" class="button">Ver Mis Pedidos</a>
+            <a href="${siteUrl}/orders" class="button">${t.viewOrders}</a>
           </div>
         </div>
         <div class="footer">
-          <p>© ${new Date().getFullYear()} Star Filters. Todos los derechos reservados.</p>
+          <p>© ${new Date().getFullYear()} Star Filters. ${t.rights}</p>
         </div>
       </div>
     </body>
@@ -886,22 +1022,22 @@ export const createOrderStatusUpdateEmail = (
   const text = `
     ${statusInfo.title}
     
-    Hola ${customerName},
+    ${t.greeting(customerName)}
     
     ${statusInfo.message}
     
-    Detalles del Pedido:
-    Número: ${orderNumber}
-    Fecha: ${orderDate}
-    Estado: ${newStatus.toUpperCase()}
-    ${trackingNumber ? `Número de Rastreo: ${trackingNumber}` : ''}
+    ${t.orderDetails}:
+    ${t.orderNumber}: ${orderNumber}
+    ${t.date}: ${orderDate}
+    ${t.status}: ${estadoLegible(newStatus)}
+    ${trackingNumber ? `${t.tracking}: ${trackingNumber}` : ''}
     
-    Productos:
+    ${t.products}:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
-    Total: $${money(total)} ${currency}
+    ${t.total}: $${money(total)} ${currency}
     
-    Ver tus pedidos: ${siteUrl}/orders
+    ${t.viewOrders}: ${siteUrl}/orders
     
     © ${new Date().getFullYear()} Star Filters
   `;
