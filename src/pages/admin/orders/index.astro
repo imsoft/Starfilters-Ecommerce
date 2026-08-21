@@ -6,7 +6,7 @@ import CustomModal from "@/components/shared/CustomModal.astro";
 import { getOrders, getOrderItems } from "@/lib/database";
 import type { Order, OrderItem } from "@/lib/database";
 import { getDeliveryLabel, isPickupMethod } from "@/lib/delivery-options";
-import { ESTADOS, infoEstado, siguientePaso, necesitaGuia as requiereGuia } from "@/lib/order-status-ui";
+import { ESTADOS, infoEstado } from "@/lib/order-status-ui";
 import type { DeliveryMethod } from "@/lib/delivery-options";
 
 import { requireAdmin } from "@/lib/auth-utils";
@@ -125,15 +125,6 @@ const ordersEnriquecidas = allOrders
       requiereFactura: Boolean(order.billing_data),
       diasSinAvanzar: dias,
       estancada: enCurso && dias >= DIAS_PARA_ALERTA,
-      // El mismo cálculo que usa el detalle, para que las dos pantallas
-      // ofrezcan exactamente la misma acción.
-      siguiente: siguientePaso(order.status, {
-        esRecoger: metodo ? isPickupMethod(metodo) : false,
-        necesitaGuia: requiereGuia(metodo),
-      }),
-      // Un envío por paquetería no se puede despachar desde la lista: primero
-      // hay que capturar la guía, y eso vive en el detalle.
-      pideGuiaPrimero: requiereGuia(metodo) && order.status === 'processing',
     };
   })
   .sort((a, b) => {
@@ -244,14 +235,13 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
                 <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Entrega</th>
                 <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Factura</th>
                 <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
-                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Siguiente paso</th>
                 <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody id="orders-table-body" class="divide-y divide-border">
               {allOrders.length === 0 ? (
                 <tr>
-                  <td colspan="9" class="px-6 py-12 text-center">
+                  <td colspan="8" class="px-6 py-12 text-center">
                     <div class="flex flex-col items-center">
                       <svg class="h-12 w-12 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -262,7 +252,7 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
                   </td>
                 </tr>
               ) : (
-                ordersEnriquecidas.map(({ order, etiquetaEntrega, esRecoger, requiereFactura, estancada, diasSinAvanzar, siguiente, pideGuiaPrimero }) => (
+                ordersEnriquecidas.map(({ order, etiquetaEntrega, esRecoger, requiereFactura, estancada, diasSinAvanzar }) => (
                   <tr
                     class="hover:bg-muted/50"
                     data-order-row
@@ -327,38 +317,6 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
                       <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
                         {getStatusText(order.status)}
                       </span>
-                    </td>
-                    <td class="px-3 py-4 whitespace-nowrap">
-                      {siguiente ? (
-                        pideGuiaPrimero ? (
-                          <a
-                            href={`/admin/orders/${order.uuid}`}
-                            class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
-                            title="Falta capturar la paquetería y el número de guía"
-                          >
-                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                            </svg>
-                            Capturar guía
-                          </a>
-                        ) : (
-                          <button
-                            type="button"
-                            class="avanzar-btn inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-                            data-order-id={order.id}
-                            data-order-number={order.order_number}
-                            data-next-status={siguiente.estado}
-                            data-next-label={siguiente.boton}
-                          >
-                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            {siguiente.boton}
-                          </button>
-                        )
-                      ) : (
-                        <span class="text-xs text-muted-foreground">—</span>
-                      )}
                     </td>
                     <td class="px-3 py-4 whitespace-nowrap text-sm font-medium">
                       <div class="flex space-x-1">
@@ -671,58 +629,6 @@ const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
         console.error('Error:', error);
         alert('Error al actualizar el estado de la orden');
       }
-    });
-  });
-</script>
-
-<script>
-  // Avanzar un pedido al siguiente paso sin salir de la lista.
-  //
-  // Es el caso común: surtir, despachar, cerrar. Antes había que entrar al
-  // detalle o abrir un modal y elegir el estado a mano de una lista de cinco,
-  // sin saber cuál tocaba.
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.avanzar-btn').forEach((boton) => {
-      boton.addEventListener('click', async () => {
-        const orderId = boton.getAttribute('data-order-id');
-        const numero = boton.getAttribute('data-order-number');
-        const estado = boton.getAttribute('data-next-status');
-        const etiqueta = boton.getAttribute('data-next-label');
-        if (!orderId || !estado) return;
-
-        // Se pregunta si avisar, en vez de decidirlo por el admin: hay
-        // correcciones que no ameritan molestar al cliente.
-        const avisar = window.confirm(
-          `${etiqueta} — pedido ${numero}\n\n` +
-          'Aceptar: se guarda y se manda el aviso por correo al cliente y al equipo.\n' +
-          'Cancelar: se guarda sin mandar ningún aviso.'
-        );
-
-        const textoOriginal = boton.innerHTML;
-        boton.setAttribute('disabled', 'true');
-        boton.textContent = 'Guardando…';
-
-        try {
-          const respuesta = await fetch('/api/orders/update-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: parseInt(orderId), status: estado, notify: avisar })
-          });
-
-          if (respuesta.ok) {
-            window.location.reload();
-            return;
-          }
-          const datos = await respuesta.json().catch(() => ({}));
-          alert(datos.error || 'No se pudo actualizar el pedido.');
-        } catch (error) {
-          console.error('Error avanzando el pedido:', error);
-          alert('No se pudo actualizar el pedido.');
-        }
-
-        boton.removeAttribute('disabled');
-        boton.innerHTML = textoOriginal;
-      });
     });
   });
 </script>
