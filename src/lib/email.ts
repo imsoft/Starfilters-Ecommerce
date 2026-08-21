@@ -244,9 +244,9 @@ export const createOrderConfirmationEmail = (
       <style>
         body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background-color: ${BRAND.accent}; color: ${BRAND.foreground}; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 1px solid ${BRAND.border}; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: ${BRAND.foreground}; }
         .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
         .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
@@ -407,9 +407,9 @@ export const createPasswordResetEmail = (
       <style>
         body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background-color: ${BRAND.accent}; color: ${BRAND.foreground}; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 1px solid ${BRAND.border}; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: ${BRAND.foreground}; }
         .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
         .button { 
           display: inline-block; 
@@ -524,9 +524,9 @@ export const createVerificationEmail = (
       <style>
         body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background-color: ${BRAND.accent}; color: ${BRAND.foreground}; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 1px solid ${BRAND.border}; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: ${BRAND.foreground}; }
         .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
         .button {
           display: inline-block;
@@ -708,9 +708,9 @@ export const createNewOrderNotificationEmail = (
       <style>
         body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: ${color600}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background-color: ${BRAND.accent}; color: ${BRAND.foreground}; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 1px solid ${BRAND.border}; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: ${BRAND.foreground}; }
         .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
         .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
@@ -905,47 +905,39 @@ export const createOrderStatusUpdateEmail = (
   // Color primary para botones y elementos principales
   const primaryColor = color600;
   
-  const statusMessages: Record<string, { title: string; message: string; color: string }> = isEn ? {
+  const statusMessages: Record<string, { title: string; message: string }> = isEn ? {
     processing: {
       title: 'Your order is being prepared',
-      message: 'Your order is confirmed and we are getting it ready to ship.',
-      color: primaryColor
+      message: 'Your order is confirmed and we are getting it ready to ship.'
     },
     shipped: {
       title: 'Your order is on its way',
-      message: 'Your order has shipped. ' + (trackingNumber ? `Tracking number: ${trackingNumber}` : ''),
-      color: primaryColor
+      message: 'Your order has shipped. ' + (trackingNumber ? `Tracking number: ${trackingNumber}` : '')
     },
     delivered: {
       title: 'Your order has been delivered',
-      message: 'Your order has arrived. We hope everything is just right.',
-      color: primaryColor
+      message: 'Your order has arrived. We hope everything is just right.'
     },
     cancelled: {
       title: 'Your order has been cancelled',
-      message: 'Your order has been cancelled. If you have any questions, please get in touch.',
-      color: primaryColor
+      message: 'Your order has been cancelled. If you have any questions, please get in touch.'
     }
   } : {
     processing: {
       title: 'Tu pedido está siendo procesado',
-      message: 'Tu pedido ha sido confirmado y está siendo preparado para el envío.',
-      color: primaryColor
+      message: 'Tu pedido ha sido confirmado y está siendo preparado para el envío.'
     },
     shipped: {
       title: '¡Tu pedido ha sido enviado!',
-      message: 'Tu pedido está en camino. ' + (trackingNumber ? `Número de rastreo: ${trackingNumber}` : ''),
-      color: primaryColor
+      message: 'Tu pedido está en camino. ' + (trackingNumber ? `Número de rastreo: ${trackingNumber}` : '')
     },
     delivered: {
       title: '¡Tu pedido ha sido entregado!',
-      message: 'Tu pedido ha llegado a su destino. ¡Esperamos que disfrutes tus productos!',
-      color: primaryColor
+      message: 'Tu pedido ha llegado a su destino. ¡Esperamos que disfrutes tus productos!'
     },
     cancelled: {
       title: 'Tu pedido ha sido cancelado',
-      message: 'Tu pedido ha sido cancelado. Si tienes alguna pregunta, por favor contáctanos.',
-      color: primaryColor
+      message: 'Tu pedido ha sido cancelado. Si tienes alguna pregunta, por favor contáctanos.'
     }
   };
 
@@ -953,8 +945,7 @@ export const createOrderStatusUpdateEmail = (
     title: isEn ? 'Your order was updated' : 'Actualización de tu pedido',
     message: isEn
       ? `Your order changed from "${estadoLegible(oldStatus)}" to "${estadoLegible(newStatus)}".`
-      : `El estado de tu pedido ha cambiado de "${estadoLegible(oldStatus)}" a "${estadoLegible(newStatus)}".`,
-    color: primaryColor
+      : `El estado de tu pedido ha cambiado de "${estadoLegible(oldStatus)}" a "${estadoLegible(newStatus)}".`
   };
 
   // El chip del estado usa los mismos colores que el panel.
@@ -988,10 +979,10 @@ export const createOrderStatusUpdateEmail = (
       <style>
         body { font-family: ${EMAIL_FONT}; line-height: 1.6; color: ${BRAND.foreground}; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: ${statusInfo.color}; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background-color: ${BRAND.accent}; color: ${BRAND.foreground}; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 1px solid ${BRAND.border}; }
         .header-logo { max-width: 180px; height: auto; margin-bottom: 15px; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: white; }
-        .content { background-color: ${BRAND.muted}; padding: 30px; border-radius: 0 0 8px 8px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: ${BRAND.foreground}; }
+        .content { background-color: ${color50}; padding: 30px; border-radius: 0 0 8px 8px; }
         .order-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .order-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
         .status-badge { 
