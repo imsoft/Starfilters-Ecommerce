@@ -1,31 +1,61 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
-import { Button } from "@/components/ui/button";
-import { getOrderByUuid, getOrderItems, updateOrderStatus } from "@/lib/database";
-import { sendEmail, createOrderStatusUpdateEmail } from "@/lib/email";
-import type { Order, OrderItem } from "@/lib/database";
-
+import { getOrderByUuid, getOrderItems } from "@/lib/database";
+import { changeOrderStatus } from "@/lib/order-status";
+import { getDeliveryOption, getDeliveryLabel, isPickupMethod } from "@/lib/delivery-options";
+import type { DeliveryMethod } from "@/lib/delivery-options";
 import { requireAdmin } from "@/lib/auth-utils";
 
-// Solo administradores: esta página se podía abrir sin haber iniciado sesión.
+export const prerender = false;
+
+// Solo administradores: la comprobación va ANTES de procesar el POST.
 const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
 if (redirigirSiNoEsAdmin) {
   return Astro.redirect(redirigirSiNoEsAdmin);
 }
 
 const { id } = Astro.params;
-
 if (!id) {
   return Astro.redirect('/admin/orders?error=invalid_id');
 }
 
-// Obtener la orden por UUID
-const order = await getOrderByUuid(id);
+let order = await getOrderByUuid(id);
 if (!order) {
   return Astro.redirect('/admin/orders?error=order_not_found');
 }
 
-// Obtener los items de la orden
+// --- Cambio de estado -------------------------------------------------------
+// Todo pasa por changeOrderStatus, la misma función que usa la API: guarda el
+// estado, guarda la guía y avisa al cliente.
+let errorAccion: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const nuevoEstado = String(formData.get('status') || '');
+  const carrier = formData.get('carrier');
+  const trackingNumber = formData.get('tracking_number');
+  // La casilla solo llega en el formulario cuando está marcada.
+  const avisar = formData.get('notify') !== null;
+
+  const resultado = await changeOrderStatus({
+    orderId: order.id,
+    newStatus: nuevoEstado,
+    carrier: carrier !== null ? String(carrier).trim() : undefined,
+    trackingNumber: trackingNumber !== null ? String(trackingNumber).trim() : undefined,
+    notifyCustomer: avisar,
+  });
+
+  if (resultado.ok) {
+    return Astro.redirect(`/admin/orders/${id}?ok=1`);
+  }
+
+  errorAccion = resultado.reason === 'invalid_status'
+    ? 'Ese estado no existe.'
+    : 'No se pudo guardar el cambio. Intenta de nuevo.';
+}
+
+const guardado = Astro.url.searchParams.get('ok') === '1';
+
 const orderItems = await getOrderItems(order.id);
 
 // Datos fiscales: se guardan como JSON y solo existen si el cliente pidió
@@ -47,515 +77,377 @@ const billingFields: Array<{ label: string; value?: string }> = billing ? [
   { label: 'Régimen fiscal', value: billing.taxRegime },
   { label: 'Uso de CFDI', value: billing.cfdiUse },
   { label: 'Código postal fiscal', value: billing.postalCode },
-  { label: 'Correo para la factura', value: billing.email },
+  { label: 'Enviar la factura a', value: billing.email },
 ].filter(f => f.value) : [];
 
-// Función para formatear fecha
+const requiereFactura = billingFields.length > 0;
+
 function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
+  return new Intl.DateTimeFormat('es-MX', {
+    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  }).format(new Date(date));
 }
 
-// Función para formatear moneda
 // Los pedidos pueden estar en pesos o en dólares (el sitio en inglés cobra en
 // USD), así que el importe se formatea con la moneda de cada orden.
 function formatCurrency(amount: number, currency: string = 'MXN'): string {
   const moneda = currency === 'USD' ? 'USD' : 'MXN';
   return new Intl.NumberFormat(moneda === 'USD' ? 'en-US' : 'es-MX', {
-    style: 'currency',
-    currency: moneda,
+    style: 'currency', currency: moneda,
   }).format(amount) + ` ${moneda}`;
 }
 
-// Función para obtener el color del badge según el estado
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'processing':
-      return 'bg-blue-100 text-blue-800';
-    case 'shipped':
-      return 'bg-purple-100 text-purple-800';
-    case 'delivered':
-      return 'bg-green-100 text-green-800';
-    case 'cancelled':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-}
+const ESTADOS: Record<string, { texto: string; badge: string }> = {
+  pending:    { texto: 'Pendiente',      badge: 'bg-yellow-100 text-yellow-800' },
+  processing: { texto: 'En preparación', badge: 'bg-blue-100 text-blue-800' },
+  shipped:    { texto: 'Enviado',        badge: 'bg-purple-100 text-purple-800' },
+  delivered:  { texto: 'Entregado',      badge: 'bg-green-100 text-green-800' },
+  cancelled:  { texto: 'Cancelado',      badge: 'bg-red-100 text-red-800' },
+};
 
-// Función para obtener el texto del estado
-function getStatusText(status: string): string {
-  switch (status) {
-    case 'pending':
-      return 'Pendiente';
-    case 'processing':
-      return 'Procesando';
-    case 'shipped':
-      return 'Enviado';
-    case 'delivered':
-      return 'Entregado';
-    case 'cancelled':
-      return 'Cancelado';
-    default:
-      return status;
-  }
-}
+const estadoActual = ESTADOS[order.status] || { texto: order.status, badge: 'bg-gray-100 text-gray-800' };
+const cancelada = order.status === 'cancelled';
 
-// Manejar actualización de estado
-if (Astro.request.method === 'POST') {
-  console.log('📝 POST recibido para actualizar estado');
-  const formData = await Astro.request.formData();
-  const newStatus = formData.get('status') as string;
-  
-  console.log('📋 Nuevo estado:', newStatus, 'Estado actual:', order.status);
-  
-  if (newStatus && newStatus !== order.status) {
-    console.log('✅ Actualizando estado...');
-    const oldStatus = order.status;
-    const success = await updateOrderStatus(order.id, newStatus);
-    console.log('✅ Resultado:', success);
-    
-    if (success) {
-      // Enviar email al comprador sobre el cambio de estado
-      try {
-        const orderDate = order.created_at 
-          ? new Date(order.created_at).toLocaleDateString('es-MX', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : new Date().toLocaleDateString('es-MX');
+// --- Entrega ----------------------------------------------------------------
+// delivery_method es nuevo: las órdenes anteriores no lo tienen y hay que
+// decirlo en vez de inventar una forma de entrega.
+const metodo = (order.delivery_method || null) as DeliveryMethod | null;
+const opcionEntrega = metodo ? getDeliveryOption(metodo) : undefined;
+const etiquetaEntrega = metodo ? getDeliveryLabel(metodo) : 'No registrada';
+const esRecoger = metodo ? isPickupMethod(metodo) : false;
+const plazoEntrega = opcionEntrega?.days.es || '';
+const direccionSucursal = opcionEntrega?.address?.text || '';
+// Solo la paquetería nacional necesita guía; el reparto propio y las
+// recolecciones no tienen número que capturar.
+const necesitaGuia = metodo === 'paqueteria';
 
-        const emailData = createOrderStatusUpdateEmail(
-          order.customer_name,
-          order.order_number,
-          oldStatus,
-          newStatus,
-          orderDate,
-          orderItems.map(item => ({
-            name: item.product_name,
-            quantity: item.quantity,
-            price: item.price
-          })),
-          order.total_amount,
-          undefined,
-          order.currency
-        );
+// --- Seguimiento ------------------------------------------------------------
+// Solo se guarda el estado actual y su fecha de cambio, así que el hito
+// alcanzado lleva fecha y los siguientes no.
+const ORDEN_ESTADOS = ['pending', 'processing', 'shipped', 'delivered'];
+const indiceActual = ORDEN_ESTADOS.indexOf(order.status);
 
-        emailData.to = order.customer_email;
+const hitos = [
+  { clave: 'pending',    titulo: 'Pago confirmado',  detalle: 'Orden creada e inventario descontado' },
+  { clave: 'processing', titulo: 'En preparación',   detalle: 'Se está surtiendo del almacén' },
+  { clave: 'shipped',    titulo: esRecoger ? 'Listo para recoger' : 'Enviado', detalle: esRecoger ? 'El cliente puede pasar por él' : 'Salió a entrega' },
+  { clave: 'delivered',  titulo: 'Entregado',        detalle: 'Pedido cerrado' },
+].map((hito, i) => ({
+  ...hito,
+  cumplido: !cancelada && i <= indiceActual,
+  esActual: !cancelada && i === indiceActual,
+  // El primer hito ocurrió al crearse la orden; el actual, en el último cambio.
+  fecha: i === 0
+    ? formatDate(order.created_at)
+    : (!cancelada && i === indiceActual ? formatDate(order.updated_at) : ''),
+}));
 
-        const emailSent = await sendEmail(emailData);
+// --- Siguiente paso ---------------------------------------------------------
+const SIGUIENTE: Record<string, { estado: string; titulo: string; boton: string; explicacion: string }> = {
+  pending: {
+    estado: 'processing',
+    titulo: 'Marcar en preparación',
+    boton: 'Empezar a preparar',
+    explicacion: 'Avisa al cliente que ya se está surtiendo su pedido.',
+  },
+  processing: {
+    estado: 'shipped',
+    titulo: esRecoger ? 'Marcar como listo para recoger' : 'Marcar como enviado',
+    boton: esRecoger ? 'Marcar listo' : 'Confirmar envío',
+    explicacion: esRecoger
+      ? 'Avisa al cliente que ya puede pasar por su pedido a la sucursal.'
+      : necesitaGuia
+        ? 'Se le manda al cliente un correo con la paquetería y el número de guía.'
+        : 'Avisa al cliente que su pedido va en camino.',
+  },
+  shipped: {
+    estado: 'delivered',
+    titulo: 'Cerrar el pedido',
+    boton: 'Marcar como entregado',
+    explicacion: 'Confirma que el cliente ya recibió su pedido.',
+  },
+};
 
-        if (emailSent) {
-          console.log(`✅ Email de actualización de estado enviado al comprador (${oldStatus} → ${newStatus})`);
-        } else {
-          console.log('⚠️ Error al enviar email de actualización de estado');
-        }
-      } catch (emailError) {
-        console.error('⚠️ Error al enviar email de actualización de estado:', emailError);
-        // No fallar la actualización si el email falla
-      }
+const siguientePaso = cancelada ? null : SIGUIENTE[order.status] || null;
 
-      return Astro.redirect(`/admin/orders/${id}?success=status_updated`);
-    } else {
-      console.error('❌ Error al actualizar estado');
-    }
-  } else {
-    console.log('⚠️ No se actualizó el estado (mismo estado o estado inválido)');
-  }
-}
+const subtotal = orderItems.reduce((suma, item) => suma + item.price * item.quantity, 0);
 ---
+<AdminLayout title={`Orden ${order.order_number}`}>
+  <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
-<AdminLayout title="Detalle de Orden">
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="mb-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-3xl font-bold tracking-tight text-foreground">Orden {order.order_number}</h1>
-            <p class="mt-2 text-muted-foreground">
-              Creada el {formatDate(order.created_at)}
+    {guardado && (
+      <div class="mb-6 flex gap-3 rounded-lg border border-green-300 bg-green-50 p-4">
+        <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-sm font-medium text-green-800">Cambio guardado.</p>
+      </div>
+    )}
+
+    {errorAccion && (
+      <div class="mb-6 flex gap-3 rounded-lg border border-red-300 bg-red-50 p-4">
+        <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-sm font-medium text-red-800">{errorAccion}</p>
+      </div>
+    )}
+
+    <!-- Encabezado -->
+    <div class="mb-7 flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <div class="mb-1.5 flex flex-wrap items-center gap-2.5">
+          <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{order.order_number}</h1>
+          <span class={`rounded-full px-3 py-1 text-xs font-semibold ${estadoActual.badge}`}>{estadoActual.texto}</span>
+        </div>
+        <p class="text-sm text-muted-foreground">
+          {order.customer_name} · {order.customer_email}{order.customer_phone && ` · ${order.customer_phone}`}
+        </p>
+      </div>
+      <a href="/admin/orders" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Volver a órdenes
+      </a>
+    </div>
+
+    <!-- Franja de operación: lo que decide el trabajo, antes que el detalle -->
+    <div class="mb-7 grid grid-cols-2 overflow-hidden rounded-xl border border-border lg:grid-cols-4">
+      <div class="border-b border-r border-border p-4 lg:border-b-0">
+        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Entrega</p>
+        <p class="text-sm font-semibold text-foreground">{etiquetaEntrega}</p>
+      </div>
+      <div class="border-b border-border p-4 lg:border-b-0 lg:border-r">
+        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Plazo prometido</p>
+        <p class="text-sm font-semibold text-foreground">{plazoEntrega || '—'}</p>
+      </div>
+      <div class="border-r border-border p-4">
+        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Factura</p>
+        <p class={`text-sm font-semibold ${requiereFactura ? 'text-amber-700' : 'text-foreground'}`}>
+          {requiereFactura ? 'Sí, requiere CFDI' : 'No solicitó'}
+        </p>
+      </div>
+      <div class="p-4">
+        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Total cobrado</p>
+        <p class="text-sm font-semibold text-foreground">{formatCurrency(order.total_amount, order.currency)}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 items-start gap-7 lg:grid-cols-[1fr_22rem]">
+
+      <div class="space-y-6">
+
+        <!-- Seguimiento -->
+        <div class="rounded-xl border border-border p-6">
+          <h2 class="mb-6 text-[17px] font-bold tracking-tight text-foreground">Seguimiento</h2>
+
+          {cancelada ? (
+            <div class="rounded-lg bg-red-50 p-4">
+              <p class="text-sm font-semibold text-red-800">Pedido cancelado</p>
+              <p class="mt-1 text-sm text-red-700">{formatDate(order.updated_at)}</p>
+            </div>
+          ) : (
+            <div>
+              {hitos.map((hito, i) => (
+                <div class="grid grid-cols-[28px_1fr] gap-4">
+                  <div class="flex flex-col items-center">
+                    {hito.cumplido ? (
+                      <span class="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-full bg-green-500">
+                        <svg class="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"></path>
+                        </svg>
+                      </span>
+                    ) : (
+                      <span class="h-[26px] w-[26px] flex-shrink-0 rounded-full border-2 border-border bg-background"></span>
+                    )}
+                    {i < hitos.length - 1 && (
+                      <span class={`w-0.5 flex-1 ${hito.cumplido ? 'bg-green-500' : 'bg-border'}`} style="min-height: 26px;"></span>
+                    )}
+                  </div>
+                  <div class={i < hitos.length - 1 ? 'pb-5' : ''}>
+                    <p class={`text-sm font-semibold ${hito.cumplido ? 'text-foreground' : 'text-muted-foreground'}`}>{hito.titulo}</p>
+                    <p class="mt-0.5 text-[13px] text-muted-foreground">
+                      {hito.fecha ? hito.fecha : hito.cumplido ? hito.detalle : 'Pendiente'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {order.tracking_number && (
+            <div class="mt-5 rounded-lg bg-muted p-4">
+              <p class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Guía</p>
+              <p class="mt-1.5 text-sm font-semibold text-foreground">
+                {order.shipping_carrier ? `${order.shipping_carrier} · ` : ''}{order.tracking_number}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <!-- Siguiente paso -->
+        {siguientePaso && (
+          <form method="POST" class="rounded-xl border-2 border-foreground p-6">
+            <p class="mb-1 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Siguiente paso</p>
+            <h2 class="mb-1.5 text-lg font-bold tracking-tight text-foreground">{siguientePaso.titulo}</h2>
+            <p class="mb-5 text-sm leading-relaxed text-muted-foreground">{siguientePaso.explicacion}</p>
+
+            <input type="hidden" name="status" value={siguientePaso.estado} />
+
+            {necesitaGuia && siguientePaso.estado === 'shipped' && (
+              <div class="mb-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div>
+                  <label for="carrier" class="mb-1.5 block text-[13px] font-semibold text-foreground">Paquetería</label>
+                  <input
+                    type="text"
+                    id="carrier"
+                    name="carrier"
+                    value={order.shipping_carrier || ''}
+                    placeholder="Estafeta, FedEx, DHL…"
+                    class="block w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label for="tracking_number" class="mb-1.5 block text-[13px] font-semibold text-foreground">Número de guía</label>
+                  <input
+                    type="text"
+                    id="tracking_number"
+                    name="tracking_number"
+                    value={order.tracking_number || ''}
+                    placeholder="794512338001"
+                    class="block w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+            )}
+
+            <label class="mb-5 flex items-center gap-2.5 text-sm text-foreground">
+              <input type="checkbox" name="notify" checked class="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+              Avisarle a {order.customer_name.split(' ')[0]} por correo
+            </label>
+
+            <div class="flex flex-wrap gap-2.5">
+              <button type="submit" class="rounded-md bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-90">
+                {siguientePaso.boton}
+              </button>
+            </div>
+          </form>
+        )}
+
+        <!-- Correcciones: regresar o cancelar -->
+        {!cancelada && (
+          <div class="rounded-xl border border-border p-5">
+            <p class="mb-3.5 text-[13px] font-semibold text-foreground">¿Marcaste algo por error?</p>
+            <div class="flex flex-wrap gap-2.5">
+              {order.status !== 'pending' && (
+                <form method="POST">
+                  <input type="hidden" name="status" value={ORDEN_ESTADOS[Math.max(indiceActual - 1, 0)]} />
+                  <button type="submit" class="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+                    Regresar al paso anterior
+                  </button>
+                </form>
+              )}
+              <form method="POST">
+                <input type="hidden" name="status" value="cancelled" />
+                <input type="hidden" name="notify" value="on" />
+                <button type="submit" class="rounded-md border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50">
+                  Cancelar pedido
+                </button>
+              </form>
+            </div>
+            <p class="mt-3 text-xs text-muted-foreground">
+              Regresar un paso no le manda correo al cliente. Cancelar sí le avisa.
             </p>
           </div>
-          <a href="/admin/orders">
-            <Button variant="outline" className="border-border text-foreground hover:bg-muted">
-              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-              </svg>
-              Volver a Órdenes
-            </Button>
-          </a>
+        )}
+
+        <!-- Productos -->
+        <div class="rounded-xl border border-border p-6">
+          <h2 class="mb-4 text-[17px] font-bold tracking-tight text-foreground">Qué se prepara</h2>
+          {orderItems.length === 0 ? (
+            <p class="py-6 text-center text-sm text-muted-foreground">Esta orden no tiene productos registrados.</p>
+          ) : (
+            <div class="space-y-3">
+              {orderItems.map((item) => (
+                <div class="flex items-center gap-4">
+                  {item.image_url ? (
+                    <img class="h-12 w-12 flex-shrink-0 rounded-md object-cover" src={item.image_url} alt={item.product_name} loading="lazy" />
+                  ) : (
+                    <span class="h-12 w-12 flex-shrink-0 rounded-md bg-muted"></span>
+                  )}
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-semibold text-foreground">{item.product_name}</p>
+                    <p class="mt-0.5 text-[13px] text-muted-foreground">{formatCurrency(item.price, order.currency)} c/u</p>
+                  </div>
+                  <p class="text-[15px] font-bold text-foreground">×{item.quantity}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <!-- Información principal -->
-        <div class="lg:col-span-2 space-y-8">
-          <!-- Estado de la orden -->
-          <div class="rounded-lg border border-border bg-background p-6">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold text-foreground">Estado de la Orden</h2>
-              <span class={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                {getStatusText(order.status)}
-              </span>
-            </div>
-            
-            <div class="space-y-4">
-              <!-- Orden recibida - Siempre completada -->
-              <div class="flex items-center space-x-3">
-                <div class="flex-shrink-0">
-                  <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                  </div>
-                </div>
-                <div class="flex-1">
-                  <p class="text-sm font-medium text-foreground">Orden recibida</p>
-                  <p class="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
-                </div>
-              </div>
+      <!-- Columna lateral -->
+      <div class="space-y-4">
 
-              <!-- Procesando -->
-              <div class="flex items-center space-x-3">
-                <div class="flex-shrink-0">
-                  <div class={`h-8 w-8 rounded-full flex items-center justify-center ${
-                    ['processing', 'shipped', 'delivered'].includes(order.status) 
-                      ? 'bg-green-500' 
-                      : 'bg-gray-300'
-                  }`}>
-                    <svg class={`h-4 w-4 ${
-                      ['processing', 'shipped', 'delivered'].includes(order.status) 
-                        ? 'text-white' 
-                        : 'text-gray-500'
-                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                  </div>
-                </div>
-                <div class="flex-1">
-                  <p class={`text-sm font-medium ${
-                    ['processing', 'shipped', 'delivered'].includes(order.status) 
-                      ? 'text-foreground' 
-                      : 'text-muted-foreground'
-                  }`}>Procesando</p>
-                  <p class="text-sm text-muted-foreground">
-                    {['processing', 'shipped', 'delivered'].includes(order.status) 
-                      ? 'Completado' 
-                      : 'Pendiente'}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Enviado -->
-              <div class="flex items-center space-x-3">
-                <div class="flex-shrink-0">
-                  <div class={`h-8 w-8 rounded-full flex items-center justify-center ${
-                    ['shipped', 'delivered'].includes(order.status) 
-                      ? 'bg-green-500' 
-                      : 'bg-gray-300'
-                  }`}>
-                    <svg class={`h-4 w-4 ${
-                      ['shipped', 'delivered'].includes(order.status) 
-                        ? 'text-white' 
-                        : 'text-gray-500'
-                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                    </svg>
-                  </div>
-                </div>
-                <div class="flex-1">
-                  <p class={`text-sm font-medium ${
-                    ['shipped', 'delivered'].includes(order.status) 
-                      ? 'text-foreground' 
-                      : 'text-muted-foreground'
-                  }`}>Enviado</p>
-                  <p class="text-sm text-muted-foreground">
-                    {['shipped', 'delivered'].includes(order.status) 
-                      ? 'Completado' 
-                      : 'Pendiente'}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Entregado -->
-              <div class="flex items-center space-x-3">
-                <div class="flex-shrink-0">
-                  <div class={`h-8 w-8 rounded-full flex items-center justify-center ${
-                    order.status === 'delivered' 
-                      ? 'bg-green-500' 
-                      : 'bg-gray-300'
-                  }`}>
-                    <svg class={`h-4 w-4 ${
-                      order.status === 'delivered' 
-                        ? 'text-white' 
-                        : 'text-gray-500'
-                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                  </div>
-                </div>
-                <div class="flex-1">
-                  <p class={`text-sm font-medium ${
-                    order.status === 'delivered' 
-                      ? 'text-foreground' 
-                      : 'text-muted-foreground'
-                  }`}>Entregado</p>
-                  <p class="text-sm text-muted-foreground">
-                    {order.status === 'delivered' 
-                      ? 'Completado' 
-                      : 'Pendiente'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-6 space-y-2">
-              {order.status === 'pending' && (
-                <form method="POST" class="inline">
-                  <input type="hidden" name="status" value="processing">
-                  <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                    Marcar como Procesando
-                  </Button>
-                </form>
-              )}
-              
-              {order.status === 'processing' && (
-                <form method="POST" class="inline">
-                  <input type="hidden" name="status" value="shipped">
-                  <Button type="submit" variant="outline" className="border-border text-foreground hover:bg-muted">
-                    Marcar como Enviado
-                  </Button>
-                </form>
-              )}
-              
-              {order.status === 'shipped' && (
-                <form method="POST" class="inline">
-                  <input type="hidden" name="status" value="delivered">
-                  <Button type="submit" variant="outline" className="border-border text-foreground hover:bg-muted">
-                    Marcar como Entregado
-                  </Button>
-                </form>
-              )}
-            </div>
+        <div class="overflow-hidden rounded-xl border border-border">
+          <div class="bg-foreground px-4 py-3.5">
+            <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-background">
+              {esRecoger ? 'Recoge en' : 'Enviar a'}
+            </p>
           </div>
-
-          <!-- Productos de la orden -->
-          <div class="rounded-lg border border-border bg-background p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Productos</h2>
-            
-            <div class="space-y-4">
-              {orderItems.length === 0 ? (
-                <p class="text-muted-foreground text-center py-8">No hay productos en esta orden</p>
-              ) : (
-                orderItems.map((item) => (
-                  <div class="flex items-center space-x-4 p-4 rounded-lg border border-border">
-                    <div class="h-16 w-16 flex-shrink-0">
-                      {item.image_url ? (
-                        <img class="h-16 w-16 rounded-md object-cover" src={item.image_url} alt={item.product_name}>
-                      ) : (
-                        <div class="h-16 w-16 rounded-md bg-muted flex items-center justify-center">
-                          <svg class="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                    <div class="flex-1">
-                      <h3 class="text-sm font-medium text-foreground">{item.product_name}</h3>
-                      <p class="text-sm text-muted-foreground">Producto ID: {item.product_id}</p>
-                    </div>
-                    <div class="text-right">
-                      <p class="text-sm font-medium text-foreground">Cantidad: {item.quantity}</p>
-                      <p class="text-sm font-medium text-foreground">{formatCurrency(item.price, order.currency)} c/u</p>
-                      <p class="text-sm font-semibold text-foreground">{formatCurrency(item.price * item.quantity, order.currency)}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <!-- Dirección de envío -->
-          <div class="rounded-lg border border-border bg-background p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Dirección de Envío</h2>
-            
-            <div class="space-y-2">
-              <p class="text-sm text-foreground">
-                <span class="font-medium">{order.customer_name}</span>
-              </p>
-              {order.shipping_address && (
-                <p class="text-sm text-muted-foreground">
-                  {order.shipping_address}
-                </p>
-              )}
-              {order.customer_phone && (
-                <p class="text-sm text-muted-foreground">
-                  Teléfono: {order.customer_phone}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <!-- Datos de facturación (solo si el cliente los capturó) -->
-          <div class="rounded-lg border border-border bg-background p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Datos de Facturación</h2>
-
-            {billingFields.length > 0 ? (
-              <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                {billingFields.map((field) => (
-                  <div>
-                    <dt class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{field.label}</dt>
-                    <dd class="mt-1 text-sm text-foreground break-words">{field.value}</dd>
-                  </div>
-                ))}
-              </dl>
+          <div class="p-4">
+            {esRecoger ? (
+              <p class="text-[13px] leading-relaxed text-muted-foreground">{direccionSucursal || 'Sucursal no registrada'}</p>
             ) : (
-              <p class="text-sm text-muted-foreground">Este pedido no solicitó factura.</p>
+              <div>
+                <p class="mb-1.5 text-sm font-semibold text-foreground">{order.customer_name}</p>
+                <p class="text-[13px] leading-relaxed text-muted-foreground">{order.shipping_address || 'Sin dirección registrada'}</p>
+              </div>
+            )}
+            {order.customer_phone && (
+              <p class="mt-3 text-[13px] text-muted-foreground">{order.customer_phone}</p>
             )}
           </div>
         </div>
 
-        <!-- Panel lateral -->
-        <div class="space-y-8">
-          <!-- Resumen de la orden -->
-          <div class="rounded-lg border border-border bg-background p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Resumen de la Orden</h2>
-            
-            <div class="space-y-3">
-              <div class="flex justify-between">
-                <span class="text-sm text-muted-foreground">Subtotal</span>
-                <span class="text-sm font-medium text-foreground">{formatCurrency(order.total_amount, order.currency)}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm text-muted-foreground">Envío</span>
-                <span class="text-sm font-medium text-foreground">Incluido</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm text-muted-foreground">Impuestos</span>
-                <span class="text-sm font-medium text-foreground">Incluido</span>
-              </div>
-              <div class="border-t border-border pt-3">
-                <div class="flex justify-between">
-                  <span class="text-base font-semibold text-foreground">Total</span>
-                  <span class="text-base font-semibold text-foreground">{formatCurrency(order.total_amount, order.currency)}</span>
+        {requiereFactura ? (
+          <div class="overflow-hidden rounded-xl border border-amber-200 bg-amber-50">
+            <div class="border-b border-amber-200 px-4 py-3.5">
+              <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-amber-800">Requiere factura</p>
+            </div>
+            <div class="space-y-2.5 p-4">
+              {billingFields.map((field) => (
+                <div class="flex justify-between gap-3">
+                  <span class="text-xs text-amber-900">{field.label}</span>
+                  <span class="text-right text-[13px] font-semibold text-foreground">{field.value}</span>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
+        ) : (
+          <div class="rounded-xl border border-border p-4">
+            <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Facturación</p>
+            <p class="text-[13px] leading-relaxed text-muted-foreground">Este pedido no solicitó factura.</p>
+          </div>
+        )}
 
-          <!-- Información del cliente -->
-          <div class="rounded-lg border border-border bg-background p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Cliente</h2>
-            
-            <div class="space-y-3">
-              <div>
-                <p class="text-sm font-medium text-foreground">{order.customer_name}</p>
-                <p class="text-sm text-muted-foreground">{order.customer_email}</p>
-                {order.customer_phone && (
-                  <p class="text-sm text-muted-foreground">{order.customer_phone}</p>
-                )}
-              </div>
-              
-              <div class="pt-3 border-t border-border">
-                <p class="text-sm text-muted-foreground mb-2">Orden creada:</p>
-                <p class="text-sm font-medium text-foreground">{formatDate(order.created_at)}</p>
-              </div>
-              
-              <div class="pt-3 border-t border-border">
-                <p class="text-sm text-muted-foreground mb-2">Estado actual:</p>
-                <p class="text-sm font-medium text-foreground">{getStatusText(order.status)}</p>
-              </div>
+        <div class="rounded-xl border border-border p-4">
+          <p class="mb-3 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Resumen</p>
+          <div class="space-y-2.5">
+            <div class="flex justify-between">
+              <span class="text-[13px] text-muted-foreground">Productos</span>
+              <span class="text-[13px] text-foreground">{formatCurrency(subtotal, order.currency)}</span>
+            </div>
+            <div class="flex justify-between border-t border-border pt-2.5">
+              <span class="text-sm font-bold text-foreground">Total cobrado</span>
+              <span class="text-sm font-bold text-foreground">{formatCurrency(order.total_amount, order.currency)}</span>
             </div>
           </div>
-
-          <!-- Acciones rápidas -->
-          <div class="rounded-lg border border-border bg-background p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Acciones</h2>
-            
-            <div class="space-y-3">
-              {order.status === 'pending' && (
-                <form method="POST" class="w-full">
-                  <input type="hidden" name="status" value="processing">
-                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Procesar Orden
-                  </Button>
-                </form>
-              )}
-              
-              {order.status === 'processing' && (
-                <form method="POST" class="w-full">
-                  <input type="hidden" name="status" value="shipped">
-                  <Button type="submit" variant="outline" className="w-full border-border text-foreground hover:bg-muted">
-                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                    </svg>
-                    Marcar como Enviado
-                  </Button>
-                </form>
-              )}
-              
-              {order.status === 'shipped' && (
-                <form method="POST" class="w-full">
-                  <input type="hidden" name="status" value="delivered">
-                  <Button type="submit" variant="outline" className="w-full border-border text-foreground hover:bg-muted">
-                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Marcar como Entregado
-                  </Button>
-                </form>
-              )}
-              
-              {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                <form method="POST" class="w-full">
-                  <input type="hidden" name="status" value="cancelled">
-                  <Button type="submit" variant="outline" className="w-full border-border text-red-600 hover:bg-red-50">
-                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                    Cancelar Orden
-                  </Button>
-                </form>
-              )}
-            </div>
-          </div>
-
-          <!-- Notas de la orden -->
-          <div class="rounded-lg border border-border bg-background p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Notas</h2>
-            
-            <div class="space-y-3">
-              <div class="p-3 rounded-md bg-muted">
-                <p class="text-sm text-muted-foreground">
-                  <span class="font-medium text-foreground">Sistema:</span> Orden creada automáticamente
-                </p>
-                <p class="text-xs text-muted-foreground mt-1">{formatDate(order.created_at)}</p>
-              </div>
-              
-              {order.status !== 'pending' && (
-                <div class="p-3 rounded-md bg-muted">
-                  <p class="text-sm text-muted-foreground">
-                    <span class="font-medium text-foreground">Estado actualizado:</span> {getStatusText(order.status)}
-                  </p>
-                  <p class="text-xs text-muted-foreground mt-1">{formatDate(order.updated_at)}</p>
-                </div>
-              )}
-            </div>
-          </div>
+          <p class="mt-3 text-xs text-muted-foreground">Creada el {formatDate(order.created_at)}</p>
         </div>
       </div>
+    </div>
   </div>
 </AdminLayout>

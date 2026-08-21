@@ -5,6 +5,8 @@ import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 import { getHeroImageUrl, getHeroPlaceholderUrl } from "@/lib/image-utils";
+import { buildCaseStudySections } from "@/lib/case-study-content";
+import { getWhatsAppNumber } from "@/lib/site-settings-service";
 
 export const prerender = false;
 
@@ -32,6 +34,29 @@ const tags = getTagsArray(caseStudy.tags);
 
 const formatDate = (date: Date) =>
   new Intl.DateTimeFormat('es-MX', { year: 'numeric', month: 'long' }).format(new Date(date));
+
+// Reto / Solución / Resultados, ya numeradas sobre lo que el caso tiene
+// capturado: un caso sin reto empieza en 01, no en 02.
+const sections = buildCaseStudySections([
+  { label: 'El reto', body: caseStudy.challenge },
+  { label: 'La solución', body: caseStudy.solution },
+  { label: 'Los resultados', body: caseStudy.results },
+]);
+
+// La galería sigue la misma numeración que las secciones de texto.
+const galleryNumber = String(sections.length + 1).padStart(2, '0');
+
+// Ficha del proyecto: solo los datos que el caso realmente tiene.
+const fichaRows = [
+  { label: 'Industria', value: caseStudy.industry },
+  { label: 'Cliente', value: caseStudy.client_name },
+  { label: 'Fecha', value: formatDate(caseStudy.created_at) },
+].filter((row): row is { label: string; value: string } => Boolean(row.value));
+
+const sidebarWhatsappNumber = (await getWhatsAppNumber()) || '523322569541';
+const sidebarWhatsappUrl = `https://wa.me/${sidebarWhatsappNumber}?text=${encodeURIComponent(
+  `Hola, leí el caso "${caseStudy.title}" y me gustaría que me ayuden con un reto de filtración similar.`
+)}`;
 ---
 
 <WebsiteLayout
@@ -51,13 +76,15 @@ const formatDate = (date: Date) =>
   />
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
 
-  <!-- pt-12: el navbar es absolute y mide 104px, y <main> solo aporta 64px.
-       Sin esto la foto de portada quedaba 40px por debajo de la barra. -->
+  <!-- Opción "Dossier técnico": un solo ancho de contenedor de arriba abajo
+       (antes el encabezado usaba max-w-6xl y el cuerpo max-w-4xl, y la página
+       se desalineaba a media lectura), un solo color de acento (el azul de la
+       marca, en vez de los círculos rojo/azul/verde que no eran de ningún
+       lado) y una ficha del proyecto fija a la derecha con los datos duros.
+       pt-12: el navbar es absolute y mide 104px, y <main> solo aporta 64px. -->
   <article class="bg-background pt-12">
-    <!-- Encabezado en dos columnas: la foto ya no ocupa el ancho completo con
-         franjas grises a los lados, y el título entra en la misma pantalla.
-         En móvil las columnas se apilan (foto arriba, datos abajo). -->
-    <div class="mx-auto max-w-6xl px-6 section-pb pt-6">
+    <div class="mx-auto max-w-6xl px-6 pt-6">
+
       <nav class="mb-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         <a href="/" class="hover:text-foreground transition-colors">Inicio</a>
         <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,139 +97,144 @@ const formatDate = (date: Date) =>
         <span class="text-foreground font-medium">{caseStudy.title}</span>
       </nav>
 
-      <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,24rem)_1fr] lg:gap-12">
-        {caseStudy.featured_image ? (
-          <!-- El fondo es la miniatura borrosa (~1 KB): se ve al instante y la
-               foto definitiva la tapa al cargar, sin JavaScript de por medio. -->
-          <figure
-            class="overflow-hidden rounded-2xl border border-border bg-muted shadow-sm"
-            style={getHeroPlaceholderUrl(caseStudy.featured_image)
-              ? `background-image:url('${getHeroPlaceholderUrl(caseStudy.featured_image)}');background-size:cover;background-position:center;`
-              : undefined}
-          >
-            <img
-              src={getHeroImageUrl(caseStudy.featured_image)}
-              alt={caseStudy.title}
-              loading="eager"
-              fetchpriority="high"
-              decoding="async"
-              class="block h-auto w-full"
-            />
-          </figure>
-        ) : (
-          <div class="aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5"></div>
-        )}
-
-        <div>
-          <div class="flex flex-wrap items-center gap-3">
-            <span class="inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-              {caseStudy.industry}
-            </span>
-            {caseStudy.client_name && (
-              <span class="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground">{caseStudy.client_name}</span>
-            )}
-            <span class="text-xs font-medium text-muted-foreground">{formatDate(caseStudy.created_at)}</span>
-          </div>
-
-          <h1 class="mt-4 text-3xl font-bold leading-tight text-foreground sm:text-4xl">
-            {caseStudy.title}
-          </h1>
-
-          {caseStudy.excerpt && (
-            <p class="mt-4 text-lg leading-relaxed text-muted-foreground">{caseStudy.excerpt}</p>
-          )}
-
-          {tags.length > 0 && (
-            <div class="mt-6 flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span class="inline-flex items-center rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-
-    <!-- Contenido principal -->
-    <div class="mx-auto max-w-4xl px-6 py-16">
-      <!-- Tags -->
-
-      <!-- Secciones 1-2-3 -->
-      <div class="space-y-14">
-        {caseStudy.challenge && (
-          <section>
-            <div class="flex items-center gap-3 mb-5">
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-700 font-bold text-sm flex-shrink-0">1</span>
-              <h2 class="text-2xl font-semibold text-foreground">El Reto</h2>
-            </div>
-            <div class="pl-11">
-              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-                {caseStudy.challenge}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {caseStudy.solution && (
-          <section>
-            <div class="flex items-center gap-3 mb-5">
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-sm flex-shrink-0">2</span>
-              <h2 class="text-2xl font-semibold text-foreground">La Solución</h2>
-            </div>
-            <div class="pl-11">
-              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-                {caseStudy.solution}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {caseStudy.results && (
-          <section>
-            <div class="flex items-center gap-3 mb-5">
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-700 font-bold text-sm flex-shrink-0">3</span>
-              <h2 class="text-2xl font-semibold text-foreground">Los Resultados</h2>
-            </div>
-            <div class="pl-11">
-              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-                {caseStudy.results}
-              </div>
-            </div>
-          </section>
-        )}
-      </div>
-
-      <!-- Galería de imágenes -->
-      {caseStudy.gallery_images && caseStudy.gallery_images.length > 0 && (
-        <div class="mt-14">
-          <h2 class="text-2xl font-semibold text-foreground mb-6">Galería del Proyecto</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {caseStudy.gallery_images.map((url, i) => (
-              <button
-                type="button"
-                class="gallery-thumb group relative aspect-square overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                data-src={url}
-                data-index={i}
-                aria-label={`Ver imagen ${i + 1}`}
-              >
-                <img
-                  src={url}
-                  alt={`${caseStudy.title} – imagen ${i + 1}`}
-                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <svg class="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
-                  </svg>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+      <p class="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+        Caso de éxito · {caseStudy.industry}
+      </p>
+      <h1 class="mt-3 max-w-4xl text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl">
+        {caseStudy.title}
+      </h1>
+      {caseStudy.excerpt && (
+        <p class="mt-5 max-w-3xl text-lg leading-relaxed text-gray-600">{caseStudy.excerpt}</p>
       )}
+
+      {caseStudy.featured_image ? (
+        <!-- El fondo es la miniatura borrosa (~1 KB): se ve al instante y la
+             foto definitiva la tapa al cargar, sin JavaScript de por medio. -->
+        <figure
+          class="mt-9 overflow-hidden rounded-2xl border border-border bg-muted"
+          style={getHeroPlaceholderUrl(caseStudy.featured_image)
+            ? `background-image:url('${getHeroPlaceholderUrl(caseStudy.featured_image)}');background-size:cover;background-position:center;`
+            : undefined}
+        >
+          <img
+            src={getHeroImageUrl(caseStudy.featured_image)}
+            alt={caseStudy.title}
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+            class="block h-64 w-full object-cover sm:h-[420px]"
+          />
+        </figure>
+      ) : (
+        <div class="mt-9 h-64 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 sm:h-[420px]"></div>
+      )}
+
+      <div class="mt-14 grid items-start gap-12 lg:grid-cols-[1fr_20rem] lg:gap-14">
+
+        <!-- Columna de lectura -->
+        <div>
+          {sections.map((section) => (
+            <section class="mb-13 last:mb-0">
+              <div class="flex items-baseline gap-3.5 border-b-2 border-foreground pb-3.5">
+                <span class="text-[13px] font-extrabold tracking-[0.1em] text-primary">{section.number}</span>
+                <h2 class="text-2xl font-bold tracking-tight text-foreground">{section.label}</h2>
+              </div>
+              <div class="mt-5 space-y-4">
+                {section.blocks.map((block) => (
+                  block.type === 'paragraph' ? (
+                    <p class="text-[17px] leading-[1.75] text-gray-700">{block.text}</p>
+                  ) : (
+                    <ul class="flex flex-col gap-4">
+                      {block.items.map((item) => (
+                        <li class="flex items-start gap-3.5">
+                          <span class="mt-[9px] h-[7px] w-[7px] flex-shrink-0 rounded-full bg-primary"></span>
+                          <span class="text-[17px] leading-[1.75] text-gray-700">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {caseStudy.gallery_images && caseStudy.gallery_images.length > 0 && (
+            <section class="mt-13">
+              <div class="flex items-baseline gap-3.5 border-b-2 border-foreground pb-3.5">
+                <span class="text-[13px] font-extrabold tracking-[0.1em] text-primary">{galleryNumber}</span>
+                <h2 class="text-2xl font-bold tracking-tight text-foreground">Galería del proyecto</h2>
+              </div>
+              <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {caseStudy.gallery_images.map((url, i) => (
+                  <button
+                    type="button"
+                    class="gallery-thumb group relative aspect-square overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                    data-src={url}
+                    data-index={i}
+                    aria-label={`Ver imagen ${i + 1}`}
+                  >
+                    <img
+                      src={url}
+                      alt={`${caseStudy.title} – imagen ${i + 1}`}
+                      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <svg class="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                      </svg>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <!-- Ficha del proyecto: los datos duros, sin tener que leer el cuerpo.
+             sticky para que sigan a la vista mientras se lee. -->
+        <aside class="lg:sticky lg:top-28">
+          <div class="overflow-hidden rounded-2xl border border-border shadow-sm">
+            <div class="bg-foreground px-5 py-4">
+              <p class="text-xs font-bold uppercase tracking-[0.12em] text-background">Ficha del proyecto</p>
+            </div>
+            {fichaRows.map((row) => (
+              <div class="flex justify-between gap-4 border-b border-border px-5 py-3.5">
+                <span class="text-[13px] text-muted-foreground">{row.label}</span>
+                <span class="text-right text-sm font-semibold text-foreground">{row.value}</span>
+              </div>
+            ))}
+            {tags.length > 0 && (
+              <div class="px-5 pb-5 pt-4">
+                <p class="mb-2.5 text-[13px] text-muted-foreground">Servicios</p>
+                <div class="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <span class="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-xs text-gray-700">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-border p-5">
+            <p class="text-[17px] font-bold tracking-tight text-foreground">¿Tienes un reto similar?</p>
+            <p class="mt-2 text-sm leading-relaxed text-gray-600">
+              Nuestros ingenieros analizan tu caso y proponen la solución de filtración para tu proceso.
+            </p>
+            <a
+              href={sidebarWhatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-4 flex items-center justify-center gap-2 rounded-md bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1ebe5d]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-[18px] w-[18px] flex-shrink-0">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/>
+              </svg>
+              Contactar por WhatsApp
+            </a>
+          </div>
+        </aside>
+      </div>
 
       <!-- Lightbox -->
       <div id="lightbox" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true">
@@ -225,30 +257,30 @@ const formatDate = (date: Date) =>
         <span id="lb-counter" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-white/70"></span>
       </div>
 
-      <!-- Casos relacionados -->
       {related.length > 0 && (
         <div class="mt-16">
-          <h3 class="text-lg font-semibold text-foreground mb-6">Más casos en {caseStudy.industry}</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <h3 class="mb-6 text-xl font-bold tracking-tight text-foreground">Más casos en {caseStudy.industry}</h3>
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
             {related.map((r) => (
               <a
                 href={`/casos-de-exito/${r.slug}`}
-                class="group rounded-xl border border-border bg-background p-4 hover:border-primary/50 hover:shadow-sm transition-all"
+                class="group overflow-hidden rounded-2xl border border-border transition-all hover:border-primary/50 hover:shadow-sm"
               >
                 {r.featured_image && (
-                  <div class="h-28 overflow-hidden rounded-md mb-3">
-                    <img src={r.featured_image} alt={r.title} class="h-full w-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
+                  <div class="h-40 overflow-hidden">
+                    <img src={r.featured_image} alt={r.title} class="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
                   </div>
                 )}
-                <p class="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">{r.title}</p>
+                <div class="p-4">
+                  <p class="text-[15px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary line-clamp-2">{r.title}</p>
+                </div>
               </a>
             ))}
           </div>
         </div>
       )}
 
-      <!-- Back -->
-      <div class="mt-10">
+      <div class="mt-10 section-pb">
         <a href="/casos-de-exito" class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>

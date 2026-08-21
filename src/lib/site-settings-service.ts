@@ -155,6 +155,56 @@ export const updatePhoneNumberCDMX = async (number: string): Promise<boolean> =>
   return await updateSetting('phone_number_cdmx', number);
 };
 
+/**
+ * Correos que reciben las notificaciones internas de pedidos.
+ *
+ * Se guardan como un arreglo JSON en site_settings para que el admin pueda
+ * poner los que quiera desde /admin/settings/notificaciones. Si la lista está
+ * vacía se usa ADMIN_EMAIL del entorno, que es como funcionaba antes: así una
+ * instalación sin configurar sigue avisando a alguien.
+ */
+export const ORDER_NOTIFICATION_EMAILS_KEY = 'order_notification_emails';
+
+export const getOrderNotificationEmails = async (): Promise<string[]> => {
+  const raw = await getSetting(ORDER_NOTIFICATION_EMAILS_KEY);
+
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const emails = parsed
+          .filter((value): value is string => typeof value === 'string')
+          .map((value) => value.trim())
+          .filter(Boolean);
+        if (emails.length > 0) return emails;
+      }
+    } catch (error) {
+      console.error('❌ order_notification_emails ilegible, se usará ADMIN_EMAIL:', error);
+    }
+  }
+
+  const fallback = process.env.ADMIN_EMAIL || import.meta.env.ADMIN_EMAIL;
+  return fallback ? [fallback] : [];
+};
+
+export const updateOrderNotificationEmails = async (emails: string[]): Promise<boolean> => {
+  const clean = emails.map((email) => email.trim()).filter(Boolean);
+  return await updateSetting(ORDER_NOTIFICATION_EMAILS_KEY, JSON.stringify(clean));
+};
+
+/**
+ * Instrucciones internas que se agregan al final del correo de nuevo pedido
+ * (cómo preparar el paquete, a quién avisar, etc.). Opcional.
+ */
+export const getOrderNotificationNote = async (): Promise<string> => {
+  const note = await getSetting('order_notification_note');
+  return note || '';
+};
+
+export const updateOrderNotificationNote = async (note: string): Promise<boolean> => {
+  return await updateSetting('order_notification_note', note);
+};
+
 export default {
   getSetting,
   getAllSettings,
@@ -173,4 +223,8 @@ export default {
   updatePhoneNumber,
   getPhoneNumberCDMX,
   updatePhoneNumberCDMX,
+  getOrderNotificationEmails,
+  updateOrderNotificationEmails,
+  getOrderNotificationNote,
+  updateOrderNotificationNote,
 };

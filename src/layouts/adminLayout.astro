@@ -291,6 +291,21 @@ const currentPath = Astro.url.pathname;
                       WhatsApp
                     </a>
                   </li>
+                  <li>
+                    <a
+                      href="/admin/settings/notificaciones"
+                      class={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                        currentPath.startsWith('/admin/settings/notificaciones')
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                      }`}
+                    >
+                      <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                      </svg>
+                      Notificaciones
+                    </a>
+                  </li>
                 </ul>
               </li>
 
@@ -490,6 +505,16 @@ const currentPath = Astro.url.pathname;
                     }`}
                   >
                     WhatsApp
+                  </a>
+                  <a
+                    href="/admin/settings/notificaciones"
+                    class={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-foreground ${
+                      currentPath.startsWith('/admin/settings/notificaciones')
+                        ? 'bg-primary/10'
+                        : 'hover:bg-primary/10'
+                    }`}
+                  >
+                    Notificaciones
                   </a>
                 </div>
                 <div class="py-6">

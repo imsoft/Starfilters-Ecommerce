@@ -5,6 +5,8 @@ import AdminFilters from "@/components/shared/AdminFilters.astro";
 import CustomModal from "@/components/shared/CustomModal.astro";
 import { getOrders, getOrderItems } from "@/lib/database";
 import type { Order, OrderItem } from "@/lib/database";
+import { getDeliveryLabel, isPickupMethod } from "@/lib/delivery-options";
+import type { DeliveryMethod } from "@/lib/delivery-options";
 
 import { requireAdmin } from "@/lib/auth-utils";
 
@@ -112,6 +114,58 @@ for (const order of allOrders) {
 }
 
 console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProductCounts));
+
+// --- Bandeja de trabajo -----------------------------------------------------
+// La lista se ordenaba por fecha, así que un pedido de hoy sin preparar
+// aparecía debajo de uno entregado la semana pasada. Ahora manda el trabajo
+// pendiente: primero lo que nadie ha tocado, y dentro de eso lo más viejo.
+const PRIORIDAD: Record<string, number> = {
+  pending: 0,
+  processing: 1,
+  shipped: 2,
+  delivered: 3,
+  cancelled: 4,
+};
+
+const DIA_MS = 24 * 60 * 60 * 1000;
+const ahora = Date.now();
+
+// Días que lleva la orden sin cambiar de estado. No es el plazo prometido al
+// cliente (los tiempos de entrega son texto libre y no se pueden calcular),
+// sino una señal honesta de que ahí nadie ha movido nada.
+const diasSinAvanzar = (order: Order): number => {
+  const referencia = order.updated_at || order.created_at;
+  if (!referencia) return 0;
+  return Math.floor((ahora - new Date(referencia).getTime()) / DIA_MS);
+};
+
+const DIAS_PARA_ALERTA = 2;
+
+const ordersEnriquecidas = allOrders
+  .map((order) => {
+    const metodo = (order.delivery_method || null) as DeliveryMethod | null;
+    const enCurso = order.status === 'pending' || order.status === 'processing';
+    const dias = diasSinAvanzar(order);
+    return {
+      order,
+      // Las órdenes anteriores a esta versión no tienen forma de entrega.
+      etiquetaEntrega: metodo ? getDeliveryLabel(metodo) : null,
+      esRecoger: metodo ? isPickupMethod(metodo) : false,
+      requiereFactura: Boolean(order.billing_data),
+      diasSinAvanzar: dias,
+      estancada: enCurso && dias >= DIAS_PARA_ALERTA,
+    };
+  })
+  .sort((a, b) => {
+    const porEstado = (PRIORIDAD[a.order.status] ?? 9) - (PRIORIDAD[b.order.status] ?? 9);
+    if (porEstado !== 0) return porEstado;
+    // Dentro del mismo estado, lo más viejo primero: es lo que urge.
+    return new Date(a.order.created_at).getTime() - new Date(b.order.created_at).getTime();
+  });
+
+const porPreparar = allOrders.filter((o) => o.status === 'pending' || o.status === 'processing').length;
+const enTransito = allOrders.filter((o) => o.status === 'shipped').length;
+const estancadas = ordersEnriquecidas.filter((o) => o.estancada).length;
 ---
 
 <AdminLayout title="Gestión de Órdenes">
@@ -136,62 +190,28 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
         </div>
       </div>
 
-      <!-- Estadísticas de órdenes -->
-      <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-lg border border-border bg-background p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <svg class="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">Total Órdenes</p>
-              <p class="text-2xl font-semibold text-foreground">{totalOrders}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-lg border border-border bg-background p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">Pendientes</p>
-              <p class="text-2xl font-semibold text-foreground">{pendingOrders}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-lg border border-border bg-background p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-              </svg>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">En Proceso</p>
-              <p class="text-2xl font-semibold text-foreground">{processingOrders}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-lg border border-border bg-background p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">Completadas</p>
-              <p class="text-2xl font-semibold text-foreground">{completedOrders}</p>
-            </div>
-          </div>
+      <!-- Contadores: además de informar, filtran la tabla al hacer clic.
+           Miden trabajo pendiente, no totales históricos. -->
+      <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <button type="button" data-contador data-status="" class="rounded-lg border-2 border-foreground bg-background p-4 text-left transition-colors hover:bg-muted">
+          <p class="mb-1.5 text-[13px] font-semibold text-foreground">Todas</p>
+          <p class="text-2xl font-bold text-foreground">{totalOrders}</p>
+        </button>
+        <button type="button" data-contador data-status="pending" class="rounded-lg border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
+          <p class="mb-1.5 text-[13px] font-semibold text-muted-foreground">Por preparar</p>
+          <p class="text-2xl font-bold text-foreground">{porPreparar}</p>
+        </button>
+        <button type="button" data-contador data-status="shipped" class="rounded-lg border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
+          <p class="mb-1.5 text-[13px] font-semibold text-muted-foreground">En tránsito</p>
+          <p class="text-2xl font-bold text-foreground">{enTransito}</p>
+        </button>
+        <button type="button" data-contador data-status="delivered" class="rounded-lg border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
+          <p class="mb-1.5 text-[13px] font-semibold text-muted-foreground">Entregadas</p>
+          <p class="text-2xl font-bold text-foreground">{completedOrders}</p>
+        </button>
+        <div class={`rounded-lg border p-4 ${estancadas > 0 ? 'border-red-200 bg-red-50' : 'border-border bg-background'}`}>
+          <p class={`mb-1.5 text-[13px] font-semibold ${estancadas > 0 ? 'text-red-800' : 'text-muted-foreground'}`}>Sin avanzar +2 días</p>
+          <p class={`text-2xl font-bold ${estancadas > 0 ? 'text-red-800' : 'text-foreground'}`}>{estancadas}</p>
         </div>
       </div>
 
@@ -230,18 +250,20 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
           <table class="w-full">
             <thead class="bg-muted">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Orden</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Total</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Orden</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Total</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Entrega</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Factura</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody id="orders-table-body" class="divide-y divide-border">
               {allOrders.length === 0 ? (
                 <tr>
-                  <td colspan="7" class="px-6 py-12 text-center">
+                  <td colspan="8" class="px-6 py-12 text-center">
                     <div class="flex flex-col items-center">
                       <svg class="h-12 w-12 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -252,31 +274,74 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
                   </td>
                 </tr>
               ) : (
-                allOrders.map((order) => (
-                  <tr class="hover:bg-muted/50">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-foreground">{order.order_number}</div>
+                ordersEnriquecidas.map(({ order, etiquetaEntrega, esRecoger, requiereFactura, estancada, diasSinAvanzar }) => (
+                  <tr
+                    class="hover:bg-muted/50"
+                    data-order-row
+                    data-status={order.status}
+                    data-buscar={`${order.order_number} ${order.customer_name} ${order.customer_email}`.toLowerCase()}
+                  >
+                    <td class="px-3 py-4 whitespace-nowrap">
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-foreground">{order.order_number}</span>
+                        {estancada && (
+                          <span class="rounded bg-red-100 px-1.5 py-0.5 text-[11px] font-bold text-red-800" title="Lleva días sin cambiar de estado">
+                            {diasSinAvanzar} d
+                          </span>
+                        )}
+                      </div>
                       <div class="text-sm text-muted-foreground">
                         {orderProductCounts.get(order.id) || 0} producto{(orderProductCounts.get(order.id) || 0) !== 1 ? 's' : ''}
                       </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-3 py-4 whitespace-nowrap">
                       <div class="text-sm font-medium text-foreground">{order.customer_name}</div>
                       <div class="text-sm text-muted-foreground">{order.customer_email}</div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    <td class="px-3 py-4 whitespace-nowrap text-sm text-foreground">
                       {formatDate(order.created_at)}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
+                    <td class="px-3 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                       {formatCurrency(order.total_amount, order.currency)}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-3 py-4">
+                      {etiquetaEntrega ? (
+                        <div class="flex items-start gap-2">
+                          {esRecoger ? (
+                            <svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"></path>
+                            </svg>
+                          ) : (
+                            <svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M16 3h1.7a2 2 0 0 1 1.8 1.1L21 8v8h-2M3 8h13v8H9"></path>
+                              <circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle>
+                            </svg>
+                          )}
+                          <div>
+                            <div class="text-sm text-foreground">{etiquetaEntrega}</div>
+                            {order.tracking_number && (
+                              <div class="text-xs text-muted-foreground">Guía {order.tracking_number}</div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <span class="text-sm text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap">
+                      {requiereFactura ? (
+                        <span class="inline-flex rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">Sí</span>
+                      ) : (
+                        <span class="text-sm text-muted-foreground">No</span>
+                      )}
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap">
                       <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
                         {getStatusText(order.status)}
                       </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div class="flex space-x-2">
+                    <td class="px-3 py-4 whitespace-nowrap text-sm font-medium">
+                      <div class="flex space-x-1">
                         <a href={`/admin/orders/${order.uuid}`}>
                           <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" title="Ver detalles">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -405,76 +470,60 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
 </AdminLayout>
 
 <script>
-  // Filtros de órdenes
+  // Filtros de órdenes.
+  //
+  // Antes esto leía las celdas por posición (td:nth-child(6) para el estado) y
+  // los índices ya no coincidían con la tabla: filtrar por estado escondía
+  // todas las filas. Ahora cada fila lleva sus datos en atributos, así que
+  // agregar o mover columnas no vuelve a romperlo.
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-orders');
     const statusFilter = document.getElementById('status-filter-orders');
-    const dateFilter = document.getElementById('date-filter-orders');
     const tableBody = document.getElementById('orders-table-body');
-    
-    // Función para filtrar órdenes
+    if (!tableBody) return;
+
     function filterOrders() {
-      const searchTerm = (searchInput as HTMLInputElement)?.value.toLowerCase() || '';
-      const selectedStatus = (statusFilter as HTMLSelectElement)?.value || '';
-      const selectedDate = (dateFilter as HTMLSelectElement)?.value || '';
-      
-      console.log('🔍 Filtros de órdenes aplicados:', { searchTerm, selectedStatus, selectedDate });
-      
-      if (!tableBody) return;
-      
-      const rows = tableBody.querySelectorAll('tr');
-      let visibleCount = 0;
-      
+      const searchTerm = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
+      const selectedStatus = statusFilter && statusFilter.value ? statusFilter.value : '';
+
+      const rows = tableBody.querySelectorAll('[data-order-row]');
       rows.forEach((row) => {
-        // Obtener datos de la fila
-        const orderNumberElement = row.querySelector('td:nth-child(2) .text-sm.font-medium');
-        const customerNameElement = row.querySelector('td:nth-child(3) .text-sm.font-medium');
-        const customerEmailElement = row.querySelector('td:nth-child(3) .text-sm.text-muted-foreground');
-        const dateElement = row.querySelector('td:nth-child(4) .text-sm');
-        const statusBadge = row.querySelector('td:nth-child(6) span');
-        
-        const orderNumber = orderNumberElement?.textContent?.toLowerCase() || '';
-        const customerName = customerNameElement?.textContent?.toLowerCase() || '';
-        const customerEmail = customerEmailElement?.textContent?.toLowerCase() || '';
-        const orderDate = dateElement?.textContent || '';
-        const statusText = statusBadge?.textContent?.toLowerCase() || '';
-        
-        // Mapear texto de estado a valor
-        let orderStatus = '';
-        if (statusText.includes('pendiente')) orderStatus = 'pending';
-        else if (statusText.includes('proceso')) orderStatus = 'processing';
-        else if (statusText.includes('enviado')) orderStatus = 'shipped';
-        else if (statusText.includes('entregado')) orderStatus = 'delivered';
-        else if (statusText.includes('cancelado')) orderStatus = 'cancelled';
-        
-        // Aplicar filtros
-        const matchesSearch = searchTerm === '' || 
-          orderNumber.includes(searchTerm) || 
-          customerName.includes(searchTerm) ||
-          customerEmail.includes(searchTerm);
-        
-        const matchesStatus = !selectedStatus || orderStatus === selectedStatus;
-        
-        // Filtro de fecha (simplificado)
-        const matchesDate = !selectedDate || true; // Por ahora siempre true, se puede implementar lógica de fechas más compleja
-        
-        if (matchesSearch && matchesStatus && matchesDate) {
-          row.style.display = '';
-          visibleCount++;
-        } else {
-          row.style.display = 'none';
-        }
+        const buscar = row.getAttribute('data-buscar') || '';
+        const estado = row.getAttribute('data-status') || '';
+
+        // "Por preparar" agrupa dos estados: nadie separa mentalmente
+        // "pendiente" de "en proceso" cuando lo que quiere es surtir.
+        const coincideEstado = !selectedStatus
+          || estado === selectedStatus
+          || (selectedStatus === 'pending' && estado === 'processing');
+
+        const coincideBusqueda = searchTerm === '' || buscar.includes(searchTerm);
+
+        row.style.display = coincideEstado && coincideBusqueda ? '' : 'none';
       });
-      
-      console.log(`✅ ${visibleCount} órdenes mostradas después del filtrado`);
     }
-    
-    // Event listeners para filtros
+
     searchInput?.addEventListener('input', filterOrders);
     statusFilter?.addEventListener('change', filterOrders);
-    dateFilter?.addEventListener('change', filterOrders);
-    
-    console.log('🎯 Filtros de órdenes inicializados');
+
+    // Los contadores de arriba filtran al hacer clic.
+    const contadores = document.querySelectorAll('[data-contador]');
+    contadores.forEach((boton) => {
+      boton.addEventListener('click', () => {
+        const estado = boton.getAttribute('data-status') || '';
+        if (statusFilter) {
+          statusFilter.value = estado;
+        }
+        contadores.forEach((otro) => {
+          const activo = otro === boton;
+          otro.classList.toggle('border-2', activo);
+          otro.classList.toggle('border-foreground', activo);
+          otro.classList.toggle('border', !activo);
+          otro.classList.toggle('border-border', !activo);
+        });
+        filterOrders();
+      });
+    });
   });
 </script>
 
@@ -587,7 +636,10 @@ console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProdu
 <script>
   // Manejar eliminación de órdenes
   document.addEventListener('DOMContentLoaded', () => {
-    
+    // deleteButtons nunca se declaró: el script reventaba con un ReferenceError
+    // en cuanto cargaba la página y el botón de borrar no hacía nada.
+    const deleteButtons = document.querySelectorAll('.delete-order-button');
+
     deleteButtons.forEach((button) => {
       button.addEventListener('click', async (event) => {
         event.preventDefault();

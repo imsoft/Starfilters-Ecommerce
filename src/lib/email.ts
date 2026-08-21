@@ -1,8 +1,44 @@
 // Configuración de email con Resend
 import { Resend } from 'resend';
+import type { BillingData } from './payment-utils';
+import type { DeliveryMethod } from './delivery-options';
+import { getDeliveryOption, getDeliveryLabel, isPickupMethod } from './delivery-options';
+
+// Datos extra del pedido para el correo interno. Todos opcionales: los pedidos
+// viejos (y el flujo legacy del webhook) no los traen y el correo debe salir
+// igual.
+export interface OrderNotificationExtras {
+  // Datos fiscales capturados en el checkout. null/undefined = no pidió factura.
+  billing?: BillingData | null;
+  deliveryMethod?: DeliveryMethod | null;
+  customerPhone?: string | null;
+  // Instrucciones fijas que el admin configura en /admin/settings/notificaciones
+  internalNote?: string;
+}
+
+// MySQL devuelve las columnas DECIMAL como CADENA, no como número. Llamar
+// .toFixed() sobre ellas lanza "total.toFixed is not a function" y tumbaba el
+// correo de cambio de estado en todos los casos. Se normaliza aquí, que es
+// donde se formatea el dinero, para que ningún llamador tenga que acordarse.
+const money = (value: unknown): string => {
+  const numero = typeof value === 'number' ? value : Number(value);
+  return (Number.isFinite(numero) ? numero : 0).toFixed(2);
+};
+
+// Evita que un dato del cliente (una razón social con "<") rompa el HTML del
+// correo.
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 
 export interface EmailData {
-  to: string;
+  // Una cadena para un destinatario, o un arreglo cuando el correo va a varias
+  // personas (las notificaciones internas de pedidos van a una lista que el
+  // admin edita desde /admin/settings/notificaciones).
+  to: string | string[];
   subject: string;
   html: string;
   text?: string;
@@ -49,7 +85,13 @@ export const sendEmail = async (emailData: EmailData): Promise<boolean> => {
       return false;
     }
 
-    if (!emailData.to) {
+    // Un arreglo vacío es tan inválido como una cadena vacía, y Resend lo
+    // rechazaría con un error genérico.
+    const recipients = Array.isArray(emailData.to)
+      ? emailData.to.filter((address) => typeof address === 'string' && address.trim() !== '')
+      : emailData.to;
+
+    if (!recipients || (Array.isArray(recipients) && recipients.length === 0)) {
       console.error('❌ No se proporcionó destinatario para el email');
       return false;
     }
@@ -61,13 +103,13 @@ export const sendEmail = async (emailData: EmailData): Promise<boolean> => {
     const from = `${resendFromName} <${fromEmail}>`;
 
     console.log('📧 Enviando email con Resend:');
-    console.log('📮 Para:', emailData.to);
+    console.log('📮 Para:', recipients);
     console.log('📝 Asunto:', emailData.subject);
     console.log('📤 Desde:', from);
 
     const result = await resend.emails.send({
       from: from,
-      to: emailData.to,
+      to: recipients,
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text,
@@ -113,7 +155,7 @@ export const createOrderConfirmationEmail = (
         <span style="color: #6b7280; font-size: 14px;">Cantidad: ${item.quantity}</span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
-        $${(item.price * item.quantity).toFixed(2)}
+        $${money(Number(item.price) * item.quantity)}
       </td>
     </tr>
   `).join('');
@@ -185,7 +227,7 @@ export const createOrderConfirmationEmail = (
           </table>
           
           <div class="total">
-            <p>Total: $${total.toFixed(2)} ${currency}</p>
+            <p>Total: $${money(total)} ${currency}</p>
           </div>
           
           <div class="shipping">
@@ -218,9 +260,9 @@ export const createOrderConfirmationEmail = (
     Fecha: ${orderDate}
     
     Productos:
-    ${items.map(item => `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+    ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
-    Total: $${total.toFixed(2)} ${currency}
+    Total: $${money(total)} ${currency}
     
     Dirección de Envío:
     ${shippingAddress}
@@ -456,7 +498,8 @@ export const createNewOrderNotificationEmail = (
   items: Array<{ name: string; quantity: number; price: number }>,
   shippingAddress: string,
   // Los pedidos pueden cobrarse en pesos o en dólares
-  currency: 'MXN' | 'USD' = 'MXN'
+  currency: 'MXN' | 'USD' = 'MXN',
+  extras: OrderNotificationExtras = {}
 ): EmailData => {
   // Paleta de colores de la aplicación
   const color50 = '#EFF6FF';
@@ -473,7 +516,7 @@ export const createNewOrderNotificationEmail = (
         <span style="color: #6b7280; font-size: 14px;">Cantidad: ${item.quantity}</span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
-        $${(item.price * item.quantity).toFixed(2)}
+        $${money(Number(item.price) * item.quantity)}
       </td>
     </tr>
   `).join('');
@@ -481,6 +524,75 @@ export const createNewOrderNotificationEmail = (
   const siteUrl = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || import.meta.env.SITE_URL || process.env.SITE_URL || 'https://starfilters.mx';
   const logoUrl = `${siteUrl}/logos/logo-starfilters.png`;
   
+  // ---- Instrucciones de entrega -------------------------------------------
+  // Quien prepara el pedido necesita saber de un vistazo si lo manda o si el
+  // cliente pasa por él: son operaciones distintas.
+  const { deliveryMethod, billing, customerPhone, internalNote } = extras;
+  const deliveryOption = deliveryMethod ? getDeliveryOption(deliveryMethod) : undefined;
+  const deliveryLabel = deliveryMethod ? getDeliveryLabel(deliveryMethod) : 'No especificado';
+  const deliveryDays = deliveryOption?.days.es || '';
+  const isPickup = deliveryMethod ? isPickupMethod(deliveryMethod) : false;
+  const pickupAddress = deliveryOption?.address?.text || '';
+
+  const deliveryHtml = `
+          <div class="shipping">
+            <h4 style="margin-top: 0;">📦 Entrega — ${escapeHtml(deliveryLabel)}</h4>
+            ${isPickup
+              ? `<p style="margin: 6px 0;"><strong>El cliente PASA A RECOGER.</strong> No prepares envío por paquetería.</p>
+                 ${pickupAddress ? `<p style="margin: 6px 0;">Sucursal: ${escapeHtml(pickupAddress)}</p>` : ''}`
+              : `<p style="margin: 6px 0;"><strong>Enviar a:</strong><br>${escapeHtml(shippingAddress)}</p>`}
+            ${deliveryDays ? `<p style="margin: 6px 0;"><strong>Tiempo comprometido:</strong> ${escapeHtml(deliveryDays)}</p>` : ''}
+            ${customerPhone ? `<p style="margin: 6px 0;"><strong>Teléfono del cliente:</strong> ${escapeHtml(customerPhone)}</p>` : ''}
+          </div>`;
+
+  // ---- Facturación ---------------------------------------------------------
+  // Si el cliente capturó datos fiscales van completos aquí, para no tener que
+  // entrar al panel. Si no, la leyenda lo dice explícitamente: el silencio se
+  // presta a que alguien facture de más o de menos.
+  const billingFields: Array<{ label: string; value?: string }> = [
+    { label: 'Razón social', value: billing?.businessName },
+    { label: 'RFC', value: billing?.rfc },
+    { label: 'Régimen fiscal', value: billing?.taxRegime },
+    { label: 'Uso de CFDI', value: billing?.cfdiUse },
+    { label: 'Código postal fiscal', value: billing?.postalCode },
+    { label: 'Enviar la factura a', value: billing?.email },
+  ].filter((field) => field.value);
+
+  const requiresInvoice = billingFields.length > 0;
+  // `null` = el checkout preguntó y el cliente no quiso factura.
+  // `undefined` = nadie preguntó (pedidos del flujo anterior): no podemos
+  // afirmar que no la quiere.
+  const billingKnown = billing !== undefined;
+
+  const billingHtml = requiresInvoice
+    ? `
+          <div style="background: #FEF3C7; border-left: 4px solid #D97706; padding: 15px; border-radius: 6px; margin: 20px 0;">
+            <h4 style="margin: 0 0 10px; color: #92400E;">🧾 ESTE PEDIDO REQUIERE FACTURA</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+              ${billingFields.map((field) => `
+                <tr>
+                  <td style="padding: 6px 0; color: #78350F; font-size: 14px; vertical-align: top; width: 45%;">${escapeHtml(field.label)}</td>
+                  <td style="padding: 6px 0; color: #1f2937; font-size: 14px; font-weight: bold;">${escapeHtml(field.value as string)}</td>
+                </tr>`).join('')}
+            </table>
+          </div>`
+    : `
+          <div style="background: #F3F4F6; border-left: 4px solid #9CA3AF; padding: 15px; border-radius: 6px; margin: 20px 0;">
+            <h4 style="margin: 0 0 6px; color: #374151;">🧾 Facturación</h4>
+            <p style="margin: 0; color: #4B5563; font-size: 14px;">
+              ${billingKnown
+                ? 'El cliente <strong>NO solicitó factura</strong> en este pedido. No es necesario emitir CFDI.'
+                : 'Este pedido no trae datos de facturación. Revísalo en el panel antes de dar por hecho que no requiere CFDI.'}
+            </p>
+          </div>`;
+
+  const noteHtml = internalNote
+    ? `
+          <div style="background: white; border: 1px dashed #9CA3AF; padding: 15px; border-radius: 6px; margin: 20px 0;">
+            <h4 style="margin: 0 0 6px; color: #374151;">📋 Instrucciones internas</h4>
+            <p style="margin: 0; color: #4B5563; font-size: 14px; white-space: pre-line;">${escapeHtml(internalNote)}</p>
+          </div>`
+    : '';
   const html = `
     <!DOCTYPE html>
     <html>
@@ -530,7 +642,7 @@ export const createNewOrderNotificationEmail = (
             <h3>Detalles de la Orden</h3>
             <p><strong>Número de Pedido:</strong> ${orderNumber}</p>
             <p><strong>Fecha:</strong> ${orderDate}</p>
-            <p><strong>Total:</strong> $${total.toFixed(2)} ${currency}</p>
+            <p><strong>Total:</strong> $${money(total)} ${currency}</p>
           </div>
           
           <div class="customer-info">
@@ -552,10 +664,11 @@ export const createNewOrderNotificationEmail = (
             </tbody>
           </table>
           
-          <div class="shipping">
-            <h4>Dirección de Envío:</h4>
-            <p>${shippingAddress}</p>
-          </div>
+          ${deliveryHtml}
+
+          ${billingHtml}
+
+          ${noteHtml}
           
           <div style="text-align: center;">
             <a href="${siteUrl}/admin/orders" class="button">Ver Orden en Panel</a>
@@ -576,17 +689,29 @@ export const createNewOrderNotificationEmail = (
     
     Número de Pedido: ${orderNumber}
     Fecha: ${orderDate}
-    Total: $${total.toFixed(2)} ${currency}
+    Total: $${money(total)} ${currency}
     
     Cliente:
     Nombre: ${customerName}
     Email: ${customerEmail}
     
     Productos:
-    ${items.map(item => `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+    ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
-    Dirección de Envío:
-    ${shippingAddress}
+    Entrega: ${deliveryLabel}
+    ${isPickup
+      ? `EL CLIENTE PASA A RECOGER. No prepares envío.${pickupAddress ? `\n    Sucursal: ${pickupAddress}` : ''}`
+      : `Enviar a: ${shippingAddress}`}
+    ${deliveryDays ? `Tiempo comprometido: ${deliveryDays}` : ''}
+    ${customerPhone ? `Teléfono del cliente: ${customerPhone}` : ''}
+
+    Facturación:
+    ${requiresInvoice
+      ? `ESTE PEDIDO REQUIERE FACTURA\n${billingFields.map((field) => `    - ${field.label}: ${field.value}`).join('\n')}`
+      : billingKnown
+        ? 'El cliente NO solicitó factura. No es necesario emitir CFDI.'
+        : 'Este pedido no trae datos de facturación. Revísalo en el panel.'}
+    ${internalNote ? `\n    Instrucciones internas:\n    ${internalNote}` : ''}
     
     Ver orden en: ${siteUrl}/admin/orders
     
@@ -662,7 +787,7 @@ export const createOrderStatusUpdateEmail = (
         <span style="color: #6b7280; font-size: 14px;">Cantidad: ${item.quantity}</span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
-        $${(item.price * item.quantity).toFixed(2)}
+        $${money(Number(item.price) * item.quantity)}
       </td>
     </tr>
   `).join('');
@@ -743,7 +868,7 @@ export const createOrderStatusUpdateEmail = (
           </table>
           
           <div style="text-align: right; margin-top: 20px;">
-            <p style="font-size: 18px; font-weight: bold;">Total: $${total.toFixed(2)} ${currency}</p>
+            <p style="font-size: 18px; font-weight: bold;">Total: $${money(total)} ${currency}</p>
           </div>
           
           <div style="text-align: center; margin-top: 30px;">
@@ -772,9 +897,9 @@ export const createOrderStatusUpdateEmail = (
     ${trackingNumber ? `Número de Rastreo: ${trackingNumber}` : ''}
     
     Productos:
-    ${items.map(item => `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+    ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
-    Total: $${total.toFixed(2)} ${currency}
+    Total: $${money(total)} ${currency}
     
     Ver tus pedidos: ${siteUrl}/orders
     

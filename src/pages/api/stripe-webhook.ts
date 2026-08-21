@@ -3,6 +3,8 @@ import { verifyWebhookSignature, STRIPE_CONFIG } from '@/lib/stripe';
 import { createOrder, createOrderItem, getOrderByPaymentIntentId } from '@/lib/database';
 import { query } from '@/config/database';
 import { sendEmail, createOrderConfirmationEmail, createNewOrderNotificationEmail } from '@/lib/email';
+import type { OrderNotificationExtras } from '@/lib/email';
+import { getOrderNotificationEmails, getOrderNotificationNote } from '@/lib/site-settings-service';
 import { recordDiscountCodeUsage } from '@/lib/discount-codes';
 import { adjustBindProductInventory } from '@/lib/bind';
 import { getCheckoutDraftByUuid, markDraftCompleted, type CheckoutDraftPayload, type DraftItem } from '@/lib/checkout-drafts';
@@ -97,7 +99,10 @@ async function sendOrderEmails(
   shippingAddress: string,
   // Moneda real del cargo: sin esto los correos decían MXN incluso en pedidos
   // cobrados en dólares
-  currency: 'MXN' | 'USD' = 'MXN'
+  currency: 'MXN' | 'USD' = 'MXN',
+  // Datos fiscales y de entrega para el correo interno. El flujo legacy no los
+  // tiene y manda el correo sin ellos.
+  extras: OrderNotificationExtras = {}
 ) {
   try {
     const orderDate = new Date().toLocaleDateString('es-MX', {
@@ -124,8 +129,11 @@ async function sendOrderEmails(
       ? '✅ Email de confirmación enviado al comprador'
       : '⚠️ Error al enviar email de confirmación al comprador');
 
-    const adminEmail = process.env.ADMIN_EMAIL || import.meta.env.ADMIN_EMAIL;
-    if (adminEmail) {
+    // Lista editable desde /admin/settings/notificaciones. Si está vacía cae a
+    // ADMIN_EMAIL, que es como funcionaba antes.
+    const notificationEmails = await getOrderNotificationEmails();
+    if (notificationEmails.length > 0) {
+      const internalNote = await getOrderNotificationNote();
       const adminEmailData = createNewOrderNotificationEmail(
         orderNumber,
         orderDate,
@@ -134,16 +142,17 @@ async function sendOrderEmails(
         totalMXN,
         items,
         shippingAddress,
-        currency
+        currency,
+        { ...extras, internalNote }
       );
-      adminEmailData.to = adminEmail;
+      adminEmailData.to = notificationEmails;
 
       const adminEmailSent = await sendEmail(adminEmailData);
       console.log(adminEmailSent
-        ? '✅ Email de notificación enviado al vendedor'
+        ? `✅ Email de notificación enviado a ${notificationEmails.length} destinatario(s)`
         : '⚠️ Error al enviar email de notificación al vendedor');
     } else {
-      console.log('⚠️ ADMIN_EMAIL no configurado, no se enviará email al vendedor');
+      console.log('⚠️ Sin correos de notificación configurados, no se enviará email al vendedor');
     }
   } catch (error) {
     console.error('⚠️ Error enviando correos de la orden:', error);
@@ -209,6 +218,9 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     stripe_payment_intent_id: paymentIntent.id,
     // Datos fiscales opcionales: si el cliente no pidió factura, va null
     billing_data: checkout.billing ? JSON.stringify(checkout.billing) : null,
+    // Forma de entrega elegida: el panel la necesita para saber si se prepara
+    // un envío o el cliente pasa a recoger.
+    delivery_method: draft.shippingMethod || null,
     // La moneda real del cargo, tal como la reporta Stripe
     currency: String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD',
   });
@@ -276,7 +288,12 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     totalMXN,
     items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price_charge ?? item.price_mxn })),
     shippingAddress,
-    String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD'
+    String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD',
+    {
+      billing: checkout.billing ?? null,
+      deliveryMethod: draft.shippingMethod ?? null,
+      customerPhone: checkout.phone || null,
+    }
   );
 }
 

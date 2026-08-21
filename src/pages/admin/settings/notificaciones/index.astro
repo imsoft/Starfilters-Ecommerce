@@ -1,0 +1,256 @@
+---
+import AdminLayout from "@/layouts/adminLayout.astro";
+import { getAuthenticatedUser } from '@/lib/auth-utils';
+import { isUserAdmin } from '@/lib/database';
+import {
+  getOrderNotificationEmails,
+  updateOrderNotificationEmails,
+  getOrderNotificationNote,
+  updateOrderNotificationNote,
+} from '@/lib/site-settings-service';
+
+export const prerender = false;
+
+// El admin no tiene middleware: cada página comprueba la sesión por su cuenta,
+// y la comprobación va ANTES de procesar el POST.
+const user = getAuthenticatedUser(Astro.cookies);
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const userIsAdmin = await isUserAdmin(user.id);
+
+if (!userIsAdmin) {
+  return Astro.redirect('/');
+}
+
+let emails = await getOrderNotificationEmails();
+let note = await getOrderNotificationNote();
+let error: string | null = null;
+let success: string | null = null;
+
+// Validación deliberadamente permisiva: solo descarta lo que Resend rechazaría.
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+
+// Resend acepta hasta 50 destinatarios por envío.
+const MAX_EMAILS = 50;
+
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+
+    const submitted = formData.getAll("emails")
+      .map((value) => String(value).trim())
+      .filter(Boolean);
+
+    // Sin distinguir mayúsculas: "Ventas@" y "ventas@" son el mismo buzón y
+    // duplicarlos manda el pedido dos veces.
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const email of submitted) {
+      const key = email.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(email);
+      }
+    }
+
+    const invalid = unique.filter((email) => !isValidEmail(email));
+    const submittedNote = String(formData.get("note") || '').trim();
+
+    if (invalid.length > 0) {
+      error = `Estos correos no son válidos: ${invalid.join(', ')}`;
+      emails = unique;
+      note = submittedNote;
+    } else if (unique.length > MAX_EMAILS) {
+      error = `Máximo ${MAX_EMAILS} correos. Quita ${unique.length - MAX_EMAILS}.`;
+      emails = unique;
+      note = submittedNote;
+    } else {
+      const okEmails = await updateOrderNotificationEmails(unique);
+      const okNote = await updateOrderNotificationNote(submittedNote);
+
+      if (okEmails && okNote) {
+        note = submittedNote;
+        // Releer: si la lista quedó vacía, getOrderNotificationEmails devuelve
+        // el ADMIN_EMAIL del entorno y eso es lo que realmente va a recibir.
+        emails = await getOrderNotificationEmails();
+        success = unique.length > 0
+          ? `Guardado. Las notificaciones de pedidos llegarán a ${unique.length} correo${unique.length === 1 ? '' : 's'}.`
+          : 'Guardado. La lista quedó vacía, así que se usará el correo del servidor (ADMIN_EMAIL).';
+      } else {
+        error = "Error al guardar. Intenta de nuevo.";
+        emails = unique;
+        note = submittedNote;
+      }
+    }
+  } catch (err) {
+    console.error("Error procesando formulario de notificaciones:", err);
+    error = "Error inesperado. Revisa la consola.";
+  }
+}
+
+// Siempre pintar al menos una fila vacía para que el formulario sea usable.
+const rows = emails.length > 0 ? emails : [''];
+---
+
+<AdminLayout title="Configuración – Correos de Notificación">
+  <div class="container mx-auto px-4 py-8 max-w-3xl">
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Correos de Notificación</h1>
+      <p class="mt-2 text-gray-600">
+        Cada vez que un cliente completa una compra, se envía un correo con el pedido,
+        la forma de entrega y los datos de facturación a todos los correos de esta lista.
+        Puedes poner los que necesites.
+      </p>
+    </div>
+
+    {error && (
+      <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 flex gap-3">
+        <svg class="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-sm font-medium text-red-800">{error}</p>
+      </div>
+    )}
+
+    {success && (
+      <div class="mb-6 rounded-lg border border-green-300 bg-green-50 p-4 flex gap-3">
+        <svg class="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-sm font-medium text-green-800">{success}</p>
+      </div>
+    )}
+
+    <form method="POST" class="space-y-6">
+
+      <div class="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 class="mb-1 text-xl font-bold text-gray-900">¿Quién recibe los pedidos?</h2>
+        <p class="mb-6 text-sm text-gray-500">
+          Agrega un correo por renglón. Todos reciben el mismo aviso al mismo tiempo.
+        </p>
+
+        <div id="email-rows" class="space-y-3">
+          {rows.map((email) => (
+            <div class="email-row flex items-center gap-2">
+              <div class="relative flex-1">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                  </svg>
+                </span>
+                <input
+                  type="email"
+                  name="emails"
+                  value={email}
+                  placeholder="ventas@starfilters.mx"
+                  class="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <button
+                type="button"
+                data-remove-email
+                aria-label="Quitar este correo"
+                class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-gray-300 text-gray-400 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          id="add-email"
+          class="mt-4 inline-flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:border-blue-400 hover:text-blue-600"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          Agregar otro correo
+        </button>
+      </div>
+
+      <div class="rounded-lg border border-gray-200 bg-white p-6">
+        <label for="note" class="block text-lg font-bold text-gray-900">
+          Instrucciones internas <span class="text-sm font-normal text-gray-400">(opcional)</span>
+        </label>
+        <p class="mb-4 mt-1 text-sm text-gray-500">
+          Este texto aparece al final de cada correo de pedido. Sirve para recordar
+          cómo preparar el envío, a quién avisar o qué hacer con la factura.
+        </p>
+        <textarea
+          id="note"
+          name="note"
+          rows="4"
+          placeholder="Ej. Confirmar existencia en almacén antes de programar la ruta. Si el pedido requiere factura, timbrarla el mismo día."
+          class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >{note}</textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+      >
+        Guardar
+      </button>
+    </form>
+
+    <div class="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-5">
+      <h3 class="mb-2 font-semibold text-blue-900">¿Qué trae cada correo?</h3>
+      <ul class="list-disc list-inside space-y-1 text-sm text-blue-800">
+        <li>Número de pedido, fecha, productos y total.</li>
+        <li>Nombre, correo y teléfono del cliente.</li>
+        <li>Forma de entrega: si se envía, a qué dirección; si el cliente pasa a recoger, a qué sucursal.</li>
+        <li>Datos de facturación completos (razón social, RFC, régimen, uso de CFDI, CP y correo para la factura).</li>
+        <li>Si el cliente no pidió factura, lo dice con todas sus letras para que nadie la timbre de más.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <script>
+    // JavaScript plano: Astro no transpila TypeScript en los scripts que van al
+    // navegador con is:inline, y aquí no hace falta.
+    function initNotificationEmails() {
+      const container = document.getElementById('email-rows');
+      const addButton = document.getElementById('add-email');
+      if (!container || !addButton) return;
+
+      // Deja siempre una fila en pie: sin ninguna, no hay dónde escribir.
+      function removeRow(row) {
+        const rows = container.querySelectorAll('.email-row');
+        if (rows.length <= 1) {
+          const input = row.querySelector('input');
+          if (input) input.value = '';
+          return;
+        }
+        row.remove();
+      }
+
+      container.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-remove-email]');
+        if (!button) return;
+        const row = button.closest('.email-row');
+        if (row) removeRow(row);
+      });
+
+      addButton.addEventListener('click', function () {
+        const rows = container.querySelectorAll('.email-row');
+        const last = rows[rows.length - 1];
+        const copy = last.cloneNode(true);
+        const input = copy.querySelector('input');
+        if (input) input.value = '';
+        container.appendChild(copy);
+        if (input) input.focus();
+      });
+    }
+
+    initNotificationEmails();
+  </script>
+</AdminLayout>

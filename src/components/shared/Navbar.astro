@@ -50,13 +50,15 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
     <div class="px-6 py-6 xl:px-8">
       <nav
         aria-label="Global"
-        class="flex items-center justify-between xl:gap-x-6"
+        class="flex items-center justify-between xl:gap-x-8 2xl:gap-x-12"
       >
         <!-- Logo - fijo a la izquierda.
-             min-w-fit: el contenedor es flex-1 (base 0) y el enlace de dentro
-             es shrink-0, así que el logo se salía de su caja y quedaba encima
-             de "Filtros de Aire" en todos los anchos de escritorio. -->
-        <div class="flex min-w-fit xl:flex-1">
+             min-w-fit: el enlace de dentro es shrink-0, así que sin esto el
+             logo se salía de su caja y quedaba encima de "Filtros de Aire".
+             Sin flex-1: el menú arranca justo después del logo (a la
+             izquierda) en vez de quedar centrado; el hueco sobrante se lo
+             queda la columna derecha, que sí es flex-1. -->
+        <div class="flex min-w-fit">
           <a href={lang === 'en' ? '/en' : '/'} class="-m-1.5 p-1.5 flex-shrink-0">
             <span class="sr-only">Starfilters</span>
             <img
@@ -98,7 +100,7 @@ const contactoLabel = lang === 'en' ? 'Contact' : t('nav.contact');
         </div>
 
         <!-- Menú de navegación - centrado -->
-        <div class="hidden xl:flex xl:items-center xl:gap-x-5">
+        <div class="hidden xl:flex xl:items-center xl:gap-x-7 2xl:gap-x-9">
 
           <!-- Filtros de Aire dropdown -->
           <div class="relative group">

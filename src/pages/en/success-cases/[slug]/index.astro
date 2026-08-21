@@ -5,6 +5,8 @@ import SplitCTA from "@/components/shared/SplitCTA.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 import { getHeroImageUrl, getHeroPlaceholderUrl } from "@/lib/image-utils";
+import { buildCaseStudySections } from "@/lib/case-study-content";
+import { getWhatsAppNumber } from "@/lib/site-settings-service";
 
 export const prerender = false;
 
@@ -38,6 +40,29 @@ const tags = getTagsArray(caseStudy.tags);
 
 const formatDate = (date: Date) =>
   new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long' }).format(new Date(date));
+
+// Challenge / solution / results, numbered over what the case actually has:
+// a case with no challenge starts at 01, not 02.
+const sections = buildCaseStudySections([
+  { label: 'The challenge', body: challenge },
+  { label: 'The solution', body: solution },
+  { label: 'The results', body: results },
+]);
+
+// The gallery continues the same numbering as the text sections.
+const galleryNumber = String(sections.length + 1).padStart(2, '0');
+
+// Project fact sheet: only the data the case actually has.
+const fichaRows = [
+  { label: 'Industry', value: industry },
+  { label: 'Client', value: caseStudy.client_name },
+  { label: 'Date', value: formatDate(caseStudy.created_at) },
+].filter((row): row is { label: string; value: string } => Boolean(row.value));
+
+const sidebarWhatsappNumber = (await getWhatsAppNumber()) || '523322569541';
+const sidebarWhatsappUrl = `https://wa.me/${sidebarWhatsappNumber}?text=${encodeURIComponent(
+  `Hello, I read the "${title}" case study and I would like help with a similar filtration challenge.`
+)}`;
 ---
 
 <WebsiteLayout
@@ -57,13 +82,15 @@ const formatDate = (date: Date) =>
   />
   <script slot="seo" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
 
-  <!-- pt-12: el navbar es absolute y mide 104px, y <main> solo aporta 64px.
-       Sin esto la foto de portada quedaba 40px por debajo de la barra. -->
+  <!-- "Technical dossier" layout: one container width from top to bottom
+       (the header used max-w-6xl and the body max-w-4xl, so the page drifted
+       out of alignment mid-read), one accent colour (the brand blue, instead of
+       the red/blue/green circles that belonged to no palette) and a sticky
+       project fact sheet on the right with the hard data.
+       pt-12: the navbar is absolute and 104px tall, and <main> only adds 64px. -->
   <article class="bg-background pt-12">
-    <!-- Two-column header: the photo no longer spans the full width with grey
-         bands on each side, and the title fits on the same screen. On mobile the
-         columns stack (photo first, details below). -->
-    <div class="mx-auto max-w-6xl px-6 section-pb pt-6">
+    <div class="mx-auto max-w-6xl px-6 pt-6">
+
       <nav class="mb-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         <a href="/en" class="hover:text-foreground transition-colors">Home</a>
         <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,137 +103,144 @@ const formatDate = (date: Date) =>
         <span class="text-foreground font-medium">{title}</span>
       </nav>
 
-      <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,24rem)_1fr] lg:gap-12">
-        {caseStudy.featured_image ? (
-          <!-- The background is the blurred thumbnail (~1 KB): it shows instantly and
-               the full photo covers it once loaded, with no JavaScript involved. -->
-          <figure
-            class="overflow-hidden rounded-2xl border border-border bg-muted shadow-sm"
-            style={getHeroPlaceholderUrl(caseStudy.featured_image)
-              ? `background-image:url('${getHeroPlaceholderUrl(caseStudy.featured_image)}');background-size:cover;background-position:center;`
-              : undefined}
-          >
-            <img
-              src={getHeroImageUrl(caseStudy.featured_image)}
-              alt={title}
-              loading="eager"
-              fetchpriority="high"
-              decoding="async"
-              class="block h-auto w-full"
-            />
-          </figure>
-        ) : (
-          <div class="aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5"></div>
-        )}
-
-        <div>
-          <div class="flex flex-wrap items-center gap-3">
-            <span class="inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-              {industry}
-            </span>
-            {caseStudy.client_name && (
-              <span class="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground">{caseStudy.client_name}</span>
-            )}
-            <span class="text-xs font-medium text-muted-foreground">{formatDate(caseStudy.created_at)}</span>
-          </div>
-
-          <h1 class="mt-4 text-3xl font-bold leading-tight text-foreground sm:text-4xl">
-            {title}
-          </h1>
-
-          {excerpt && (
-            <p class="mt-4 text-lg leading-relaxed text-muted-foreground">{excerpt}</p>
-          )}
-
-          {tags.length > 0 && (
-            <div class="mt-6 flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span class="inline-flex items-center rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-
-
-    <div class="mx-auto max-w-4xl px-6 py-16">
-
-      <div class="space-y-14">
-        {challenge && (
-          <section>
-            <div class="flex items-center gap-3 mb-5">
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-700 font-bold text-sm flex-shrink-0">1</span>
-              <h2 class="text-2xl font-semibold text-foreground">The Challenge</h2>
-            </div>
-            <div class="pl-11">
-              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-                {challenge}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {solution && (
-          <section>
-            <div class="flex items-center gap-3 mb-5">
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-sm flex-shrink-0">2</span>
-              <h2 class="text-2xl font-semibold text-foreground">The Solution</h2>
-            </div>
-            <div class="pl-11">
-              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-                {solution}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {results && (
-          <section>
-            <div class="flex items-center gap-3 mb-5">
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-700 font-bold text-sm flex-shrink-0">3</span>
-              <h2 class="text-2xl font-semibold text-foreground">The Results</h2>
-            </div>
-            <div class="pl-11">
-              <div class="prose prose-gray max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-                {results}
-              </div>
-            </div>
-          </section>
-        )}
-      </div>
-
-      <!-- Project gallery -->
-      {caseStudy.gallery_images && caseStudy.gallery_images.length > 0 && (
-        <div class="mt-14">
-          <h2 class="text-2xl font-semibold text-foreground mb-6">Project Gallery</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {caseStudy.gallery_images.map((url, i) => (
-              <button
-                type="button"
-                class="gallery-thumb group relative aspect-square overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                data-src={url}
-                data-index={i}
-                aria-label={`View image ${i + 1}`}
-              >
-                <img
-                  src={url}
-                  alt={`${title} – image ${i + 1}`}
-                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <svg class="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
-                  </svg>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+      <p class="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+        Success case · {industry}
+      </p>
+      <h1 class="mt-3 max-w-4xl text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl">
+        {title}
+      </h1>
+      {excerpt && (
+        <p class="mt-5 max-w-3xl text-lg leading-relaxed text-gray-600">{excerpt}</p>
       )}
+
+      {caseStudy.featured_image ? (
+        <!-- The background is the ~1 KB blurred thumbnail: it shows instantly and the
+             full photo covers it on load, with no JavaScript involved. -->
+        <figure
+          class="mt-9 overflow-hidden rounded-2xl border border-border bg-muted"
+          style={getHeroPlaceholderUrl(caseStudy.featured_image)
+            ? `background-image:url('${getHeroPlaceholderUrl(caseStudy.featured_image)}');background-size:cover;background-position:center;`
+            : undefined}
+        >
+          <img
+            src={getHeroImageUrl(caseStudy.featured_image)}
+            alt={title}
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+            class="block h-64 w-full object-cover sm:h-[420px]"
+          />
+        </figure>
+      ) : (
+        <div class="mt-9 h-64 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 sm:h-[420px]"></div>
+      )}
+
+      <div class="mt-14 grid items-start gap-12 lg:grid-cols-[1fr_20rem] lg:gap-14">
+
+        <!-- Reading column -->
+        <div>
+          {sections.map((section) => (
+            <section class="mb-13 last:mb-0">
+              <div class="flex items-baseline gap-3.5 border-b-2 border-foreground pb-3.5">
+                <span class="text-[13px] font-extrabold tracking-[0.1em] text-primary">{section.number}</span>
+                <h2 class="text-2xl font-bold tracking-tight text-foreground">{section.label}</h2>
+              </div>
+              <div class="mt-5 space-y-4">
+                {section.blocks.map((block) => (
+                  block.type === 'paragraph' ? (
+                    <p class="text-[17px] leading-[1.75] text-gray-700">{block.text}</p>
+                  ) : (
+                    <ul class="flex flex-col gap-4">
+                      {block.items.map((item) => (
+                        <li class="flex items-start gap-3.5">
+                          <span class="mt-[9px] h-[7px] w-[7px] flex-shrink-0 rounded-full bg-primary"></span>
+                          <span class="text-[17px] leading-[1.75] text-gray-700">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {caseStudy.gallery_images && caseStudy.gallery_images.length > 0 && (
+            <section class="mt-13">
+              <div class="flex items-baseline gap-3.5 border-b-2 border-foreground pb-3.5">
+                <span class="text-[13px] font-extrabold tracking-[0.1em] text-primary">{galleryNumber}</span>
+                <h2 class="text-2xl font-bold tracking-tight text-foreground">Project gallery</h2>
+              </div>
+              <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {caseStudy.gallery_images.map((url, i) => (
+                  <button
+                    type="button"
+                    class="gallery-thumb group relative aspect-square overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                    data-src={url}
+                    data-index={i}
+                    aria-label={`View image ${i + 1}`}
+                  >
+                    <img
+                      src={url}
+                      alt={`${title} – imagen ${i + 1}`}
+                      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <svg class="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                      </svg>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <!-- Project fact sheet: los datos duros, sin tener que leer el cuerpo.
+             Sticky so it stays in view while reading. -->
+        <aside class="lg:sticky lg:top-28">
+          <div class="overflow-hidden rounded-2xl border border-border shadow-sm">
+            <div class="bg-foreground px-5 py-4">
+              <p class="text-xs font-bold uppercase tracking-[0.12em] text-background">Project fact sheet</p>
+            </div>
+            {fichaRows.map((row) => (
+              <div class="flex justify-between gap-4 border-b border-border px-5 py-3.5">
+                <span class="text-[13px] text-muted-foreground">{row.label}</span>
+                <span class="text-right text-sm font-semibold text-foreground">{row.value}</span>
+              </div>
+            ))}
+            {tags.length > 0 && (
+              <div class="px-5 pb-5 pt-4">
+                <p class="mb-2.5 text-[13px] text-muted-foreground">Services</p>
+                <div class="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <span class="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-xs text-gray-700">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-border p-5">
+            <p class="text-[17px] font-bold tracking-tight text-foreground">Facing a similar challenge?</p>
+            <p class="mt-2 text-sm leading-relaxed text-gray-600">
+              Our engineers review your case and propose the filtration solution for your process.
+            </p>
+            <a
+              href={sidebarWhatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-4 flex items-center justify-center gap-2 rounded-md bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1ebe5d]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-[18px] w-[18px] flex-shrink-0">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/>
+              </svg>
+              Contact via WhatsApp
+            </a>
+          </div>
+        </aside>
+      </div>
 
       <!-- Lightbox -->
       <div id="lightbox" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true">
@@ -231,29 +265,28 @@ const formatDate = (date: Date) =>
 
       {related.length > 0 && (
         <div class="mt-16">
-          <h3 class="text-lg font-semibold text-foreground mb-6">More cases in {industry}</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {related.map((r) => {
-              const relTitle = r.title_en || r.title;
-              return (
-                <a
-                  href={`/en/success-cases/${r.slug}`}
-                  class="group rounded-xl border border-border bg-background p-4 hover:border-primary/50 hover:shadow-sm transition-all"
-                >
-                  {r.featured_image && (
-                    <div class="h-28 overflow-hidden rounded-md mb-3">
-                      <img src={r.featured_image} alt={relTitle} class="h-full w-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
-                    </div>
-                  )}
-                  <p class="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">{relTitle}</p>
-                </a>
-              );
-            })}
+          <h3 class="mb-6 text-xl font-bold tracking-tight text-foreground">More cases in {industry}</h3>
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            {related.map((r) => (
+              <a
+                href={`/en/success-cases/${r.slug}`}
+                class="group overflow-hidden rounded-2xl border border-border transition-all hover:border-primary/50 hover:shadow-sm"
+              >
+                {r.featured_image && (
+                  <div class="h-40 overflow-hidden">
+                    <img src={r.featured_image} alt={r.title_en || r.title} class="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                  </div>
+                )}
+                <div class="p-4">
+                  <p class="text-[15px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary line-clamp-2">{r.title_en || r.title}</p>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
       )}
 
-      <div class="mt-10">
+      <div class="mt-10 section-pb">
         <a href="/en/success-cases" class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>

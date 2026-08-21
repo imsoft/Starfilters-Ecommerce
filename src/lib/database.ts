@@ -145,6 +145,13 @@ export interface Order {
   stripe_payment_intent_id?: string;
   // Datos fiscales opcionales capturados en el checkout (JSON serializado)
   billing_data?: string | null;
+  // Forma de entrega elegida en el checkout. Vivía solo en el borrador y se
+  // perdía al crear la orden: sin ella el panel no puede distinguir un
+  // "recoge en GDL" de un envío nacional, que son operaciones distintas.
+  delivery_method?: string | null;
+  // Paquetería y guía: solo aplican a la entrega por paquetería nacional.
+  shipping_carrier?: string | null;
+  tracking_number?: string | null;
   // Moneda del cobro: sin ella un total de 2,000 es ambiguo (¿pesos o dólares?)
   currency?: 'MXN' | 'USD';
   created_at: Date;
@@ -332,6 +339,9 @@ export const deleteProduct = async (id: number): Promise<boolean> => {
 // Funciones para Órdenes
 export const getOrders = async (limit = 10, offset = 0): Promise<Order[]> => {
   try {
+    // Crea las columnas de logística si aún no existen: así el panel las tiene
+    // desde la primera visita, sin esperar a que entre un pedido nuevo.
+    await ensureOrdersDeliveryColumns();
     const sql = `
       SELECT * FROM orders 
       ORDER BY created_at DESC
@@ -568,13 +578,45 @@ export const ensureOrdersBillingColumn = (): Promise<void> => {
   return ordersBillingColumnEnsured;
 };
 
+// Columnas de logística: forma de entrega, paquetería y número de guía.
+let ordersDeliveryColumnsEnsured: Promise<void> | null = null;
+
+export const ensureOrdersDeliveryColumns = (): Promise<void> => {
+  if (!ordersDeliveryColumnsEnsured) {
+    ordersDeliveryColumnsEnsured = (async () => {
+      const columnas: Array<{ nombre: string; definicion: string }> = [
+        { nombre: 'delivery_method', definicion: 'VARCHAR(32) NULL' },
+        { nombre: 'shipping_carrier', definicion: 'VARCHAR(64) NULL' },
+        { nombre: 'tracking_number', definicion: 'VARCHAR(64) NULL' },
+      ];
+
+      for (const columna of columnas) {
+        const rows = await query(
+          `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = ?`,
+          [columna.nombre]
+        ) as any[];
+        if (!rows[0] || Number(rows[0].n) === 0) {
+          await query(`ALTER TABLE orders ADD COLUMN ${columna.nombre} ${columna.definicion}`);
+          console.log(`✅ Columna orders.${columna.nombre} creada`);
+        }
+      }
+    })().catch((error) => {
+      ordersDeliveryColumnsEnsured = null;
+      throw error;
+    });
+  }
+  return ordersDeliveryColumnsEnsured;
+};
+
 export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at' | 'updated_at'>): Promise<number> => {
   await ensureOrdersPaymentIntentColumn();
   await ensureOrdersBillingColumn();
+  await ensureOrdersDeliveryColumns();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data, currency)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data, currency, delivery_method, shipping_carrier, tracking_number)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -588,9 +630,27 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
     order.shipping_address || null,
     order.stripe_payment_intent_id || null,
     order.billing_data || null,
-    order.currency || 'MXN'
+    order.currency || 'MXN',
+    order.delivery_method || null,
+    order.shipping_carrier || null,
+    order.tracking_number || null
   ]) as any;
   return result.insertId;
+};
+
+/**
+ * Guarda paquetería y guía de una orden. Se llama al marcarla como enviada.
+ */
+export const updateOrderShipping = async (
+  id: number,
+  datos: { carrier?: string | null; trackingNumber?: string | null }
+): Promise<boolean> => {
+  await ensureOrdersDeliveryColumns();
+  const result = await query(
+    'UPDATE orders SET shipping_carrier = ?, tracking_number = ?, updated_at = NOW() WHERE id = ?',
+    [datos.carrier || null, datos.trackingNumber || null, id]
+  ) as any;
+  return result.affectedRows > 0;
 };
 
 export const getOrderByPaymentIntentId = async (paymentIntentId: string): Promise<Order | null> => {
@@ -905,12 +965,14 @@ export const getUserOrders = async (userId: number, limit = 50, offset = 0): Pro
 };
 
 export const getOrderById = async (orderId: number): Promise<Order | null> => {
+  await ensureOrdersDeliveryColumns();
   const sql = 'SELECT * FROM orders WHERE id = ?';
   const result = await query(sql, [orderId]) as Order[];
   return result.length > 0 ? result[0] : null;
 };
 
 export const getOrderByUuid = async (uuid: string): Promise<Order | null> => {
+  await ensureOrdersDeliveryColumns();
   const sql = 'SELECT * FROM orders WHERE uuid = ?';
   const result = await query(sql, [uuid]) as Order[];
   return result.length > 0 ? result[0] : null;
