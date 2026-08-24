@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { ZONA_HORARIA } from '@/lib/timezone';
 import { verifyWebhookSignature, STRIPE_CONFIG } from '@/lib/stripe';
 import { createOrder, createOrderItem, getOrderByPaymentIntentId } from '@/lib/database';
 import { query } from '@/config/database';
@@ -108,6 +109,7 @@ async function sendOrderEmails(
 ) {
   try {
     const orderDate = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', {
+      timeZone: ZONA_HORARIA,
       year: 'numeric',
       month: 'long',
       day: 'numeric',

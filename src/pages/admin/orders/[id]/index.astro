@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
+import { ZONA_HORARIA } from "@/lib/timezone";
 import { getOrderByUuid, getOrderItems, getOrderStatusHistory, setOrderCfdiStamped } from "@/lib/database";
 import { changeOrderStatus } from "@/lib/order-status";
 import { getDeliveryOption, getDeliveryLabel, isPickupMethod } from "@/lib/delivery-options";
@@ -96,6 +97,7 @@ const requiereFactura = billingFields.length > 0;
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('es-MX', {
+    timeZone: ZONA_HORARIA,
     day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
   }).format(new Date(date));
 }

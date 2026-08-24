@@ -1,5 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { ZONA_HORARIA } from "@/lib/timezone";
 import SEO from "@/components/shared/SEO.astro";
 import { getCaseStudyBySlug, getActiveCaseStudies } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
@@ -38,7 +39,8 @@ const getTagsArray = (tags?: string) =>
 const tags = getTagsArray(caseStudy.tags);
 
 const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long' }).format(new Date(date));
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: ZONA_HORARIA, year: 'numeric', month: 'long' }).format(new Date(date));
 
 // Challenge / solution / results, numbered over what the case actually has:
 // a case with no challenge starts at 01, not 02.

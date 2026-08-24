@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
+import { ZONA_HORARIA } from "@/lib/timezone";
 import { Button } from "@/components/ui/button";
 import AdminFilters from "@/components/shared/AdminFilters.astro";
 import { getAllBlogPosts } from "@/lib/database";
@@ -46,6 +47,7 @@ console.log('📊 Estadísticas del blog calculadas:', {
 // Función para formatear fecha
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('es-ES', {
+    timeZone: ZONA_HORARIA,
     day: 'numeric',
     month: 'short',
     year: 'numeric'

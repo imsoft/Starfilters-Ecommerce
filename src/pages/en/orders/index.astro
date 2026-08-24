@@ -1,5 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { ZONA_HORARIA } from "@/lib/timezone";
 import CustomModal from "@/components/shared/CustomModal.astro";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { getUserOrders } from "@/lib/database";
@@ -22,12 +23,15 @@ const stats = {
   shipped: orders.filter(o => o.status === 'shipped').length,
   delivered: orders.filter(o => o.status === 'delivered').length,
   cancelled: orders.filter(o => o.status === 'cancelled').length,
-  totalSpent: orders.reduce((sum, o) => sum + o.total_amount, 0)
+  // total_amount llega de MySQL como CADENA (columna DECIMAL): sumarlo tal cual
+  // concatenaba los importes y el resultado se mostraba como "$NaN MXN".
+  totalSpent: orders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0)
 };
 
 // Utility functions
 const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat('en-US', {
+    timeZone: ZONA_HORARIA,
     year: 'numeric',
     month: 'long',
     day: 'numeric',

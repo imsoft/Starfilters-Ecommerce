@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
+import { ZONA_HORARIA } from "@/lib/timezone";
 import CustomModal from "@/components/shared/CustomModal.astro";
 import { requireAdmin } from "@/lib/auth-utils";
 import { getRegularUsers, getAdminUsers, promoteUserToAdmin } from "@/lib/database";
@@ -46,6 +47,7 @@ console.log('📊 Estadísticas de usuarios calculadas:', {
 // Función para formatear fecha
 const formatDate = (date: Date): string => {
   return new Intl.DateTimeFormat('es-MX', {
+    timeZone: ZONA_HORARIA,
     year: 'numeric',
     month: 'long',
     day: 'numeric',

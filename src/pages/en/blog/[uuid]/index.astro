@@ -1,5 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { ZONA_HORARIA } from "@/lib/timezone";
 import SEO from "@/components/shared/SEO.astro";
 import { getBlogPostByUuid } from "@/lib/database";
 import type { BlogPost } from "@/lib/database";
@@ -36,6 +37,7 @@ const postData = {
 // Function to format date
 const formatDate = (date: Date): string => {
   return new Intl.DateTimeFormat('en-US', {
+    timeZone: ZONA_HORARIA,
     year: 'numeric',
     month: 'long',
     day: 'numeric'

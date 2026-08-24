@@ -16,6 +16,7 @@ import {
 } from './database';
 import { sendEmail, createOrderStatusUpdateEmail } from './email';
 import { getOrderNotificationEmails } from './site-settings-service';
+import { ZONA_HORARIA } from './timezone';
 
 export const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const;
 
@@ -122,6 +123,7 @@ export const changeOrderStatus = async ({
     const fechaEn = (locale: string) =>
       order.created_at
         ? new Date(order.created_at).toLocaleDateString(locale, {
+            timeZone: ZONA_HORARIA,
             year: 'numeric',
             month: 'long',
             day: 'numeric',

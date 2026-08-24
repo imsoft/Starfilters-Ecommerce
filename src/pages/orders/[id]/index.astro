@@ -1,5 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { ZONA_HORARIA } from "@/lib/timezone";
 import CustomModal from "@/components/shared/CustomModal.astro";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { getUserOrderWithItems } from "@/lib/database";
@@ -30,6 +31,7 @@ const { items, ...order } = orderWithItems;
 // Funciones de utilidad
 const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat('es-ES', {
+    timeZone: ZONA_HORARIA,
     year: 'numeric',
     month: 'long',
     day: 'numeric',

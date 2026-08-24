@@ -1,5 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
+import { ZONA_HORARIA } from "@/lib/timezone";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { getUserById, updateUser } from "@/lib/database";
 import { validateEmail, validatePhone, generateJWT } from "@/lib/auth";
@@ -96,6 +97,7 @@ if (Astro.request.method === "POST") {
 // Formatear fecha de registro
 const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat('es-ES', {
+    timeZone: ZONA_HORARIA,
     year: 'numeric',
     month: 'long',
     day: 'numeric'
