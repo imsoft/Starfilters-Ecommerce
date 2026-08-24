@@ -187,6 +187,21 @@ if (!user) {
                     />
                   </div>
                 </div>
+
+                <div class="sm:col-span-2">
+                  <label for="phone" class="block text-sm/6 font-medium text-foreground">Contact phone</label>
+                  <div class="mt-2">
+                    <input
+                      id="phone"
+                      type="tel"
+                      name="phone"
+                      autocomplete="tel"
+                      placeholder="+52 33 1234 5678"
+                      class="block w-full rounded-md bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-border placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                    />
+                  </div>
+                  <p class="mt-1.5 text-xs text-muted-foreground">So we can coordinate the delivery. Only used for this order.</p>
+                </div>
               </div>
             </div>
 
@@ -1390,6 +1405,7 @@ if (!user) {
           const state = (document.getElementById('state') as HTMLInputElement)?.value;
           const postalCode = (document.getElementById('postal-code') as HTMLInputElement)?.value;
           const country = (document.getElementById('country') as HTMLInputElement)?.value;
+          const phone = (document.getElementById('phone') as HTMLInputElement)?.value?.trim();
           const deliveryMethod = getSelectedDeliveryMethod();
 
           isLoadingPaymentForm = true;
@@ -1405,6 +1421,7 @@ if (!user) {
             state,
             postalCode,
             country,
+            phone,
           };
 
           console.log('💳 Creating Payment Intent with Stripe...');
