@@ -1,16 +1,21 @@
 ---
 import { getLangFromUrl, useTranslations } from '@/i18n/utils';
-import { getActivePortfolioProjects } from '@/lib/database';
+import { getHomeCaseStudies } from '@/lib/database';
+import type { CaseStudy } from '@/lib/database';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 const isEn = lang === 'en';
 
-let projects = [];
+// La galería salía de portfolio_projects, una tabla aparte donde había que
+// volver a capturar el mismo proyecto que ya estaba como caso de éxito. Ahora
+// sale de los casos marcados con "mostrar en la página principal", así que
+// cada tarjeta lleva a SU caso y no al listado completo.
+let projects: CaseStudy[] = [];
 try {
-  projects = await getActivePortfolioProjects();
+  projects = await getHomeCaseStudies();
 } catch (error) {
-  console.error('Error cargando proyectos de portafolio:', error);
+  console.error('Error cargando los casos de éxito de la página principal:', error);
 }
 
 if (projects.length === 0) return;
@@ -48,18 +53,19 @@ import MarqueePause from "@/components/shared/MarqueePause.astro";
     <div class="project-track flex items-stretch" data-marquee style={`animation-duration: ${scrollDuration}`}>
       {[...loopProjects, ...loopProjects].map((project) => {
         const title = (isEn && project.title_en) ? project.title_en : project.title;
-        const description = (isEn && project.description_en) ? project.description_en : project.description;
-        let portfolioHref = project.link_url || (isEn ? '/en/success-cases' : '/casos-de-exito');
-        if (isEn && portfolioHref.startsWith('/casos-de-exito')) {
-          portfolioHref = portfolioHref.replace('/casos-de-exito', '/en/success-cases');
-        }
+        const description = (isEn && project.excerpt_en) ? project.excerpt_en : (project.excerpt || '');
+        // Al caso concreto, no al listado: antes, sin link_url, todas las
+        // tarjetas caían en "todos los proyectos".
+        const portfolioHref = isEn
+          ? `/en/success-cases/${project.slug}`
+          : `/casos-de-exito/${project.slug}`;
 
         return (
           <div class="group relative flex flex-col flex-shrink-0 w-80 sm:w-96 mx-3 overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <!-- Imagen -->
             <div class="relative h-56 overflow-hidden">
               <img
-                src={project.image_url}
+                src={project.featured_image}
                 alt={title}
                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"

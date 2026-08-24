@@ -35,6 +35,8 @@ if (Astro.request.method === 'POST') {
   const gallery_images: string[] = gallery_images_raw ? JSON.parse(gallery_images_raw) : [];
   const tags = formData.get('tags') as string | null;
   const is_active = formData.get('is_active') === '1';
+  // La casilla solo llega en el formulario cuando está marcada.
+  const show_on_home = formData.get('show_on_home') === '1';
 
   if (!slug || !title || !industry) {
     return Astro.redirect(`/admin/casos-de-exito/edit/${uuid}?error=missing_fields`);
@@ -60,6 +62,7 @@ if (Astro.request.method === 'POST') {
       gallery_images,
       tags: tags || undefined,
       is_active,
+      show_on_home,
     });
 
     if (updated) return Astro.redirect('/admin/casos-de-exito?success=updated');
@@ -326,6 +329,18 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
               <span class="text-sm text-foreground">Inactivo (oculto)</span>
             </label>
           </div>
+        </div>
+
+        <div class="mt-6 border-t border-border pt-6">
+          <label class="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" name="show_on_home" value="1" checked={caseStudy.show_on_home} class="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+            <span>
+              <span class="block text-sm font-medium text-foreground">Mostrar en la página principal</span>
+              <span class="block text-xs text-muted-foreground">
+                Aparece en el carrusel "Galería de Proyectos" del inicio, y al hacer clic lleva a este caso.
+              </span>
+            </span>
+          </label>
         </div>
       </div>
 

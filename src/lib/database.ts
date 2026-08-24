@@ -1983,6 +1983,10 @@ export interface CaseStudy {
   gallery_images?: string[];
   tags?: string;
   is_active: boolean;
+  // Si además aparece en el carrusel de la página principal. La galería del
+  // home tenía su propia tabla (portfolio_projects) con los mismos campos
+  // capturados a mano: ahora sale de aquí y esto elige cuáles se muestran.
+  show_on_home: boolean;
   sort_order: number;
   created_at: Date;
   updated_at: Date;
@@ -2007,6 +2011,7 @@ export interface CreateCaseStudyData {
   gallery_images?: string[];
   tags?: string;
   is_active?: boolean;
+  show_on_home?: boolean;
   sort_order?: number;
 }
 
@@ -2034,11 +2039,39 @@ function mapCaseStudyFromDB(row: any): CaseStudy {
     gallery_images: row.gallery_images ? JSON.parse(row.gallery_images) : [],
     tags: row.tags,
     is_active: Boolean(row.is_active),
+    // Las filas anteriores a la columna no la traen; se asume que sí sale.
+    show_on_home: row.show_on_home === undefined || row.show_on_home === null
+      ? true
+      : Boolean(row.show_on_home),
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
 }
+
+// Columna añadida después de crear la tabla: los casos existentes no la tienen.
+let caseStudiesHomeColumnEnsured: Promise<void> | null = null;
+
+const ensureCaseStudyHomeColumn = (): Promise<void> => {
+  if (!caseStudiesHomeColumnEnsured) {
+    caseStudiesHomeColumnEnsured = (async () => {
+      const rows = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'case_studies' AND COLUMN_NAME = 'show_on_home'`
+      ) as any[];
+      if (!rows[0] || Number(rows[0].n) === 0) {
+        // Por defecto 1: al desplegar, la galería del home sigue mostrando algo
+        // en vez de quedarse vacía hasta que alguien entre a marcarlos.
+        await query('ALTER TABLE case_studies ADD COLUMN show_on_home TINYINT(1) NOT NULL DEFAULT 1');
+        console.log('✅ Columna case_studies.show_on_home creada');
+      }
+    })().catch((error) => {
+      caseStudiesHomeColumnEnsured = null;
+      throw error;
+    });
+  }
+  return caseStudiesHomeColumnEnsured;
+};
 
 export const initCaseStudiesTable = async (): Promise<void> => {
   await query(`
@@ -2062,11 +2095,25 @@ export const initCaseStudiesTable = async (): Promise<void> => {
       featured_image VARCHAR(1000),
       tags VARCHAR(500),
       is_active TINYINT(1) DEFAULT 1,
+      show_on_home TINYINT(1) NOT NULL DEFAULT 1,
       sort_order INT DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
+  await ensureCaseStudyHomeColumn();
+};
+
+/**
+ * Los casos que salen en el carrusel de la página principal.
+ * Solo activos y marcados, en el mismo orden que el listado.
+ */
+export const getHomeCaseStudies = async (): Promise<CaseStudy[]> => {
+  await initCaseStudiesTable();
+  const rows = await query(
+    'SELECT * FROM case_studies WHERE is_active = 1 AND show_on_home = 1 ORDER BY sort_order ASC, created_at DESC'
+  ) as any[];
+  return rows.map(mapCaseStudyFromDB);
 };
 
 export const getAllCaseStudies = async (): Promise<CaseStudy[]> => {
@@ -2101,8 +2148,8 @@ export const createCaseStudy = async (data: CreateCaseStudyData): Promise<CaseSt
       `INSERT INTO case_studies
         (uuid, slug, title, title_en, industry, industry_en, excerpt, excerpt_en,
          challenge, challenge_en, solution, solution_en, results, results_en,
-         client_name, featured_image, gallery_images, tags, is_active, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         client_name, featured_image, gallery_images, tags, is_active, show_on_home, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         uuid,
         data.slug,
@@ -2123,6 +2170,7 @@ export const createCaseStudy = async (data: CreateCaseStudyData): Promise<CaseSt
         data.gallery_images?.length ? JSON.stringify(data.gallery_images) : null,
         data.tags || null,
         data.is_active !== false ? 1 : 0,
+        data.show_on_home !== false ? 1 : 0,
         data.sort_order ?? 0,
       ]
     );
@@ -2141,7 +2189,7 @@ export const updateCaseStudy = async (uuid: string, data: UpdateCaseStudyData): 
         excerpt = ?, excerpt_en = ?, challenge = ?, challenge_en = ?,
         solution = ?, solution_en = ?, results = ?, results_en = ?,
         client_name = ?, featured_image = COALESCE(?, featured_image),
-        gallery_images = ?, tags = ?, is_active = ?,
+        gallery_images = ?, tags = ?, is_active = ?, show_on_home = ?,
         sort_order = COALESCE(?, sort_order), updated_at = NOW()
        WHERE uuid = ?`,
       [
@@ -2165,6 +2213,7 @@ export const updateCaseStudy = async (uuid: string, data: UpdateCaseStudyData): 
           : undefined,
         data.tags || null,
         data.is_active !== false ? 1 : 0,
+        data.show_on_home !== false ? 1 : 0,
         data.sort_order ?? null,
         uuid,
       ]
