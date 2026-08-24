@@ -348,14 +348,6 @@ const getStatusText = (status: string) => {
                   >
                     Ver Detalles
                   </a>
-                  {order.status === 'delivered' && (
-                    <a
-                      href={`/orders/${order.id}/invoice`}
-                      class="inline-flex items-center justify-center rounded-md bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 transition-colors"
-                    >
-                      Descargar Factura
-                    </a>
-                  )}
                 </div>
               </div>
             </div>
