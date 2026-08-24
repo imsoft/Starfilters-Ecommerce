@@ -460,6 +460,18 @@ if (!user) {
      */
     let estadoPakke: 'sin-cp' | 'cargando' | 'ok' | 'fallback' = 'sin-cp';
 
+    // El botón de confirmar se pinta dentro de initCheckout y la cotización
+    // corre fuera: no se veían entre sí. Sin este puente, al terminar de
+    // cotizar se refrescaba el resumen (por eso el envío ya aparecía) pero el
+    // botón se quedaba en "Calculando el envío…" y bloqueado para siempre.
+    let refrescarBotonConfirmar: () => void = () => {};
+
+    // Todo cambio de estadoPakke tiene que repintar el resumen Y el botón.
+    const refrescarTrasCotizar = () => {
+      renderOrderSummary();
+      refrescarBotonConfirmar();
+    };
+
     /** true cuando el envío aún no se puede cifrar y no debe mostrarse un monto. */
     function envioPorCalcular(method: string): boolean {
       return method === 'paqueteria' && (estadoPakke === 'sin-cp' || estadoPakke === 'cargando');
@@ -547,7 +559,7 @@ if (!user) {
         tarifaPakke = null;
         ultimoCpCotizado = '';
         estadoPakke = 'sin-cp';
-        renderOrderSummary();
+        refrescarTrasCotizar();
         return;
       }
       if (cp === ultimoCpCotizado && !forzar) return;
@@ -555,7 +567,7 @@ if (!user) {
       estado.textContent = 'Buscando paqueterías…';
       lista.innerHTML = '';
       estadoPakke = 'cargando';
-      renderOrderSummary();
+      refrescarTrasCotizar();
 
       try {
         const res = await fetch('/api/cotizar-envio', {
@@ -571,7 +583,7 @@ if (!user) {
           estado.textContent = 'No hay cotización disponible ahora; se aplica la tarifa estándar.';
           tarifaPakke = null;
           estadoPakke = 'fallback';
-          renderOrderSummary();
+          refrescarTrasCotizar();
           return;
         }
 
@@ -604,16 +616,16 @@ if (!user) {
               courierName: el.dataset.courier || '',
               total: Number(el.dataset.total) || 0,
             };
-            renderOrderSummary();
+            refrescarTrasCotizar();
           });
         });
 
-        renderOrderSummary();
+        refrescarTrasCotizar();
       } catch {
         estadoPakke = 'fallback';
         estado.textContent = 'No hay cotización disponible ahora; se aplica la tarifa estándar.';
         tarifaPakke = null;
-        renderOrderSummary();
+        refrescarTrasCotizar();
       }
     }
 
@@ -1170,6 +1182,7 @@ if (!user) {
       const deliveryOptions = document.getElementById('delivery-options');
       if (!deliveryOptions || deliveryOptions.hasAttribute('data-checkout-init')) return;
       deliveryOptions.setAttribute('data-checkout-init', 'true');
+      refrescarBotonConfirmar = updateConfirmButton;
       initInvoiceToggle();
       await cargarTasaCambio();
       console.log('🚀 initCheckout iniciado');
