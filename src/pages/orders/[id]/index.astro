@@ -326,15 +326,6 @@ const total = subtotal + shipping + tax;
                   Descargar Factura
                 </a>
               )}
-              {(order.status === 'pending' || order.status === 'processing') && (
-                <button
-                  type="button"
-                  class="block w-full text-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
-                  onclick={`cancelOrder(${order.id})`}
-                >
-                  Cancelar Pedido
-                </button>
-              )}
               <a
                 href="/orders"
                 class="block w-full text-center rounded-md bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 transition-colors"
@@ -377,24 +368,5 @@ const total = subtotal + shipping + tax;
 </WebsiteLayout>
 
 <script>
-  // Función para cancelar pedido
-  function cancelOrder(orderId: number) {
-    if (typeof (window as any).showCustomModal === 'function') {
-      (window as any).showCustomModal(
-        'confirm-dialog',
-        'Cancelar pedido',
-        '¿Estás seguro de que quieres cancelar este pedido?',
-        () => {
-          // Implementar lógica de cancelación
-          console.log(`Cancelando pedido ${orderId}`);
-          // TODO: Implementar llamada al backend para cancelar
-        },
-        'Cancelar pedido',
-        'No cancelar'
-      );
-    }
-  }
 
-  // Hacer la función global
-  (window as any).cancelOrder = cancelOrder;
 </script>

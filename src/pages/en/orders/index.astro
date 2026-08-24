@@ -352,15 +352,6 @@ const getStatusText = (status: string) => {
                       Download Invoice
                     </a>
                   )}
-                  {(order.status === 'pending' || order.status === 'processing') && (
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
-                      onclick={`cancelOrder(${order.id})`}
-                    >
-                      Cancel Order
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -473,23 +464,4 @@ const getStatusText = (status: string) => {
   document.addEventListener('astro:page-load', initOrdersFilters);
   
   // Function to cancel order
-  function cancelOrder(orderId: number) {
-    if (typeof (window as any).showCustomModal === 'function') {
-      (window as any).showCustomModal(
-        'confirm-dialog',
-        'Cancel order',
-        'Are you sure you want to cancel this order?',
-        () => {
-          // Implement cancellation logic
-          console.log(`Cancelling order ${orderId}`);
-          // TODO: Implement backend call to cancel
-        },
-        'Cancel order',
-        "Don't cancel"
-      );
-    }
-  }
-
-  // Make function global
-  (window as any).cancelOrder = cancelOrder;
 </script>

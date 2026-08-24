@@ -352,15 +352,6 @@ const getStatusText = (status: string) => {
                       Descargar Factura
                     </a>
                   )}
-                  {(order.status === 'pending' || order.status === 'processing') && (
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
-                      onclick={`cancelOrder(${order.id})`}
-                    >
-                      Cancelar Pedido
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -471,25 +462,5 @@ const getStatusText = (status: string) => {
 
   initOrdersFilters();
   document.addEventListener('astro:page-load', initOrdersFilters);
-  
-  // Función para cancelar pedido
-  function cancelOrder(orderId: number) {
-    if (typeof (window as any).showCustomModal === 'function') {
-      (window as any).showCustomModal(
-        'confirm-dialog',
-        'Cancelar pedido',
-        '¿Estás seguro de que quieres cancelar este pedido?',
-        () => {
-          // Implementar lógica de cancelación
-          console.log(`Cancelando pedido ${orderId}`);
-          // TODO: Implementar llamada al backend para cancelar
-        },
-        'Cancelar pedido',
-        'No cancelar'
-      );
-    }
-  }
 
-  // Hacer la función global
-  (window as any).cancelOrder = cancelOrder;
 </script>
