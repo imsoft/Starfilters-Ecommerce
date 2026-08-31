@@ -11,6 +11,7 @@ import type { FilterCategoryVariant } from "@/lib/filter-category-service";
 import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchema, extractTextFromHTML } from "@/lib/seo-utils";
 import { getExchangeRate } from "@/lib/currency-service";
 import { getBindInventoryByCode } from "@/lib/bind";
+import { existenciaSegunBind, normalizarCodigosBind } from "@/lib/stock";
 import { getMoneda, precioEnMoneda, convertirMoneda } from "@/lib/currency-preference";
 import { getProductName, getProductDescription, getProductCategory, getProductPriceAndCurrency, formatPriceByCurrency, getCategoryName } from "@/lib/i18n-helpers";
 import { getWhatsAppNumber } from "@/lib/site-settings-service";
@@ -126,19 +127,19 @@ if (product.filter_category_id) {
 
 // Disponibilidad real (BIND), para que Google no anuncie como agotado algo que
 // sí hay: products.stock local casi siempre está en cero.
-const codigosBind = [
+// Solo cuentan los tamaños ACTIVOS: aquí se sumaban también los inactivos, así
+// que la ficha podía anunciar existencias de un tamaño que ni siquiera se puede
+// comprar. El listado y /api/check-stock ya filtraban por is_active.
+const codigosBind = normalizarCodigosBind([
   (product as any).bind_code,
-  ...categoryVariants.filter((v) => v.bind_code).map((v) => v.bind_code as string),
-]
-  .filter(Boolean)
-  .map((c) => String(c).trim().toUpperCase());
+  ...categoryVariants.filter((v) => v.is_active && v.bind_code).map((v) => v.bind_code as string),
+]);
 
 let hayExistencia = product.stock > 0;
 if (codigosBind.length > 0) {
   const inventarioBind = await getBindInventoryByCode().catch(() => null);
-  if (inventarioBind && codigosBind.some((c) => inventarioBind.has(c))) {
-    hayExistencia = codigosBind.reduce((s, c) => s + (inventarioBind.get(c) ?? 0), 0) > 0;
-  }
+  const enBind = existenciaSegunBind(inventarioBind, codigosBind);
+  if (enBind !== null) hayExistencia = enBind > 0;
 }
 
 // Obtener nombres traducidos

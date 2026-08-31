@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getProductByUuid } from '@/lib/database';
 import { getBindProductById, getBindInventoryByCode } from '@/lib/bind';
 import { getProductVariants } from '@/lib/filter-category-service';
+import { existenciaSegunBind, normalizarCodigosBind } from '@/lib/stock';
 
 const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -32,17 +33,33 @@ export const GET: APIRoute = async ({ request }) => {
       });
     }
 
-    // Código a consultar: el que venga en la petición (el tamaño elegido), el
-    // del producto o —si no hay— el de alguno de sus tamaños.
-    let codigo = (bindCode || product.bind_code || product.bind_id || '').trim();
-    if (!codigo && product.filter_category_id) {
-      try {
-        const variantes = await getProductVariants(product.id, product.filter_category_id);
-        codigo = (variantes.find((v) => v.is_active && v.bind_code)?.bind_code || '').trim();
-      } catch (error) {
-        console.warn('⚠️ No se pudieron leer los tamaños para resolver el código BIND:', error);
+    // Códigos a consultar.
+    //
+    // Si la petición trae un tamaño concreto se mira SOLO ese, que es el que se
+    // va a comprar. Si no —el botón del listado no manda tamaño—, se miran
+    // TODOS los códigos del producto y se suman, igual que hace la tarjeta del
+    // listado. Antes aquí se tomaba un único código y bastaba con que ese
+    // estuviera en cero para responder "agotado" sobre un producto que la
+    // misma página anunciaba como disponible.
+    let codigos: string[] = [];
+    if (bindCode) {
+      codigos = normalizarCodigosBind([bindCode]);
+    } else {
+      const deTamanos: string[] = [];
+      if (product.filter_category_id) {
+        try {
+          const variantes = await getProductVariants(product.id, product.filter_category_id);
+          deTamanos.push(
+            ...variantes.filter((v) => v.is_active && v.bind_code).map((v) => v.bind_code as string)
+          );
+        } catch (error) {
+          console.warn('⚠️ No se pudieron leer los tamaños para resolver los códigos BIND:', error);
+        }
       }
+      codigos = normalizarCodigosBind([product.bind_code, product.bind_id, ...deTamanos]);
     }
+
+    const codigo = codigos[0] || '';
 
     // Inventario de BIND, consultado en proceso. Antes esta ruta se hacía una
     // petición HTTP a sí misma (/api/bind/search-by-code) armando el origen con
@@ -51,12 +68,12 @@ export const GET: APIRoute = async ({ request }) => {
     // local —que nunca se sincroniza y siempre es 0—, así que la ficha decía
     // "disponible" y el botón respondía "agotado".
     let stock: number | null = null;
-    if (codigo) {
+    if (codigos.length > 0) {
       try {
         const mapa = await getBindInventoryByCode();
-        const enMapa = mapa?.get(codigo.toUpperCase());
-        if (enMapa !== undefined) {
-          stock = enMapa;
+        const sumaBind = existenciaSegunBind(mapa, codigos);
+        if (sumaBind !== null) {
+          stock = sumaBind;
         } else if (ES_UUID.test(codigo)) {
           const bindResult = await getBindProductById(codigo);
           if (bindResult.success && bindResult.data) {
@@ -66,7 +83,7 @@ export const GET: APIRoute = async ({ request }) => {
           }
         }
       } catch (error) {
-        console.warn('Error obteniendo stock desde BIND para', codigo, error);
+        console.warn('Error obteniendo stock desde BIND para', codigos.join(', '), error);
       }
     }
 
@@ -76,7 +93,7 @@ export const GET: APIRoute = async ({ request }) => {
     const hayDatoReal = stock !== null;
     if (!hayDatoReal) {
       console.warn(
-        `⚠️ Sin inventario de BIND para "${product.name}" (código: ${codigo || 'ninguno'}); se permite agregar y se validará al pagar.`
+        `⚠️ Sin inventario de BIND para "${product.name}" (códigos: ${codigos.join(', ') || 'ninguno'}); se permite agregar y se validará al pagar.`
       );
     }
 

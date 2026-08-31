@@ -1,5 +1,6 @@
 ---
 import { getLangFromUrl } from "@/i18n/utils";
+import { existenciaSegunBind, normalizarCodigosBind } from "@/lib/stock";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import {
   getProductVariants,
@@ -108,14 +109,12 @@ const products = await Promise.all(
       price: finalPrice,
       currency: finalCurrency,
       stock: product.stock || 0,
-      bindCodes: [
+      bindCodes: normalizarCodigosBind([
         (product as any).bind_code,
         ...((await getProductVariants(product.id, product.filter_category_id ?? null))
           .filter((v) => v.is_active && v.bind_code)
           .map((v) => v.bind_code as string)),
-      ]
-        .filter(Boolean)
-        .map((c) => String(c).trim().toUpperCase()),
+      ]),
       imageUrl,
       nominal_size: product.nominal_size || undefined,
     };
@@ -129,15 +128,9 @@ const products = await Promise.all(
 const inventarioBind = await getBindInventoryByCode().catch(() => null);
 
 const hayExistencia = (producto: { stock: number; bindCodes: string[] }): boolean => {
-  if (inventarioBind && producto.bindCodes.length > 0) {
-    const total = producto.bindCodes.reduce(
-      (suma, codigo) => suma + (inventarioBind.get(codigo) ?? 0),
-      0
-    );
-    // Solo se confía en BIND si reconoció alguno de los códigos
-    if (producto.bindCodes.some((c) => inventarioBind.has(c))) return total > 0;
-  }
-  return producto.stock > 0;
+  const enBind = existenciaSegunBind(inventarioBind, producto.bindCodes);
+  // null = BIND no respondió o no reconoció los códigos; se cae al local.
+  return enBind === null ? producto.stock > 0 : enBind > 0;
 };
 
 const formatPrice = (price: number, currency: "MXN" | "USD") =>
