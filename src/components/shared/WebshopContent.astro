@@ -164,7 +164,10 @@ const formatPrice = (price: number, currency: "MXN" | "USD") =>
 const t = {
   all: isEn ? "All" : "Todos",
   productType: isEn ? "Product type" : "Tipo de producto",
-  filterType: isEn ? "Filter type" : "Tipo de filtro",
+  // "Tipo de filtro" era falso en las familias que no son filtros: en
+  // Accesorios cuarto limpio las opciones son ventana, pass through y puerta.
+  // "Tipo" describe igual de bien la subcategoría de cualquier familia.
+  filterType: isEn ? "Type" : "Tipo",
   allTypes: isEn ? "All types" : "Todos los tipos",
   resultsFound: isEn ? "products found" : "productos encontrados",
   inStock: isEn ? "In stock" : "Disponible",
