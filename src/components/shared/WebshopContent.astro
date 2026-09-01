@@ -167,11 +167,9 @@ const t = {
   filterType: isEn ? "Filter type" : "Tipo de filtro",
   allTypes: isEn ? "All types" : "Todos los tipos",
   resultsFound: isEn ? "products found" : "productos encontrados",
-  from: isEn ? "From" : "Desde",
-  askPrice: isEn ? "Ask for price" : "Consultar precio",
   inStock: isEn ? "In stock" : "Disponible",
   outOfStock: isEn ? "Out of stock" : "Agotado",
-  addToCart: isEn ? "Add to cart" : "Agregar al carrito",
+  chooseModel: isEn ? "Choose model" : "Elegir modelo",
   unavailable: isEn ? "Unavailable" : "No disponible",
   pickType: isEn
     ? "Choose a filter type to see available products."
@@ -306,12 +304,10 @@ const subheading = selected
                   {product.name}
                 </h3>
               </a>
-              <div class="mt-1 flex items-center justify-between">
-                <p class="text-sm font-semibold text-foreground">
-                  {product.price > 0
-                    ? (product.desde ? `${t.from} ${formatPrice(product.price, product.currency)}` : formatPrice(product.price, product.currency))
-                    : t.askPrice}
-                </p>
+              <!-- Sin precio: la mayoría de los productos vale distinto según el
+                   tamaño, y un solo importe en la tarjeta engañaba. El precio de
+                   cada medida se ve en la ficha, al elegir modelo. -->
+              <div class="mt-1">
                 {hayExistencia(product) ? (
                   <span class="text-xs text-green-600 font-medium">{t.inStock}</span>
                 ) : (
@@ -320,23 +316,16 @@ const subheading = selected
               </div>
               <div class="mt-auto pt-3">
                 {hayExistencia(product) ? (
-                  <button
-                    type="button"
-                    class="add-to-cart-btn w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    data-uuid={product.uuid}
-                    data-id={product.id}
-                    data-name={product.name}
-                    data-price={product.price}
-                    data-image={product.imageUrl}
-                    data-category={product.category || ""}
-                    data-currency={product.currency}
+                  <a
+                    href={productDetailRoute(product.uuid)}
+                    class="block w-full rounded-lg bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
-                    {t.addToCart}
-                  </button>
+                    {t.chooseModel}
+                  </a>
                 ) : (
-                  <button type="button" disabled class="w-full rounded-lg bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground cursor-not-allowed">
+                  <span class="block w-full rounded-lg bg-muted px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
                     {t.unavailable}
-                  </button>
+                  </span>
                 )}
               </div>
             </div>
@@ -372,82 +361,7 @@ const subheading = selected
     }
   });
 
-  // Agregar al carrito vía data-attributes (evita problemas de escape con
-  // comillas en los nombres, p. ej. medidas en pulgadas 9.125").
-  //
-  // Listener delegado en document, igual que los filtros: este módulo solo se
-  // evalúa una vez por sesión, así que enlazar botón por botón dejaba sin
-  // escucha a los que llegan tras una navegación con ClientRouter (entrar a la
-  // tienda desde otra página, o cambiar de categoría) y el clic no hacía nada.
-  document.addEventListener("click", (e) => {
-    const target = e.target as HTMLElement | null;
-    const btn = target?.closest<HTMLElement>(".add-to-cart-btn");
-    if (!btn) return;
-    const d = btn.dataset;
-    addToCartQuick(
-      d.uuid || "",
-      Number(d.id),
-      d.name || "",
-      Number(d.price),
-      d.image || "",
-      d.category || "",
-      d.currency || "MXN"
-    );
-  });
 
-  async function addToCartQuick(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = "MXN") {
-    const cartData = localStorage.getItem("starfilters_cart");
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency };
-    if (!cart.currency) cart.currency = currency;
-
-    const idx = cart.items.findIndex((item: any) => item.uuid === uuid);
-
-    // Verificar disponibilidad con la misma fuente que la ficha de producto
-    // (BIND vía /api/check-stock) antes de agregar.
-    const quantityInCart = idx >= 0 ? cart.items[idx].quantity : 0;
-    try {
-      const res = await fetch(`/api/check-stock?uuid=${encodeURIComponent(uuid)}&quantity=${quantityInCart + 1}`);
-      const data = await res.json();
-      if (!data.available) {
-        // Sin cifras: el cliente no quiere publicar cuántas piezas hay.
-        const isEn = window.location.pathname.startsWith("/en");
-        if (data.outOfStock) {
-          showWarningNotification(isEn
-            ? "This product is out of stock, please contact us for actual delivery times."
-            : "Este producto está agotado, contáctanos para conocer los tiempos de entrega reales.");
-        } else {
-          showWarningNotification(isEn
-            ? "We don't have enough stock for that quantity. Contact us and we'll gladly help."
-            : "No tenemos inventario suficiente para esa cantidad. Contáctanos y con gusto te ayudamos.");
-        }
-        return;
-      }
-    } catch (error) {
-      console.warn("No se pudo verificar el stock:", error);
-    }
-
-    if (idx >= 0) {
-      cart.items[idx].quantity += 1;
-      cart.items[idx].price = price;
-      cart.items[idx].currency = currency;
-    } else {
-      cart.items.push({ uuid, product_id, name, price, currency, quantity: 1, image_url, category });
-    }
-    cart.total = cart.items.reduce((tt: number, i: any) => tt + i.price * i.quantity, 0);
-    cart.itemCount = cart.items.reduce((c: number, i: any) => c + i.quantity, 0);
-    localStorage.setItem("starfilters_cart", JSON.stringify(cart));
-
-    showNotification(`${name} ✓`);
-    window.dispatchEvent(new CustomEvent("cartUpdated", { detail: cart }));
-  }
-
-  function showNotification(message: string) {
-    const n = document.createElement("div");
-    n.className = "fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300";
-    n.innerHTML = `<div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>${message}</span></div>`;
-    document.body.appendChild(n);
-    setTimeout(() => { n.style.opacity = "0"; setTimeout(() => n.remove(), 300); }, 2500);
-  }
 
   function showWarningNotification(message: string) {
     const n = document.createElement("div");

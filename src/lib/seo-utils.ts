@@ -191,7 +191,7 @@ export function generateProductSchema(product: {
   category?: string;
   stock: number;
   uuid: string;
-}, siteUrl: string) {
+}, siteUrl: string, precioMXN?: number | null) {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -206,7 +206,10 @@ export function generateProductSchema(product: {
       "@type": "Offer",
       "url": `${siteUrl}/product/${product.uuid}`,
       "priceCurrency": "MXN",
-      "price": product.price,
+      // precioMXN gana sobre product.price: los productos capturados con
+      // tamaños tienen su fila en cero y el precio real vive en cada tamaño,
+      // así que Google recibía "price": 0 y ese producto no califica.
+      "price": precioMXN ?? product.price,
       "availability": product.stock > 0 
         ? "https://schema.org/InStock" 
         : "https://schema.org/OutOfStock",

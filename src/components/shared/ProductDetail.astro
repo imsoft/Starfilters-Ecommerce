@@ -263,7 +263,6 @@ const quoteWhatsappUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(wa
 const siteUrl = Astro.site?.href || Astro.url.origin;
 const productKeywords = generateProductKeywords(product);
 const productDescription = extractTextFromHTML(productDesc || '', 160);
-const productSchema = generateProductSchema(product, siteUrl);
 const breadcrumbSchema = generateBreadcrumbSchema([
   { name: t.home, url: isEn ? `${siteUrl}en` : siteUrl },
   { name: t.products, url: `${siteUrl}${productsHref.replace(/^\//, '')}` },
@@ -515,6 +514,19 @@ const precioMostrado = precioProductoNum > 0
 const precioEsDesde = precioProductoNum <= 0
   && preciosDeTamanos.length > 1
   && Math.min(...preciosDeTamanos) !== Math.max(...preciosDeTamanos);
+
+// Precio para Google, siempre en MXN y con el mismo respaldo en los tamaños:
+// enviar 0 deja al producto fuera de Google Shopping.
+const precioSchemaMXN = (() => {
+  const propio = Number(precioEnMoneda(product, 'MXN', exchangeRate)) || 0;
+  if (propio > 0) return propio;
+  const deTamanos = categoryVariants
+    .map((v) => Number(precioEnMoneda(v as any, 'MXN', exchangeRate)))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  return deTamanos.length > 0 ? Math.min(...deTamanos) : null;
+})();
+
+const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
 ---
 
 <WebsiteLayout
@@ -533,7 +545,10 @@ const precioEsDesde = precioProductoNum <= 0
     ogImageAlt={productName}
     keywords={productKeywords}
     product={{
-      price: product.price,
+      // El mismo precio que el otro schema: enviar product.price mandaba 0
+      // en los productos capturados con tamaños, y las dos etiquetas de la
+      // página se contradecían.
+      price: precioSchemaMXN ?? product.price,
       currency: 'MXN',
       availability: hayExistencia ? 'in stock' : 'out of stock',
       brand: 'Star Filters'
