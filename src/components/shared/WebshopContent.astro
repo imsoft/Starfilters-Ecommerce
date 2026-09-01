@@ -97,8 +97,34 @@ const products = await Promise.all(
       /* la imagen de la categoría ya viene en product.image_url */
     }
 
-    // Precio en la moneda que eligió el visitante
-    const finalPrice = precioEnMoneda(product, moneda, exchangeRate);
+    // Los tamaños se leen una sola vez: sirven para el precio y para los
+    // códigos de BIND.
+    const variantes = (await getProductVariants(product.id, product.filter_category_id ?? null))
+      .filter((v) => v.is_active);
+
+    // Precio en la moneda que eligió el visitante.
+    //
+    // Cuando el producto se captura con tamaños, el precio real vive en cada
+    // tamaño y la fila del producto se queda en cero: la tienda mostraba
+    // "$0.00 MXN" mientras el panel —que sí mira los tamaños— enseñaba el
+    // precio correcto. Si el producto no tiene precio propio, se usa el más
+    // barato de sus tamaños y se marca como "desde".
+    const precioPropio = Number(precioEnMoneda(product, moneda, exchangeRate)) || 0;
+    // Number() explícito: MySQL devuelve DECIMAL como CADENA y, cuando la
+    // moneda de origen y destino coinciden, precioEnMoneda la devuelve tal
+    // cual. Number.isFinite("1250.00") es false, así que sin esto los precios
+    // se descartaban en pesos y solo funcionaban en dólares (donde la
+    // conversión los volvía número).
+    const preciosTamanos = variantes
+      .map((v) => Number(precioEnMoneda(v as any, moneda, exchangeRate)))
+      .filter((n) => Number.isFinite(n) && n > 0);
+
+    const finalPrice = precioPropio > 0
+      ? precioPropio
+      : (preciosTamanos.length > 0 ? Math.min(...preciosTamanos) : 0);
+    // "Desde" solo si el precio salió de los tamaños y hay más de uno distinto.
+    const desde = precioPropio <= 0 && preciosTamanos.length > 1
+      && Math.min(...preciosTamanos) !== Math.max(...preciosTamanos);
     const finalCurrency = moneda;
 
     return {
@@ -107,13 +133,12 @@ const products = await Promise.all(
       name: getProductName(product, lang),
       category: product.category || "",
       price: finalPrice,
+      desde,
       currency: finalCurrency,
       stock: product.stock || 0,
       bindCodes: normalizarCodigosBind([
         (product as any).bind_code,
-        ...((await getProductVariants(product.id, product.filter_category_id ?? null))
-          .filter((v) => v.is_active && v.bind_code)
-          .map((v) => v.bind_code as string)),
+        ...variantes.filter((v) => v.bind_code).map((v) => v.bind_code as string),
       ]),
       imageUrl,
       nominal_size: product.nominal_size || undefined,
@@ -142,6 +167,8 @@ const t = {
   filterType: isEn ? "Filter type" : "Tipo de filtro",
   allTypes: isEn ? "All types" : "Todos los tipos",
   resultsFound: isEn ? "products found" : "productos encontrados",
+  from: isEn ? "From" : "Desde",
+  askPrice: isEn ? "Ask for price" : "Consultar precio",
   inStock: isEn ? "In stock" : "Disponible",
   outOfStock: isEn ? "Out of stock" : "Agotado",
   addToCart: isEn ? "Add to cart" : "Agregar al carrito",
@@ -281,7 +308,9 @@ const subheading = selected
               </a>
               <div class="mt-1 flex items-center justify-between">
                 <p class="text-sm font-semibold text-foreground">
-                  {formatPrice(product.price, product.currency)}
+                  {product.price > 0
+                    ? (product.desde ? `${t.from} ${formatPrice(product.price, product.currency)}` : formatPrice(product.price, product.currency))
+                    : t.askPrice}
                 </p>
                 {hayExistencia(product) ? (
                   <span class="text-xs text-green-600 font-medium">{t.inStock}</span>

@@ -497,6 +497,24 @@ const efficiencyList = parseListField(product.efficiency);
 const characteristicsList = parseListField(product.characteristics);
 const applicationsList = parseListField(product.applications);
 const benefitsList = parseListField(product.benefits);
+
+// Precio a mostrar. Si el producto se capturó con tamaños, su propia fila queda
+// en cero y el precio real vive en cada tamaño: la ficha mostraba "$0.00" hasta
+// que el visitante elegía una medida. Se enseña el más barato como punto de
+// partida; al elegir tamaño el selector lo actualiza.
+const preciosDeTamanos = sizeOptions
+  .map((o) => Number(o.price))
+  .filter((n) => Number.isFinite(n) && n > 0);
+
+const precioProductoNum = Number(productPriceFinal) || 0;
+
+const precioMostrado = precioProductoNum > 0
+  ? precioProductoNum
+  : (preciosDeTamanos.length > 0 ? Math.min(...preciosDeTamanos) : 0);
+
+const precioEsDesde = precioProductoNum <= 0
+  && preciosDeTamanos.length > 1
+  && Math.min(...preciosDeTamanos) !== Math.max(...preciosDeTamanos);
 ---
 
 <WebsiteLayout
@@ -575,7 +593,11 @@ const benefitsList = parseListField(product.benefits);
                 vista: mostrar además el equivalente en la otra moneda con la
                 tasa del día confundía más de lo que ayudaba. */}
             <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
-              {formatPrice(productPriceFinal, finalCurrency)}
+              {precioMostrado > 0
+                ? (precioEsDesde
+                    ? `${isEn ? 'From' : 'Desde'} ${formatPrice(precioMostrado, finalCurrency)}`
+                    : formatPrice(precioMostrado, finalCurrency))
+                : (isEn ? 'Ask for price' : 'Consultar precio')}
             </p>
           </div>
 
