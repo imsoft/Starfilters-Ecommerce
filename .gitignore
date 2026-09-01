@@ -30,3 +30,7 @@ pnpm-debug.log*
 .claude/
 skills-lock.json
 pnpm-workspace.yaml
+
+# Scripts temporales de diagnóstico (no deben versionarse)
+_*.mjs
+_*.cjs
