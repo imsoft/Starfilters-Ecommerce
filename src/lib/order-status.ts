@@ -117,8 +117,9 @@ export const changeOrderStatus = async ({
       price: item.price,
     }));
 
-    // La guía recién capturada gana sobre la que ya tenía la orden.
+    // La guía y la paquetería recién capturadas ganan sobre las que ya tenía.
     const guia = trackingNumber ?? order.tracking_number ?? undefined;
+    const paqueteria = carrier ?? order.shipping_carrier ?? null;
 
     const fechaEn = (locale: string) =>
       order.created_at
@@ -147,6 +148,7 @@ export const changeOrderStatus = async ({
           order.total_amount,
           guia,
           order.currency,
+          paqueteria,
           idiomaCliente,
           'cliente'
         );
@@ -176,6 +178,7 @@ export const changeOrderStatus = async ({
           order.total_amount,
           guia,
           order.currency,
+          paqueteria,
           // El equipo lee en español, sin importar el idioma de la compra.
           'es',
           'equipo'

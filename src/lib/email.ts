@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import type { BillingData } from './payment-utils';
 import type { DeliveryMethod } from './delivery-options';
 import { getDeliveryOption, getDeliveryLabel, isPickupMethod } from './delivery-options';
+import { resolverPaqueteria } from './carriers';
 
 // Datos extra del pedido para el correo interno. Todos opcionales: los pedidos
 // viejos (y el flujo legacy del webhook) no los traen y el correo debe salir
@@ -843,6 +844,9 @@ export const createOrderStatusUpdateEmail = (
   total: number,
   trackingNumber?: string,
   currency: 'MXN' | 'USD' = 'MXN',
+  // Con qué paquetería va. Sin esto el correo decía "Número de rastreo: 125"
+  // sin indicar con quién ni dónde consultarlo.
+  carrier?: string | null,
   // Idioma del cliente. Los pedidos hechos en /en recibían el aviso en español.
   lang: 'es' | 'en' = 'es',
   // A quién va dirigido. El mismo aviso no se puede escribir igual para el
@@ -868,6 +872,8 @@ export const createOrderStatusUpdateEmail = (
     date: 'Date',
     status: 'Status',
     tracking: 'Tracking number',
+    carrier: 'Carrier',
+    trackHere: 'Track your shipment',
     products: 'Products',
     product: 'Product',
     total: 'Total',
@@ -882,6 +888,8 @@ export const createOrderStatusUpdateEmail = (
     date: 'Fecha',
     status: 'Estado',
     tracking: 'Número de Rastreo',
+    carrier: 'Paquetería',
+    trackHere: 'Rastrear mi envío',
     products: 'Productos',
     product: 'Producto',
     total: 'Total',
@@ -905,6 +913,9 @@ export const createOrderStatusUpdateEmail = (
   // Color primary para botones y elementos principales
   const primaryColor = color600;
   
+  // Paquetería y enlace de rastreo, si se reconoce.
+  const paqueteria = resolverPaqueteria(carrier, trackingNumber);
+
   const statusMessages: Record<string, { title: string; message: string }> = isEn ? {
     processing: {
       title: 'Your order is being prepared',
@@ -912,7 +923,7 @@ export const createOrderStatusUpdateEmail = (
     },
     shipped: {
       title: 'Your order is on its way',
-      message: 'Your order has shipped. ' + (trackingNumber ? `Tracking number: ${trackingNumber}` : '')
+      message: 'Your order has shipped. ' + (paqueteria ? `It is travelling with ${paqueteria.nombre}. ` : '') + (trackingNumber ? `Tracking number: ${trackingNumber}` : '')
     },
     delivered: {
       title: 'Your order has been delivered',
@@ -929,7 +940,7 @@ export const createOrderStatusUpdateEmail = (
     },
     shipped: {
       title: '¡Tu pedido ha sido enviado!',
-      message: 'Tu pedido está en camino. ' + (trackingNumber ? `Número de rastreo: ${trackingNumber}` : '')
+      message: 'Tu pedido está en camino. ' + (paqueteria ? `Va con ${paqueteria.nombre}. ` : '') + (trackingNumber ? `Número de rastreo: ${trackingNumber}` : '')
     },
     delivered: {
       title: '¡Tu pedido ha sido entregado!',
@@ -1027,7 +1038,13 @@ export const createOrderStatusUpdateEmail = (
             <p><strong>${t.orderNumber}:</strong> ${orderNumber}</p>
             <p><strong>${t.date}:</strong> ${orderDate}</p>
             <p><strong>${t.status}:</strong> <span class="status-badge">${estadoLegible(newStatus)}</span></p>
-            ${trackingNumber ? `<p><strong>${t.tracking}:</strong> ${trackingNumber}</p>` : ''}
+            ${paqueteria ? `<p><strong>${t.carrier}:</strong> ${escapeHtml(paqueteria.nombre)}</p>` : ''}
+            ${trackingNumber ? `<p><strong>${t.tracking}:</strong> ${
+              paqueteria?.url
+                ? `<a href="${paqueteria.url}" style="color: ${BRAND.primary}; font-weight: bold;">${escapeHtml(trackingNumber)}</a>`
+                : escapeHtml(trackingNumber)
+            }</p>` : ''}
+            ${paqueteria?.url ? `<p style="margin-top: 14px;"><a href="${paqueteria.url}" style="display: inline-block; background-color: ${BRAND.primary}; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">${t.trackHere}</a></p>` : ''}
           </div>
           
           <h3>${t.products}:</h3>
@@ -1070,7 +1087,9 @@ export const createOrderStatusUpdateEmail = (
     ${t.orderNumber}: ${orderNumber}
     ${t.date}: ${orderDate}
     ${t.status}: ${estadoLegible(newStatus)}
+    ${paqueteria ? `${t.carrier}: ${paqueteria.nombre}` : ''}
     ${trackingNumber ? `${t.tracking}: ${trackingNumber}` : ''}
+    ${paqueteria?.url ? `${t.trackHere}: ${paqueteria.url}` : ''}
     
     ${t.products}:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
