@@ -22,10 +22,7 @@ const stats = {
   processing: orders.filter(o => o.status === 'processing').length,
   shipped: orders.filter(o => o.status === 'shipped').length,
   delivered: orders.filter(o => o.status === 'delivered').length,
-  cancelled: orders.filter(o => o.status === 'cancelled').length,
-  // total_amount llega de MySQL como CADENA (columna DECIMAL): sumarlo tal cual
-  // concatenaba los importes y el resultado se mostraba como "$NaN MXN".
-  totalSpent: orders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0)
+  cancelled: orders.filter(o => o.status === 'cancelled').length
 };
 
 // Funciones de utilidad
@@ -117,7 +114,7 @@ const getStatusText = (status: string) => {
 
       <!-- Estadísticas -->
       {orders.length > 0 && (
-        <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <!-- Total de pedidos -->
           <div class="bg-card rounded-lg border border-border p-6">
             <div class="flex items-center">
@@ -129,21 +126,6 @@ const getStatusText = (status: string) => {
               <div class="ml-4">
                 <p class="text-sm font-medium text-muted-foreground">Total de Pedidos</p>
                 <p class="text-2xl font-semibold text-foreground">{stats.total}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Total gastado -->
-          <div class="bg-card rounded-lg border border-border p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-muted-foreground">Total Gastado</p>
-                <p class="text-2xl font-semibold text-foreground">{formatCurrency(stats.totalSpent)}</p>
               </div>
             </div>
           </div>
