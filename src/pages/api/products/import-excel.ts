@@ -44,10 +44,22 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Primera fila son los encabezados
-    const headers = (data[0] as string[]).map((h: string) => 
-      String(h || '').toLowerCase().trim().replace(/\s+/g, '_')
-    );
+    // Primera fila son los encabezados.
+    //
+    // Los acentos se quitan antes de comparar. Antes no se quitaban, así que una
+    // columna llamada "Características" no coincidía con la clave del mapa
+    // ("caracteristicas") y la columna entera se descartaba SIN AVISAR: el
+    // producto se creaba sin características y parecía que no se habían
+    // guardado. Lo mismo con cualquier encabezado acentuado.
+    const normalizar = (texto: string) =>
+      String(texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '_');
+
+    const headers = (data[0] as string[]).map(normalizar);
 
     // Mapeo de columnas comunes
     const columnMap: Record<string, string> = {
@@ -134,6 +146,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       'benefits': 'benefits',
       'beneficios_en': 'benefits_en',
       'benefits_en': 'benefits_en',
+      // Como lo escribe quien llena la hoja, no como se llama la columna en la base.
+      'medidas': 'dimensions',
+      'medidas_del_equipo': 'dimensions',
+      'medida': 'dimensions',
+      'caracteristicas_del_producto': 'characteristics',
+      'beneficios_del_producto': 'benefits',
+      'aplicaciones_del_producto': 'applications',
+      'descripcion_corta': 'description',
+      'codigo': 'product_code',
+      'clave': 'product_code',
     };
 
     const results = {
@@ -142,6 +164,22 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       warnings: [] as any[],
       createdCategories: [] as any[],
     };
+
+    // Las claves del mapa pasan por la misma normalización que los encabezados.
+    const mapaNormalizado: Record<string, string> = {};
+    for (const [clave, campo] of Object.entries(columnMap)) {
+      mapaNormalizado[normalizar(clave)] = campo as string;
+    }
+
+    // Una columna que no se reconoce se descartaba en silencio y nadie se
+    // enteraba de que ese dato nunca llegó a la base. Ahora se avisa.
+    const noReconocidas = headers.filter((h) => h && !mapaNormalizado[h]);
+    for (const columna of noReconocidas) {
+      results.warnings.push({
+        row: 1,
+        message: `La columna "${columna}" no se reconoce y no se importó. Revisa el nombre del encabezado.`,
+      });
+    }
 
     // Procesar cada fila (empezando desde la fila 2, índice 1)
     for (let i = 1; i < data.length; i++) {
@@ -158,7 +196,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           const value = row[index];
           if (value === undefined || value === null || value === '') return;
 
-          const mappedField = columnMap[header];
+          const mappedField = mapaNormalizado[header];
           if (mappedField) {
             // Convertir valores según el tipo de campo
             if (mappedField === 'price' || mappedField === 'price_usd' || mappedField === 'stock') {
