@@ -156,6 +156,7 @@ if (Astro.request.method === "POST") {
         typical_installation: formData.get("typical_installation") as string || null,
         typical_installation_en: formData.get("typical_installation_en") as string || null,
         air_flow: (formData.get("air_flow") as string)?.trim() || null,
+        dimensions: (formData.get("dimensions") as string)?.trim() || null,
         initial_pressure_drop: (formData.get("initial_pressure_drop") as string)?.trim() || null,
         recommended_final_pressure_drop: (formData.get("recommended_final_pressure_drop") as string)?.trim() || null,
         applications: processListField(formData.get("applications")),
@@ -860,6 +861,25 @@ console.log('📦 Tamaños preparados:', productSizes.length);
               class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >{product.typical_installation_en || ""}</textarea>
           </div>
+        </div>
+
+
+        <div class="mt-6">
+          <label for="dimensions" class="mb-2 block text-sm font-semibold text-gray-700">
+            Medidas del equipo
+          </label>
+          <input
+            type="text"
+            id="dimensions"
+            name="dimensions"
+            value={product.dimensions || ""}
+            placeholder="Ej: 2100 x 1000 x 1200 mm (alto x ancho x fondo)"
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+          <p class="mt-1.5 text-xs text-gray-500">
+            Para equipos como air showers, pass through o UMAs, que no se capturan por tamaño.
+            Es la medida del equipo, no la de la caja de envío.
+          </p>
         </div>
 
         <div class="mt-6">

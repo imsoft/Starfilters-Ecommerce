@@ -43,6 +43,7 @@ const t = {
   image: isEn ? 'image' : 'imagen',
   efficiency: isEn ? 'Efficiency' : 'Eficiencia',
   efficiencyClass: isEn ? 'EN1822 Class:' : 'EN1822 Clase:',
+  dimensions: isEn ? 'Dimensions' : 'Medidas',
   characteristics: isEn ? 'Characteristics' : 'Características',
   applications: isEn ? 'Applications' : 'Aplicaciones',
   benefits: isEn ? 'Benefits' : 'Beneficios',
@@ -598,6 +599,16 @@ const benefitsList = parseListField(product.benefits);
                     <p class="mt-2"><span class="font-medium">{t.efficiencyClass}</span> {product.efficiency_class}</p>
                   )}
                 </dd>
+              </div>
+            )}
+
+            {/* Medidas del equipo. Para los filtros la medida es el tamaño
+                nominal del selector; esto es para air showers, pass through,
+                UMAs y demás equipo, que no se captura por tamaño. */}
+            {product.dimensions && (
+              <div class="border-t border-border pt-4">
+                <dt class="font-medium text-foreground">{t.dimensions}</dt>
+                <dd class="mt-2 text-sm text-muted-foreground">{product.dimensions}</dd>
               </div>
             )}
 
