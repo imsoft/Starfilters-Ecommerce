@@ -341,7 +341,12 @@ function sizeOptionLabel(nominal: string | null | undefined, real: string | null
   const r = real?.trim();
   // Hay productos (manómetros, equipos) donde la variante es un modelo y solo
   // se llena un campo: mostrar "Modelo X / —" se leía como dato faltante.
-  if (n && r) return `${n} / ${r}`;
+  //
+  // Y cuando la medida nominal y la real son la misma, repetirla ("24 x 24 /
+  // 24 x 24") no aporta nada y parece un error. Pasa sobre todo en productos
+  // que se unieron desde medidas sueltas, donde la real se copió de la nominal.
+  const iguales = n && r && n.toLowerCase().replace(/\s+/g, ' ') === r.toLowerCase().replace(/\s+/g, ' ');
+  if (n && r && !iguales) return `${n} / ${r}`;
   return n || r || '—';
 }
 
