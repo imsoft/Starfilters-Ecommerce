@@ -1,4 +1,10 @@
 ---
+// Algunas categorías guardan main_image como nombre de archivo suelto, sin
+// ruta: el navegador lo resuelve contra /admin/ y pide una imagen que no
+// existe. La tienda ya lo saneaba así; el panel no, y disparaba un 404 por fila.
+const imagenValida = (src?: string | null) =>
+  src && (src.startsWith('http') || src.startsWith('/')) ? src : null;
+
 import AdminLayout from "@/layouts/adminLayout.astro";
 import { getAllCategories, getCategoryVariants, getCategoryImages } from "@/lib/filter-category-service";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
@@ -49,7 +55,7 @@ const categoriesWithVariants = await Promise.all(
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="mt-10 mb-8">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 class="text-3xl font-bold tracking-tight text-foreground">Categorías de Filtros</h1>
           <p class="mt-2 text-muted-foreground">
@@ -212,9 +218,9 @@ const categoriesWithVariants = await Promise.all(
                   <tr class="hover:bg-muted/50">
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="relative h-20 w-20">
-                        {category.main_image && category.main_image.trim() !== '' ? (
+                        {imagenValida(category.main_image) ? (
                           <img
-                            src={category.main_image}
+                            src={imagenValida(category.main_image)}
                             alt={category.name}
                             class="h-20 w-20 rounded-lg object-cover border border-gray-200"
                             loading="lazy"
@@ -222,7 +228,7 @@ const categoriesWithVariants = await Promise.all(
                           />
                         ) : null}
                         <div 
-                          class={`image-placeholder flex h-20 w-20 items-center justify-center rounded-lg bg-muted border border-gray-200 ${category.main_image && category.main_image.trim() !== '' ? 'hidden absolute inset-0' : ''}`}
+                          class={`image-placeholder flex h-20 w-20 items-center justify-center rounded-lg bg-muted border border-gray-200 ${imagenValida(category.main_image) ? 'hidden absolute inset-0' : ''}`}
                         >
                           <svg
                             class="h-8 w-8 text-muted-foreground"

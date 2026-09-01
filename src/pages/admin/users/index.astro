@@ -148,7 +148,7 @@ const error = url.searchParams.get('error');
           {regularUsers.length > 0 ? (
             <div class="space-y-4">
               {regularUsers.map((regularUser) => (
-                <div class="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                <div class="flex flex-wrap items-center justify-between gap-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
                   <div class="flex items-center space-x-3">
                     <div class="flex-shrink-0">
                       <div class="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
@@ -233,7 +233,7 @@ const error = url.searchParams.get('error');
           {adminUsers.length > 0 ? (
             <div class="space-y-4">
               {adminUsers.map((admin) => (
-                <div class="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                <div class="flex flex-wrap items-center justify-between gap-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
                   <div class="flex items-center space-x-3">
                     <div class="flex-shrink-0">
                       {admin.profile_image ? (

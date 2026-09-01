@@ -23,7 +23,7 @@ const {
 <div class="mb-6 rounded-lg border border-border bg-background p-4">
   <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
     <!-- Filtros principales - ocupan todo el ancho disponible -->
-    <div class="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
+    <div class="flex flex-1 flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
       <!-- Campo de búsqueda -->
       <div class="relative flex-1 min-w-0">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -41,7 +41,7 @@ const {
       
       <!-- Filtros adicionales -->
       {filters.map((filter) => (
-        <div class="flex-shrink-0">
+        <div class="min-w-0 shrink">
           <select 
             id={filter.id} 
             class="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:w-auto sm:min-w-[160px]"
@@ -57,7 +57,7 @@ const {
 
     <!-- Botón de exportar - siempre a la derecha -->
     {showExport && (
-      <div class="flex-shrink-0">
+      <div class="min-w-0 shrink">
         <button 
           type="button"
           class="inline-flex items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"

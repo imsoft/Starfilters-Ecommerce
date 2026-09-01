@@ -27,6 +27,20 @@ app.use(express.static(join(__dirname, 'dist/client')));
 // SSR handler de Astro
 app.use(ssrHandler);
 
+// 404 del sitio.
+//
+// Montado como middleware, Astro llama a next() cuando ninguna ruta coincide, y
+// Express respondía con su error crudo "Cannot GET /...". El proyecto tiene su
+// propia 404.astro; aquí se renderiza esa, forzando el código 404 para que
+// buscadores y clientes no la lean como una página válida.
+app.use((req, res, next) => {
+  req.url = '/404';
+  const writeHeadOriginal = res.writeHead.bind(res);
+  res.writeHead = (_status, ...resto) => writeHeadOriginal(404, ...resto);
+  res.statusCode = 404;
+  ssrHandler(req, res, next);
+});
+
 // Iniciar servidor
 app.listen(PORT, HOSTNAME, () => {
   console.log(`🚀 Server running on http://${HOSTNAME}:${PORT}`);
