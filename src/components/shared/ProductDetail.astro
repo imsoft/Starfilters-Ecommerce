@@ -218,7 +218,19 @@ const relatedProductsWithImages = await Promise.all(
     const primaryImage = images.find(img => img.is_primary) || images[0];
     const pCat = getProductCategory(p, lang);
     const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(pCat);
-    const pPrice = precioEnMoneda(p, moneda, exchangeRate);
+    // Mismo respaldo que en el listado: si el producto se capturó con tamaños,
+    // su fila vale 0 y el precio real vive en cada tamaño. Sin esto la sección
+    // de relacionados seguía anunciando "$0.00" con su botón de comprar.
+    let pPrice = Number(precioEnMoneda(p, moneda, exchangeRate)) || 0;
+    if (pPrice <= 0) {
+      try {
+        const tamanos = (await getProductVariants(p.id, p.filter_category_id ?? null))
+          .filter((v) => v.is_active)
+          .map((v) => Number(precioEnMoneda(v as any, moneda, exchangeRate)))
+          .filter((n) => Number.isFinite(n) && n > 0);
+        if (tamanos.length) pPrice = Math.min(...tamanos);
+      } catch { /* si falla, se queda sin precio y se ofrece cotizar */ }
+    }
     const pCurrency = moneda;
     return { 
       ...p, 
@@ -840,17 +852,26 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
                     <p class="mt-1 text-sm text-muted-foreground">{relatedProduct.category}</p>
                   </div>
                   <p class="text-sm font-medium text-foreground ml-2 flex-shrink-0">
-                    {formatPrice(relatedProduct.price)}
+                    {relatedProduct.price > 0 ? formatPrice(relatedProduct.price) : (isEn ? 'Ask for price' : 'Consultar precio')}
                   </p>
                 </div>
                 <div class="mt-auto pt-3">
-                  <button
-                    type="button"
-                    class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}', '${relatedProduct.currency || finalCurrency}')`}
-                  >
-                    {t.addToCart}
-                  </button>
+                  {relatedProduct.price > 0 ? (
+                    <button
+                      type="button"
+                      class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                      onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}', '${relatedProduct.currency || finalCurrency}')`}
+                    >
+                      {t.addToCart}
+                    </button>
+                  ) : (
+                    <a
+                      href={productHref(relatedProduct.uuid)}
+                      class="relative z-10 block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      {isEn ? 'Choose model' : 'Elegir modelo'}
+                    </a>
+                  )}
                 </div>
               </div>
             ))}
