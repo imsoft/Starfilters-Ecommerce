@@ -87,6 +87,8 @@ interface EtiquetasDesglose {
   free: string;
   tax: string;
   total: string;
+  /** Para pedidos sin desglose guardado: nombra la diferencia sin inventarla. */
+  extras: string;
 }
 
 const hayNumero = (v: unknown): boolean =>
@@ -135,6 +137,35 @@ const ETIQUETAS_DESGLOSE_ES: EtiquetasDesglose = {
   free: 'Gratis',
   tax: 'IVA (16%)',
   total: 'Total',
+  extras: 'Envío e impuestos',
+};
+
+/**
+ * Los pedidos anteriores a las columnas de desglose no tienen subtotal
+ * guardado, así que el correo saltaba del renglón del producto al total y la
+ * diferencia quedaba sin explicar: parecía una suma mal hecha.
+ *
+ * No se puede reconstruir cuánto fue envío y cuánto impuesto —ese dato nunca
+ * se guardó—, pero sí decir a cuánto asciende la diferencia, que es lo que
+ * faltaba para que el correo cuadre a la vista.
+ */
+const diferenciaSinDesglose = (
+  items: Array<{ quantity: number; price: unknown }>,
+  total: unknown,
+  et: EtiquetasDesglose,
+  currency: string
+): { html: string; texto: string } => {
+  const suma = items.reduce(
+    (acumulado, item) => acumulado + Number(item.quantity || 0) * (Number(item.price) || 0), 0);
+  const diferencia = (Number(total) || 0) - suma;
+  // Un centavo de redondeo no merece un renglón; una diferencia negativa
+  // significa que los datos no son de fiar y es mejor no decir nada.
+  if (!(diferencia > 0.5)) return { html: '', texto: '' };
+  return {
+    html: `<p style="margin: 4px 0; color: ${BRAND.mutedForeground};">${et.subtotal}: <span style="color: ${BRAND.foreground};">$${money(suma)} ${currency}</span></p>
+            <p style="margin: 4px 0; color: ${BRAND.mutedForeground};">${et.extras}: <span style="color: ${BRAND.foreground};">$${money(diferencia)} ${currency}</span></p>`,
+    texto: `${et.subtotal}: $${money(suma)} ${currency}\n${et.extras}: $${money(diferencia)} ${currency}`,
+  };
 };
 
 // Evita que un dato del cliente (una razón social con "<") rompa el HTML del
@@ -274,6 +305,7 @@ export const createOrderConfirmationEmail = (
     discount: 'Discount',
     shipping: 'Shipping',
     free: 'Free',
+    extras: 'Shipping & taxes',
     tax: 'VAT (16%)',
     rights: 'All rights reserved.',
   } : {
@@ -294,6 +326,7 @@ export const createOrderConfirmationEmail = (
     discount: 'Descuento',
     shipping: 'Envío',
     free: 'Gratis',
+    extras: 'Envío e impuestos',
     tax: 'IVA (16%)',
     rights: 'Todos los derechos reservados.',
   };
@@ -385,7 +418,7 @@ export const createOrderConfirmationEmail = (
           </table>
           
           <div class="total">
-            ${desgloseHtml(desglose, t, currency)}
+            ${desgloseHtml(desglose, t, currency) || diferenciaSinDesglose(items, total, t, currency).html}
             <p style="font-weight: bold; margin-top: 10px; border-top: 1px solid ${BRAND.border}; padding-top: 10px;">${t.total}: $${money(total)} ${currency}</p>
           </div>
           
@@ -421,7 +454,7 @@ export const createOrderConfirmationEmail = (
     ${t.products}:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
-    ${desgloseTexto(desglose, t, currency)}
+    ${desgloseTexto(desglose, t, currency) || diferenciaSinDesglose(items, total, t, currency).texto}
     ${t.total}: $${money(total)} ${currency}
     
     ${t.shippingAddress}:
@@ -838,7 +871,7 @@ export const createNewOrderNotificationEmail = (
             <h3>Detalles de la Orden</h3>
             <p><strong>Número de Pedido:</strong> ${orderNumber}</p>
             <p><strong>Fecha:</strong> ${orderDate}</p>
-            ${desgloseHtml(desglose, ETIQUETAS_DESGLOSE_ES, currency)}
+            ${desgloseHtml(desglose, ETIQUETAS_DESGLOSE_ES, currency) || diferenciaSinDesglose(items, total, ETIQUETAS_DESGLOSE_ES, currency).html}
             <p style="border-top: 1px solid ${BRAND.border}; padding-top: 8px; margin-top: 8px;"><strong>Total:</strong> $${money(total)} ${currency}</p>
           </div>
           
@@ -886,7 +919,7 @@ export const createNewOrderNotificationEmail = (
     
     Número de Pedido: ${orderNumber}
     Fecha: ${orderDate}
-    ${desgloseTexto(desglose, ETIQUETAS_DESGLOSE_ES, currency)}
+    ${desgloseTexto(desglose, ETIQUETAS_DESGLOSE_ES, currency) || diferenciaSinDesglose(items, total, ETIQUETAS_DESGLOSE_ES, currency).texto}
     Total: $${money(total)} ${currency}
     
     Cliente:
@@ -977,6 +1010,7 @@ export const createOrderStatusUpdateEmail = (
     discount: 'Discount',
     shipping: 'Shipping',
     free: 'Free',
+    extras: 'Shipping & taxes',
     tax: 'VAT (16%)',
     rights: 'All rights reserved.',
   } : {
@@ -998,6 +1032,7 @@ export const createOrderStatusUpdateEmail = (
     discount: 'Descuento',
     shipping: 'Envío',
     free: 'Gratis',
+    extras: 'Envío e impuestos',
     tax: 'IVA (16%)',
     rights: 'Todos los derechos reservados.',
   };
@@ -1165,7 +1200,7 @@ export const createOrderStatusUpdateEmail = (
           </table>
           
           <div style="text-align: right; margin-top: 20px;">
-            ${desgloseHtml(desglose, t, currency)}
+            ${desgloseHtml(desglose, t, currency) || diferenciaSinDesglose(items, total, t, currency).html}
             <p style="font-size: 18px; font-weight: bold; margin-top: 10px; border-top: 1px solid ${BRAND.border}; padding-top: 10px;">${t.total}: $${money(total)} ${currency}</p>
           </div>
           
@@ -1199,7 +1234,7 @@ export const createOrderStatusUpdateEmail = (
     ${t.products}:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
-    ${desgloseTexto(desglose, t, currency)}
+    ${desgloseTexto(desglose, t, currency) || diferenciaSinDesglose(items, total, t, currency).texto}
     ${t.total}: $${money(total)} ${currency}
     
     ${t.viewOrders}: ${siteUrl}/orders
