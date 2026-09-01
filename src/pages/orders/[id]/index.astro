@@ -109,7 +109,9 @@ const hayDesglose = subtotal !== null;
 ---
 
 <WebsiteLayout title={`Pedido #${order.order_number}`}>
-  <div class="min-h-screen bg-background">
+  <!-- pt-12: el navbar es absolute y mide 104px, y <main> solo aporta 64px.
+       Sin esto el breadcrumb quedaba 40px por debajo de la barra y no se leía. -->
+  <div class="min-h-screen bg-background pt-12">
     <div class="mx-auto max-w-4xl px-6 lg:px-8">
       <!-- Breadcrumb -->
       <nav class="mb-8" aria-label="Breadcrumb">

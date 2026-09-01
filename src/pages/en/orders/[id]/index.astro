@@ -84,15 +84,32 @@ const getStatusText = (status: string) => {
   }
 };
 
-// Calculate subtotal
-const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-const shipping = 0; // No shipping cost for now
-const tax = subtotal * 0.16; // VAT 16%
-const total = subtotal + shipping + tax;
+// Desglose del pedido.
+//
+// Antes se reconstruía aquí: el subtotal salía de los renglones, el envío
+// estaba FIJO en cero y el IVA se calculaba solo sobre el subtotal. El total
+// mostrado, en cambio, era el realmente cobrado, así que la suma no cuadraba.
+//
+// Ahora se usa el desglose que guardó el checkout. Los pedidos anteriores a
+// esas columnas no lo tienen, y en ese caso se muestra solo el total en vez de
+// inventar renglones que no suman.
+const num = (v: unknown): number | null => {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const subtotal = num(order.subtotal_amount);
+const discount = num(order.discount_amount);
+const shipping = num(order.shipping_amount);
+const tax = num(order.tax_amount);
+const hayDesglose = subtotal !== null;
 ---
 
 <WebsiteLayout title={`Order #${order.order_number}`}>
-  <div class="min-h-screen bg-background">
+  <!-- pt-12: el navbar es absolute y mide 104px, y <main> solo aporta 64px.
+       Sin esto el breadcrumb quedaba 40px por debajo de la barra y no se leía. -->
+  <div class="min-h-screen bg-background pt-12">
     <div class="mx-auto max-w-4xl px-6 lg:px-8">
       <!-- Breadcrumb -->
       <nav class="mb-8" aria-label="Breadcrumb">
