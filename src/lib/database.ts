@@ -155,6 +155,14 @@ export interface Order {
   // Cuándo se timbró el CFDI. NULL = la factura sigue pendiente. Sin esto,
   // "requiere factura" se quedaba encendido para siempre.
   cfdi_stamped_at?: Date | null;
+  // Desglose realmente cobrado, en la moneda de la orden. NULL en los pedidos
+  // anteriores a estas columnas: sin él, la página de detalle se inventaba el
+  // desglose (envío fijo en 0, IVA solo sobre el subtotal) y no cuadraba con
+  // el total.
+  subtotal_amount?: number | null;
+  discount_amount?: number | null;
+  shipping_amount?: number | null;
+  tax_amount?: number | null;
   // Idioma en el que el cliente compró, para escribirle en ese idioma. Se
   // captura en el checkout: el webhook corre después y no sabe de qué página
   // vino la compra.
@@ -597,6 +605,10 @@ export const ensureOrdersDeliveryColumns = (): Promise<void> => {
         { nombre: 'tracking_number', definicion: 'VARCHAR(64) NULL' },
         { nombre: 'cfdi_stamped_at', definicion: 'DATETIME NULL' },
         { nombre: 'customer_language', definicion: "VARCHAR(2) NULL" },
+        { nombre: 'subtotal_amount', definicion: 'DECIMAL(10,2) NULL' },
+        { nombre: 'discount_amount', definicion: 'DECIMAL(10,2) NULL' },
+        { nombre: 'shipping_amount', definicion: 'DECIMAL(10,2) NULL' },
+        { nombre: 'tax_amount', definicion: 'DECIMAL(10,2) NULL' },
       ];
 
       for (const columna of columnas) {
@@ -624,8 +636,8 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
   await ensureOrdersDeliveryColumns();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data, currency, delivery_method, shipping_carrier, tracking_number, customer_language)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (uuid, order_number, user_id, customer_name, customer_email, customer_phone, total_amount, status, shipping_address, stripe_payment_intent_id, billing_data, currency, delivery_method, shipping_carrier, tracking_number, customer_language, subtotal_amount, discount_amount, shipping_amount, tax_amount)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -643,7 +655,11 @@ export const createOrder = async (order: Omit<Order, 'id' | 'uuid' | 'created_at
     order.delivery_method || null,
     order.shipping_carrier || null,
     order.tracking_number || null,
-    order.customer_language || null
+    order.customer_language || null,
+    order.subtotal_amount ?? null,
+    order.discount_amount ?? null,
+    order.shipping_amount ?? null,
+    order.tax_amount ?? null
   ]) as any;
   return result.insertId;
 };

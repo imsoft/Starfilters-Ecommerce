@@ -84,11 +84,28 @@ const getStatusText = (status: string) => {
   }
 };
 
-// Calcular subtotal
-const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-const shipping = 0; // Por ahora sin costo de envío
-const tax = subtotal * 0.16; // IVA 16%
-const total = subtotal + shipping + tax;
+// Desglose del pedido.
+//
+// Antes se reconstruía aquí: el subtotal salía de los renglones, el envío
+// estaba FIJO en cero y el IVA se calculaba solo sobre el subtotal. El total
+// mostrado, en cambio, era el realmente cobrado, así que la suma no cuadraba:
+// un pedido de $101 con envío aparecía como 101 + 0 + 16.16 y un total de
+// $287.29.
+//
+// Ahora se usa el desglose que guardó el checkout. Los pedidos anteriores a
+// esas columnas no lo tienen, y en ese caso se muestra solo el total en vez de
+// inventar renglones que no suman.
+const num = (v: unknown): number | null => {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const subtotal = num(order.subtotal_amount);
+const discount = num(order.discount_amount);
+const shipping = num(order.shipping_amount);
+const tax = num(order.tax_amount);
+const hayDesglose = subtotal !== null;
 ---
 
 <WebsiteLayout title={`Pedido #${order.order_number}`}>
@@ -291,18 +308,30 @@ const total = subtotal + shipping + tax;
               Resumen del Pedido
             </h2>
             <div class="space-y-3">
-              <div class="flex justify-between text-sm">
-                <span class="text-muted-foreground">Subtotal:</span>
-                <span class="text-foreground">{formatCurrency(subtotal, order.currency)}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-muted-foreground">Envío:</span>
-                <span class="text-foreground">{shipping === 0 ? 'Gratis' : formatCurrency(shipping)}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-muted-foreground">IVA (16%):</span>
-                <span class="text-foreground">{formatCurrency(tax, order.currency)}</span>
-              </div>
+              {hayDesglose ? (
+                <>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Subtotal:</span>
+                    <span class="text-foreground">{formatCurrency(subtotal as number, order.currency)}</span>
+                  </div>
+                  {discount !== null && discount > 0 && (
+                    <div class="flex justify-between text-sm">
+                      <span class="text-muted-foreground">Descuento:</span>
+                      <span class="text-green-600">-{formatCurrency(discount, order.currency)}</span>
+                    </div>
+                  )}
+                  <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Envío:</span>
+                    <span class="text-foreground">{!shipping ? 'Gratis' : formatCurrency(shipping, order.currency)}</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">IVA (16%):</span>
+                    <span class="text-foreground">{formatCurrency(tax ?? 0, order.currency)}</span>
+                  </div>
+                </>
+              ) : (
+                <p class="text-xs text-muted-foreground">Este pedido es anterior al desglose; solo se guardó el total cobrado.</p>
+              )}
               <div class="border-t border-border pt-3">
                 <div class="flex justify-between">
                   <span class="font-semibold text-foreground">Total:</span>

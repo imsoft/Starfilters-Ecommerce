@@ -291,18 +291,30 @@ const total = subtotal + shipping + tax;
               Order Summary
             </h2>
             <div class="space-y-3">
-              <div class="flex justify-between text-sm">
-                <span class="text-muted-foreground">Subtotal:</span>
-                <span class="text-foreground">{formatCurrency(subtotal, order.currency)}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-muted-foreground">Shipping:</span>
-                <span class="text-foreground">{shipping === 0 ? 'Free' : formatCurrency(shipping)}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-muted-foreground">Tax (VAT 16%):</span>
-                <span class="text-foreground">{formatCurrency(tax, order.currency)}</span>
-              </div>
+              {hayDesglose ? (
+                <>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Subtotal:</span>
+                    <span class="text-foreground">{formatCurrency(subtotal as number, order.currency)}</span>
+                  </div>
+                  {discount !== null && discount > 0 && (
+                    <div class="flex justify-between text-sm">
+                      <span class="text-muted-foreground">Discount:</span>
+                      <span class="text-green-600">-{formatCurrency(discount, order.currency)}</span>
+                    </div>
+                  )}
+                  <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Shipping:</span>
+                    <span class="text-foreground">{!shipping ? 'Free' : formatCurrency(shipping, order.currency)}</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Tax (VAT 16%):</span>
+                    <span class="text-foreground">{formatCurrency(tax ?? 0, order.currency)}</span>
+                  </div>
+                </>
+              ) : (
+                <p class="text-xs text-muted-foreground">This order predates the breakdown; only the charged total was stored.</p>
+              )}
               <div class="border-t border-border pt-3">
                 <div class="flex justify-between">
                   <span class="font-semibold text-foreground">Total:</span>

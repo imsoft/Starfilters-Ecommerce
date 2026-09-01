@@ -228,6 +228,12 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     delivery_method: draft.shippingMethod || null,
     // Idioma de la compra, para que los avisos posteriores salgan en su idioma.
     customer_language: checkout.lang === 'en' ? 'en' : 'es',
+    // Desglose realmente cobrado, tal como lo calculó el checkout. Sin esto la
+    // página del pedido lo reconstruía a ojo y no cuadraba con el total.
+    subtotal_amount: draft.totals?.subtotal ?? null,
+    discount_amount: draft.totals?.discount ?? null,
+    shipping_amount: draft.totals?.shipping ?? null,
+    tax_amount: draft.totals?.tax ?? null,
     // La moneda real del cargo, tal como la reporta Stripe
     currency: String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD',
   });
