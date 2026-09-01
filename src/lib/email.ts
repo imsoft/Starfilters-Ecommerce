@@ -64,6 +64,79 @@ const money = (value: unknown): string => {
   return (Number.isFinite(numero) ? numero : 0).toFixed(2);
 };
 
+/**
+ * Desglose del pedido para el pie de los correos.
+ *
+ * Los correos saltaban del renglón del producto al total: un pedido de
+ * $5,070.53 terminaba en "Total: $6,051.94" sin decir de dónde salía la
+ * diferencia (envío e IVA). Se muestra el desglose que guardó la orden; los
+ * pedidos anteriores a esas columnas no lo tienen y siguen mostrando solo el
+ * total, que es lo único que se sabe con certeza.
+ */
+export interface DesgloseCorreo {
+  subtotal?: number | string | null;
+  discount?: number | string | null;
+  shipping?: number | string | null;
+  tax?: number | string | null;
+}
+
+interface EtiquetasDesglose {
+  subtotal: string;
+  discount: string;
+  shipping: string;
+  free: string;
+  tax: string;
+  total: string;
+}
+
+const hayNumero = (v: unknown): boolean =>
+  v !== null && v !== undefined && Number.isFinite(Number(v));
+
+/** Renglones del desglose en HTML. Vacío si la orden no lo trae guardado. */
+const desgloseHtml = (
+  d: DesgloseCorreo | null | undefined,
+  et: EtiquetasDesglose,
+  currency: string
+): string => {
+  if (!d || !hayNumero(d.subtotal)) return '';
+  const fila = (etiqueta: string, valor: string) =>
+    `<p style="margin: 4px 0; color: ${BRAND.mutedForeground};">${etiqueta}: <span style="color: ${BRAND.foreground};">${valor}</span></p>`;
+
+  const partes = [fila(et.subtotal, `$${money(d.subtotal)} ${currency}`)];
+  if (hayNumero(d.discount) && Number(d.discount) > 0) {
+    partes.push(fila(et.discount, `-$${money(d.discount)} ${currency}`));
+  }
+  partes.push(fila(et.shipping, Number(d.shipping) > 0 ? `$${money(d.shipping)} ${currency}` : et.free));
+  if (hayNumero(d.tax)) partes.push(fila(et.tax, `$${money(d.tax)} ${currency}`));
+  return partes.join('\n            ');
+};
+
+/** El mismo desglose para la versión de texto plano. */
+const desgloseTexto = (
+  d: DesgloseCorreo | null | undefined,
+  et: EtiquetasDesglose,
+  currency: string
+): string => {
+  if (!d || !hayNumero(d.subtotal)) return '';
+  const lineas = [`${et.subtotal}: $${money(d.subtotal)} ${currency}`];
+  if (hayNumero(d.discount) && Number(d.discount) > 0) {
+    lineas.push(`${et.discount}: -$${money(d.discount)} ${currency}`);
+  }
+  lineas.push(`${et.shipping}: ${Number(d.shipping) > 0 ? `$${money(d.shipping)} ${currency}` : et.free}`);
+  if (hayNumero(d.tax)) lineas.push(`${et.tax}: $${money(d.tax)} ${currency}`);
+  return lineas.join('\n    ');
+};
+
+// El aviso interno siempre va en español, así que sus etiquetas son fijas.
+const ETIQUETAS_DESGLOSE_ES: EtiquetasDesglose = {
+  subtotal: 'Subtotal',
+  discount: 'Descuento',
+  shipping: 'Envío',
+  free: 'Gratis',
+  tax: 'IVA (16%)',
+  total: 'Total',
+};
+
 // Evita que un dato del cliente (una razón social con "<") rompa el HTML del
 // correo.
 const escapeHtml = (value: string): string =>
@@ -178,7 +251,9 @@ export const createOrderConfirmationEmail = (
   // Los pedidos pueden cobrarse en pesos o en dólares
   currency: 'MXN' | 'USD' = 'MXN',
   // Idioma del cliente: quien compraba en /en recibía la confirmación en español.
-  lang: 'es' | 'en' = 'es'
+  lang: 'es' | 'en' = 'es',
+  // Desglose del cobro, para que el total no aparezca sin explicación.
+  desglose?: DesgloseCorreo | null
 ): EmailData => {
   const isEn = lang === 'en';
   const t = isEn ? {
@@ -195,6 +270,11 @@ export const createOrderConfirmationEmail = (
     quantity: 'Quantity',
     shippingAddress: 'Shipping address',
     viewOrders: 'View my orders',
+    subtotal: 'Subtotal',
+    discount: 'Discount',
+    shipping: 'Shipping',
+    free: 'Free',
+    tax: 'VAT (16%)',
     rights: 'All rights reserved.',
   } : {
     subject: (n: string) => `Confirmación de Pedido #${n} - Star Filters`,
@@ -210,6 +290,11 @@ export const createOrderConfirmationEmail = (
     quantity: 'Cantidad',
     shippingAddress: 'Dirección de Envío',
     viewOrders: 'Ver Mis Pedidos',
+    subtotal: 'Subtotal',
+    discount: 'Descuento',
+    shipping: 'Envío',
+    free: 'Gratis',
+    tax: 'IVA (16%)',
     rights: 'Todos los derechos reservados.',
   };
   // Paleta de colores de la aplicación
@@ -300,7 +385,8 @@ export const createOrderConfirmationEmail = (
           </table>
           
           <div class="total">
-            <p>${t.total}: $${money(total)} ${currency}</p>
+            ${desgloseHtml(desglose, t, currency)}
+            <p style="font-weight: bold; margin-top: 10px; border-top: 1px solid ${BRAND.border}; padding-top: 10px;">${t.total}: $${money(total)} ${currency}</p>
           </div>
           
           <div class="shipping">
@@ -335,6 +421,7 @@ export const createOrderConfirmationEmail = (
     ${t.products}:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
+    ${desgloseTexto(desglose, t, currency)}
     ${t.total}: $${money(total)} ${currency}
     
     ${t.shippingAddress}:
@@ -606,7 +693,9 @@ export const createNewOrderNotificationEmail = (
   shippingAddress: string,
   // Los pedidos pueden cobrarse en pesos o en dólares
   currency: 'MXN' | 'USD' = 'MXN',
-  extras: OrderNotificationExtras = {}
+  extras: OrderNotificationExtras = {},
+  // Desglose del cobro, igual que en los correos al comprador.
+  desglose?: DesgloseCorreo | null
 ): EmailData => {
   // Paleta de colores de la aplicación
   const color50 = BRAND.primaryTint;
@@ -749,7 +838,8 @@ export const createNewOrderNotificationEmail = (
             <h3>Detalles de la Orden</h3>
             <p><strong>Número de Pedido:</strong> ${orderNumber}</p>
             <p><strong>Fecha:</strong> ${orderDate}</p>
-            <p><strong>Total:</strong> $${money(total)} ${currency}</p>
+            ${desgloseHtml(desglose, ETIQUETAS_DESGLOSE_ES, currency)}
+            <p style="border-top: 1px solid ${BRAND.border}; padding-top: 8px; margin-top: 8px;"><strong>Total:</strong> $${money(total)} ${currency}</p>
           </div>
           
           <div class="customer-info">
@@ -796,6 +886,7 @@ export const createNewOrderNotificationEmail = (
     
     Número de Pedido: ${orderNumber}
     Fecha: ${orderDate}
+    ${desgloseTexto(desglose, ETIQUETAS_DESGLOSE_ES, currency)}
     Total: $${money(total)} ${currency}
     
     Cliente:
@@ -852,7 +943,10 @@ export const createOrderStatusUpdateEmail = (
   // A quién va dirigido. El mismo aviso no se puede escribir igual para el
   // comprador ("tu pedido va en camino") que para el equipo, que necesita
   // saber de quién es el pedido y entrar al panel.
-  destinatario: 'cliente' | 'equipo' = 'cliente'
+  destinatario: 'cliente' | 'equipo' = 'cliente',
+  // Desglose guardado en la orden. Sin él el correo saltaba del renglón del
+  // producto al total, y la diferencia (envío e IVA) no se explicaba.
+  desglose?: DesgloseCorreo | null
 ): EmailData => {
   const paraEquipo = destinatario === 'equipo';
   // Paleta de colores de la aplicación
@@ -879,6 +973,11 @@ export const createOrderStatusUpdateEmail = (
     total: 'Total',
     quantity: 'Quantity',
     viewOrders: 'View my orders',
+    subtotal: 'Subtotal',
+    discount: 'Discount',
+    shipping: 'Shipping',
+    free: 'Free',
+    tax: 'VAT (16%)',
     rights: 'All rights reserved.',
   } : {
     subject: (n: string) => `Actualización de Pedido #${n} - Star Filters`,
@@ -895,6 +994,11 @@ export const createOrderStatusUpdateEmail = (
     total: 'Total',
     quantity: 'Cantidad',
     viewOrders: 'Ver Mis Pedidos',
+    subtotal: 'Subtotal',
+    discount: 'Descuento',
+    shipping: 'Envío',
+    free: 'Gratis',
+    tax: 'IVA (16%)',
     rights: 'Todos los derechos reservados.',
   };
 
@@ -1061,7 +1165,8 @@ export const createOrderStatusUpdateEmail = (
           </table>
           
           <div style="text-align: right; margin-top: 20px;">
-            <p style="font-size: 18px; font-weight: bold;">${t.total}: $${money(total)} ${currency}</p>
+            ${desgloseHtml(desglose, t, currency)}
+            <p style="font-size: 18px; font-weight: bold; margin-top: 10px; border-top: 1px solid ${BRAND.border}; padding-top: 10px;">${t.total}: $${money(total)} ${currency}</p>
           </div>
           
           <div style="text-align: center; margin-top: 30px;">
@@ -1094,6 +1199,7 @@ export const createOrderStatusUpdateEmail = (
     ${t.products}:
     ${items.map(item => `- ${item.name} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
+    ${desgloseTexto(desglose, t, currency)}
     ${t.total}: $${money(total)} ${currency}
     
     ${t.viewOrders}: ${siteUrl}/orders

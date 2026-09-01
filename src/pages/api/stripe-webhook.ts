@@ -105,7 +105,9 @@ async function sendOrderEmails(
   // tiene y manda el correo sin ellos.
   extras: OrderNotificationExtras = {},
   // Idioma del comprador. El correo interno siempre va en español.
-  lang: 'es' | 'en' = 'es'
+  lang: 'es' | 'en' = 'es',
+  // Desglose del cobro, para que el total no aparezca sin explicación.
+  desglose?: { subtotal?: number | null; discount?: number | null; shipping?: number | null; tax?: number | null } | null
 ) {
   try {
     const orderDate = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', {
@@ -125,7 +127,8 @@ async function sendOrderEmails(
       items,
       shippingAddress,
       currency,
-      lang
+      lang,
+      desglose
     );
     emailData.to = customerEmail;
 
@@ -148,7 +151,8 @@ async function sendOrderEmails(
         items,
         shippingAddress,
         currency,
-        { ...extras, internalNote }
+        { ...extras, internalNote },
+        desglose
       );
       adminEmailData.to = notificationEmails;
 
@@ -307,7 +311,13 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
       deliveryMethod: draft.shippingMethod ?? null,
       customerPhone: checkout.phone || null,
     },
-    checkout.lang === 'en' ? 'en' : 'es'
+    checkout.lang === 'en' ? 'en' : 'es',
+    {
+      subtotal: draft.totals?.subtotal ?? null,
+      discount: draft.totals?.discount ?? null,
+      shipping: draft.totals?.shipping ?? null,
+      tax: draft.totals?.tax ?? null,
+    }
   );
 }
 

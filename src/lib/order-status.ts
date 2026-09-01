@@ -121,6 +121,15 @@ export const changeOrderStatus = async ({
     const guia = trackingNumber ?? order.tracking_number ?? undefined;
     const paqueteria = carrier ?? order.shipping_carrier ?? null;
 
+    // Desglose guardado en la orden (null en los pedidos anteriores a esas
+    // columnas: entonces el correo muestra solo el total).
+    const desglose = {
+      subtotal: order.subtotal_amount,
+      discount: order.discount_amount,
+      shipping: order.shipping_amount,
+      tax: order.tax_amount,
+    };
+
     const fechaEn = (locale: string) =>
       order.created_at
         ? new Date(order.created_at).toLocaleDateString(locale, {
@@ -150,7 +159,8 @@ export const changeOrderStatus = async ({
           order.currency,
           paqueteria,
           idiomaCliente,
-          'cliente'
+          'cliente',
+          desglose
         );
         paraCliente.to = order.customer_email;
         customerEmailSent = await sendEmail(paraCliente);
@@ -181,7 +191,8 @@ export const changeOrderStatus = async ({
           paqueteria,
           // El equipo lee en español, sin importar el idioma de la compra.
           'es',
-          'equipo'
+          'equipo',
+          desglose
         );
         paraEquipo.to = destinatarios;
         teamEmailSent = await sendEmail(paraEquipo);
