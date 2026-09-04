@@ -264,11 +264,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         // Producto al que pertenece la medida cuando el item es una variante.
         let parentProductId: number | null = null;
 
+        // Nombre con el que va a la orden y al correo. Para una medida se arma
+        // con el producto al que pertenece, no con la categoría.
+        let nombreParaOrden: string | null = null;
+
         if (item.uuid.startsWith('variant-')) {
           // El item ES una variante: getProductByUuid ya devolvió sus datos
           variantId = product.id;
           codeToCheck = (product as any).bind_code || null;
           parentProductId = Number((product as any).product_id) || null;
+
+          // Una medida heredada de la categoría (product_id NULL) no sabe de
+          // qué producto es. La ficha manda parent_uuid: el producto desde el
+          // que se eligió. Se acepta solo si es de la misma categoría, para
+          // que nadie cuele un nombre ajeno.
+          if (!parentProductId && typeof item.parent_uuid === 'string' && item.parent_uuid && !item.parent_uuid.startsWith('variant-')) {
+            const padre = await getProductByUuid(item.parent_uuid);
+            if (padre && Number((padre as any).filter_category_id) === Number((product as any).filter_category_id)) {
+              parentProductId = padre.id;
+              nombreParaOrden = `${padre.name} - ${(product as any).nominal_size || ''}`.trim().replace(/ - $/, '');
+            }
+          }
         } else if (item.size && (product as any).filter_category_id) {
           // Producto base con tamaño elegido: buscar la variante que coincide
           try {
@@ -358,7 +374,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           product_id: parentProductId ?? product.id,
           parent_product_id: parentProductId,
           uuid: item.uuid,
-          name: product.name,
+          name: nombreParaOrden ?? product.name,
           quantity,
           price: unitPrice,
           currency,

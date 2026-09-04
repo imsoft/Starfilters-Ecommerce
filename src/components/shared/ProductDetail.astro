@@ -418,25 +418,25 @@ if (categoryVariants.length > 0) {
       continue;
     }
     
-    // Buscar si hay un producto asociado a esta variante por bind_code
-    const variantProduct = relatedVariants.find(p => 
-      p.bind_code && variant.bind_code && 
-      p.bind_code.trim().toLowerCase() === variant.bind_code.trim().toLowerCase()
-    );
-    
-    // En la moneda que eligió el visitante
+    // Antes, si un producto hermano de la misma categoría guardaba el mismo
+    // código BIND que esta medida, la opción se convertía en ESE producto:
+    // en "Accesorios cuarto limpio" (Ventana, Pass through y Puerta comparten
+    // la tabla de medidas) elegir un modelo de ventana agregaba un pass
+    // through al carrito. Una medida siempre es del producto que se está
+    // viendo; el vínculo se manda como parent_uuid para que el cobro use su
+    // nombre y su foto.
     const variantPrice = precioEnMoneda(variant, moneda, exchangeRate);
     const variantCurrency = moneda;
     
     sizeOptions.push({
-      value: variantProduct?.uuid || `variant-${variant.id}`,
+      value: `variant-${variant.id}`,
       label: sizeOptionLabel(nominalEnIdioma(variant.nominal_size, variant.nominal_size_en), variant.real_size),
       price: variantPrice,
       currency: variantCurrency,
       stock: variant.stock,
-      name: variantProduct ? getProductName(variantProduct, lang) : productName,
-      image: variantProduct?.image_url || mainImage,
-      id: variantProduct?.id || product.id,
+      name: productName,
+      image: mainImage,
+      id: product.id,
       variantId: variant.id,
       bindCode: variant.bind_code,
       airFlow: variant.air_flow || null,
@@ -755,6 +755,7 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
                         data-price={opt.price} 
                         data-currency={opt.currency}
                         data-name={opt.name}
+                        data-parent-uuid={product.uuid}
                         data-image={opt.image}
                         data-id={opt.id}
                         data-variant-id={opt.variantId || ''}
@@ -914,6 +915,7 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
     nominal_size: '',
     real_size: '',
     size_label: '',
+    parent_uuid: '',
     bind_code: undefined as string | undefined
   };
 
@@ -1021,6 +1023,7 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
       uuid: selectedOption.value,
       id: parseInt(selectedOption.getAttribute('data-id') || '0'),
       name: selectedOption.getAttribute('data-name') || '',
+      parent_uuid: selectedOption.getAttribute('data-parent-uuid') || '',
       price: parseFloat(selectedOption.getAttribute('data-price') || '0'),
       currency: selectedOption.getAttribute('data-currency') || 'MXN',
       image: selectedOption.getAttribute('data-image') || '',
@@ -1097,6 +1100,7 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
       cart.items.push({
         uuid: currentProduct.uuid,
         product_id: currentProduct.id,
+        parent_uuid: currentProduct.parent_uuid || undefined,
         name: currentProduct.name,
         price: currentProduct.price,
         currency: currentProduct.currency,
