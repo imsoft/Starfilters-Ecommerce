@@ -1064,7 +1064,10 @@ if (!user) {
               </div>
             </div>
             <div class="flex flex-1 items-end justify-between pt-2">
-              <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aUSD(item.price, item.currency), cartCurrency)}</p>
+              ${item.quantity > 1
+                ? `<p class="mt-1 text-sm text-muted-foreground">${formatPrice(aUSD(item.price, item.currency), cartCurrency)} <span class="text-xs">each</span></p>
+                   <p class="text-sm font-semibold text-foreground">Total: ${formatPrice(aUSD(item.price, item.currency) * item.quantity, cartCurrency)}</p>`
+                : `<p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aUSD(item.price, item.currency), cartCurrency)}</p>`}
               <div class="ml-4">
                 <span class="text-sm text-muted-foreground">Quantity: ${item.quantity}</span>
               </div>
