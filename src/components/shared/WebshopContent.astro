@@ -154,8 +154,12 @@ const inventarioBind = await getBindInventoryByCode().catch(() => null);
 
 const hayExistencia = (producto: { stock: number; bindCodes: string[] }): boolean => {
   const enBind = existenciaSegunBind(inventarioBind, producto.bindCodes);
-  // null = BIND no respondió o no reconoció los códigos; se cae al local.
-  return enBind === null ? producto.stock > 0 : enBind > 0;
+  // null = BIND no respondió o no reconoció ningún código. Antes se caía al
+  // stock local, que nunca se sincroniza y siempre es 0: la tarjeta decía
+  // "Agotado" y en la ficha el mismo producto se podía agregar al carrito. La
+  // regla del cobro es "sin dato no se bloquea", y aquí se aplica la misma.
+  // Solo dice "Agotado" cuando BIND lo dice.
+  return enBind === null ? true : enBind > 0;
 };
 
 const formatPrice = (price: number, currency: "MXN" | "USD") =>

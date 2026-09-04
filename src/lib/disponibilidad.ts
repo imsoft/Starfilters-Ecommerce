@@ -3,7 +3,7 @@
  *
  * La existencia sale de BIND sumando los códigos del producto y de sus
  * medidas (propias o heredadas de la categoría). Si BIND no responde o no
- * reconoce ningún código, se cae al stock local. Esta regla vivía solo en
+ * reconoce ningún código, no se bloquea: el cobro vuelve a validar. Esta regla vivía solo en
  * WebshopContent; las tarjetas del carrito y de productos relacionados no
  * decían nada de existencias. Aquí queda una sola versión para todas.
  */
@@ -25,5 +25,7 @@ export const hayExistenciaDeProducto = async (
   }
   const codigos = normalizarCodigosBind([product.bind_code, product.bind_id, ...codigosMedidas]);
   const enBind = existenciaSegunBind(inventarioBind, codigos);
-  return enBind === null ? (Number(product.stock) || 0) > 0 : enBind > 0;
+  // Sin dato de BIND no se marca agotado: el stock local nunca se sincroniza
+  // y siempre es 0. Misma regla que el catálogo y el cobro.
+  return enBind === null ? true : enBind > 0;
 };

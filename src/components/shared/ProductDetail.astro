@@ -137,7 +137,8 @@ const codigosBind = normalizarCodigosBind([
   ...categoryVariants.filter((v) => v.is_active && v.bind_code).map((v) => v.bind_code as string),
 ]);
 
-let hayExistencia = product.stock > 0;
+// Sin dato de BIND no se marca agotado (misma regla que catálogo y cobro).
+let hayExistencia = true;
 if (codigosBind.length > 0) {
   const inventarioBind = await getBindInventoryByCode().catch(() => null);
   const enBind = existenciaSegunBind(inventarioBind, codigosBind);
