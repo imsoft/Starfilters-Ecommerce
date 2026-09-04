@@ -88,17 +88,6 @@ for (const order of allOrders) {
 
 console.log('📊 Conteo de productos por orden:', Object.fromEntries(orderProductCounts));
 
-// --- Bandeja de trabajo -----------------------------------------------------
-// La lista se ordenaba por fecha, así que un pedido de hoy sin preparar
-// aparecía debajo de uno entregado la semana pasada. Ahora manda el trabajo
-// pendiente: primero lo que nadie ha tocado, y dentro de eso lo más viejo.
-const PRIORIDAD: Record<string, number> = {
-  pending: 0,
-  processing: 1,
-  shipped: 2,
-  delivered: 3,
-  cancelled: 4,
-};
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 const ahora = Date.now();
@@ -129,12 +118,11 @@ const ordersEnriquecidas = allOrders
       estancada: enCurso && dias >= DIAS_PARA_ALERTA,
     };
   })
-  .sort((a, b) => {
-    const porEstado = (PRIORIDAD[a.order.status] ?? 9) - (PRIORIDAD[b.order.status] ?? 9);
-    if (porEstado !== 0) return porEstado;
-    // Dentro del mismo estado, lo más viejo primero: es lo que urge.
-    return new Date(a.order.created_at).getTime() - new Date(b.order.created_at).getTime();
-  });
+  // Del más reciente al más antiguo. Antes iba "por lo que falta hacer"
+  // (pendientes primero, y dentro los más viejos), pero mezclaba fechas y al
+  // equipo le resultaba revuelto: no encontraba el pedido que acababa de
+  // entrar. Los contadores de arriba siguen filtrando por lo que falta.
+  .sort((a, b) => new Date(b.order.created_at).getTime() - new Date(a.order.created_at).getTime());
 
 // Opciones del modal de estado, desde la fuente única.
 const opcionesEstado = Object.entries(ESTADOS).map(([clave, info]) => ({
