@@ -84,15 +84,30 @@ if (product.filter_category_id) {
   }
 }
 
-// Cómo llamar al selector: en los filtros la variante es una medida, pero en
-// manómetros o equipos es un modelo ("Digital - Rango 0 - 30 pascales"), y
-// "Tamaño nominal / Tamaño real" no describía eso. Si ninguna variante trae
-// medida real, se trata como modelo.
-const hayMedidaReal = categoryVariants.some((v) => v.real_size?.trim())
-  || Boolean(product.real_size?.trim());
-const etiquetaSelector = hayMedidaReal
+// Cómo llamar al selector. En los filtros la variante es una medida; en
+// gabinetes, ventanas o manómetros es un modelo ("24 X 48 - 110V - Acero
+// inoxidable"). Antes bastaba con que alguna variante tuviera "medida real"
+// para decir "Tamaño nominal / Tamaño real", y al unir los gabinetes esa
+// medida real se copió de la nominal: el selector de modelos quedó mal
+// nombrado. Ahora:
+//   - hay una medida real DISTINTA de la nominal → "Tamaño nominal / Tamaño real"
+//   - todas las opciones son solo dimensiones (24 x 24 x 2) → "Medida"
+//   - cualquier otra cosa (voltaje, material, mecanismo…) → "Modelo"
+const limpio = (t: unknown) => String(t ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+const opcionesSelector = categoryVariants.length
+  ? categoryVariants.map((v) => ({ nominal: v.nominal_size, real: v.real_size }))
+  : [{ nominal: product.nominal_size, real: product.real_size }];
+const hayMedidaRealDistinta = opcionesSelector.some(
+  (o) => limpio(o.real) && limpio(o.real) !== limpio(o.nominal)
+);
+const soloDimensiones = opcionesSelector.every((o) =>
+  /^[\d.,]+\s*(mm|cm|m|in|")?(\s*[x×]\s*[\d.,]+\s*(mm|cm|m|in|")?){1,2}$/i.test(limpio(o.nominal))
+);
+const etiquetaSelector = hayMedidaRealDistinta
   ? (isEn ? 'Nominal size / Actual size:' : 'Tamaño nominal / Tamaño real:')
-  : (isEn ? 'Model:' : 'Modelo:');
+  : soloDimensiones
+    ? (isEn ? 'Size:' : 'Medida:')
+    : (isEn ? 'Model:' : 'Modelo:');
 
 // Migas de pan de la categoría: desde la ficha se podía volver a "Productos"
 // pero no al listado de la categoría en la que venías (ej. todos los filtros),
