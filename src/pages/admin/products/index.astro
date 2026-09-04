@@ -37,9 +37,9 @@ try {
 // cruza por código, con tiempo límite y caché (ver getBindInventoryByCode).
 import { getBindInventoryByCode } from '@/lib/bind';
 
-const tieneCodigos = allProducts.some((p: any) => p.bind_code);
-const bindInventoryByCode = tieneCodigos ? await getBindInventoryByCode() : null;
-const bindDisponible = bindInventoryByCode !== null;
+// (la consulta a BIND se hace más abajo, cuando ya se conocen los códigos de
+// las medidas: antes se decidía solo por el código del producto y, si ninguno
+// lo tenía, no se consultaba BIND aunque las medidas sí tuvieran códigos)
 
 // La categoría que se muestra sale de la categoría de filtro ASIGNADA al
 // producto, no del texto suelto products.category: ese texto se quedaba viejo
@@ -67,29 +67,52 @@ const codigosPorProducto = new Map<number, string[]>();
 const preciosPorProducto = new Map<number, number[]>();
 const tipoDeCambio = await getExchangeRate().catch(() => 17);
 try {
+  // Las medidas de un producto son las suyas (product_id) o, si no tiene
+  // ninguna propia, las de su categoría (product_id NULL). Es la misma regla
+  // que usa la tienda (getProductVariants). Antes aquí solo se tomaban las
+  // propias, así que un producto con medidas heredadas —códigos y precios
+  // incluidos— salía como "$0.00, 0 unidades, sin código BIND".
+  type FilaMedida = { product_id: number | null; category_id: number; bind_code: string | null; price: number; currency: string | null };
   const filas = await query(
-    `SELECT product_id, bind_code, price, currency, price_usd
+    `SELECT product_id, category_id, bind_code, price, currency
      FROM filter_category_variants
-     WHERE product_id IS NOT NULL AND is_active = 1`
-  ) as Array<{ product_id: number; bind_code: string | null; price: number; currency: string | null; price_usd: number | null }>;
+     WHERE is_active = 1`
+  ) as FilaMedida[];
+  const propias = new Map<number, FilaMedida[]>();
+  const heredadas = new Map<number, FilaMedida[]>();
   for (const fila of filas) {
-    if (fila.bind_code) {
-      const lista = codigosPorProducto.get(fila.product_id) || [];
-      lista.push(String(fila.bind_code).trim().toUpperCase());
-      codigosPorProducto.set(fila.product_id, lista);
+    if (fila.product_id) {
+      propias.set(fila.product_id, [...(propias.get(fila.product_id) || []), fila]);
+    } else {
+      heredadas.set(fila.category_id, [...(heredadas.get(fila.category_id) || []), fila]);
     }
-    const enMXN = fila.currency === 'USD'
-      ? Number(fila.price) * tipoDeCambio
-      : Number(fila.price);
-    if (enMXN > 0) {
-      const precios = preciosPorProducto.get(fila.product_id) || [];
-      precios.push(enMXN);
-      preciosPorProducto.set(fila.product_id, precios);
+  }
+  for (const product of allProducts as any[]) {
+    const medidas = propias.get(product.id)?.length
+      ? propias.get(product.id)!
+      : (product.filter_category_id ? heredadas.get(product.filter_category_id) || [] : []);
+    for (const fila of medidas) {
+      if (fila.bind_code) {
+        const lista = codigosPorProducto.get(product.id) || [];
+        lista.push(String(fila.bind_code).trim().toUpperCase());
+        codigosPorProducto.set(product.id, lista);
+      }
+      const enMXN = fila.currency === 'USD' ? Number(fila.price) * tipoDeCambio : Number(fila.price);
+      if (enMXN > 0) {
+        const precios = preciosPorProducto.get(product.id) || [];
+        precios.push(enMXN);
+        preciosPorProducto.set(product.id, precios);
+      }
     }
   }
 } catch (error) {
   console.error('❌ No se pudieron cargar los tamaños:', error);
 }
+
+const tieneCodigos =
+  allProducts.some((p: any) => p.bind_code) || codigosPorProducto.size > 0;
+const bindInventoryByCode = tieneCodigos ? await getBindInventoryByCode() : null;
+const bindDisponible = bindInventoryByCode !== null;
 
 // Precio a mostrar: rango si los tamaños valen distinto, y cuántos son
 const precioDeProducto = (product: any): { texto: string; tamanos: number } => {
