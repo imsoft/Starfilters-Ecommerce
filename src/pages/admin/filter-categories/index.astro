@@ -235,8 +235,10 @@ for (const huerfana of categoriesWithVariants.filter((c) => c.parent_id && !fami
               <tbody class="divide-y divide-border bg-background">
                 {ordenadas.map((category) => (
                   <tr class={category.nivel === 1 ? 'bg-muted/20 hover:bg-muted/40' : 'hover:bg-muted/50'}>
-                    <td class={`px-6 py-4 whitespace-nowrap ${category.nivel === 1 ? 'pl-14' : ''}`}>
-                      <div class={`relative ${category.nivel === 1 ? 'h-12 w-12' : 'h-20 w-20'}`}>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      {/* La imagen de una subcategoría es más chica, pero va centrada en el
+                          mismo cuadro de 80 px que las familias: así la columna queda alineada. */}
+                      <div class={`relative flex h-20 w-20 items-center justify-center ${category.nivel === 1 ? '[&_img]:h-12 [&_img]:w-12 [&_.image-placeholder]:h-12 [&_.image-placeholder]:w-12 [&_.image-placeholder]:absolute [&_.image-placeholder]:inset-auto' : ''}`}>
                         {imagenValida(category.main_image) ? (
                           <img
                             src={imagenValida(category.main_image)}
@@ -265,7 +267,7 @@ for (const huerfana of categoriesWithVariants.filter((c) => c.parent_id && !fami
                         </div>
                       </div>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class={`px-6 py-4 ${category.nivel === 1 ? 'pl-10' : ''}`}>
                       <div class="flex-1 min-w-0">
                         {category.nivel === 1 ? (
                           <div class="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
