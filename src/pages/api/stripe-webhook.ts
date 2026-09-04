@@ -128,7 +128,8 @@ async function sendOrderEmails(
       shippingAddress,
       currency,
       lang,
-      desglose
+      desglose,
+      extras.deliveryMethod ?? null
     );
     emailData.to = customerEmail;
 

@@ -298,8 +298,15 @@ export const createOrderConfirmationEmail = (
   // Idioma del cliente: quien compraba en /en recibía la confirmación en español.
   lang: 'es' | 'en' = 'es',
   // Desglose del cobro, para que el total no aparezca sin explicación.
-  desglose?: DesgloseCorreo | null
+  desglose?: DesgloseCorreo | null,
+  // Forma de entrega. Un pedido para recoger no tiene "dirección de envío" ni
+  // se "envía": se recoge en sucursal, y el correo debe decirlo así.
+  deliveryMethod?: DeliveryMethod | null
 ): EmailData => {
+  const opcionEntrega = deliveryMethod ? getDeliveryOption(deliveryMethod) : undefined;
+  const esRecoger = deliveryMethod ? isPickupMethod(deliveryMethod) : false;
+  const direccionMostrada = esRecoger && opcionEntrega?.address?.text ? opcionEntrega.address.text : shippingAddress;
+  const plazo = opcionEntrega?.days[lang === 'en' ? 'en' : 'es'] || '';
   const isEn = lang === 'en';
   const t = isEn ? {
     subject: (n: string) => `Order confirmation #${n} - Star Filters`,
@@ -314,6 +321,10 @@ export const createOrderConfirmationEmail = (
     total: 'Total',
     quantity: 'Quantity',
     shippingAddress: 'Shipping address',
+    pickupAt: 'Pick up at',
+    willShip: 'We will let you know when your order ships.',
+    willBeReady: 'We will let you know when your order is ready for pickup.',
+    availability: 'Availability',
     viewOrders: 'View my orders',
     subtotal: 'Subtotal',
     discount: 'Discount',
@@ -335,6 +346,10 @@ export const createOrderConfirmationEmail = (
     total: 'Total',
     quantity: 'Cantidad',
     shippingAddress: 'Dirección de Envío',
+    pickupAt: 'Recoger en',
+    willShip: 'Te avisaremos cuando tu pedido sea enviado.',
+    willBeReady: 'Te avisaremos cuando tu pedido esté listo para recoger.',
+    availability: 'Disponible',
     viewOrders: 'Ver Mis Pedidos',
     subtotal: 'Subtotal',
     discount: 'Descuento',
@@ -437,11 +452,12 @@ export const createOrderConfirmationEmail = (
           </div>
           
           <div class="shipping">
-            <h4>${t.shippingAddress}:</h4>
-            <p>${shippingAddress}</p>
+            <h4>${esRecoger ? t.pickupAt : t.shippingAddress}:</h4>
+            <p>${escapeHtml(direccionMostrada)}</p>
+            ${esRecoger && plazo ? `<p style="margin-top: 6px; color: ${BRAND.mutedForeground};">${t.availability}: ${escapeHtml(plazo)}</p>` : ''}
           </div>
           
-          <p>Te notificaremos cuando tu pedido sea enviado.</p>
+          <p>${esRecoger ? t.willBeReady : t.willShip}</p>
           
           <div style="text-align: center; margin-top: 30px;">
             <a href="${siteUrl}/orders" class="button">${t.viewOrders}</a>
@@ -471,10 +487,10 @@ export const createOrderConfirmationEmail = (
     ${desgloseTexto(desglose, t, currency) || diferenciaSinDesglose(items, total, t, currency).texto}
     ${t.total}: $${money(total)} ${currency}
     
-    ${t.shippingAddress}:
-    ${shippingAddress}
+    ${esRecoger ? t.pickupAt : t.shippingAddress}:
+    ${direccionMostrada}${esRecoger && plazo ? `\n    ${t.availability}: ${plazo}` : ''}
     
-    Te notificaremos cuando tu pedido sea enviado.
+    ${esRecoger ? t.willBeReady : t.willShip}
     
     © ${new Date().getFullYear()} Star Filters
   `;
@@ -993,8 +1009,15 @@ export const createOrderStatusUpdateEmail = (
   destinatario: 'cliente' | 'equipo' = 'cliente',
   // Desglose guardado en la orden. Sin él el correo saltaba del renglón del
   // producto al total, y la diferencia (envío e IVA) no se explicaba.
-  desglose?: DesgloseCorreo | null
+  desglose?: DesgloseCorreo | null,
+  // Forma de entrega: un pedido para recoger no "va en camino", queda listo
+  // para recoger en sucursal.
+  deliveryMethod?: DeliveryMethod | null
 ): EmailData => {
+  const opcionEntrega = deliveryMethod ? getDeliveryOption(deliveryMethod) : undefined;
+  const esRecoger = deliveryMethod ? isPickupMethod(deliveryMethod) : false;
+  const direccionRecoger = opcionEntrega?.address?.text || '';
+  const plazoRecoger = opcionEntrega?.days[lang === 'en' ? 'en' : 'es'] || '';
   const paraEquipo = destinatario === 'equipo';
   // Paleta de colores de la aplicación
   const color50 = BRAND.primaryTint;
@@ -1072,9 +1095,12 @@ export const createOrderStatusUpdateEmail = (
   const statusMessages: Record<string, { title: string; message: string }> = isEn ? {
     processing: {
       title: 'Your order is being prepared',
-      message: 'Your order is confirmed and we are getting it ready to ship.'
+      message: esRecoger ? 'Your order is confirmed and we are getting it ready for pickup.' : 'Your order is confirmed and we are getting it ready to ship.'
     },
-    shipped: {
+    shipped: esRecoger ? {
+      title: 'Your order is ready for pickup',
+      message: `You can pick it up at ${direccionRecoger}.` + (plazoRecoger ? ` Availability: ${plazoRecoger}.` : '')
+    } : {
       title: 'Your order is on its way',
       message: 'Your order has shipped. ' + (paqueteria ? `It is travelling with ${paqueteria.nombre}. ` : '') + (trackingNumber ? `Tracking number: ${trackingNumber}` : '')
     },
@@ -1089,9 +1115,12 @@ export const createOrderStatusUpdateEmail = (
   } : {
     processing: {
       title: 'Tu pedido está siendo procesado',
-      message: 'Tu pedido ha sido confirmado y está siendo preparado para el envío.'
+      message: esRecoger ? 'Tu pedido ha sido confirmado y lo estamos preparando para que lo recojas.' : 'Tu pedido ha sido confirmado y está siendo preparado para el envío.'
     },
-    shipped: {
+    shipped: esRecoger ? {
+      title: '¡Tu pedido está listo para recoger!',
+      message: `Puedes pasar por él a ${direccionRecoger}.` + (plazoRecoger ? ` Disponible: ${plazoRecoger}.` : '')
+    } : {
       title: '¡Tu pedido ha sido enviado!',
       message: 'Tu pedido está en camino. ' + (paqueteria ? `Va con ${paqueteria.nombre}. ` : '') + (trackingNumber ? `Número de rastreo: ${trackingNumber}` : '')
     },
@@ -1191,13 +1220,14 @@ export const createOrderStatusUpdateEmail = (
             <p><strong>${t.orderNumber}:</strong> ${orderNumber}</p>
             <p><strong>${t.date}:</strong> ${orderDate}</p>
             <p><strong>${t.status}:</strong> <span class="status-badge">${estadoLegible(newStatus)}</span></p>
-            ${paqueteria ? `<p><strong>${t.carrier}:</strong> ${escapeHtml(paqueteria.nombre)}</p>` : ''}
-            ${trackingNumber ? `<p><strong>${t.tracking}:</strong> ${
+            ${esRecoger && direccionRecoger ? `<p><strong>${isEn ? 'Pick up at' : 'Recoger en'}:</strong> ${escapeHtml(direccionRecoger)}</p>` : ''}
+            ${!esRecoger && paqueteria ? `<p><strong>${t.carrier}:</strong> ${escapeHtml(paqueteria.nombre)}</p>` : ''}
+            ${!esRecoger && trackingNumber ? `<p><strong>${t.tracking}:</strong> ${
               paqueteria?.url
                 ? `<a href="${paqueteria.url}" style="color: ${BRAND.primary}; font-weight: bold;">${escapeHtml(trackingNumber)}</a>`
                 : escapeHtml(trackingNumber)
             }</p>` : ''}
-            ${paqueteria?.url ? `<p style="margin-top: 14px;"><a href="${paqueteria.url}" style="display: inline-block; background-color: ${BRAND.primary}; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">${t.trackHere}</a></p>` : ''}
+            ${!esRecoger && paqueteria?.url ? `<p style="margin-top: 14px;"><a href="${paqueteria.url}" style="display: inline-block; background-color: ${BRAND.primary}; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">${t.trackHere}</a></p>` : ''}
           </div>
           
           <h3>${t.products}:</h3>
@@ -1241,9 +1271,10 @@ export const createOrderStatusUpdateEmail = (
     ${t.orderNumber}: ${orderNumber}
     ${t.date}: ${orderDate}
     ${t.status}: ${estadoLegible(newStatus)}
-    ${paqueteria ? `${t.carrier}: ${paqueteria.nombre}` : ''}
-    ${trackingNumber ? `${t.tracking}: ${trackingNumber}` : ''}
-    ${paqueteria?.url ? `${t.trackHere}: ${paqueteria.url}` : ''}
+    ${esRecoger && direccionRecoger ? `${isEn ? 'Pick up at' : 'Recoger en'}: ${direccionRecoger}` : ''}
+    ${!esRecoger && paqueteria ? `${t.carrier}: ${paqueteria.nombre}` : ''}
+    ${!esRecoger && trackingNumber ? `${t.tracking}: ${trackingNumber}` : ''}
+    ${!esRecoger && paqueteria?.url ? `${t.trackHere}: ${paqueteria.url}` : ''}
     
     ${t.products}:
     ${items.map(item => `- ${item.name}${item.size ? ` · ${item.size}` : ''}${item.code ? ` (código ${item.code})` : ''} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}

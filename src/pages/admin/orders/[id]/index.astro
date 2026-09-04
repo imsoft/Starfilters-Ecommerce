@@ -231,7 +231,7 @@ import { getOrderDiscountAmount } from '@/lib/database';
       <div>
         <div class="mb-1.5 flex flex-wrap items-center gap-2.5">
           <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{order.order_number}</h1>
-          <span class={`rounded-full px-3 py-1 text-xs font-semibold ${estadoActual.badge}`}>{estadoActual.etiqueta}</span>
+          <span class={`rounded-full px-3 py-1 text-xs font-semibold ${estadoActual.badge}`}>{esRecoger && order.status === 'shipped' ? 'Listo para recoger' : estadoActual.etiqueta}</span>
         </div>
         <p class="text-sm text-muted-foreground">
           {order.customer_name} · {order.customer_email}{order.customer_phone && ` · ${order.customer_phone}`}

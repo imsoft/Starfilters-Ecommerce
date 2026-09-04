@@ -67,6 +67,8 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const esRecoger = order.delivery_method ? isPickupMethod(order.delivery_method as DeliveryMethod) : false;
+
 const getStatusText = (status: string) => {
   switch (status) {
     case 'pending':
@@ -74,7 +76,8 @@ const getStatusText = (status: string) => {
     case 'processing':
       return 'Procesando';
     case 'shipped':
-      return 'Enviado';
+      // Un pedido para recoger no se "envía": queda listo en sucursal.
+      return esRecoger ? 'Listo para recoger' : 'Enviado';
     case 'delivered':
       return 'Entregado';
     case 'cancelled':
@@ -117,6 +120,7 @@ const hayDesglose = desglose !== null;
 // Si ni así cierran los números, se nombra la diferencia sin inventarla.
 const diferencia = Number(order.total_amount) - items.reduce((suma, item) => suma + Number(item.price) * item.quantity, 0);
 import { desgloseDeOrden } from '@/lib/order-breakdown';
+import { isPickupMethod, type DeliveryMethod } from '@/lib/delivery-options';
 ---
 
 <WebsiteLayout title={`Pedido #${order.order_number}`}>
@@ -304,9 +308,9 @@ import { desgloseDeOrden } from '@/lib/order-breakdown';
               <div class="flex items-center gap-4">
                 <div class={`w-3 h-3 rounded-full ${['shipped', 'delivered'].includes(order.status) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                 <div>
-                  <p class="font-medium text-foreground">Enviado</p>
+                  <p class="font-medium text-foreground">{esRecoger ? 'Listo para recoger' : 'Enviado'}</p>
                   {order.status === 'shipped' && (
-                    <p class="text-sm text-muted-foreground">Tu pedido está en camino</p>
+                    <p class="text-sm text-muted-foreground">{esRecoger ? 'Ya puedes pasar por tu pedido a la sucursal' : 'Tu pedido está en camino'}</p>
                   )}
                 </div>
               </div>

@@ -16,6 +16,7 @@ import {
   getOrderDiscountAmount,
 } from './database';
 import { desgloseDeOrden } from './order-breakdown';
+import type { DeliveryMethod } from './delivery-options';
 import { sendEmail, createOrderStatusUpdateEmail } from './email';
 import { getOrderNotificationEmails } from './site-settings-service';
 import { ZONA_HORARIA } from './timezone';
@@ -173,7 +174,8 @@ export const changeOrderStatus = async ({
           paqueteria,
           idiomaCliente,
           'cliente',
-          desglose
+          desglose,
+          (order.delivery_method as DeliveryMethod | null) ?? null
         );
         paraCliente.to = order.customer_email;
         customerEmailSent = await sendEmail(paraCliente);
@@ -205,7 +207,8 @@ export const changeOrderStatus = async ({
           // El equipo lee en español, sin importar el idioma de la compra.
           'es',
           'equipo',
-          desglose
+          desglose,
+          (order.delivery_method as DeliveryMethod | null) ?? null
         );
         paraEquipo.to = destinatarios;
         teamEmailSent = await sendEmail(paraEquipo);
