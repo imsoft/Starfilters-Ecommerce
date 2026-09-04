@@ -654,6 +654,7 @@ const recommendedProductsWithImages = await Promise.all(
                     </div>` 
                   : ""}
                 ${item.bind_code ? `<p class="mt-1 text-xs text-muted-foreground">Código: ${item.bind_code}</p>` : ""}
+                ${item.efficiency ? `<p class="mt-1 text-xs text-muted-foreground">Eficiencia: ${item.efficiency}</p>` : ""}
                 
                 <!-- Cantidad -->
                 <div class="mt-3 flex items-center gap-3">

@@ -531,6 +531,12 @@ if (categoryVariants.length > 0) {
 
 // Preparar datos técnicos
 const efficiencyList = parseListField(product.efficiency);
+// Eficiencia en una línea, para el carrito y el checkout: en un filtro es el
+// dato que define qué se está comprando, y ahí no se veía.
+const eficienciaTexto = [
+  ...efficiencyList,
+  ...(product.efficiency_class ? [`${isEn ? 'Class' : 'Clase'}: ${product.efficiency_class}`] : []),
+].join(' · ').slice(0, 140);
 const characteristicsList = parseListField(product.characteristics);
 const applicationsList = parseListField(product.applications);
 const benefitsList = parseListField(product.benefits);
@@ -648,7 +654,7 @@ const codigoInicial: string =
       <div class="mx-auto grid max-w-2xl grid-cols-1 items-start gap-x-8 gap-y-16 px-4 py-8 sm:px-6 sm:py-12 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
           <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h2>
-          <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''} data-nominal-size={product.nominal_size || ''} data-real-size={product.real_size || ''} data-category={productCat}>
+          <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''} data-nominal-size={product.nominal_size || ''} data-real-size={product.real_size || ''} data-category={productCat} data-efficiency={eficienciaTexto}>
             {/* Un solo precio, en la moneda del idioma y con el código a la
                 vista: mostrar además el equivalente en la otra moneda con la
                 tasa del día confundía más de lo que ayudaba. */}
@@ -960,6 +966,7 @@ const codigoInicial: string =
     real_size: '',
     size_label: '',
     parent_uuid: '',
+    efficiency: '',
     bind_code: undefined as string | undefined
   };
 
@@ -1023,6 +1030,7 @@ const codigoInicial: string =
         currentProduct.currency = productContainer.getAttribute('data-currency') || 'MXN';
         // Intentar obtener tamaño del producto si está disponible
         currentProduct.category = productContainer.getAttribute('data-category') || '';
+        currentProduct.efficiency = productContainer.getAttribute('data-efficiency') || '';
         const nominalSize = productContainer.getAttribute('data-nominal-size') || '';
         const realSize = productContainer.getAttribute('data-real-size') || '';
         if (nominalSize || realSize) {
@@ -1072,6 +1080,7 @@ const codigoInicial: string =
       currency: selectedOption.getAttribute('data-currency') || 'MXN',
       image: selectedOption.getAttribute('data-image') || '',
       category: document.querySelector('[data-category]')?.getAttribute('data-category') || '',
+      efficiency: document.querySelector('[data-efficiency]')?.getAttribute('data-efficiency') || '',
       nominal_size: nominalSize,
       real_size: realSize,
       size_label: sizeLabel,
@@ -1159,6 +1168,7 @@ const codigoInicial: string =
         product_id: currentProduct.id,
         parent_uuid: currentProduct.parent_uuid || undefined,
         bind_code: currentProduct.bind_code || undefined,
+        efficiency: currentProduct.efficiency || undefined,
         name: currentProduct.name,
         price: currentProduct.price,
         currency: currentProduct.currency,
