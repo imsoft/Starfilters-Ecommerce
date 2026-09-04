@@ -477,6 +477,16 @@ function formatCurrency(amount: number): string {
             ]
           },
           {
+            id: "status-filter",
+            label: "Estado",
+            options: [
+              { value: "active", label: "Activos" },
+              { value: "inactive", label: "Inactivos" },
+              { value: "draft", label: "Borradores" },
+              { value: "all", label: "Todos" }
+            ]
+          },
+          {
             id: "stock-filter",
             label: "Filtrar por stock",
             options: [
@@ -546,7 +556,7 @@ function formatCurrency(amount: number): string {
               </thead>
               <tbody id="products-table-body" class="divide-y divide-border">
                 {paginatedProducts.map((product) => (
-                  <tr class="hover:bg-muted/50">
+                  <tr class="hover:bg-muted/50" data-status={product.status}>
                     <td class="px-6 py-4 whitespace-nowrap">
                       {product.primary_image_url ? (
                         <img
@@ -775,6 +785,11 @@ function formatCurrency(amount: number): string {
     const searchInput = document.getElementById('search-products');
     const categoryFilter = document.getElementById('category-filter');
     const stockFilter = document.getElementById('stock-filter');
+    // Los productos inactivos (por ejemplo, las medidas de gabinete que se
+    // unieron en un solo producto) seguían llenando el listado. Por defecto se
+    // muestran solo los activos; "Todos" los trae de vuelta.
+    const statusFilter = document.getElementById('status-filter') as HTMLSelectElement | null;
+    if (statusFilter && !statusFilter.value) statusFilter.value = 'active';
     const tableBody = document.getElementById('products-table-body');
     const itemsPerPageSelect = document.getElementById('items-per-page');
 
@@ -793,6 +808,7 @@ function formatCurrency(amount: number): string {
       const searchTerm = (searchInput as HTMLInputElement)?.value.toLowerCase() || '';
       const selectedCategory = (categoryFilter as HTMLSelectElement)?.value || '';
       const selectedStockRange = (stockFilter as HTMLSelectElement)?.value || '';
+      const selectedStatus = statusFilter?.value || 'active';
 
       console.log('🔍 Filtros aplicados:', { searchTerm, selectedCategory, selectedStockRange });
 
@@ -828,8 +844,10 @@ function formatCurrency(amount: number): string {
         // Aplicar filtros
         const matchesSearch = productName.includes(searchTerm);
         const matchesCategory = !selectedCategory || productCategory.includes(selectedCategory);
+        const rowStatus = row.getAttribute('data-status') || 'active';
+        const matchesStatus = selectedStatus === 'all' || rowStatus === selectedStatus;
 
-        if (matchesSearch && matchesCategory && matchesStock) {
+        if (matchesSearch && matchesCategory && matchesStock && matchesStatus) {
           row.style.display = '';
           visibleCount++;
         } else {
@@ -844,6 +862,9 @@ function formatCurrency(amount: number): string {
     searchInput?.addEventListener('input', filterProducts);
     categoryFilter?.addEventListener('change', filterProducts);
     stockFilter?.addEventListener('change', filterProducts);
+    statusFilter?.addEventListener('change', filterProducts);
+    // Aplicar el estado por defecto (solo activos) en cuanto carga la lista
+    filterProducts();
 
     // Event listeners para botones de eliminar
     const deleteButtons = document.querySelectorAll('[data-delete-product]');
