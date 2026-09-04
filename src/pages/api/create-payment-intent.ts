@@ -382,6 +382,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           size: item.size || undefined,
           variant_id: variantId,
           bind_target: bindTarget,
+          // El código con el que se identifica la pieza: el de la medida
+          // elegida o, si no, el del producto.
+          bind_code: codeToCheck || null,
         } as ResolvedCartItem);
       }
     } catch (stockError) {

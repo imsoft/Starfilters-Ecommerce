@@ -425,7 +425,7 @@ import { getOrderDiscountAmount } from '@/lib/database';
                   )}
                   <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold text-foreground">{item.product_name}</p>
-                    <p class="mt-0.5 text-sm text-muted-foreground">{formatCurrency(item.price, order.currency)} c/u</p>
+                    <p class="mt-0.5 text-sm text-muted-foreground">{formatCurrency(item.price, order.currency)} c/u{item.bind_code ? ` · código ${item.bind_code}` : ''}</p>
                   </div>
                   <p class="text-base font-semibold text-foreground">×{item.quantity}</p>
                 </div>

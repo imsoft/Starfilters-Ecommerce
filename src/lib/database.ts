@@ -185,6 +185,9 @@ export interface OrderItem {
   price: number;
   product_name: string;
   image_url?: string;
+  // Código BIND del producto o de la medida que se compró. Es lo que el
+  // cliente y el equipo usan para identificar la pieza.
+  bind_code?: string | null;
   created_at: Date;
 }
 
@@ -808,12 +811,32 @@ const ensureOrderItemsProductIdNullable = (): Promise<void> => {
   return orderItemsProductIdNullableEnsured;
 };
 
+// order_items.bind_code: el código con el que se identifica la pieza. Se crea
+// al primer uso, como el resto de migraciones en caliente.
+let bindCodeColumnEnsured: Promise<void> | null = null;
+const ensureOrderItemsBindCode = (): Promise<void> => {
+  if (!bindCodeColumnEnsured) {
+    bindCodeColumnEnsured = (async () => {
+      const filas = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_items' AND COLUMN_NAME = 'bind_code'`
+      ) as any[];
+      if (!Number(filas?.[0]?.n)) {
+        await query('ALTER TABLE order_items ADD COLUMN bind_code VARCHAR(100) NULL AFTER product_name');
+        console.log('✅ Columna order_items.bind_code creada');
+      }
+    })().catch((error) => { bindCodeColumnEnsured = null; throw error; });
+  }
+  return bindCodeColumnEnsured;
+};
+
 export const createOrderItem = async (item: Omit<OrderItem, 'id' | 'uuid' | 'created_at'>): Promise<number> => {
   await ensureOrderItemsProductIdNullable();
+  await ensureOrderItemsBindCode();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO order_items (uuid, order_id, product_id, quantity, price, product_name, image_url)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO order_items (uuid, order_id, product_id, quantity, price, product_name, bind_code, image_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -822,6 +845,7 @@ export const createOrderItem = async (item: Omit<OrderItem, 'id' | 'uuid' | 'cre
     item.quantity,
     item.price,
     item.product_name,
+    item.bind_code || null,
     item.image_url || null
   ]) as any;
   return result.insertId;

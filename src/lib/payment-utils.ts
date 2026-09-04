@@ -162,6 +162,8 @@ export interface ResolvedCartItem extends CartItem {
   // Producto real al que pertenece una variante ("variant-N"): su product_id
   // es el id de la variante, que no sirve para enlazar la orden al producto.
   parent_product_id?: number | null;
+  // Código BIND visible de la pieza (producto o medida)
+  bind_code?: string | null;
 }
 
 // Crear Payment Intent para el checkout
@@ -231,6 +233,7 @@ export const createCheckoutPaymentIntent = async (
         variant_id: item.variant_id ?? null,
         bind_target: item.bind_target ?? null,
         parent_product_id: item.parent_product_id ?? null,
+        bind_code: item.bind_code ?? null,
       };
     });
 

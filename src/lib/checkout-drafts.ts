@@ -31,6 +31,8 @@ export interface DraftItem {
   parent_product_id?: number | null;
   // ProductID de BIND ERP ya resuelto para el ajuste de inventario
   bind_target: string | null;
+  // Código BIND visible (SKU) de la pieza, para la orden y los correos
+  bind_code?: string | null;
 }
 
 export interface CheckoutDraftPayload {

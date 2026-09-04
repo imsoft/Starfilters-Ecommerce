@@ -557,6 +557,13 @@ const precioSchemaMXN = (() => {
 })();
 
 const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
+
+// Código que se muestra al abrir la ficha: el de la opción preseleccionada.
+const codigoInicial: string =
+  (sizeOptions.find((o) => o.isCurrentProduct)?.bindCode as string | undefined)
+  || (product as any).bind_code
+  || (sizeOptions[0]?.bindCode as string | undefined)
+  || '';
 ---
 
 <WebsiteLayout
@@ -643,6 +650,11 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
                     ? `${isEn ? 'From' : 'Desde'} ${formatPrice(precioMostrado, finalCurrency)}`
                     : formatPrice(precioMostrado, finalCurrency))
                 : (isEn ? 'Ask for price' : 'Consultar precio')}
+            </p>
+            {/* Código BIND de la pieza: el cliente lo usa para pedir y el
+                equipo para identificarla. Cambia con el modelo elegido. */}
+            <p id="product-bind-code" class="mt-1 text-sm text-muted-foreground" data-prefijo={isEn ? 'Code' : 'Código'}>
+              {codigoInicial ? `${isEn ? 'Code' : 'Código'}: ${codigoInicial}` : ''}
             </p>
           </div>
 
@@ -1071,6 +1083,11 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
     if (priceElement) {
       priceElement.textContent = formatPrice(currentProduct.price, currentProduct.currency);
     }
+    const codeElement = document.getElementById('product-bind-code');
+    if (codeElement) {
+      const prefijo = codeElement.getAttribute('data-prefijo') || 'Código';
+      codeElement.textContent = currentProduct.bind_code ? `${prefijo}: ${currentProduct.bind_code}` : '';
+    }
   }
 
 
@@ -1133,6 +1150,7 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
         uuid: currentProduct.uuid,
         product_id: currentProduct.id,
         parent_uuid: currentProduct.parent_uuid || undefined,
+        bind_code: currentProduct.bind_code || undefined,
         name: currentProduct.name,
         price: currentProduct.price,
         currency: currentProduct.currency,

@@ -202,6 +202,9 @@ import { desgloseDeOrden } from '@/lib/order-breakdown';
                     <h3 class="font-medium text-foreground">
                       {item.product_name}
                     </h3>
+                    {item.bind_code && (
+                      <p class="text-xs text-muted-foreground">Code: {item.bind_code}</p>
+                    )}
                     <p class="text-sm text-muted-foreground">
                       Quantity: {item.quantity}
                     </p>
