@@ -379,6 +379,12 @@ interface SizeOption {
   isCurrentProduct: boolean;
 }
 
+// Código visible del producto en sí (su fila): el de BIND o, si no lo tiene,
+// el que haya en bind_id, código de producto o SKU. Es lo que se muestra al
+// abrir la ficha, antes de cambiar de modelo.
+const codigoDelProducto: string | null =
+  (product as any).bind_code || (product as any).bind_id || (product as any).product_code || (product as any).sku || null;
+
 const sizeOptions: SizeOption[] = [];
 const addedSizes = new Set<string>();
 
@@ -427,6 +433,7 @@ if (categoryVariants.length > 0) {
         image: mainImage,
         id: product.id,
         airFlow: currentProductAirFlow,
+        bindCode: codigoDelProducto,
         isCurrentProduct: true
       });
       addedSizes.add(normalizedVariantKey);
@@ -487,6 +494,7 @@ if (categoryVariants.length > 0) {
       image: mainImage,
       id: product.id,
       airFlow: currentProductAirFlow,
+      bindCode: codigoDelProducto,
       isCurrentProduct: true
     });
     addedSizes.add(currentSizeKey);
@@ -561,7 +569,7 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
 // Código que se muestra al abrir la ficha: el de la opción preseleccionada.
 const codigoInicial: string =
   (sizeOptions.find((o) => o.isCurrentProduct)?.bindCode as string | undefined)
-  || (product as any).bind_code
+  || codigoDelProducto
   || (sizeOptions[0]?.bindCode as string | undefined)
   || '';
 ---

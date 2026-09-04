@@ -612,6 +612,11 @@ export const getProductsByFilterCategory = async (filterCategoryId: number): Pro
       FROM filter_category_variants fcv
       INNER JOIN filter_categories fc ON fcv.category_id = fc.id
       WHERE fcv.category_id = ? AND fcv.is_active = 1
+        -- Solo medidas que NO pertenecen a un producto: las que sí, ya se
+        -- eligen dentro de su ficha. Sin esto, al crear subcategorías de
+        -- Gabinetes y mover ahí los productos, la familia quedó sin productos
+        -- directos y sus 19 medidas salieron como 19 tarjetas en el catálogo.
+        AND fcv.product_id IS NULL
       ORDER BY fcv.bind_code`,
       [filterCategoryId]
     ) as Product[];
