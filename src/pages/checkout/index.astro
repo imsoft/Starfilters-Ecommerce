@@ -14,6 +14,8 @@ const user = getAuthenticatedUser(Astro.cookies);
 if (!user) {
   return Astro.redirect('/login');
 }
+import { getWhatsAppNumber } from '@/lib/site-settings-service';
+const waNumber = (await getWhatsAppNumber()) || '523322569541';
 ---
 
 <WebsiteLayout title="Checkout">
@@ -77,6 +79,11 @@ if (!user) {
                   </label>
                 ))}
               </div>
+              <!-- Los plazos de arriba son los normales; para algo más rápido, el
+                   equipo lo revisa caso por caso. Mismo número que el botón flotante. -->
+              <p class="mt-4 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                ¿Necesitas un tiempo de entrega más rápido? <a href={`https://wa.me/${waNumber}?text=${encodeURIComponent('Hola, necesito un tiempo de entrega más rápido para mi pedido.')}`} target="_blank" rel="noopener" class="font-medium text-primary hover:underline">Contáctanos directo por WhatsApp</a> y vemos qué se puede hacer.
+              </p>
 
               <!-- Cotización real de paqueterías (Pakke). Se llena al elegir
                    "Envío por paquetería" y escribir el código postal. Si Pakke
