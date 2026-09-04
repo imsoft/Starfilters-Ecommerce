@@ -221,7 +221,9 @@ const getProductStatus = (stock: number) => {
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-muted-foreground">Ventas del Mes</p>
-              <p class="text-2xl font-semibold text-foreground">{formatCurrency(stats.monthlySales)} MXN</p>
+              {/* En una sola línea: al partirse "$153,235.48 / MXN" estiraba las
+                  cuatro tarjetas y dejaba un hueco abajo en las otras tres. */}
+              <p class="text-2xl font-semibold text-foreground whitespace-nowrap">{formatCurrency(stats.monthlySales)} <span class="text-sm font-medium text-muted-foreground">MXN</span></p>
               {stats.monthlySalesUSD > 0 && (
                 <p class="text-sm text-muted-foreground">
                   + {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(stats.monthlySalesUSD)} USD
@@ -240,7 +242,7 @@ const getProductStatus = (stock: number) => {
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-muted-foreground">Tasa de Cambio USD</p>
-              <p class="text-2xl font-semibold text-foreground">${exchangeRate.toFixed(2)} MXN</p>
+              <p class="text-2xl font-semibold text-foreground whitespace-nowrap">${exchangeRate.toFixed(2)} <span class="text-sm font-medium text-muted-foreground">MXN</span></p>
             </div>
           </div>
         </div>
