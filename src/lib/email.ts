@@ -1086,8 +1086,12 @@ export const createOrderStatusUpdateEmail = (
     delivered:  { es: 'Entregado',   en: 'Delivered' },
     cancelled:  { es: 'Cancelado',   en: 'Cancelled' },
   };
-  const estadoLegible = (estado: string) =>
-    ESTADO_TEXTO[estado] ? ESTADO_TEXTO[estado][isEn ? 'en' : 'es'] : estado;
+  // Para un pedido que se recoge, "shipped" no es "Enviado": es "Listo para
+  // recoger". Aplica a la insignia, al asunto y al aviso al equipo.
+  const estadoLegible = (estado: string) => {
+    if (estado === 'shipped' && esRecoger) return isEn ? 'Ready for pickup' : 'Listo para recoger';
+    return ESTADO_TEXTO[estado] ? ESTADO_TEXTO[estado][isEn ? 'en' : 'es'] : estado;
+  };
   
   // Color primary para botones y elementos principales
   const primaryColor = color600;
