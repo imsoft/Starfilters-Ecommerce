@@ -3,10 +3,14 @@ import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import CustomModal from "@/components/shared/CustomModal.astro";
 import { getProducts, getProductImages, getProductById } from "@/lib/database";
+import { getBindInventoryByCode } from "@/lib/bind";
+import { hayExistenciaDeProducto } from "@/lib/disponibilidad";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
 
 // Get some products to show as recommended
 const recommendedProducts = await getProducts(4, 0);
+// getBindInventoryByCode cachea 5 minutos, así que no pesa en cada visita.
+const inventarioBind = await getBindInventoryByCode().catch(() => null);
 
 // Get primary image for each recommended product
 const recommendedProductsWithImages = await Promise.all(
@@ -14,7 +18,9 @@ const recommendedProductsWithImages = await Promise.all(
     const images = await getProductImages(product.id);
     const primaryImage = images.find(img => img.is_primary) || images[0];
     const imageUrl = primaryImage?.image_url || getProductPlaceholderImage(product.category);
-    return { ...product, imageUrl };
+    // Misma regla de existencias que el catálogo (BIND por producto y medidas).
+    const disponible = await hayExistenciaDeProducto(product, inventarioBind);
+    return { ...product, imageUrl, disponible };
   })
 );
 
@@ -192,6 +198,13 @@ const recommendedProductsWithImages = await Promise.all(
                         {product.name}
                       </a>
                   </h3>
+                  <div class="mt-0.5">
+                    {product.disponible ? (
+                      <span class="text-xs text-green-600 font-medium">In stock</span>
+                    ) : (
+                      <span class="text-xs text-red-500 font-medium">Out of stock</span>
+                    )}
+                  </div>
                 </div>
                 <!-- Sin precio, categoría ni "agregar" directo: igual que el catálogo
                      y los relacionados. Casi todo vale distinto según la medida, y
