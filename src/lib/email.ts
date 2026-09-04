@@ -4,6 +4,7 @@ import type { BillingData } from './payment-utils';
 import type { DeliveryMethod } from './delivery-options';
 import { getDeliveryOption, getDeliveryLabel, isPickupMethod } from './delivery-options';
 import { resolverPaqueteria } from './carriers';
+import { desgloseDeOrden } from './order-breakdown';
 
 // Datos extra del pedido para el correo interno. Todos opcionales: los pedidos
 // viejos (y el flujo legacy del webhook) no los traen y el correo debe salir
@@ -155,15 +156,28 @@ const diferenciaSinDesglose = (
   et: EtiquetasDesglose,
   currency: string
 ): { html: string; texto: string } => {
+  // Misma regla que las páginas del pedido (lib/order-breakdown.ts): del total
+  // se recupera el envío y el IVA. Aquí no se conoce el descuento, así que si
+  // los números no cierran se nombra la diferencia sin inventar renglones.
   const suma = items.reduce(
     (acumulado, item) => acumulado + Number(item.quantity || 0) * (Number(item.price) || 0), 0);
+  const d = desgloseDeOrden({ subtotalRenglones: suma, total });
+  const fila = (etiqueta: string, valor: string) =>
+    `<p style="margin: 4px 0; color: ${BRAND.mutedForeground};">${etiqueta}: <span style="color: ${BRAND.foreground};">${valor}</span></p>`;
+  if (d && (d.shipping > 0 || d.tax > 0)) {
+    return {
+      html: [
+        fila(et.subtotal, `$${money(d.subtotal)} ${currency}`),
+        fila(et.shipping, d.shipping > 0 ? `$${money(d.shipping)} ${currency}` : et.free),
+        fila(et.tax, `$${money(d.tax)} ${currency}`),
+      ].join('\n            '),
+      texto: `${et.subtotal}: $${money(d.subtotal)} ${currency}\n${et.shipping}: ${d.shipping > 0 ? '$' + money(d.shipping) + ' ' + currency : et.free}\n${et.tax}: $${money(d.tax)} ${currency}`,
+    };
+  }
   const diferencia = (Number(total) || 0) - suma;
-  // Un centavo de redondeo no merece un renglón; una diferencia negativa
-  // significa que los datos no son de fiar y es mejor no decir nada.
   if (!(diferencia > 0.5)) return { html: '', texto: '' };
   return {
-    html: `<p style="margin: 4px 0; color: ${BRAND.mutedForeground};">${et.subtotal}: <span style="color: ${BRAND.foreground};">$${money(suma)} ${currency}</span></p>
-            <p style="margin: 4px 0; color: ${BRAND.mutedForeground};">${et.extras}: <span style="color: ${BRAND.foreground};">$${money(diferencia)} ${currency}</span></p>`,
+    html: fila(et.subtotal, `$${money(suma)} ${currency}`) + `\n            ` + fila(et.extras, `$${money(diferencia)} ${currency}`),
     texto: `${et.subtotal}: $${money(suma)} ${currency}\n${et.extras}: $${money(diferencia)} ${currency}`,
   };
 };

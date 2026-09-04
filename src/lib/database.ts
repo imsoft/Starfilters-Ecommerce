@@ -760,6 +760,23 @@ export const getOrderStatusHistory = async (orderId: number): Promise<OrderStatu
   ) as OrderStatusHistoryRow[];
 };
 
+/**
+ * Descuento aplicado a una orden, según discount_code_usage. Los pedidos
+ * anteriores a la columna discount_amount solo lo tienen aquí.
+ */
+export const getOrderDiscountAmount = async (orderId: number): Promise<number> => {
+  try {
+    const filas = await query(
+      'SELECT COALESCE(SUM(discount_amount), 0) AS total FROM discount_code_usage WHERE order_id = ?',
+      [orderId]
+    ) as any[];
+    return Number(filas?.[0]?.total) || 0;
+  } catch {
+    // Sin tabla (base antigua) no hay descuento que reportar.
+    return 0;
+  }
+};
+
 export const getOrderByPaymentIntentId = async (paymentIntentId: string): Promise<Order | null> => {
   await ensureOrdersPaymentIntentColumn();
   const rows = await query(

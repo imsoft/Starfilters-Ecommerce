@@ -179,23 +179,31 @@ const siguientePaso = cancelada ? null : calcularSiguientePaso(order.status, { e
 
 const subtotal = orderItems.reduce((suma, item) => suma + Number(item.price) * item.quantity, 0);
 
-// Desglose que guardó el checkout al cobrar. El resumen mostraba "Productos" y
-// "Total cobrado" a secas, y la diferencia (envío e IVA) quedaba sin explicar:
-// el mismo "no me cuadra la suma" que el cliente reportó en el correo, pero en
-// el panel. Los pedidos anteriores a estas columnas no lo tienen.
-const num = (v: unknown): number | null => {
-  if (v === null || v === undefined) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
+// Desglose: el guardado o, en pedidos viejos, el reconstruido desde el total
+// con la misma regla del cobro (lib/order-breakdown.ts). Es lo mismo que ve
+// el cliente en su página, para que las dos pantallas cuenten la misma
+// historia.
+const desgloseOrden = desgloseDeOrden({
+  subtotalRenglones: subtotal,
+  total: order.total_amount,
+  guardado: {
+    subtotal: order.subtotal_amount,
+    discount: order.discount_amount,
+    shipping: order.shipping_amount,
+    tax: order.tax_amount,
+  },
+  descuentoRegistrado: await getOrderDiscountAmount(order.id),
+});
 const desglose = {
-  subtotal: num(order.subtotal_amount),
-  discount: num(order.discount_amount),
-  shipping: num(order.shipping_amount),
-  tax: num(order.tax_amount),
+  subtotal: desgloseOrden?.subtotal ?? null,
+  discount: desgloseOrden?.discount ?? null,
+  shipping: desgloseOrden?.shipping ?? null,
+  tax: desgloseOrden?.tax ?? null,
 };
-const hayDesglose = desglose.subtotal !== null;
+const hayDesglose = desgloseOrden !== null;
 const diferenciaSinDesglose = Number(order.total_amount) - subtotal;
+import { desgloseDeOrden } from '@/lib/order-breakdown';
+import { getOrderDiscountAmount } from '@/lib/database';
 ---
 <AdminLayout title={`Orden ${order.order_number}`}>
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

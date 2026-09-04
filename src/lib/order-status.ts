@@ -13,7 +13,9 @@ import {
   updateOrderStatus,
   updateOrderShipping,
   recordOrderStatusChange,
+  getOrderDiscountAmount,
 } from './database';
+import { desgloseDeOrden } from './order-breakdown';
 import { sendEmail, createOrderStatusUpdateEmail } from './email';
 import { getOrderNotificationEmails } from './site-settings-service';
 import { ZONA_HORARIA } from './timezone';
@@ -121,14 +123,23 @@ export const changeOrderStatus = async ({
     const guia = trackingNumber ?? order.tracking_number ?? undefined;
     const paqueteria = carrier ?? order.shipping_carrier ?? null;
 
-    // Desglose guardado en la orden (null en los pedidos anteriores a esas
-    // columnas: entonces el correo muestra solo el total).
-    const desglose = {
-      subtotal: order.subtotal_amount,
-      discount: order.discount_amount,
-      shipping: order.shipping_amount,
-      tax: order.tax_amount,
-    };
+    // Desglose guardado en la orden o, en pedidos anteriores a esas columnas,
+    // reconstruido desde el total con la misma regla del cobro: así el correo
+    // muestra envío e IVA igual que la página del pedido.
+    const calculado = desgloseDeOrden({
+      subtotalRenglones: items.reduce((suma, item) => suma + Number(item.price) * item.quantity, 0),
+      total: order.total_amount,
+      guardado: {
+        subtotal: order.subtotal_amount,
+        discount: order.discount_amount,
+        shipping: order.shipping_amount,
+        tax: order.tax_amount,
+      },
+      descuentoRegistrado: await getOrderDiscountAmount(orderId),
+    });
+    const desglose = calculado
+      ? { subtotal: calculado.subtotal, discount: calculado.discount, shipping: calculado.shipping, tax: calculado.tax }
+      : null;
 
     const fechaEn = (locale: string) =>
       order.created_at
