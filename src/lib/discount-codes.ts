@@ -50,6 +50,18 @@ export async function validateDiscountCode(
     const discountCode = results[0];
     const now = new Date();
 
+    // MySQL entrega las columnas DECIMAL como texto. Comparar "500.00" con un
+    // número funciona por coerción, pero .toFixed() sobre el texto revienta y
+    // el mensaje de "compra mínima" terminaba como "Error al validar el
+    // código". Se normalizan una sola vez aquí.
+    const valor = Number(discountCode.discount_value) || 0;
+    const compraMinima =
+      discountCode.min_purchase_amount === null || discountCode.min_purchase_amount === undefined
+        ? null : Number(discountCode.min_purchase_amount);
+    const topeDescuento =
+      discountCode.max_discount_amount === null || discountCode.max_discount_amount === undefined
+        ? null : Number(discountCode.max_discount_amount);
+
     // Validar fechas de vigencia
     if (discountCode.start_date && new Date(discountCode.start_date) > now) {
       return {
@@ -77,13 +89,10 @@ export async function validateDiscountCode(
     }
 
     // Validar monto mínimo de compra
-    if (
-      discountCode.min_purchase_amount !== null &&
-      subtotal < discountCode.min_purchase_amount
-    ) {
+    if (compraMinima !== null && Number.isFinite(compraMinima) && subtotal < compraMinima) {
       return {
         valid: false,
-        message: `Este código requiere una compra mínima de $${discountCode.min_purchase_amount.toFixed(2)} MXN`,
+        message: `Este código requiere una compra mínima de $${compraMinima.toFixed(2)} MXN`,
       };
     }
 
@@ -105,22 +114,19 @@ export async function validateDiscountCode(
     // Calcular el descuento
     let discountAmount = 0;
     if (discountCode.discount_type === 'percentage') {
-      discountAmount = (subtotal * discountCode.discount_value) / 100;
+      discountAmount = (subtotal * valor) / 100;
       // Aplicar límite máximo si existe
-      if (
-        discountCode.max_discount_amount !== null &&
-        discountAmount > discountCode.max_discount_amount
-      ) {
-        discountAmount = discountCode.max_discount_amount;
+      if (topeDescuento !== null && Number.isFinite(topeDescuento) && discountAmount > topeDescuento) {
+        discountAmount = topeDescuento;
       }
     } else {
       // Descuento fijo
-      discountAmount = discountCode.discount_value;
-      // El descuento no puede ser mayor al subtotal
-      if (discountAmount > subtotal) {
-        discountAmount = subtotal;
-      }
+      discountAmount = valor;
     }
+    // El descuento nunca supera el subtotal: un porcentaje con tope mal
+    // capturado o un fijo mayor que la compra dejarían un subtotal negativo.
+    if (discountAmount > subtotal) discountAmount = subtotal;
+    if (discountAmount < 0) discountAmount = 0;
 
     return {
       valid: true,
@@ -238,6 +244,7 @@ export async function associateProductsToDiscountCode(
   productIds: number[]
 ): Promise<void> {
   try {
+    await ensureDiscountProductsTable();
     // Eliminar asociaciones existentes
     await query(
       `DELETE FROM discount_code_products WHERE discount_code_id = ?`,
@@ -260,11 +267,43 @@ export async function associateProductsToDiscountCode(
   }
 }
 
+// La tabla de "productos específicos" de un código vive en database/schema.sql,
+// pero una base levantada antes de esa migración no la tiene. Sin ella la
+// consulta fallaba en silencio y devolvía [] —es decir, el código aplicaba a
+// TODO el catálogo aunque el admin lo hubiera limitado a ciertos productos—,
+// y el alta con productos reventaba. Igual que el resto del proyecto, se crea
+// al primer uso.
+let tablaProductosLista: Promise<void> | null = null;
+const ensureDiscountProductsTable = (): Promise<void> => {
+  if (!tablaProductosLista) {
+    tablaProductosLista = (async () => {
+      await query(`
+        CREATE TABLE IF NOT EXISTS discount_code_products (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          discount_code_id INT NOT NULL,
+          product_id INT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY unique_discount_product (discount_code_id, product_id),
+          FOREIGN KEY (discount_code_id) REFERENCES discount_codes(id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+          INDEX idx_discount_code_id (discount_code_id),
+          INDEX idx_product_id (product_id)
+        )
+      `);
+    })().catch((error) => {
+      tablaProductosLista = null;
+      throw error;
+    });
+  }
+  return tablaProductosLista;
+};
+
 /**
  * Obtiene los IDs de productos asociados a un código de descuento
  */
 export async function getDiscountCodeProducts(discountCodeId: number): Promise<number[]> {
   try {
+    await ensureDiscountProductsTable();
     const results = await query(
       `SELECT product_id FROM discount_code_products WHERE discount_code_id = ?`,
       [discountCodeId]
