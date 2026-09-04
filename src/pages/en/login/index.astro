@@ -1,5 +1,6 @@
 ---
 import AuthLayout from "@/layouts/authLayout.astro";
+import { isUserAdmin } from '@/lib/database';
 import PasswordInput from "@/components/ui/PasswordInput.astro";
 import { getUserByEmail } from "@/lib/database";
 import { verifyPassword, generateJWT, validateLoginData } from "@/lib/auth";
@@ -69,7 +70,12 @@ if (Astro.request.method === "POST") {
     });
 
     // Redirigir al dashboard o página principal
-    const redirectTo = Astro.url.searchParams.get('redirect') || '/en';
+    // A dónde ir después de entrar: a la página que pidió el login (solo rutas
+    // del propio sitio, nunca una URL externa) o, si es administrador, al
+    // panel. Antes todos caían al inicio, y el admin tenía que buscar el panel.
+    const pedida = Astro.url.searchParams.get('redirect') || '';
+    const esLocal = pedida.startsWith('/') && !pedida.startsWith('//');
+    const redirectTo = esLocal ? pedida : ((await isUserAdmin(user.id)) ? '/admin/dashboard' : '/en');
     return Astro.redirect(redirectTo);
     
   } catch (error) {

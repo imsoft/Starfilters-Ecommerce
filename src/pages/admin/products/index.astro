@@ -8,7 +8,7 @@ import { getExchangeRate } from "@/lib/currency-service";
 import type { Product } from "@/lib/database";
 
 // Verificar que el usuario es administrador
-const { redirect } = await requireAdmin(Astro.cookies);
+const { redirect } = await requireAdmin(Astro.cookies, Astro.url.pathname);
 if (redirect) {
   return Astro.redirect(redirect);
 }

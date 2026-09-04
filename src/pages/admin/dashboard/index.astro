@@ -14,7 +14,7 @@ import { getBindInventoryByCode } from "@/lib/bind";
 import { query } from "@/config/database";
 
 // Verificar que el usuario es administrador
-const { redirect } = await requireAdmin(Astro.cookies);
+const { redirect } = await requireAdmin(Astro.cookies, Astro.url.pathname);
 if (redirect) {
   return Astro.redirect(redirect);
 }

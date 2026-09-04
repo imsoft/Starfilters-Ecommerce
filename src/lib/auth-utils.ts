@@ -62,12 +62,17 @@ export const isAdminAsync = async (user: AuthUser | null): Promise<boolean> => {
 };
 
 // Función para middleware de autenticación de administrador
-export const requireAdmin = async (cookies: any): Promise<{ redirect: string | null; user: AuthUser | null; isAdmin: boolean }> => {
+export const requireAdmin = async (
+  cookies: any,
+  // Ruta a la que volver después de entrar. Sin esto, el login mandaba al
+  // inicio del sitio y el admin tenía que buscar el panel otra vez.
+  returnTo?: string
+): Promise<{ redirect: string | null; user: AuthUser | null; isAdmin: boolean }> => {
   const user = getAuthenticatedUser(cookies);
   
   if (!user) {
     return {
-      redirect: '/login',
+      redirect: returnTo ? `/login?redirect=${encodeURIComponent(returnTo)}` : '/login',
       user: null,
       isAdmin: false
     };

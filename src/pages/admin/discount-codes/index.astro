@@ -9,7 +9,7 @@ export const prerender = false;
 const user = getAuthenticatedUser(Astro.cookies);
 
 if (!user) {
-  return Astro.redirect('/login');
+  return Astro.redirect(`/login?redirect=${encodeURIComponent(Astro.url.pathname)}`);
 }
 
 const userIsAdmin = await isUserAdmin(user.id);

@@ -6,7 +6,7 @@ import { createCaseStudy, getNextCaseStudySortOrder } from "@/lib/database";
 import { requireAdmin } from "@/lib/auth-utils";
 
 // Solo administradores: esta página se podía abrir sin haber iniciado sesión.
-const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies);
+const { redirect: redirigirSiNoEsAdmin } = await requireAdmin(Astro.cookies, Astro.url.pathname);
 if (redirigirSiNoEsAdmin) {
   return Astro.redirect(redirigirSiNoEsAdmin);
 }

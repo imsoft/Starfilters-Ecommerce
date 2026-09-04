@@ -12,7 +12,7 @@ import { requireAdmin } from "@/lib/auth-utils";
 export const prerender = false;
 
 // Solo administradores: la comprobación va ANTES de procesar el POST.
-const { redirect: redirigirSiNoEsAdmin, user: adminUser } = await requireAdmin(Astro.cookies);
+const { redirect: redirigirSiNoEsAdmin, user: adminUser } = await requireAdmin(Astro.cookies, Astro.url.pathname);
 if (redirigirSiNoEsAdmin) {
   return Astro.redirect(redirigirSiNoEsAdmin);
 }

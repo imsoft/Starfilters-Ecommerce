@@ -5,7 +5,7 @@ import { compararPreciosConBind, aplicarPreciosDeBind } from "@/lib/bind-price-s
 
 export const prerender = false;
 
-const { redirect } = await requireAdmin(Astro.cookies);
+const { redirect } = await requireAdmin(Astro.cookies, Astro.url.pathname);
 if (redirect) {
   return Astro.redirect(redirect);
 }

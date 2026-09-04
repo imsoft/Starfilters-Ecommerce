@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/auth-utils";
 import { getAdminUserByEmail } from "@/lib/database";
 
 // Verificar autenticación y permisos de administrador
-const authResult = await requireAdmin(Astro.cookies);
+const authResult = await requireAdmin(Astro.cookies, Astro.url.pathname);
 
 if (authResult.redirect) {
   return Astro.redirect(authResult.redirect);
@@ -15,7 +15,7 @@ if (authResult.redirect) {
 const user = authResult.user;
 
 if (!user) {
-  return Astro.redirect('/login');
+  return Astro.redirect(`/login?redirect=${encodeURIComponent(Astro.url.pathname)}`);
 }
 
 // Obtener información completa del administrador
