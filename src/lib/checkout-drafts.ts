@@ -25,6 +25,10 @@ export interface DraftItem {
   // Fila de filter_category_variants a decrementar (si el item es una variante
   // o un producto base con tamaño que resolvió a una variante)
   variant_id: number | null;
+  // Cuando el item ES una variante ("variant-N"), product_id trae el id de la
+  // variante, que no existe en products. Aquí va el producto al que pertenece
+  // la medida, para que la orden conserve el vínculo con el producto real.
+  parent_product_id?: number | null;
   // ProductID de BIND ERP ya resuelto para el ajuste de inventario
   bind_target: string | null;
 }

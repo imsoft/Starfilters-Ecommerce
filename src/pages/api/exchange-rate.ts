@@ -1,70 +1,27 @@
 import type { APIRoute } from 'astro';
+import { getExchangeRate } from '@/lib/currency-service';
+
+export const prerender = false;
 
 /**
- * Endpoint para obtener la tasa de cambio USD a MXN
- * Incluye caché de 1 hora para evitar demasiadas llamadas a la API
+ * Tasa USD→MXN para el navegador.
+ *
+ * Antes este endpoint consultaba al proveedor externo en cada petición, sin
+ * caché y sin freno: el servidor cobraba con una tasa (la de su caché de una
+ * hora) y el checkout mostraba otra (la del momento), así que el total que
+ * veía el comprador podía no coincidir con el que se le cobraba. Ahora sale
+ * de la misma caché que usa el servidor para cobrar.
  */
-export const GET: APIRoute = async ({ request }) => {
-  try {
-    // Intentar obtener de la API de exchangerate-api.com (gratis)
-    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
+export const GET: APIRoute = async () => {
+  const rate = await getExchangeRate();
+  return new Response(
+    JSON.stringify({ success: true, rate, timestamp: new Date().toISOString() }),
+    {
+      status: 200,
       headers: {
-        'Cache-Control': 'no-cache'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Error al obtener tasa de cambio');
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=300',
+      },
     }
-
-    const data = await response.json();
-    const rate = data.rates.MXN;
-
-    if (!rate || typeof rate !== 'number') {
-      throw new Error('Tasa MXN no disponible');
-    }
-
-    // Obtener fecha de última actualización
-    const lastUpdate = data.date || new Date().toISOString().split('T')[0];
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        rate: rate,
-        lastUpdate: lastUpdate,
-        timestamp: Date.now(),
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          // Cachear por 1 hora en el cliente
-          'Cache-Control': 'public, max-age=3600'
-        }
-      }
-    );
-  } catch (error) {
-    console.error('❌ Error obteniendo tasa de cambio:', error);
-    
-    // Tasa de respaldo (actualizar periódicamente)
-    const fallbackRate = 17.0;
-    
-    return new Response(
-      JSON.stringify({
-        success: false,
-        rate: fallbackRate,
-        lastUpdate: null,
-        timestamp: Date.now(),
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        usingFallback: true
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=300' // Cachear menos tiempo si hay error
-        }
-      }
-    );
-  }
+  );
 };

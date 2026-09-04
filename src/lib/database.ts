@@ -225,9 +225,16 @@ export const getProductByUuid = async (uuid: string): Promise<Product | null> =>
       return null;
     }
 
+    // Una variante es una medida de un producto concreto. Antes el nombre se
+    // armaba con el de la CATEGORÍA ("Gabinetes - 24 x 24"), así que tres
+    // gabinetes distintos con la misma medida quedaban idénticos en la orden
+    // y en el correo, y nadie sabía cuál se había comprado. Ahora lleva el
+    // nombre del producto al que pertenece, y expone product_id para que la
+    // orden, el descuento por producto y la cotización del envío lo usen.
     const variantSql = `SELECT
       fcv.id as id,
       CONCAT('variant-', fcv.id) as uuid,
+      fcv.product_id as product_id,
       fcv.category_id as filter_category_id,
       NULL as bind_id,
       fcv.bind_code as bind_code,
@@ -235,10 +242,10 @@ export const getProductByUuid = async (uuid: string): Promise<Product | null> =>
       fcv.nominal_size as nominal_size,
       fcv.nominal_size_en as nominal_size_en,
       fcv.real_size as real_size,
-      CONCAT(fc.name, ' - ', fcv.nominal_size) as name,
-      CONCAT(COALESCE(fc.name_en, fc.name), ' - ', fcv.nominal_size) as name_en,
-      fc.description as description,
-      fc.description_en as description_en,
+      CONCAT(COALESCE(p.name, fc.name), ' - ', fcv.nominal_size) as name,
+      CONCAT(COALESCE(p.name_en, p.name, fc.name_en, fc.name), ' - ', fcv.nominal_size) as name_en,
+      COALESCE(p.description, fc.description) as description,
+      COALESCE(p.description_en, fc.description_en) as description_en,
       fcv.price as price,
       COALESCE(fcv.currency, 'MXN') as currency,
       fcv.price_usd as price_usd,
@@ -247,7 +254,7 @@ export const getProductByUuid = async (uuid: string): Promise<Product | null> =>
       fcv.stock as stock,
       IF(fcv.is_active = 1, 'active', 'inactive') as status,
       NULL as tags,
-      NULL as dimensions,
+      p.dimensions as dimensions,
       NULL as weight,
       NULL as material,
       NULL as warranty,
@@ -256,6 +263,7 @@ export const getProductByUuid = async (uuid: string): Promise<Product | null> =>
       fcv.updated_at as updated_at
     FROM filter_category_variants fcv
     INNER JOIN filter_categories fc ON fcv.category_id = fc.id
+    LEFT JOIN products p ON p.id = fcv.product_id
     WHERE fcv.id = ?`;
     const variantResult = await query(variantSql, [variantId]) as Product[];
     return variantResult.length > 0 ? variantResult[0] : null;
@@ -1123,7 +1131,7 @@ export const getDashboardStats = async () => {
     await ensureOrdersBillingColumn();
     const monthlySalesResult = await query(
       `SELECT COALESCE(currency, 'MXN') AS currency, COALESCE(SUM(total_amount), 0) AS total
-       FROM orders WHERE status = "completed" AND created_at >= ?
+       FROM orders WHERE status IN ('processing', 'shipped', 'delivered') AND created_at >= ?
        GROUP BY COALESCE(currency, 'MXN')`,
       [firstDayOfMonth]
     ) as Array<{ currency: string; total: number }>;
@@ -1211,25 +1219,25 @@ export const getSalesStats = async (): Promise<SalesStats> => {
 
     // Ventas de hoy
     const todayResult = await query(
-      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND created_at >= ?',
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND COALESCE(currency, "MXN") = "MXN" AND created_at >= ?',
       [today]
     );
 
     // Ventas de esta semana
     const weekResult = await query(
-      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND created_at >= ?',
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND COALESCE(currency, "MXN") = "MXN" AND created_at >= ?',
       [weekAgo]
     );
 
     // Ventas de este mes
     const monthResult = await query(
-      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND created_at >= ?',
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND COALESCE(currency, "MXN") = "MXN" AND created_at >= ?',
       [monthAgo]
     );
 
     // Ventas del mes pasado para calcular tendencia
     const lastMonthResult = await query(
-      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND created_at >= ? AND created_at < ?',
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ("delivered", "shipped", "processing") AND COALESCE(currency, "MXN") = "MXN" AND created_at >= ? AND created_at < ?',
       [lastMonthAgo, monthAgo]
     );
 

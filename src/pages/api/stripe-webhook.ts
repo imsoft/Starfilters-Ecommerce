@@ -249,12 +249,14 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     // orden (se registra el error y se continúa).
     try {
       // Para variantes, product_id trae el id de filter_category_variants,
-      // que NO existe en products: violaría la FK de order_items. Se guarda
-      // NULL y el nombre/precio quedan en la fila.
+      // que NO existe en products: violaría la FK de order_items. Se usa el
+      // producto al que pertenece la medida (parent_product_id) y, si el
+      // borrador es anterior a ese campo, NULL: el nombre y el precio quedan
+      // en la fila de todos modos.
       const isVariant = typeof item.uuid === 'string' && item.uuid.startsWith('variant-');
       await createOrderItem({
         order_id: orderId,
-        product_id: isVariant ? null : item.product_id,
+        product_id: isVariant ? (item.parent_product_id ?? null) : item.product_id,
         quantity: item.quantity,
         // En la moneda del cobro, para que cuadre con total_amount
         price: item.price_charge ?? item.price_mxn,

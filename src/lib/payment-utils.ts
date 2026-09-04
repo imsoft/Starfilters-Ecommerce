@@ -68,6 +68,9 @@ export const calculateTax = (subtotal: number): number => {
   return subtotal * 0.16; // 16% IVA
 };
 
+/** Redondea a centavos evitando el error binario (1.005 → 1.01, no 1.00). */
+export const aCentavos = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
+
 /**
  * Calcular el total del pedido en la moneda en la que se va a cobrar.
  *
@@ -128,16 +131,25 @@ export const calculateOrderTotal = async (
       : calculateShipping(shippingMethod, subtotalEnMXN).cost;
   const shipping = convertir(shippingMXN, 'MXN');
 
+  // Todo a centavos ANTES de sumar. Si no, el IVA sale con seis decimales,
+  // Stripe redondea el total por su cuenta y los renglones que ve el cliente
+  // (subtotal + envío + IVA) no suman lo que se le cobró, a veces por un
+  // centavo. Cada importe se redondea por separado y el total es la suma de
+  // los importes ya redondeados: así siempre cuadra a la vista.
+  const subtotalR = aCentavos(subtotal);
+  const discountR = aCentavos(discount);
+  const subtotalAfterDiscountR = Math.max(0, aCentavos(subtotalR - discountR));
+  const shippingR = aCentavos(shipping);
   // El flete es un servicio gravado: el IVA se calcula sobre mercancía + envío.
-  const tax = calculateTax(subtotalAfterDiscount + shipping);
-  const total = subtotalAfterDiscount + shipping + tax;
+  const taxR = aCentavos(calculateTax(subtotalAfterDiscountR + shippingR));
+  const totalR = aCentavos(subtotalAfterDiscountR + shippingR + taxR);
 
   return {
-    subtotal,
-    discount,
-    shipping,
-    tax,
-    total,
+    subtotal: subtotalR,
+    discount: discountR,
+    shipping: shippingR,
+    tax: taxR,
+    total: totalR,
     exchangeRate
   };
 };
@@ -147,6 +159,9 @@ export const calculateOrderTotal = async (
 export interface ResolvedCartItem extends CartItem {
   variant_id?: number | null;
   bind_target?: string | null;
+  // Producto real al que pertenece una variante ("variant-N"): su product_id
+  // es el id de la variante, que no sirve para enlazar la orden al producto.
+  parent_product_id?: number | null;
 }
 
 // Crear Payment Intent para el checkout
@@ -215,6 +230,7 @@ export const createCheckoutPaymentIntent = async (
         size: item.size || null,
         variant_id: item.variant_id ?? null,
         bind_target: item.bind_target ?? null,
+        parent_product_id: item.parent_product_id ?? null,
       };
     });
 

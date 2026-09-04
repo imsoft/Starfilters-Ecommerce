@@ -222,14 +222,37 @@ export const armarPaqueteDesdeBD = async (
   const uuids = items.map((i) => i.uuid).filter(Boolean) as string[];
   const porUuid = new Map<string, Partial<Paquete>>();
 
-  if (uuids.length > 0) {
-    const filas = (await query(
+  // Una medida del carrito llega como "variant-N": no es un uuid de products,
+  // así que antes no encontraba medidas de caja y cotizaba con el bulto por
+  // defecto. Las medidas viven en el producto al que pertenece la variante.
+  const deProducto = uuids.filter((u) => !u.startsWith('variant-'));
+  const deVariante = uuids
+    .filter((u) => u.startsWith('variant-'))
+    .map((u) => ({ uuid: u, id: Number(u.replace('variant-', '')) }))
+    .filter((v) => Number.isFinite(v.id));
+
+  const filas: any[] = [];
+  if (deProducto.length > 0) {
+    filas.push(...((await query(
       `SELECT uuid, package_length_cm, package_width_cm, package_height_cm, package_weight_kg
          FROM products
-        WHERE uuid IN (${uuids.map(() => '?').join(',')})`,
-      uuids
+        WHERE uuid IN (${deProducto.map(() => '?').join(',')})`,
+      deProducto
+    )) as any[]));
+  }
+  if (deVariante.length > 0) {
+    const porVariante = (await query(
+      `SELECT CONCAT('variant-', fcv.id) AS uuid,
+              p.package_length_cm, p.package_width_cm, p.package_height_cm, p.package_weight_kg
+         FROM filter_category_variants fcv
+         JOIN products p ON p.id = fcv.product_id
+        WHERE fcv.id IN (${deVariante.map(() => '?').join(',')})`,
+      deVariante.map((v) => v.id)
     )) as any[];
+    filas.push(...porVariante);
+  }
 
+  if (filas.length > 0) {
     for (const f of filas) {
       // Solo cuenta como "con medidas" si trae al menos el peso: una fila con
       // las cuatro columnas vacías equivale a no tener nada capturado.

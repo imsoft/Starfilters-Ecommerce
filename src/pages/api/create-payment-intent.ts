@@ -40,12 +40,17 @@ async function resolveStockAndBindTarget(
   fallbackStock: number,
   codeToCheck: string | null | undefined,
   productName: string
-): Promise<{ stock: number; bindTarget: string | null }> {
-  let stock = fallbackStock || 0;
+): Promise<{ stock: number | null; bindTarget: string | null }> {
+  // `null` significa "BIND no dio dato". Se distingue de 0 a propósito: el
+  // stock local nunca se sincroniza y siempre es 0, así que usarlo como
+  // respaldo rechazaba el pago ("Stock insuficiente") de productos que sí
+  // hay, mientras que /api/check-stock los dejaba entrar al carrito. Aquí se
+  // aplica el mismo criterio: sin dato de BIND, no se bloquea.
+  let stock: number | null = fallbackStock > 0 ? fallbackStock : null;
   let bindTarget: string | null = null;
 
   if (!codeToCheck || !codeToCheck.trim()) {
-    console.log(`📦 Stock desde base de datos: ${stock} para producto ${productName}`);
+    console.log(`📦 Sin código BIND para ${productName}; stock local ${fallbackStock}`);
     return { stock, bindTarget };
   }
 
@@ -256,21 +261,29 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         let codeToCheck: string | null = null;
         let fallbackStock = Number(product.stock) || 0;
 
+        // Producto al que pertenece la medida cuando el item es una variante.
+        let parentProductId: number | null = null;
+
         if (item.uuid.startsWith('variant-')) {
           // El item ES una variante: getProductByUuid ya devolvió sus datos
           variantId = product.id;
           codeToCheck = (product as any).bind_code || null;
+          parentProductId = Number((product as any).product_id) || null;
         } else if (item.size && (product as any).filter_category_id) {
           // Producto base con tamaño elegido: buscar la variante que coincide
           try {
             const variants = await getProductVariants(product.id, (product as any).filter_category_id);
-            const sizeParts = String(item.size).split(' / ');
-            const nominalSize = sizeParts[0]?.trim() || '';
-            const realSize = sizeParts[1]?.trim() || '';
+            // La etiqueta que manda el carrito es la del desplegable: "nominal /
+            // real", o solo "nominal" cuando las dos son iguales o la real está
+            // vacía. Se compara con la misma regla, sin distinguir mayúsculas.
+            const limpiar = (t: unknown) => String(t ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+            const etiquetaDe = (n: unknown, r: unknown) => {
+              const nn = limpiar(n), rr = limpiar(r);
+              return nn && rr && nn !== rr ? `${nn} / ${rr}` : nn || rr;
+            };
+            const buscada = limpiar(item.size);
             const matchingVariant = variants.find(v =>
-              v.nominal_size?.trim() === nominalSize &&
-              v.real_size?.trim() === realSize &&
-              v.is_active
+              v.is_active && etiquetaDe(v.nominal_size, v.real_size) === buscada
             );
             if (matchingVariant) {
               variantId = matchingVariant.id;
@@ -296,9 +309,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           codeToCheck,
           product.name
         );
-        console.log(`✅ Stock obtenido: ${actualStock} para producto ${product.name}`);
+        console.log(`✅ Stock obtenido: ${actualStock ?? 'sin dato'} para producto ${product.name}`);
 
-        if (actualStock < quantity) {
+        if (actualStock === null) {
+          console.warn(`⚠️ Sin inventario de BIND para "${product.name}"; se permite el cobro (mismo criterio que check-stock).`);
+        }
+
+        if (actualStock !== null && actualStock < quantity) {
           return new Response(JSON.stringify({
             error: 'Stock insuficiente',
             // Sin cifras de inventario: el mensaje llega hasta la pantalla del
@@ -321,18 +338,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
 
         // Imagen para la orden/correo (mejor esfuerzo)
-        let imageUrl: string | null = (product as any).image_url || null;
-        if (!imageUrl && !item.uuid.startsWith('variant-')) {
-          try {
-            const primaryImage = await getProductPrimaryImage(product.id);
+        let imageUrl: string | null = null;
+        try {
+          // Para una variante, la foto es la del producto al que pertenece.
+          const idParaImagen = item.uuid.startsWith('variant-') ? parentProductId : product.id;
+          if (idParaImagen) {
+            const primaryImage = await getProductPrimaryImage(idParaImagen);
             imageUrl = primaryImage?.image_url || null;
-          } catch {
-            imageUrl = null;
           }
+        } catch {
+          imageUrl = null;
         }
+        if (!imageUrl) imageUrl = (product as any).image_url || null;
 
         resolvedItems.push({
-          product_id: product.id,
+          // Para variantes, el producto real: así el descuento por producto,
+          // la orden y la cotización del envío apuntan al producto y no a la
+          // fila de la medida.
+          product_id: parentProductId ?? product.id,
+          parent_product_id: parentProductId,
           uuid: item.uuid,
           name: product.name,
           quantity,
@@ -383,10 +407,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         });
       }
 
+      // Los códigos se definen en pesos y el importe se calcula sobre el
+      // subtotal en pesos. Si el cobro es en dólares hay que convertirlo:
+      // antes se restaban $500 MXN como si fueran $500 USD.
+      let montoDescuento = discountValidation.discountAmount || 0;
+      if (chargeCurrency === 'USD') {
+        const tasa = exchangeRate ?? (await getExchangeRate());
+        montoDescuento = tasa ? Math.round((montoDescuento / tasa) * 100) / 100 : montoDescuento;
+      }
+
       discountData = {
         code: discountValidation.discountCode.code,
         discountCodeId: discountValidation.discountCode.id,
-        amount: discountValidation.discountAmount || 0,
+        amount: montoDescuento,
       };
     }
 
