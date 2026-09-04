@@ -1,9 +1,16 @@
 import type { APIRoute } from 'astro';
+import { requireAdminApi } from '@/lib/auth-utils';
 import { getBindProducts, getBindProductById, getBindInventoryByCode } from '@/lib/bind';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, cookies }) => {
+  // Devuelve existencias de BIND. Solo lo usa la tabla de tamaños del panel,
+  // y el cliente no quiere publicar cuántas piezas hay: sin sesión de
+  // administrador, no responde.
+  const noAutorizado = await requireAdminApi(cookies);
+  if (noAutorizado) return noAutorizado;
+
   const code = url.searchParams.get('code');
 
   if (!code) {
