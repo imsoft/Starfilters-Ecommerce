@@ -148,7 +148,12 @@ if (codigosBind.length > 0) {
 // Obtener nombres traducidos
 const productName = getProductName(product, lang);
 const productDesc = getProductDescription(product, lang);
-const productCat = getProductCategory(product, lang);
+// La categoría que viaja al carrito es la ASIGNADA en el panel, no el texto
+// suelto products.category: ese texto se queda viejo (un pass through decía
+// "Filtros de Aire") y era lo que el carrito mostraba bajo el nombre.
+const productCat = productCategory
+  ? getCategoryName(productCategory, lang)
+  : getProductCategory(product, lang);
 
 // Obtener tasa de cambio actual (necesaria antes de calcular precios)
 const exchangeRate = await getExchangeRate();
@@ -884,6 +889,9 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
   const isEnPage = pageLang === 'en';
   const msg = {
     minQty: isEnPage ? 'Quantity must be at least 1' : 'La cantidad debe ser al menos 1',
+    noPrice: isEnPage
+      ? 'This product has no online price yet. Request a quote and we will get back to you.'
+      : 'Este producto aún no tiene precio en línea. Solicita una cotización y te respondemos.',
     soldOut: isEnPage
       ? 'This product is out of stock, please contact us for actual delivery times.'
       : 'Este producto está agotado, contáctanos para conocer los tiempos de entrega reales.',
@@ -1057,6 +1065,14 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
 
     if (quantity < 1) {
       showErrorNotification(msg.minQty);
+      return;
+    }
+
+    // Sin precio no se agrega: el cobro lo rechazaría de todos modos
+    // ("Producto sin precio"), pero eso pasaba hasta el final del checkout y
+    // el carrito mientras tanto mostraba "$0.00 MXN".
+    if (!(Number(currentProduct.price) > 0)) {
+      showErrorNotification(msg.noPrice);
       return;
     }
 

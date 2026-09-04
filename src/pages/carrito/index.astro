@@ -642,7 +642,9 @@ const recommendedProductsWithImages = await Promise.all(
                   <a href="/product/${item.uuid}" class="hover:text-primary transition-colors">${item.name}</a>
                 </h3>
                 ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">${item.category}</p>` : ""}
-                <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aCentavos(aMonedaElegida(Number(item.price) || 0, item.currency)))}</p>
+                ${Number(item.price) > 0
+                  ? `<p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aCentavos(aMonedaElegida(Number(item.price) || 0, item.currency)))}</p>`
+                  : `<p class="mt-1 text-sm font-medium text-amber-700">Sin precio en línea · solicita cotización</p>`}
                 
                 <!-- Tamaño seleccionado -->
                 ${item.size 
