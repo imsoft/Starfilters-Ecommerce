@@ -446,6 +446,13 @@ if (!user) {
       }
     };
 
+    /** Redondea a centavos evitando el error binario (1.005 → 1.01). */
+    const aCentavos = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+    /** Importe en pesos, que es la moneda en la que se definen los descuentos. */
+    const aMXN = (monto: number, moneda?: string) =>
+      moneda === 'USD' ? monto * tasaCambio : monto;
+
     /** Lleva un importe a la moneda elegida por el visitante */
     const aMonedaElegida = (monto: number, moneda?: string) => {
       const destino = monedaElegida();
@@ -1070,16 +1077,20 @@ if (!user) {
         (suma: number, item: any) => suma + aMonedaElegida(item.price, item.currency) * item.quantity,
         0
       );
-      const discountAmount = appliedDiscount?.amount || 0;
-      const subtotalAfterDiscount = subtotal - discountAmount;
+      // El importe del descuento llega del servidor EN PESOS (los códigos se
+      // definen en pesos). Si el visitante ve dólares hay que convertirlo:
+      // antes se restaban $500 MXN como si fueran $500 USD.
+      const discountAmount = aCentavos(aMonedaElegida(appliedDiscount?.amount || 0, 'MXN'));
+      const subtotalAfterDiscount = Math.max(0, aCentavos(subtotal - discountAmount));
       const deliveryMethod = getSelectedDeliveryMethod();
       const subtotalMXN = monedaElegida() === 'MXN' ? subtotalAfterDiscount : subtotalAfterDiscount * tasaCambio;
       const shipping = deliveryMethod
         ? aMonedaElegida(costoEnvio(deliveryMethod, subtotalMXN), 'MXN')
         : 0;
       // El IVA también aplica al envío (mismo criterio que el servidor).
-      const tax = (subtotalAfterDiscount + shipping) * 0.16;
-      const total = subtotalAfterDiscount + shipping + tax;
+      // A centavos, igual que el servidor: así los renglones suman el total.
+      const tax = aCentavos((subtotalAfterDiscount + aCentavos(shipping)) * 0.16);
+      const total = aCentavos(subtotalAfterDiscount + aCentavos(shipping) + tax);
 
       // Actualizar precios de opciones de entrega
       updateDeliveryPrices(subtotalAfterDiscount);
@@ -1151,7 +1162,10 @@ if (!user) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             code: code,
-            subtotal: cart.total,
+            // En pesos: el mínimo de compra del código está en pesos y cart.total
+            // suma los precios en la moneda en que se agregó cada renglón.
+            subtotal: aCentavos(cart.items.reduce(
+              (suma: number, item: any) => suma + aMXN(Number(item.price) || 0, item.currency) * (item.quantity || 1), 0)),
             cartItems: cart.items, // Enviar items del carrito para validar productos permitidos
           }),
         });
@@ -1164,8 +1178,7 @@ if (!user) {
             discountCodeId: data.discountCode.id,
             amount: data.discountAmount,
           };
-          const currency = cart.currency || 'MXN';
-          messageDiv.textContent = `✓ ${data.message} - Ahorro: ${formatPrice(data.discountAmount, currency)}`;
+          messageDiv.textContent = `✓ ${data.message} - Ahorro: ${formatPrice(aCentavos(aMonedaElegida(data.discountAmount, 'MXN')), monedaElegida())}`;
           messageDiv.className = 'mt-2 text-sm text-green-600';
           messageDiv.classList.remove('hidden');
           input.disabled = true;
@@ -1451,8 +1464,8 @@ if (!user) {
             (suma: number, item: any) => suma + aMonedaElegida(item.price, item.currency) * item.quantity,
             0
           );
-          const discountAmount = appliedDiscount?.amount || 0;
-          const subtotalAfterDiscount = subtotal - discountAmount;
+          const discountAmount = aCentavos(aMonedaElegida(appliedDiscount?.amount || 0, 'MXN'));
+          const subtotalAfterDiscount = Math.max(0, aCentavos(subtotal - discountAmount));
           const shipping = aMonedaElegida(
             costoEnvio(
               deliveryMethod,
@@ -1460,8 +1473,9 @@ if (!user) {
             ),
             'MXN'
           );
-          const tax = (subtotalAfterDiscount + shipping) * 0.16;
-          const total = subtotalAfterDiscount + shipping + tax;
+          // A centavos, igual que el servidor: así los renglones suman el total.
+          const tax = aCentavos((subtotalAfterDiscount + aCentavos(shipping)) * 0.16);
+          const total = aCentavos(subtotalAfterDiscount + aCentavos(shipping) + tax);
 
           const minAmount = cartCurrency === 'USD' ? 0.50 : 10.00;
           if (total < minAmount) {

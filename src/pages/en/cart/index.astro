@@ -290,11 +290,48 @@ const formatPrice = (price: number): string => {
 
   // With the currency code: the site handles pesos and dollars and the $
   // symbol is the same for both.
+  // ── Currency ─────────────────────────────────────────────────────────────
+  // Each line keeps the price in the currency it was added with (pesos from
+  // the Spanish site, dollars from /en). This page used to add those prices
+  // as-is and label them "USD": an item added in pesos showed up as if it
+  // were dollars. Now every line is converted to the chosen currency with
+  // the same rate the checkout uses.
+  let tasaCambio = 17;
+  const cargarTasaCambio = async () => {
+    try {
+      const res = await fetch("/api/exchange-rate");
+      const data = await res.json();
+      if (data.success && data.rate) tasaCambio = data.rate;
+    } catch {
+      // Fallback rate stays
+    }
+  };
+  const monedaElegida = (): "MXN" | "USD" => {
+    const cookie = document.cookie.split("; ").find((c) => c.startsWith("moneda="));
+    const valor = cookie?.split("=")[1]?.toUpperCase();
+    return valor === "USD" || valor === "MXN" ? valor : "USD";
+  };
+  const aMonedaElegida = (monto: number, moneda?: string): number => {
+    const destino = monedaElegida();
+    const origen = moneda === "USD" ? "USD" : "MXN";
+    if (origen === destino) return monto;
+    return origen === "USD" ? monto * tasaCambio : monto / tasaCambio;
+  };
+  const aCentavos = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+  const cart_tiene_otra_moneda = (): boolean => {
+    try {
+      const guardado = localStorage.getItem("starfilters_cart");
+      const items = guardado ? JSON.parse(guardado).items || [] : [];
+      return items.some((i: any) => (i.currency === "USD" ? "USD" : "MXN") !== monedaElegida());
+    } catch { return false; }
+  };
+
   function formatPrice(price: number): string {
-    return new Intl.NumberFormat("en-US", {
+    const moneda = monedaElegida();
+    return new Intl.NumberFormat(moneda === "USD" ? "en-US" : "es-MX", {
       style: "currency",
-      currency: "USD",
-    }).format(price) + " USD";
+      currency: moneda,
+    }).format(price) + " " + moneda;
   }
 
   async function addProductToCart(
@@ -592,6 +629,7 @@ const formatPrice = (price: number): string => {
   }
 
   async function renderCart(): Promise<void> {
+    if (monedaElegida() !== ("USD") || cart_tiene_otra_moneda()) await cargarTasaCambio();
     const cart = getCart();
     const cartLoading = document.getElementById("cart-loading");
     const cartEmpty = document.getElementById("cart-empty");
@@ -661,7 +699,7 @@ const formatPrice = (price: number): string => {
                   <a href="/en/product/${item.uuid}" class="hover:text-primary transition-colors">${item.name}</a>
                 </h3>
                 ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">${item.category}</p>` : ""}
-                <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
+                <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aCentavos(aMonedaElegida(Number(item.price) || 0, item.currency)))}</p>
                 
                 <!-- Selected size -->
                 ${item.size 
@@ -721,9 +759,11 @@ const formatPrice = (price: number): string => {
 
       // Render summary. Shipping is calculated at checkout based on location,
       // so it is neither estimated nor added to the total here.
-      const subtotal = cart.total;
-      const tax = subtotal * 0.16;
-      const total = subtotal + tax;
+      const subtotal = aCentavos(cart.items.reduce(
+        (suma: number, item: any) =>
+          suma + aMonedaElegida(Number(item.price) || 0, item.currency) * (item.quantity || 1), 0));
+      const tax = aCentavos(subtotal * 0.16);
+      const total = aCentavos(subtotal + tax);
 
       cartSummary.innerHTML = `
         <div class="flex items-center justify-between">

@@ -13,14 +13,14 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
 ---
 
 <WebsiteLayout 
-  title="Compra Exitosa"
-  seoTitle="Compra Exitosa - Star Filters"
-  description="Tu compra se ha procesado exitosamente"
+  title="Purchase Complete"
+  seoTitle="Purchase Complete - Star Filters"
+  description="Your purchase was processed successfully"
 >
   <SEO 
     slot="seo"
-    title="Compra Exitosa - Star Filters"
-    description="Tu compra se ha procesado exitosamente"
+    title="Purchase Complete - Star Filters"
+    description="Your purchase was processed successfully"
   />
 
   <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-16">
@@ -33,40 +33,40 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
       </div>
 
       <h1 id="success-title" class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-4">
-        ¡Compra Exitosa!
+        Purchase complete!
       </h1>
 
       <p id="success-description" class="text-lg text-muted-foreground mb-8">
-        Tu pedido ha sido procesado correctamente. Recibirás un correo de confirmación con los detalles de tu compra.
+        Your order was processed correctly. You will receive a confirmation email with the details of your purchase.
       </p>
 
       {paymentIntentId && (
         <div class="mb-8 p-4 bg-muted rounded-lg">
-          <p class="text-sm text-muted-foreground mb-2">ID de pago:</p>
+          <p class="text-sm text-muted-foreground mb-2">Payment ID:</p>
           <p class="text-sm font-mono text-foreground break-all">{paymentIntentId}</p>
         </div>
       )}
 
       <div class="space-y-4">
         <a
-          href="/orders"
+          href="/en/orders"
           class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          Ver mis pedidos
+          View my orders
         </a>
         
         <div>
           <a
-            href="/"
+            href="/en"
             class="text-sm text-primary hover:text-foreground transition-colors"
           >
-            Volver al inicio
+            Back to home
           </a>
         </div>
       </div>
 
       <div id="next-steps" class="mt-12 pt-8 border-t border-border">
-        <h2 class="text-lg font-semibold text-foreground mb-4">¿Qué sigue?</h2>
+        <h2 class="text-lg font-semibold text-foreground mb-4">What's next?</h2>
         <ul class="text-left space-y-2 text-sm text-muted-foreground max-w-md mx-auto">
           <li class="flex items-start">
             <svg class="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +84,7 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
             <svg class="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
-            <span>Puedes rastrear tu pedido desde la sección "Mis Pedidos"</span>
+            <span>You can track your order from the "My Orders" section</span>
           </li>
         </ul>
       </div>
@@ -111,17 +111,17 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
       const descEl = document.getElementById('success-description');
       const iconContainer = document.getElementById('success-icon');
       const nextSteps = document.getElementById('next-steps');
-      if (titleEl) titleEl.textContent = 'El pago no se completó';
-      if (descEl) descEl.textContent = 'Tu tarjeta no fue aceptada o el pago se canceló. No se te cobró nada y tu carrito sigue intacto: puedes volver e intentar con otro método de pago.';
+      if (titleEl) titleEl.textContent = 'The payment was not completed';
+      if (descEl) descEl.textContent = 'Your card was not accepted or the payment was cancelled. Nothing was charged and your cart is intact: go back and try another payment method.';
       if (iconContainer) {
         iconContainer.classList.remove('bg-green-100');
         iconContainer.classList.add('bg-red-100');
         iconContainer.innerHTML = '<svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
       }
       if (nextSteps) {
-        nextSteps.innerHTML = '<a href="/checkout" class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Volver al pago</a>';
+        nextSteps.innerHTML = '<a href="/en/checkout" class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Back to payment</a>';
       }
-      document.querySelectorAll('a[href="/orders"]').forEach((a) => a.classList.add('hidden'));
+      document.querySelectorAll('a[href="/en/orders"]').forEach((a) => a.classList.add('hidden'));
     } else {
       // Limpiar el carrito en el cliente
       try {
@@ -148,10 +148,10 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
             const nextSteps = document.getElementById('next-steps');
 
             if (titleEl) {
-              titleEl.textContent = 'Transferencia bancaria pendiente';
+              titleEl.textContent = 'Bank transfer pending';
             }
             if (descEl) {
-              descEl.textContent = 'Hemos recibido tu pedido. Realiza la transferencia bancaria con los datos que te fueron proporcionados. Una vez que recibamos el pago, procesaremos tu pedido y te enviaremos un correo de confirmación.';
+              descEl.textContent = 'We received your order. Make the bank transfer with the details provided. Once we receive the payment we will process your order and send you a confirmation email.';
             }
             if (iconContainer) {
               iconContainer.classList.remove('bg-green-100');
@@ -160,25 +160,25 @@ const paymentIntentClientSecret = url.searchParams.get('payment_intent_client_se
             }
             if (nextSteps) {
               nextSteps.innerHTML = `
-                <h2 class="text-lg font-semibold text-foreground mb-4">Instrucciones</h2>
+                <h2 class="text-lg font-semibold text-foreground mb-4">Instructions</h2>
                 <ul class="text-left space-y-2 text-sm text-muted-foreground max-w-md mx-auto">
                   <li class="flex items-start">
                     <svg class="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span>Realiza la transferencia bancaria con los datos proporcionados por Stripe</span>
+                    <span>Make the bank transfer with the details provided by Stripe</span>
                   </li>
                   <li class="flex items-start">
                     <svg class="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span>Una vez confirmado el pago, recibirás un correo de confirmación</span>
+                    <span>Once the payment is confirmed you will receive a confirmation email</span>
                   </li>
                   <li class="flex items-start">
                     <svg class="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span>Puedes revisar el estado de tu pedido en la sección "Mis Pedidos"</span>
+                    <span>You can check your order status in the "My Orders" section</span>
                   </li>
                 </ul>
               `;

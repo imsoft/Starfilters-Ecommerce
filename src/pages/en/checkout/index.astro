@@ -438,6 +438,13 @@ if (!user) {
       }
     };
 
+    /** Rounds to cents avoiding binary error (1.005 → 1.01). */
+    const aCentavos = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+    /** Amount in pesos, the currency discount codes are defined in. */
+    const aMXN = (monto: number, moneda?: string) =>
+      moneda === 'USD' ? monto * tasaCambio : monto;
+
     /** Lleva un importe a la moneda elegida por el visitante */
     const aUSD = (monto: number, moneda?: string) => {
       const destino = monedaElegida();
@@ -951,7 +958,7 @@ if (!user) {
             const { error } = await currentStripe.confirmPayment({
               elements: currentElements,
               confirmParams: {
-                return_url: `${window.location.origin}/purchase-success`,
+                return_url: `${window.location.origin}/en/purchase-success`,
               },
             });
 
@@ -1069,8 +1076,11 @@ if (!user) {
         (suma: number, item: any) => suma + aUSD(item.price, item.currency) * item.quantity,
         0
       );
-      const discountAmount = aUSD(appliedDiscount?.amount || 0, cart.currency);
-      const subtotalAfterDiscount = subtotal - discountAmount;
+      // The discount comes from the server IN PESOS (codes are defined in MXN).
+      // It was converted "from cart.currency", i.e. not at all on the English
+      // site, so $500 MXN were subtracted as if they were $500 USD.
+      const discountAmount = aCentavos(aUSD(appliedDiscount?.amount || 0, 'MXN'));
+      const subtotalAfterDiscount = Math.max(0, aCentavos(subtotal - discountAmount));
       const deliveryMethod = getSelectedDeliveryMethod();
       // getShippingCost devuelve pesos (tarifas reales): se convierte a USD
       const subtotalMXN = monedaElegida() === 'MXN'
@@ -1080,8 +1090,9 @@ if (!user) {
         ? aUSD(costoEnvio(deliveryMethod, subtotalMXN), 'MXN')
         : 0;
       // VAT also applies to shipping (same rule as the server).
-      const tax = (subtotalAfterDiscount + shipping) * 0.16;
-      const total = subtotalAfterDiscount + shipping + tax;
+      // Rounded to cents like the server, so the lines add up to the total.
+      const tax = aCentavos((subtotalAfterDiscount + aCentavos(shipping)) * 0.16);
+      const total = aCentavos(subtotalAfterDiscount + aCentavos(shipping) + tax);
 
       updateDeliveryPrices(subtotalAfterDiscount);
 
@@ -1152,7 +1163,10 @@ if (!user) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             code: code,
-            subtotal: cart.total,
+            // In pesos: the code's minimum purchase is in MXN and cart.total adds
+            // each line in the currency it was added with.
+            subtotal: aCentavos(cart.items.reduce(
+              (suma: number, item: any) => suma + aMXN(Number(item.price) || 0, item.currency) * (item.quantity || 1), 0)),
             cartItems: cart.items, // Send cart items to validate allowed products
           }),
         });
@@ -1165,7 +1179,7 @@ if (!user) {
             discountCodeId: data.discountCode.id,
             amount: data.discountAmount,
           };
-          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(aUSD(data.discountAmount, cart.currency), monedaElegida())}`;
+          messageDiv.textContent = `✓ ${data.message} - Savings: ${formatPrice(aCentavos(aUSD(data.discountAmount, 'MXN')), monedaElegida())}`;
           messageDiv.className = 'mt-2 text-sm text-green-600';
           messageDiv.classList.remove('hidden');
           input.disabled = true;
@@ -1439,8 +1453,11 @@ if (!user) {
             (suma: number, item: any) => suma + aUSD(item.price, item.currency) * item.quantity,
             0
           );
-          const discountAmount = aUSD(appliedDiscount?.amount || 0, cart.currency);
-          const subtotalAfterDiscount = subtotal - discountAmount;
+          // The discount comes from the server IN PESOS (codes are defined in MXN).
+          // It was converted "from cart.currency", i.e. not at all on the English
+          // site, so $500 MXN were subtracted as if they were $500 USD.
+          const discountAmount = aCentavos(aUSD(appliedDiscount?.amount || 0, 'MXN'));
+          const subtotalAfterDiscount = Math.max(0, aCentavos(subtotal - discountAmount));
           const shipping = aUSD(
             costoEnvio(
               deliveryMethod,
@@ -1448,8 +1465,9 @@ if (!user) {
             ),
             'MXN'
           );
-          const tax = (subtotalAfterDiscount + shipping) * 0.16;
-          const total = subtotalAfterDiscount + shipping + tax;
+          // Rounded to cents like the server, so the lines add up to the total.
+          const tax = aCentavos((subtotalAfterDiscount + aCentavos(shipping)) * 0.16);
+          const total = aCentavos(subtotalAfterDiscount + aCentavos(shipping) + tax);
 
           const minAmount = cartCurrency === 'USD' ? 0.50 : 10.00;
           if (total < minAmount) {

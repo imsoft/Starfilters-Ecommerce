@@ -288,13 +288,50 @@ const formatPrice = (price: number): string => {
     return items.reduce((count, item) => count + item.quantity, 0);
   }
 
+  // ── Moneda ──────────────────────────────────────────────────────────────
+  // Cada renglón guarda el precio en la moneda en la que se agregó (pesos
+  // desde el sitio en español, dólares desde /en). Antes esta página sumaba
+  // esos precios tal cual y los etiquetaba "MXN": un artículo agregado en
+  // dólares aparecía como si fueran pesos. Ahora cada renglón se convierte a
+  // la moneda elegida, con la misma tasa que usa el checkout.
+  let tasaCambio = 17;
+  const cargarTasaCambio = async () => {
+    try {
+      const res = await fetch("/api/exchange-rate");
+      const data = await res.json();
+      if (data.success && data.rate) tasaCambio = data.rate;
+    } catch {
+      // Si falla, se usa la tasa por defecto
+    }
+  };
+  const monedaElegida = (): "MXN" | "USD" => {
+    const cookie = document.cookie.split("; ").find((c) => c.startsWith("moneda="));
+    const valor = cookie?.split("=")[1]?.toUpperCase();
+    return valor === "USD" || valor === "MXN" ? valor : "MXN";
+  };
+  const aMonedaElegida = (monto: number, moneda?: string): number => {
+    const destino = monedaElegida();
+    const origen = moneda === "USD" ? "USD" : "MXN";
+    if (origen === destino) return monto;
+    return origen === "USD" ? monto * tasaCambio : monto / tasaCambio;
+  };
+  const aCentavos = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+  const cart_tiene_otra_moneda = (): boolean => {
+    try {
+      const guardado = localStorage.getItem("starfilters_cart");
+      const items = guardado ? JSON.parse(guardado).items || [] : [];
+      return items.some((i: any) => (i.currency === "USD" ? "USD" : "MXN") !== monedaElegida());
+    } catch { return false; }
+  };
+
   // Con el código de moneda: el sitio maneja pesos y dólares y el símbolo $
   // es el mismo en los dos.
   function formatPrice(price: number): string {
-    return new Intl.NumberFormat("es-MX", {
+    const moneda = monedaElegida();
+    return new Intl.NumberFormat(moneda === "USD" ? "en-US" : "es-MX", {
       style: "currency",
-      currency: "MXN",
-    }).format(price) + " MXN";
+      currency: moneda,
+    }).format(price) + " " + moneda;
   }
 
   async function addProductToCart(
@@ -596,6 +633,7 @@ const formatPrice = (price: number): string => {
   }
 
   async function renderCart(): Promise<void> {
+    if (monedaElegida() !== ("MXN") || cart_tiene_otra_moneda()) await cargarTasaCambio();
     const cart = getCart();
     const cartLoading = document.getElementById("cart-loading");
     const cartEmpty = document.getElementById("cart-empty");
@@ -665,7 +703,7 @@ const formatPrice = (price: number): string => {
                   <a href="/product/${item.uuid}" class="hover:text-primary transition-colors">${item.name}</a>
                 </h3>
                 ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">${item.category}</p>` : ""}
-                <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(item.price)}</p>
+                <p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aCentavos(aMonedaElegida(Number(item.price) || 0, item.currency)))}</p>
                 
                 <!-- Tamaño seleccionado -->
                 ${item.size 
@@ -725,9 +763,11 @@ const formatPrice = (price: number): string => {
 
       // Renderizar resumen. El envío se calcula en el checkout según la
       // ubicación, así que aquí no se estima ni se suma al total.
-      const subtotal = cart.total;
-      const tax = subtotal * 0.16;
-      const total = subtotal + tax;
+      const subtotal = aCentavos(cart.items.reduce(
+        (suma: number, item: any) =>
+          suma + aMonedaElegida(Number(item.price) || 0, item.currency) * (item.quantity || 1), 0));
+      const tax = aCentavos(subtotal * 0.16);
+      const total = aCentavos(subtotal + tax);
 
       cartSummary.innerHTML = `
         <div class="flex items-center justify-between">
