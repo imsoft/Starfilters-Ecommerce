@@ -1162,7 +1162,11 @@ export const getDashboardStats = async () => {
     ]);
 
     // Obtener pedidos pendientes
-    const pendingOrdersResult = await query('SELECT COUNT(*) as total FROM orders WHERE status = "pending"');
+    // "Por atender": los que nadie ha tocado (pending) y los pagados que se
+    // están preparando (processing). Un pago con tarjeta entra directamente
+    // como processing, así que contar solo "pending" dejaba el contador en
+    // cero justo después de un pedido nuevo.
+    const pendingOrdersResult = await query('SELECT COUNT(*) as total FROM orders WHERE status IN ("pending", "processing")');
 
     // Obtener ventas del mes actual
     const currentDate = new Date();
