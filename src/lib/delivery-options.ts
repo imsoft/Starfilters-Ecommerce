@@ -48,7 +48,7 @@ export const DELIVERY_OPTIONS: DeliveryOption[] = [
   {
     value: 'pickup-gdl',
     label: { es: 'Recoger en Guadalajara', en: 'Pick up in Guadalajara' },
-    days: { es: 'Siguiente día a partir de las 11am', en: 'Next day from 11am' },
+    days: { es: 'Siguiente día a partir de las 11:00 a.m.', en: 'Next day from 11:00 a.m.' },
     cost: 0,
     freeOverThreshold: false,
     isPickup: true,
