@@ -60,9 +60,12 @@ const ESTADO_BADGE: Record<string, { bg: string; fg: string }> = {
 // .toFixed() sobre ellas lanza "total.toFixed is not a function" y tumbaba el
 // correo de cambio de estado en todos los casos. Se normaliza aquí, que es
 // donde se formatea el dinero, para que ningún llamador tenga que acordarse.
+// Con separador de miles: "$10,141.06", no "$10141.06". Es el formato de
+// todo el sitio; los correos eran el único lugar sin él.
 const money = (value: unknown): string => {
   const numero = typeof value === 'number' ? value : Number(value);
-  return (Number.isFinite(numero) ? numero : 0).toFixed(2);
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    .format(Number.isFinite(numero) ? numero : 0);
 };
 
 /**
