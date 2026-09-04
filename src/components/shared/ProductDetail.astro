@@ -856,27 +856,17 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
                     </h3>
                     <p class="mt-1 text-sm text-muted-foreground">{relatedProduct.category}</p>
                   </div>
-                  <p class="text-sm font-medium text-foreground ml-2 flex-shrink-0">
-                    {relatedProduct.price > 0 ? formatPrice(relatedProduct.price) : (isEn ? 'Ask for price' : 'Consultar precio')}
-                  </p>
                 </div>
+                <!-- Sin precio ni "agregar" directo, igual que las tarjetas del
+                     catálogo: casi todo vale distinto según la medida, y agregar
+                     desde aquí metía el producto sin medida y con el precio base. -->
                 <div class="mt-auto pt-3">
-                  {relatedProduct.price > 0 ? (
-                    <button
-                      type="button"
-                      class="relative z-10 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                      onclick={`event.stopPropagation(); addToCartFromProduct('${relatedProduct.uuid}', ${relatedProduct.id}, '${relatedProduct.name}', ${relatedProduct.price}, '${relatedProduct.imageUrl}', '${relatedProduct.category || ''}', '${relatedProduct.currency || finalCurrency}')`}
-                    >
-                      {t.addToCart}
-                    </button>
-                  ) : (
-                    <a
-                      href={productHref(relatedProduct.uuid)}
-                      class="relative z-10 block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      {isEn ? 'Choose model' : 'Elegir modelo'}
-                    </a>
-                  )}
+                  <a
+                    href={productHref(relatedProduct.uuid)}
+                    class="relative z-10 block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    {isEn ? 'Choose model' : 'Elegir modelo'}
+                  </a>
                 </div>
               </div>
             ))}
@@ -1232,37 +1222,4 @@ const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
   }
 
   // Funciones globales para productos relacionados
-  async function addToCartFromProduct(uuid: string, product_id: number, name: string, price: number, image_url: string, category: string, currency: string = 'MXN'): Promise<void> {
-    const stockAvailable = await checkStock(uuid, 1);
-    if (!stockAvailable) return;
-
-    const cartData = localStorage.getItem('starfilters_cart');
-    let cart = cartData ? JSON.parse(cartData) : { items: [], total: 0, itemCount: 0, currency: currency };
-
-    const existingItemIndex = cart.items.findIndex((item: any) => item.uuid === uuid);
-
-    if (existingItemIndex >= 0) {
-      cart.items[existingItemIndex].quantity += 1;
-    } else {
-      cart.items.push({
-        uuid,
-        product_id,
-        name,
-        price,
-        currency,
-        quantity: 1,
-        image_url,
-        category
-      });
-    }
-
-    cart.total = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
-    cart.itemCount = cart.items.reduce((count: number, item: any) => count + item.quantity, 0);
-
-    localStorage.setItem('starfilters_cart', JSON.stringify(cart));
-    showNotification(msg.addedSingle(name));
-    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
-  }
-
-  (window as any).addToCartFromProduct = addToCartFromProduct;
 </script>
