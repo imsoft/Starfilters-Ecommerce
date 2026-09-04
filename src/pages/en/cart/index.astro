@@ -643,7 +643,10 @@ const recommendedProductsWithImages = await Promise.all(
                 </h3>
                 ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">${item.category}</p>` : ""}
                 ${Number(item.price) > 0
-                  ? `<p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aCentavos(aMonedaElegida(Number(item.price) || 0, item.currency)))}</p>`
+                  ? (item.quantity > 1
+                      ? `<p class="mt-1 text-sm text-muted-foreground">${formatPrice(aCentavos(aMonedaElegida(Number(item.price) || 0, item.currency)))} <span class="text-xs">each</span></p>
+                         <p class="text-sm font-semibold text-foreground">Total: ${formatPrice(aCentavos(aMonedaElegida(Number(item.price) || 0, item.currency) * item.quantity))}</p>`
+                      : `<p class="mt-1 text-sm font-medium text-foreground">${formatPrice(aCentavos(aMonedaElegida(Number(item.price) || 0, item.currency)))}</p>`)
                   : `<p class="mt-1 text-sm font-medium text-amber-700">No online price · request a quote</p>`}
                 
                 <!-- Selected size -->
