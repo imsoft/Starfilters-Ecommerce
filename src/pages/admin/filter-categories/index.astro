@@ -49,6 +49,25 @@ const categoriesWithVariants = await Promise.all(
     };
   })
 );
+
+// La tabla iba plana: "Bolsa", "Carbón Activado", "Celda"… sin decir de qué
+// familia era cada una, y la única forma de crear una subcategoría era saber
+// que había que elegir un "padre" en el formulario. Ahora cada familia va
+// seguida de sus subcategorías, y tiene su propio botón para agregar una.
+type CategoriaLista = (typeof categoriesWithVariants)[number] & { nivel: 0 | 1; padreNombre?: string };
+const porNombre = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'es');
+const familias = categoriesWithVariants.filter((c) => !c.parent_id).sort(porNombre);
+const ordenadas: CategoriaLista[] = [];
+for (const familia of familias) {
+  ordenadas.push({ ...familia, nivel: 0 });
+  for (const hija of categoriesWithVariants.filter((c) => c.parent_id === familia.id).sort(porNombre)) {
+    ordenadas.push({ ...hija, nivel: 1, padreNombre: familia.name });
+  }
+}
+// Subcategorías cuya familia ya no existe: al final, para que no se pierdan.
+for (const huerfana of categoriesWithVariants.filter((c) => c.parent_id && !familias.some((f) => f.id === c.parent_id)).sort(porNombre)) {
+  ordenadas.push({ ...huerfana, nivel: 1, padreNombre: '(familia eliminada)' });
+}
 ---
 
 <AdminLayout title="Categorías de Filtros">
@@ -214,10 +233,10 @@ const categoriesWithVariants = await Promise.all(
                 </tr>
               </thead>
               <tbody class="divide-y divide-border bg-background">
-                {categoriesWithVariants.map((category) => (
-                  <tr class="hover:bg-muted/50">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="relative h-20 w-20">
+                {ordenadas.map((category) => (
+                  <tr class={category.nivel === 1 ? 'bg-muted/20 hover:bg-muted/40' : 'hover:bg-muted/50'}>
+                    <td class={`px-6 py-4 whitespace-nowrap ${category.nivel === 1 ? 'pl-14' : ''}`}>
+                      <div class={`relative ${category.nivel === 1 ? 'h-12 w-12' : 'h-20 w-20'}`}>
                         {imagenValida(category.main_image) ? (
                           <img
                             src={imagenValida(category.main_image)}
@@ -248,7 +267,14 @@ const categoriesWithVariants = await Promise.all(
                     </td>
                     <td class="px-6 py-4">
                       <div class="flex-1 min-w-0">
-                        <div class="text-base font-semibold text-foreground mb-1">
+                        {category.nivel === 1 ? (
+                          <div class="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Subcategoría de {category.padreNombre}
+                          </div>
+                        ) : (
+                          <div class="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary">Familia</div>
+                        )}
+                        <div class={`font-semibold text-foreground mb-1 ${category.nivel === 1 ? 'text-sm' : 'text-base'}`}>
                           {category.name}
                         </div>
                         {category.description && (
@@ -265,6 +291,15 @@ const categoriesWithVariants = await Promise.all(
                     </td>
                     <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                       <div class="flex items-center justify-end gap-2">
+                        {category.nivel === 0 && (
+                          <a
+                            href={`/admin/filter-categories/create?parent=${category.id}`}
+                            class="mr-2 inline-flex items-center rounded-md border border-primary/40 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+                            title={`Agregar una subcategoría dentro de ${category.name}`}
+                          >
+                            + Subcategoría
+                          </a>
+                        )}
                         <a
                           href={`/admin/filter-categories/edit/${category.id}`}
                           class="text-primary hover:text-foreground"
