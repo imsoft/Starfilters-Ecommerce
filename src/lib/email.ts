@@ -291,7 +291,7 @@ export const createOrderConfirmationEmail = (
   orderNumber: string,
   orderDate: string,
   total: number,
-  items: Array<{ name: string; quantity: number; price: number; code?: string | null }>,
+  items: Array<{ name: string; quantity: number; price: number; code?: string | null; size?: string | null }>,
   shippingAddress: string,
   // Los pedidos pueden cobrarse en pesos o en dólares
   currency: 'MXN' | 'USD' = 'MXN',
@@ -356,7 +356,7 @@ export const createOrderConfirmationEmail = (
   const itemsList = items.map(item => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border};">
-        <strong>${item.name}</strong>${item.code ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Código: ${escapeHtml(String(item.code))}</span>` : ''}<br>
+        <strong>${item.name}</strong>${item.size ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Modelo: ${escapeHtml(String(item.size))}</span>` : ''}${item.code ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Código: ${escapeHtml(String(item.code))}</span>` : ''}<br>
         <span style="color: ${BRAND.mutedForeground}; font-size: 14px;">${t.quantity}: ${item.quantity}</span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border}; text-align: right;">
@@ -466,7 +466,7 @@ export const createOrderConfirmationEmail = (
     ${t.date}: ${orderDate}
     
     ${t.products}:
-    ${items.map(item => `- ${item.name}${item.code ? ` (código ${item.code})` : ''} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
+    ${items.map(item => `- ${item.name}${item.size ? ` · ${item.size}` : ''}${item.code ? ` (código ${item.code})` : ''} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
     ${desgloseTexto(desglose, t, currency) || diferenciaSinDesglose(items, total, t, currency).texto}
     ${t.total}: $${money(total)} ${currency}
@@ -736,7 +736,7 @@ export const createNewOrderNotificationEmail = (
   customerName: string,
   customerEmail: string,
   total: number,
-  items: Array<{ name: string; quantity: number; price: number; code?: string | null }>,
+  items: Array<{ name: string; quantity: number; price: number; code?: string | null; size?: string | null }>,
   shippingAddress: string,
   // Los pedidos pueden cobrarse en pesos o en dólares
   currency: 'MXN' | 'USD' = 'MXN',
@@ -755,7 +755,7 @@ export const createNewOrderNotificationEmail = (
   const itemsList = items.map(item => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border};">
-        <strong>${item.name}</strong>${item.code ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Código: ${escapeHtml(String(item.code))}</span>` : ''}<br>
+        <strong>${item.name}</strong>${item.size ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Modelo: ${escapeHtml(String(item.size))}</span>` : ''}${item.code ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Código: ${escapeHtml(String(item.code))}</span>` : ''}<br>
         <span style="color: ${BRAND.mutedForeground}; font-size: 14px;">Cantidad: ${item.quantity}</span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border}; text-align: right;">
@@ -941,7 +941,7 @@ export const createNewOrderNotificationEmail = (
     Email: ${customerEmail}
     
     Productos:
-    ${items.map(item => `- ${item.name}${item.code ? ` (código ${item.code})` : ''} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
+    ${items.map(item => `- ${item.name}${item.size ? ` · ${item.size}` : ''}${item.code ? ` (código ${item.code})` : ''} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
     Entrega: ${deliveryLabel}
     ${isPickup
@@ -978,7 +978,7 @@ export const createOrderStatusUpdateEmail = (
   oldStatus: string,
   newStatus: string,
   orderDate: string,
-  items: Array<{ name: string; quantity: number; price: number; code?: string | null }>,
+  items: Array<{ name: string; quantity: number; price: number; code?: string | null; size?: string | null }>,
   total: number,
   trackingNumber?: string,
   currency: 'MXN' | 'USD' = 'MXN',
@@ -1122,7 +1122,7 @@ export const createOrderStatusUpdateEmail = (
   const itemsList = items.map(item => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border};">
-        <strong>${item.name}</strong>${item.code ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Código: ${escapeHtml(String(item.code))}</span>` : ''}<br>
+        <strong>${item.name}</strong>${item.size ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Modelo: ${escapeHtml(String(item.size))}</span>` : ''}${item.code ? `<br><span style="color: ${BRAND.mutedForeground}; font-size: 13px;">Código: ${escapeHtml(String(item.code))}</span>` : ''}<br>
         <span style="color: ${BRAND.mutedForeground}; font-size: 14px;">${t.quantity}: ${item.quantity}</span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid ${BRAND.border}; text-align: right;">
@@ -1246,7 +1246,7 @@ export const createOrderStatusUpdateEmail = (
     ${paqueteria?.url ? `${t.trackHere}: ${paqueteria.url}` : ''}
     
     ${t.products}:
-    ${items.map(item => `- ${item.name}${item.code ? ` (código ${item.code})` : ''} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
+    ${items.map(item => `- ${item.name}${item.size ? ` · ${item.size}` : ''}${item.code ? ` (código ${item.code})` : ''} x${item.quantity}: $${money(Number(item.price) * item.quantity)}`).join('\n')}
     
     ${desgloseTexto(desglose, t, currency) || diferenciaSinDesglose(items, total, t, currency).texto}
     ${t.total}: $${money(total)} ${currency}

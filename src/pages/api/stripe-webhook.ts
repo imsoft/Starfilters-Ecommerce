@@ -262,6 +262,7 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
         price: item.price_charge ?? item.price_mxn,
         product_name: item.name,
         bind_code: item.bind_code ?? null,
+        size: item.size ?? null,
         image_url: item.image_url || undefined
       });
 
@@ -306,7 +307,7 @@ async function processOrderFromDraft(paymentIntent: any, draft: CheckoutDraftPay
     customerName,
     checkout.email,
     totalMXN,
-    items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price_charge ?? item.price_mxn, code: item.bind_code ?? null })),
+    items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price_charge ?? item.price_mxn, code: item.bind_code ?? null, size: item.size ?? null })),
     shippingAddress,
     String(paymentIntent.currency || 'mxn').toUpperCase() as 'MXN' | 'USD',
     {

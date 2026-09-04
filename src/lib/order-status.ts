@@ -118,6 +118,7 @@ export const changeOrderStatus = async ({
       quantity: item.quantity,
       price: item.price,
       code: item.bind_code ?? null,
+      size: item.size ?? null,
     }));
 
     // La guía y la paquetería recién capturadas ganan sobre las que ya tenía.

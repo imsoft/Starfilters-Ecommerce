@@ -425,7 +425,15 @@ import { getOrderDiscountAmount } from '@/lib/database';
                   )}
                   <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold text-foreground">{item.product_name}</p>
-                    <p class="mt-0.5 text-sm text-muted-foreground">{formatCurrency(item.price, order.currency)} c/u{item.bind_code ? ` · código ${item.bind_code}` : ''}</p>
+                    {item.size && (
+                      <p class="mt-0.5 text-sm text-foreground">Modelo: {item.size}</p>
+                    )}
+                    <p class="mt-0.5 text-sm text-muted-foreground">
+                      {formatCurrency(item.price, order.currency)} c/u{item.bind_code ? ` · código ${item.bind_code}` : ''}
+                      {item.product_id && (
+                        <> · <a href={`/admin/products/edit/${item.product_id}`} class="text-primary hover:underline">ver producto</a></>
+                      )}
+                    </p>
                   </div>
                   <p class="text-base font-semibold text-foreground">×{item.quantity}</p>
                 </div>

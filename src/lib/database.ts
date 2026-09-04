@@ -188,6 +188,9 @@ export interface OrderItem {
   // Código BIND del producto o de la medida que se compró. Es lo que el
   // cliente y el equipo usan para identificar la pieza.
   bind_code?: string | null;
+  // Modelo o medida elegida ("24 X 48 - 110V - Acero inoxidable"): sin esto
+  // el equipo veía "Gabinete autopropulsado ×2" y no sabía cuál surtir.
+  size?: string | null;
   created_at: Date;
 }
 
@@ -825,6 +828,14 @@ const ensureOrderItemsBindCode = (): Promise<void> => {
         await query('ALTER TABLE order_items ADD COLUMN bind_code VARCHAR(100) NULL AFTER product_name');
         console.log('✅ Columna order_items.bind_code creada');
       }
+      const filasSize = await query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_items' AND COLUMN_NAME = 'size'`
+      ) as any[];
+      if (!Number(filasSize?.[0]?.n)) {
+        await query('ALTER TABLE order_items ADD COLUMN size VARCHAR(150) NULL AFTER bind_code');
+        console.log('✅ Columna order_items.size creada');
+      }
     })().catch((error) => { bindCodeColumnEnsured = null; throw error; });
   }
   return bindCodeColumnEnsured;
@@ -835,8 +846,8 @@ export const createOrderItem = async (item: Omit<OrderItem, 'id' | 'uuid' | 'cre
   await ensureOrderItemsBindCode();
   const uuid = generateUUID();
   const sql = `
-    INSERT INTO order_items (uuid, order_id, product_id, quantity, price, product_name, bind_code, image_url)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO order_items (uuid, order_id, product_id, quantity, price, product_name, bind_code, size, image_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const result = await query(sql, [
     uuid,
@@ -846,6 +857,7 @@ export const createOrderItem = async (item: Omit<OrderItem, 'id' | 'uuid' | 'cre
     item.price,
     item.product_name,
     item.bind_code || null,
+    item.size || null,
     item.image_url || null
   ]) as any;
   return result.insertId;
