@@ -118,8 +118,12 @@ export const compararPreciosConBind = async (): Promise<ComparacionPrecios> => {
     });
   }
 
-  // Primero lo más llamativo: cambios de moneda y diferencias grandes
+  // Primero lo urgente: lo que hoy está en $0 en el sitio y ya tiene precio en
+  // BIND (eso es lo que el cliente ve como "$0.00" en la tienda). Después,
+  // cambios de moneda y diferencias grandes.
   diferentes.sort((a, b) => {
+    const aSin = a.precioSitio <= 0, bSin = b.precioSitio <= 0;
+    if (aSin !== bSin) return aSin ? -1 : 1;
     if (a.cambiaMoneda !== b.cambiaMoneda) return a.cambiaMoneda ? -1 : 1;
     return Math.abs(b.diferenciaPct ?? 0) - Math.abs(a.diferenciaPct ?? 0);
   });
