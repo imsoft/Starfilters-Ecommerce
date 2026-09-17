@@ -424,10 +424,19 @@ if (categoryVariants.length > 0) {
     
     // Si es el producto actual y aún no lo hemos agregado, agregarlo primero
     if (isCurrentProduct && !currentProductAdded) {
+      // La fila del producto puede tener su propio precio en 0 aunque la
+      // medida que coincide con él (misma bind_code) sí lo tenga: pasó con
+      // "Carbón activado impregnado" (código PC1) — la medida valía $421 en
+      // filter_category_variants, pero products.price seguía en 0 porque
+      // nunca se guardó ahí, y esta opción usaba siempre productPriceFinal.
+      // Si el producto no tiene precio propio, se usa el de esta variante.
+      const precioUnshift = productPriceFinal > 0
+        ? productPriceFinal
+        : precioEnMoneda(variant, moneda, exchangeRate);
       sizeOptions.unshift({
         value: product.uuid,
         label: sizeOptionLabel(nominalEnIdioma(product.nominal_size, product.nominal_size_en), product.real_size),
-        price: productPriceFinal,
+        price: precioUnshift,
         currency: finalCurrency,
         stock: product.stock,
         name: productName,
