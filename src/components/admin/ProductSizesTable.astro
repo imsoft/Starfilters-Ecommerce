@@ -283,12 +283,15 @@ const normalizedSizes = initialSizes.map(size => ({
           contenedor.appendChild(aviso);
         }
 
+        // Solo se muestra un aviso cuando el precio capturado DIFIERE del de
+        // BIND. Si está vacío, se rellena solo y sin comentario; si ya
+        // coincide, no hace falta decir nada.
         function ponerPrecio() {
           input.value = Number(precio).toFixed(2);
           // BIND entrega el precio de lista en pesos
           if (selMoneda) selMoneda.value = 'MXN';
-          aviso.textContent = 'Precio de BIND';
-          aviso.className = 'mt-1 text-xs text-green-700';
+          aviso.textContent = '';
+          aviso.className = 'mt-1 text-xs';
           updateJson();
         }
 
@@ -298,8 +301,8 @@ const normalizedSizes = initialSizes.map(size => ({
         if (forzar || vacio) { ponerPrecio(); return; }
 
         if (Math.abs(actual - precio) < 0.01) {
-          aviso.textContent = 'Igual que BIND';
-          aviso.className = 'mt-1 text-xs text-gray-500';
+          aviso.textContent = '';
+          aviso.className = 'mt-1 text-xs';
           return;
         }
 
