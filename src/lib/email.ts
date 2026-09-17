@@ -1106,7 +1106,10 @@ export const createOrderStatusUpdateEmail = (
     },
     shipped: esRecoger ? {
       title: 'Your order is ready for pickup',
-      message: `You can pick it up at ${direccionRecoger}.` + (plazoRecoger ? ` Availability: ${plazoRecoger}.` : '')
+      // Ya está listo AHORA: decir "Availability: next day from 11am" (el
+      // horario de recolección general) contradice el aviso y confunde.
+      // Ese horario sí tiene sentido en la confirmación de compra, no aquí.
+      message: `You can pick it up at ${direccionRecoger}.`
     } : {
       title: 'Your order is on its way',
       message: 'Your order has shipped. ' + (paqueteria ? `It is travelling with ${paqueteria.nombre}. ` : '') + (trackingNumber ? `Tracking number: ${trackingNumber}` : '')
@@ -1126,7 +1129,10 @@ export const createOrderStatusUpdateEmail = (
     },
     shipped: esRecoger ? {
       title: '¡Tu pedido está listo para recoger!',
-      message: `Puedes pasar por él a ${direccionRecoger}.` + (plazoRecoger ? ` Disponible: ${plazoRecoger}.` : '')
+      // Ya está listo AHORA: decir "Disponible: siguiente día a partir de las
+      // 11am" (el horario general de recolección) contradice el aviso y
+      // confunde. Ese horario sí tiene sentido en la confirmación de compra.
+      message: `Puedes pasar por él a ${direccionRecoger}.`
     } : {
       title: '¡Tu pedido ha sido enviado!',
       message: 'Tu pedido está en camino. ' + (paqueteria ? `Va con ${paqueteria.nombre}. ` : '') + (trackingNumber ? `Número de rastreo: ${trackingNumber}` : '')
