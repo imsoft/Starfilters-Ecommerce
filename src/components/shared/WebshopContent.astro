@@ -1,5 +1,6 @@
 ---
 import { getLangFromUrl } from "@/i18n/utils";
+import { rellenarPreciosFaltantes } from "@/lib/bind-price-sync";
 import { existenciaSegunBind, normalizarCodigosBind } from "@/lib/stock";
 import LazyImage from "@/components/shared/LazyImage.astro";
 import {
@@ -195,6 +196,10 @@ const subheading = selected
   : isEn
     ? "Browse our full catalog of air filters and cleanroom equipment."
     : "Explora nuestro catálogo completo de filtros de aire y equipo para cuarto limpio.";
+
+// Precios en $0 con código BIND: que BIND los rellene (sin esperar; corre como
+// mucho cada 20 min). Ver lib/bind-price-sync.ts.
+void rellenarPreciosFaltantes().catch(() => {});
 ---
 
 <div class="section-pb bg-background min-h-screen pt-24">

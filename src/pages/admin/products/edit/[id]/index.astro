@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
+import { rellenarPreciosFaltantes } from "@/lib/bind-price-sync";
 import {
   getProductById,
   updateProduct as updateProductService,
@@ -297,8 +298,11 @@ if (Astro.request.method === "POST") {
           const params = new URLSearchParams();
           if (skippedSizes.length > 0) params.set('sizes_skipped', skippedSizes.join(', '));
           if (failedSizes.length > 0) params.set('sizes_failed', failedSizes.join(', '));
+          // Si se acaba de capturar un código BIND en algo que está en $0, que tome su precio ya.
+          void rellenarPreciosFaltantes(true).catch(() => {});
           return Astro.redirect(`/admin/products/edit/${productId}?${params.toString()}`);
         }
+        void rellenarPreciosFaltantes(true).catch(() => {});
         return Astro.redirect("/admin/products");
       } else {
         error = "Error al actualizar el producto";

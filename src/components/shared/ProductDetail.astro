@@ -12,6 +12,7 @@ import { generateProductKeywords, generateProductSchema, generateBreadcrumbSchem
 import { getExchangeRate } from "@/lib/currency-service";
 import { getBindInventoryByCode } from "@/lib/bind";
 import { hayExistenciaDeProducto } from "@/lib/disponibilidad";
+import { rellenarPreciosFaltantes } from "@/lib/bind-price-sync";
 import { existenciaSegunBind, normalizarCodigosBind } from "@/lib/stock";
 import { getMoneda, precioEnMoneda, convertirMoneda } from "@/lib/currency-preference";
 import { getProductName, getProductDescription, getProductCategory, getProductPriceAndCurrency, formatPriceByCurrency, getCategoryName } from "@/lib/i18n-helpers";
@@ -572,6 +573,13 @@ const precioSchemaMXN = (() => {
 
 const productSchema = generateProductSchema(product, siteUrl, precioSchemaMXN);
 
+// Si alguna opción tiene código pero está en $0, se pide a BIND que rellene los
+// precios faltantes. No se espera la respuesta (la ficha no debe tardar por
+// esto): la siguiente visita ya los trae. Ver lib/bind-price-sync.ts.
+if (sizeOptions.some((o) => !(Number(o.price) > 0)) || !(Number(product.price) > 0)) {
+  void rellenarPreciosFaltantes().catch(() => {});
+}
+
 // Código que se muestra al abrir la ficha: el de la opción preseleccionada.
 const codigoInicial: string =
   (sizeOptions.find((o) => o.isCurrentProduct)?.bindCode as string | undefined)
@@ -1098,7 +1106,11 @@ const codigoInicial: string =
   function updateDisplayedPrice() {
     const priceElement = document.getElementById('main-product-price');
     if (priceElement) {
-      priceElement.textContent = formatPrice(currentProduct.price, currentProduct.currency);
+      // Una medida sin precio no vale "$0.00": se cotiza. El servidor ya lo
+      // pintaba así, pero este script lo sobreescribía al elegir la medida.
+      priceElement.textContent = Number(currentProduct.price) > 0
+        ? formatPrice(currentProduct.price, currentProduct.currency)
+        : (isEnPage ? 'Ask for price' : 'Consultar precio');
     }
     const codeElement = document.getElementById('product-bind-code');
     if (codeElement) {

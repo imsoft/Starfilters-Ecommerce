@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
+import { rellenarPreciosFaltantes } from "@/lib/bind-price-sync";
 import {
   createProduct,
 } from "@/lib/product-service";
@@ -441,6 +442,8 @@ if (Astro.request.method === "POST") {
       console.log(`📷 Imágenes finales en BD antes de redirigir: ${finalImages.length}`);
       
       // Redirigir a la lista de productos después de crear
+      // Producto nuevo con código BIND y sin precio: que lo tome de BIND ya.
+      void rellenarPreciosFaltantes(true).catch(() => {});
       return Astro.redirect(`/admin/products`);
     }
   } catch (err) {

@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "@/layouts/adminLayout.astro";
+import { rellenarPreciosFaltantes } from "@/lib/bind-price-sync";
 import { Button } from "@/components/ui/button";
 import AdminFilters from "@/components/shared/AdminFilters.astro";
 import { getAllProducts } from "@/lib/product-service";
@@ -233,6 +234,10 @@ function formatCurrency(amount: number): string {
     currency: 'MXN'
   }).format(amount);
 }
+
+// Precios en $0 con código BIND: que BIND los rellene (sin esperar; corre como
+// mucho cada 20 min). Ver lib/bind-price-sync.ts.
+void rellenarPreciosFaltantes().catch(() => {});
 ---
 
 <AdminLayout title="Gestión de Productos">

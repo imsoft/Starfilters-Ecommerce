@@ -186,3 +186,66 @@ export const aplicarPreciosDeBind = async (
 
   return { aplicados, fallidos };
 };
+
+// ── Precios faltantes ───────────────────────────────────────────────────────
+//
+// El cliente captura el código de BIND de un producto o de una medida y espera
+// ver su precio en la tienda. Pero el precio vive en la base del sitio, y solo
+// llegaba cuando alguien entraba a "Precios desde BIND" y daba aplicar: hasta
+// entonces la tienda mostraba $0.00.
+//
+// Un precio en CERO no es una decisión de nadie, es un hueco. Rellenarlo con el
+// precio de lista de BIND no pisa nada: aquí nunca se toca una fila que ya
+// tenga precio (eso sigue pasando por la pantalla, con revisión humana).
+
+const CADA_CUANTO_MS = 20 * 60 * 1000;
+let ultimoRelleno = 0;
+let rellenoEnCurso: Promise<number> | null = null;
+
+/**
+ * Pone el precio de BIND a los productos y medidas que están en $0 y tienen un
+ * código que BIND reconoce. Devuelve cuántas filas rellenó.
+ *
+ * Se puede llamar desde cualquier página sin miedo: corre como mucho una vez
+ * cada 20 minutos y nunca dos a la vez. `forzar` se salta la espera (lo usa el
+ * panel justo después de guardar un código).
+ */
+export const rellenarPreciosFaltantes = async (forzar = false): Promise<number> => {
+  if (rellenoEnCurso) return rellenoEnCurso;
+  if (!forzar && Date.now() - ultimoRelleno < CADA_CUANTO_MS) return 0;
+  ultimoRelleno = Date.now();
+
+  rellenoEnCurso = (async () => {
+    try {
+      const { diferentes } = await compararPreciosConBind();
+      const huecos = diferentes.filter(
+        (f) => !(f.precioSitio > 0) && !f.cambiaMoneda && f.precioBind > 0 && f.precioBind <= PRECIO_MAXIMO
+      );
+      let rellenados = 0;
+      for (const f of huecos) {
+        const precio = Number(f.precioBind.toFixed(2));
+        // "AND price = 0": si alguien le puso precio mientras tanto, no se pisa.
+        const tabla = f.origen === 'variante' ? 'filter_category_variants' : 'products';
+        const r = (await query(
+          `UPDATE ${tabla} SET price = ?, currency = 'MXN', price_usd = NULL
+            WHERE id = ? AND (price IS NULL OR price = 0)`,
+          [precio, f.id]
+        )) as any;
+        if (r?.affectedRows) {
+          rellenados++;
+          console.log(`💲 Precio faltante rellenado desde BIND: ${f.codigo} (${f.nombre}) → $${precio} MXN`);
+        }
+      }
+      if (rellenados) console.log(`✅ ${rellenados} precio(s) faltante(s) tomados de BIND`);
+      return rellenados;
+    } catch (error: any) {
+      console.error('⚠️ No se pudieron rellenar precios faltantes desde BIND:', error?.message);
+      // Que un fallo de BIND no bloquee el siguiente intento durante 20 minutos.
+      ultimoRelleno = 0;
+      return 0;
+    } finally {
+      rellenoEnCurso = null;
+    }
+  })();
+  return rellenoEnCurso;
+};
