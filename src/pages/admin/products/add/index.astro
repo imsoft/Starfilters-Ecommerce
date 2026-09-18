@@ -4,10 +4,11 @@ import { rellenarPreciosFaltantes } from "@/lib/bind-price-sync";
 import {
   createProduct,
 } from "@/lib/product-service";
-import { getActiveCategories } from "@/lib/filter-category-service";
+import { getActiveCategories, addCategoryVariant } from "@/lib/filter-category-service";
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { isUserAdmin } from '@/lib/database';
 import { generateUUID } from "@/lib/database";
+import { getExchangeRate } from "@/lib/currency-service";
 import ProductImageManagerCreate from "@/components/admin/ProductImageManagerCreate.astro";
 import DynamicListInput from "@/components/admin/DynamicListInput.astro";
 import ProductSizesTable from "@/components/admin/ProductSizesTable.astro";
@@ -105,104 +106,113 @@ if (Astro.request.method === "POST") {
     const filterCategoryIdStr = formData.get("filter_category_id") as string;
     const filterCategoryId = filterCategoryIdStr ? parseInt(filterCategoryIdStr) : null;
 
-    // Si hay tamaños, crear un producto por cada tamaño
-    // Si no hay tamaños, crear un solo producto
-    let productId: number | null = null;
-    
-    if (sizes.length > 0) {
-      // Crear un producto por cada tamaño
+    // UN SOLO PRODUCTO, siempre. Antes, si la tabla de tamaños traía varias
+    // filas, aquí se creaba un PRODUCTO DISTINTO por cada una —la misma causa
+    // raíz que obligó a unir después los gabinetes y "Filtro de celdas" con
+    // scripts/unir-productos-por-medida.js—. La edición de un producto ya
+    // existente SÍ guardaba los tamaños como variantes de verdad
+    // (filter_category_variants); el alta era la única puerta que seguía
+    // rota. Ahora hace lo mismo que la edición: un producto, y cada tamaño
+    // como su variante.
+    let productId: number | null = await createProduct({
+      uuid: uuid,
+      product_type: productType,
+      filter_category_id: filterCategoryId,
+      bind_code: null,
+      sku: null,
+      name: formData.get("name") as string,
+      name_en: (formData.get("name_en") as string) || undefined,
+      description: (formData.get("description") as string) || undefined,
+      description_en: (formData.get("description_en") as string) || undefined,
+      price: 0,
+      currency: "MXN",
+      price_usd: null,
+      nominal_size: null,
+      real_size: null,
+      category: category,
+      stock: 0,
+      status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
+      // Campos técnicos (compartidos por todas las medidas)
+      efficiency: efficiency,
+      efficiency_en: efficiencyEn,
+      efficiency_class: null,
+      characteristics: characteristics,
+      characteristics_en: characteristicsEn,
+      frame_material: null,
+      max_temperature: null,
+      typical_installation: typicalInstallation,
+      typical_installation_en: typicalInstallationEn,
+      air_flow: airFlow,
+      dimensions: dimensions,
+      package_length_cm: packageLengthCm,
+      package_width_cm: packageWidthCm,
+      package_height_cm: packageHeightCm,
+      package_weight_kg: packageWeightKg,
+      initial_pressure_drop: initialPressureDrop,
+      recommended_final_pressure_drop: recommendedFinalPressureDrop,
+      applications: applications,
+      applications_en: applicationsEn,
+      benefits: benefits,
+      benefits_en: benefitsEn,
+    });
+
+    // Los tamaños de la tabla, como variantes del producto recién creado —
+    // igual que hace /admin/products/edit al guardar tamaños.
+    const sizeFailures: string[] = [];
+    const sizesConDatos = sizes.filter(
+      (s) => s.bind_code?.trim() || s.nominal_size?.trim() || s.real_size?.trim()
+    );
+    // Sin categoría de filtro no hay dónde guardar las medidas (igual que en
+    // la edición): antes se perdía en silencio porque cada medida quedaba
+    // horneada en su propio producto y "daba igual". Ahora si hay filas
+    // capturadas y no hay categoría, se avisa en vez de tirarlas.
+    if (productId && !filterCategoryId && sizesConDatos.length > 0) {
+      sizeFailures.push(
+        `${sizesConDatos.length} medida(s) no se guardaron: asigna una categoría de filtro al producto y captúralas de nuevo desde "Editar".`
+      );
+    }
+    if (productId && filterCategoryId && sizes.length > 0) {
+      const exchangeRate = await getExchangeRate();
       for (const size of sizes) {
-        const sizeUuid = generateUUID();
-        const sizeProductId = await createProduct({
-          uuid: sizeUuid,
-          product_type: productType,
-          filter_category_id: filterCategoryId,
-          bind_code: size.bind_code || null,
-          sku: size.sku || null,
-          name: formData.get("name") as string,
-          name_en: (formData.get("name_en") as string) || undefined,
-          description: (formData.get("description") as string) || undefined,
-          description_en: (formData.get("description_en") as string) || undefined,
-          price: size.price || 0,
-          currency: size.currency || 'MXN',
-          price_usd: size.currency === 'USD' ? (size.price || 0) : null,
-          nominal_size: size.nominal_size || null,
-          real_size: size.real_size || null,
-          category: category,
-          stock: 0,
-          status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
-          // Campos técnicos (compartidos entre todas las variantes)
-          efficiency: efficiency,
-          efficiency_en: efficiencyEn,
-          efficiency_class: null,
-          characteristics: characteristics,
-          characteristics_en: characteristicsEn,
-          frame_material: null,
-          max_temperature: null,
-          typical_installation: typicalInstallation,
-          typical_installation_en: typicalInstallationEn,
-          air_flow: airFlow,
-          dimensions: dimensions,
-          package_length_cm: packageLengthCm,
-          package_width_cm: packageWidthCm,
-          package_height_cm: packageHeightCm,
-          package_weight_kg: packageWeightKg,
-          initial_pressure_drop: initialPressureDrop,
-          recommended_final_pressure_drop: recommendedFinalPressureDrop,
-          applications: applications,
-          applications_en: applicationsEn,
-          benefits: benefits,
-          benefits_en: benefitsEn,
-        });
-        
-        // Guardar el ID del primer producto creado
-        if (!productId) {
-          productId = sizeProductId;
+        if (!size.bind_code?.trim() && !size.nominal_size?.trim() && !size.real_size?.trim()) {
+          continue; // fila vacía, no aporta nada
+        }
+        let priceUsd: number | null = null;
+        if (size.currency === 'USD') {
+          priceUsd = size.price;
+        } else {
+          priceUsd = (size.price || 0) / exchangeRate;
+        }
+        try {
+          await addCategoryVariant({
+            category_id: filterCategoryId,
+            product_id: productId,
+            bind_code: size.bind_code?.trim() || null,
+            air_flow: size.air_flow?.trim() || null,
+            nominal_size: size.nominal_size?.trim() || '',
+            nominal_size_en: null,
+            real_size: size.real_size?.trim() || '',
+            price: size.price || 0,
+            currency: size.currency || 'MXN',
+            price_usd: priceUsd,
+            stock: 0,
+            is_active: true,
+          });
+        } catch (variantError: any) {
+          // bind_code es UNIQUE en toda la tabla: si el código ya lo usa otro
+          // producto, la fila se perdía sin decir nada. Se avisa en vez de
+          // fallar el alta completa.
+          const duplicado = /duplicate|unique/i.test(variantError?.sqlMessage || variantError?.message || '');
+          sizeFailures.push(
+            duplicado
+              ? `${size.bind_code || size.nominal_size} (ese código BIND ya está usado por otro producto)`
+              : `${size.bind_code || size.nominal_size} (${variantError?.sqlMessage || variantError?.message || 'error al guardar'})`
+          );
         }
       }
-    } else {
-      // Crear un solo producto sin tamaño específico
-      productId = await createProduct({
-        uuid: uuid,
-        product_type: productType,
-        filter_category_id: filterCategoryId,
-        bind_code: null,
-        sku: null,
-        name: formData.get("name") as string,
-        name_en: (formData.get("name_en") as string) || undefined,
-        description: (formData.get("description") as string) || undefined,
-        description_en: (formData.get("description_en") as string) || undefined,
-        price: 0,
-        currency: "MXN",
-        price_usd: null,
-        nominal_size: null,
-        real_size: null,
-        category: category,
-        stock: 0,
-        status: (formData.get("status") as "active" | "inactive" | "draft") || "active",
-        // Campos técnicos
-        efficiency: efficiency,
-        efficiency_en: efficiencyEn,
-        efficiency_class: null,
-        characteristics: characteristics,
-        characteristics_en: characteristicsEn,
-        frame_material: null,
-        max_temperature: null,
-        typical_installation: typicalInstallation,
-        typical_installation_en: typicalInstallationEn,
-        air_flow: airFlow,
-        dimensions: dimensions,
-        package_length_cm: packageLengthCm,
-        package_width_cm: packageWidthCm,
-        package_height_cm: packageHeightCm,
-        package_weight_kg: packageWeightKg,
-        initial_pressure_drop: initialPressureDrop,
-        recommended_final_pressure_drop: recommendedFinalPressureDrop,
-        applications: applications,
-        applications_en: applicationsEn,
-        benefits: benefits,
-        benefits_en: benefitsEn,
-      });
+      if (sizeFailures.length) {
+        console.error('⚠️ Tamaños no guardados al crear el producto:', sizeFailures);
+      }
     }
 
     if (!productId) {
@@ -441,9 +451,17 @@ if (Astro.request.method === "POST") {
       const finalImages = await getProductImages(productId);
       console.log(`📷 Imágenes finales en BD antes de redirigir: ${finalImages.length}`);
       
-      // Redirigir a la lista de productos después de crear
       // Producto nuevo con código BIND y sin precio: que lo tome de BIND ya.
       void rellenarPreciosFaltantes(true).catch(() => {});
+
+      // Si algún tamaño no se pudo guardar, ir a la ficha para que el aviso
+      // sea visible (la página de edición ya sabe leer "sizes_failed").
+      if (sizeFailures.length > 0) {
+        const params = new URLSearchParams({ sizes_failed: sizeFailures.join(', ') });
+        return Astro.redirect(`/admin/products/edit/${productId}?${params.toString()}`);
+      }
+
+      // Redirigir a la lista de productos después de crear
       return Astro.redirect(`/admin/products`);
     }
   } catch (err) {
