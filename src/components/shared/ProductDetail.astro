@@ -509,34 +509,19 @@ if (categoryVariants.length > 0) {
     });
     addedSizes.add(currentSizeKey);
   }
-  
-  // Agregar productos relacionados
-  for (const variant of relatedVariants) {
-    const sizeKey = variant.bind_code || 
-                   `${variant.nominal_size || ''}_${variant.real_size || ''}`;
-    
-    if (addedSizes.has(sizeKey)) {
-      continue;
-    }
-    
-    const variantFinalPrice = precioEnMoneda(variant, moneda, exchangeRate);
-    const variantFinalCurrency = moneda;
-    const variantName = getProductName(variant, lang);
-    
-    sizeOptions.push({
-      value: variant.uuid,
-      label: sizeOptionLabel(nominalEnIdioma(variant.nominal_size, variant.nominal_size_en), variant.real_size),
-      price: variantFinalPrice,
-      currency: variantFinalCurrency,
-      stock: variant.stock,
-      name: variantName,
-      image: variant.image_url || mainImage,
-      id: variant.id,
-      isCurrentProduct: false
-    });
-    
-    addedSizes.add(sizeKey);
-  }
+
+  // Antes, aquí se metían los demás PRODUCTOS ACTIVOS de la misma categoría
+  // como si fueran "tamaños" de este producto (mismo mecanismo que ya usa
+  // "Productos Relacionados" más abajo, con relatedVariants). Servía cuando
+  // una familia guardaba cada tamaño como un producto aparte —el mismo caso
+  // que se corrigió con el script de unión—, pero en categorías con
+  // productos de verdad distintos (Puertas, Cortina enrollable, Ventana,
+  // Pass through, Manómetro digital/análogo, todos en "Accesorios cuarto
+  // limpio") esto ofrecía un producto ajeno como si fuera un modelo del
+  // actual: elegir la única opción de "Puertas" agregaba al carrito
+  // "Cortina enrollable". No se reintroduce: un producto sin tamaños propios
+  // ni de categoría se queda con una sola opción, él mismo, y sus hermanos
+  // siguen apareciendo —correctamente— en "Productos Relacionados".
 }
 
 // Preparar datos técnicos
