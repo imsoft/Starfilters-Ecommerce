@@ -2,7 +2,8 @@ import type { APIRoute } from 'astro';
 import * as XLSX from 'xlsx';
 import { createProduct } from '@/lib/product-service';
 import { generateUUID } from '@/lib/database';
-import { getFilterCategoryIdByName, createCategory } from '@/lib/filter-category-service';
+import { getFilterCategoryIdByName, createCategory, addCategoryVariant } from '@/lib/filter-category-service';
+import { getExchangeRate } from '@/lib/currency-service';
 
 import { requireAdminApi } from '@/lib/auth-utils';
 // Función helper para normalizar listas separadas por comas
@@ -181,6 +182,31 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
+    // Varias filas con el mismo nombre son medidas del MISMO producto, no
+    // productos distintos. Antes cada fila creaba su propio producto y el
+    // catálogo terminaba con "Gabinete 12x24" repetido una vez por medida.
+    // Se cuenta de antemano para saber, ya en la primera fila, si el nombre
+    // se repite y hay que crear un solo producto con sus tamaños.
+    const indiceNombre = headers.findIndex((h) => mapaNormalizado[h] === 'name');
+    const filasPorNombre = new Map<string, number>();
+    if (indiceNombre >= 0) {
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i] as any[];
+        if (!row || row.length === 0) continue;
+        const nombre = String(row[indiceNombre] ?? '').trim().toLowerCase();
+        if (nombre) filasPorNombre.set(nombre, (filasPorNombre.get(nombre) ?? 0) + 1);
+      }
+    }
+    // nombre + categoría -> id del producto ya creado en esta importación.
+    const productosDelGrupo = new Map<string, number>();
+
+    let exchangeRate = 1;
+    try {
+      exchangeRate = await getExchangeRate();
+    } catch {
+      // si falla la tasa se guarda el precio tal cual
+    }
+
     // Procesar cada fila (empezando desde la fila 2, índice 1)
     for (let i = 1; i < data.length; i++) {
       const row = data[i] as any[];
@@ -283,12 +309,77 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           delete productData.filter_category;
         }
 
+        const nombreClave = String(productData.name).trim().toLowerCase();
+        const esGrupoDeMedidas = (filasPorNombre.get(nombreClave) ?? 0) > 1;
+
+        // Un grupo de medidas necesita una categoría de filtro: los tamaños
+        // viven en filter_category_variants, que cuelga de la categoría.
+        if (esGrupoDeMedidas && !productData.filter_category_id) {
+          results.warnings.push({
+            row: i + 1,
+            message: `"${productData.name}" se repite en varias filas pero no tiene categoría de filtro, así que cada fila se creó como un producto aparte. Agrega la columna "categoria_filtro" para que las medidas queden dentro de un solo producto.`,
+          });
+        }
+
+        if (esGrupoDeMedidas && productData.filter_category_id) {
+          const categoryId = productData.filter_category_id;
+          const claveGrupo = `${nombreClave}|${categoryId}`;
+
+          // Los campos de medida pertenecen al tamaño, no al producto.
+          const medida = {
+            nominal_size: String(productData.nominal_size ?? '').trim(),
+            real_size: String(productData.real_size ?? '').trim(),
+            bind_code: String(productData.bind_code ?? '').trim(),
+            product_code: String(productData.product_code ?? '').trim(),
+            air_flow: String(productData.air_flow ?? '').trim(),
+            price: Number(productData.price) || 0,
+            currency: productData.currency === 'USD' ? 'USD' : 'MXN',
+          };
+
+          let productId = productosDelGrupo.get(claveGrupo) ?? null;
+
+          if (!productId) {
+            // La primera fila crea el producto, ya sin los datos de medida.
+            const base = { ...productData };
+            delete base.nominal_size;
+            delete base.real_size;
+            delete base.bind_code;
+            delete base.product_code;
+            delete base.air_flow;
+
+            productId = await createProduct(base);
+            if (!productId) {
+              results.errors.push({ row: i + 1, message: 'Error al crear el producto en la base de datos' });
+              continue;
+            }
+            productosDelGrupo.set(claveGrupo, productId);
+            results.success.push({ id: productId, name: productData.name });
+          }
+
+          await addCategoryVariant({
+            category_id: categoryId,
+            product_id: productId,
+            nominal_size: medida.nominal_size,
+            real_size: medida.real_size,
+            bind_code: medida.bind_code || null,
+            product_code: medida.product_code || null,
+            air_flow: medida.air_flow || null,
+            price: medida.price,
+            currency: medida.currency,
+            price_usd: medida.currency === 'USD' ? medida.price : medida.price / exchangeRate,
+            stock: 0,
+            is_active: true,
+          } as any);
+
+          continue;
+        }
+
         // Crear el producto
         const productId = await createProduct(productData);
 
         if (productId) {
           results.success.push({ id: productId, name: productData.name });
-          
+
           // TODO: Procesar imágenes si se proporcionaron URLs
           // Esto requeriría subirlas a Cloudinary y asociarlas al producto
         } else {
