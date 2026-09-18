@@ -655,7 +655,10 @@ const codigoInicial: string =
       <!-- Technical Specifications Section -->
       <div class="mx-auto grid max-w-2xl grid-cols-1 items-start gap-x-8 gap-y-16 px-4 py-8 sm:px-6 sm:py-12 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
         <div>
-          <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h2>
+          {/* El nombre del producto es el encabezado principal de la ficha: va
+              en h1. Estaba como h2 y ninguna ficha tenía h1, que es lo primero
+              que lee un buscador para saber de qué trata la página. */}
+          <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h1>
           <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''} data-nominal-size={product.nominal_size || ''} data-real-size={product.real_size || ''} data-category={productCat} data-efficiency={eficienciaTexto}>
             {/* Un solo precio, en la moneda del idioma y con el código a la
                 vista: mostrar además el equivalente en la otra moneda con la
