@@ -49,6 +49,22 @@ try {
 // Tipos de producto (categoría 1) — chips superiores
 const parentCats = await getParentCategories();
 
+// Las tres tarjetas de /filtros (Baja / Media / HEPA) enlazan a categorías
+// que no tienen productos propios: son agrupaciones de tipos de filtro según
+// la clasificación del cliente (su documento "Filtros de aire"). Antes esas
+// páginas salían vacías con el aviso "Elige un tipo de filtro". Aquí se
+// resuelve qué tipos reúne cada una y se muestran sus productos juntos.
+// Celda y Mini Pleat no figuran en el documento; van en media eficiencia por
+// sus rangos (45–95 %).
+const GRUPOS_DE_EFICIENCIA: Record<string, string[]> = {
+  'filtros-de-baja-eficiencia': ['pleat', 'metalico', 'carbon-activado'],
+  'filtros-de-mediana-eficiencia': ['bolsa', 'w-v-bank', 'celda', 'mini-pleat'],
+  'filtros-hepa-de-alta-eficiencia': [
+    'hepa-sello-gel', 'hepa-sello-neopreno', 'hepa-alta-capacidad',
+    'hepa-alta-temperatura', 'colector-de-polvo',
+  ],
+};
+
 // Familia activa y sus tipos de filtro (categoría 2)
 let activeParent = null;
 let childCats: any[] = [];
@@ -60,7 +76,22 @@ if (selected) {
   } else {
     activeParent = selected;
   }
-  if (activeParent) childCats = await getChildCategories(activeParent.id);
+  // Las agrupaciones por eficiencia no se listan junto a los tipos reales.
+  if (activeParent) {
+    childCats = (await getChildCategories(activeParent.id))
+      .filter((c) => !GRUPOS_DE_EFICIENCIA[c.slug]);
+  }
+}
+
+const grupoEficiencia = selected ? GRUPOS_DE_EFICIENCIA[selected.slug] : undefined;
+let categoriasDelGrupo: any[] = [];
+if (grupoEficiencia) {
+  const resueltas = await Promise.all(grupoEficiencia.map((slug) => getCategoryBySlug(slug)));
+  categoriasDelGrupo = resueltas.filter(
+    (c) => c && (c.status === 'active' || c.status == null)
+  );
+  // El desplegable "Tipo" ofrece solo los tipos de este grupo.
+  childCats = categoriasDelGrupo;
 }
 
 // Algunas categorías tienen main_image guardada como nombre de archivo sin
@@ -73,7 +104,18 @@ const exchangeRate = await getExchangeRate();
 
 let rawProducts: any[] = [];
 if (selected) {
-  if (selected.parent_id) {
+  if (grupoEficiencia) {
+    // Grupo por eficiencia: los productos de todos sus tipos, sin repetir
+    const listas = await Promise.all(
+      categoriasDelGrupo.map((c) => getProductsByFilterCategory(c.id))
+    );
+    const vistos = new Set<number>();
+    for (const producto of listas.flat()) {
+      if (vistos.has(producto.id)) continue;
+      vistos.add(producto.id);
+      rawProducts.push(producto);
+    }
+  } else if (selected.parent_id) {
     // Tipo de filtro seleccionado: sus variantes
     rawProducts = await getProductsByFilterCategory(selected.id);
   } else {
@@ -243,7 +285,7 @@ void rellenarPreciosFaltantes().catch(() => {});
               data-filter-nav
               class="w-full rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
             >
-              <option value={`${productsRoute}?category=${activeParent.slug}`}>{t.allTypes}</option>
+              <option value={`${productsRoute}?category=${grupoEficiencia ? selected.slug : activeParent.slug}`}>{t.allTypes}</option>
               {childCats.map((cat) => (
                 <option
                   value={`${productsRoute}?category=${cat.slug}`}
@@ -344,8 +386,10 @@ void rellenarPreciosFaltantes().catch(() => {});
           ))}
         </div>
       </>
-    ) : activeParent && childCats.length > 0 ? (
-      <!-- Familia con tipos de filtro pero sin selección de variante directa -->
+    ) : activeParent && childCats.length > 0 && !selected.parent_id && !grupoEficiencia ? (
+      <!-- Familia con tipos de filtro pero sin selección de variante directa.
+           Si ya se eligió un tipo y está vacío, el aviso de abajo: decir
+           "elige un tipo" cuando ya se eligió uno confundía. -->
       <div class="text-center py-16">
         <p class="text-sm text-muted-foreground">{t.pickType}</p>
       </div>
