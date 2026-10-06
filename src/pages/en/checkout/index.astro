@@ -1075,9 +1075,9 @@ const waNumber = (await getWhatsAppNumber()) || '523322569541';
                   <span class="font-medium text-foreground">${item.name}</span>
                 </h4>
                 ${item.color ? `<p class="mt-1 text-sm text-muted-foreground">Color: ${item.color}</p>` : ''}
-                ${item.size ? `<p class="mt-1 text-sm text-muted-foreground">Model: ${item.size}</p>` : ''}
-                ${item.bind_code ? `<p class="mt-1 text-sm text-muted-foreground">Code: ${item.bind_code}</p>` : ''}
-                ${item.efficiency && !/%/.test(String(item.size || '')) ? `<p class="mt-1 text-sm text-muted-foreground">Efficiency: ${item.efficiency}</p>` : ''}
+                ${item.size ? `<p class="mt-1 text-sm text-muted-foreground"><span class="font-medium text-foreground">Model:</span> ${item.size}</p>` : ''}
+                ${item.bind_code ? `<p class="mt-1 text-sm text-muted-foreground"><span class="font-medium text-foreground">Code:</span> ${item.bind_code}</p>` : ''}
+                ${item.efficiency && !/%/.test(String(item.size || '')) ? `<p class="mt-1 text-sm text-muted-foreground"><span class="font-medium text-foreground">Efficiency:</span> ${item.efficiency}</p>` : ''}
                 ${item.category ? `<p class="mt-1 text-sm text-muted-foreground">Category: ${item.category}</p>` : ''}
               </div>
             </div>

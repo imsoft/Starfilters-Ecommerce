@@ -657,17 +657,12 @@ const recommendedProductsWithImages = await Promise.all(
                   : `<p class="mt-1 text-sm font-medium text-amber-700">Sin precio en línea · solicita cotización</p>`}
                 
                 <!-- Tamaño seleccionado -->
-                ${item.size 
-                  ? `<div class="mt-2">
-                      <p class="text-xs font-medium text-foreground">Modelo:</p>
-                      <p class="text-xs text-muted-foreground">${item.size}</p>
-                    </div>` 
-                  : ""}
-                ${item.bind_code ? `<p class="mt-1 text-xs text-muted-foreground">Código: ${item.bind_code}</p>` : ""}
+                ${item.size ? `<p class="mt-2 text-xs text-muted-foreground"><span class="font-medium text-foreground">Modelo:</span> ${item.size}</p>` : ""}
+                ${item.bind_code ? `<p class="mt-1 text-xs text-muted-foreground"><span class="font-medium text-foreground">Código:</span> ${item.bind_code}</p>` : ""}
                                 <!-- La eficiencia del producto es la lista de TODAS sus opciones
                      ("50% blanco - 65% verde…"); si el modelo elegido ya trae su
                      eficiencia ("24 x 24 x 15 / 45-50%"), repetir la lista confunde. -->
-${item.efficiency && !/%/.test(String(item.size || "")) ? `<p class="mt-1 text-xs text-muted-foreground">Eficiencia: ${item.efficiency}</p>` : ""}
+${item.efficiency && !/%/.test(String(item.size || "")) ? `<p class="mt-1 text-xs text-muted-foreground"><span class="font-medium text-foreground">Eficiencia:</span> ${item.efficiency}</p>` : ""}
                 
                 <!-- Cantidad -->
                 <div class="mt-3 flex items-center gap-3">
