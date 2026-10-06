@@ -6,8 +6,15 @@ import { getProducts, getProductImages, getProductById } from "@/lib/database";
 import { getBindInventoryByCode } from "@/lib/bind";
 import { hayExistenciaDeProducto } from "@/lib/disponibilidad";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
 
 // Get some products to show as recommended
+// El carrito muestra precios, y los precios solo se ven con sesión
+// (petición del cliente, oct 2026). Misma regla que el checkout.
+if (!getAuthenticatedUser(Astro.cookies)) {
+  return Astro.redirect('/en/login?redirect=/en/cart');
+}
+
 const recommendedProducts = await getProducts(4, 0);
 // getBindInventoryByCode cachea 5 minutos, así que no pesa en cada visita.
 const inventarioBind = await getBindInventoryByCode().catch(() => null);

@@ -16,6 +16,14 @@ import { rellenarPreciosFaltantes } from "@/lib/bind-price-sync";
 import { existenciaSegunBind, normalizarCodigosBind } from "@/lib/stock";
 import { getMoneda, precioEnMoneda, convertirMoneda } from "@/lib/currency-preference";
 import { getProductName, getProductDescription, getProductCategory, getProductPriceAndCurrency, formatPriceByCurrency, getCategoryName } from "@/lib/i18n-helpers";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
+
+// Los precios solo se muestran con sesión iniciada (petición del cliente,
+// oct 2026). Sin sesión la ficha enseña todo lo demás, pero en lugar del
+// precio invita a entrar, no se puede agregar al carrito y los precios
+// tampoco viajan en el HTML (data-price vacío).
+const haySesion = !!getAuthenticatedUser(Astro.cookies);
+const loginHref = `${Astro.url.pathname.startsWith('/en') ? '/en/login' : '/login'}?redirect=${encodeURIComponent(Astro.url.pathname)}`;
 import { getWhatsAppNumber } from "@/lib/site-settings-service";
 
 // Vista de detalle de producto compartida por /product/[id] y /en/product/[id],
@@ -659,17 +667,24 @@ const codigoInicial: string =
               en h1. Estaba como h2 y ninguna ficha tenía h1, que es lo primero
               que lee un buscador para saber de qué trata la página. */}
           <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{productName}</h1>
-          <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={product.price_usd || ''} data-nominal-size={product.nominal_size || ''} data-real-size={product.real_size || ''} data-category={productCat} data-efficiency={eficienciaTexto}>
+          <div class="mt-4" data-product-uuid={product.uuid} data-currency={finalCurrency} data-price-usd={haySesion ? (product.price_usd || '') : ''} data-nominal-size={product.nominal_size || ''} data-real-size={product.real_size || ''} data-category={productCat} data-efficiency={eficienciaTexto}>
             {/* Un solo precio, en la moneda del idioma y con el código a la
                 vista: mostrar además el equivalente en la otra moneda con la
                 tasa del día confundía más de lo que ayudaba. */}
-            <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
-              {precioMostrado > 0
-                ? (precioEsDesde
-                    ? `${isEn ? 'From' : 'Desde'} ${formatPrice(precioMostrado, finalCurrency)}`
-                    : formatPrice(precioMostrado, finalCurrency))
-                : (isEn ? 'Ask for price' : 'Consultar precio')}
-            </p>
+            {haySesion ? (
+              <p id="main-product-price" class="text-3xl tracking-tight text-foreground">
+                {precioMostrado > 0
+                  ? (precioEsDesde
+                      ? `${isEn ? 'From' : 'Desde'} ${formatPrice(precioMostrado, finalCurrency)}`
+                      : formatPrice(precioMostrado, finalCurrency))
+                  : (isEn ? 'Ask for price' : 'Consultar precio')}
+              </p>
+            ) : (
+              <p class="text-base text-muted-foreground" data-sin-precio>
+                <a href={loginHref} class="font-medium text-primary hover:underline">{isEn ? 'Sign in' : 'Inicia sesión'}</a>
+                {isEn ? ' to see prices.' : ' para ver los precios.'}
+              </p>
+            )}
             {/* Código BIND de la pieza: el cliente lo usa para pedir y el
                 equipo para identificarla. Cambia con el modelo elegido. */}
             <p id="product-bind-code" class="mt-1 text-sm text-muted-foreground" data-prefijo={isEn ? 'Code' : 'Código'}>
@@ -804,7 +819,7 @@ const codigoInicial: string =
                       <option 
                         key={idx}
                         value={opt.value} 
-                        data-price={opt.price} 
+                        data-price={haySesion ? opt.price : ''} 
                         data-currency={opt.currency}
                         data-name={opt.name}
                         data-parent-uuid={product.uuid}
@@ -823,7 +838,7 @@ const codigoInicial: string =
               )}
 
               <!-- Cantidad (Input numérico) -->
-              <div>
+              {haySesion && <div>
                 <label for="quantity" class="block text-sm font-medium text-foreground mb-2">
                   {t.quantity}
                 </label>
@@ -835,18 +850,27 @@ const codigoInicial: string =
                   value="1"
                   class="w-32 rounded-md bg-background py-3 px-4 text-base text-foreground outline-1 -outline-offset-1 outline-border focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                 />
-              </div>
+              </div>}
             </div>
 
             <!-- Botones de acción -->
             <div class="flex flex-col gap-3">
-              <button
-                type="button"
-                id="add-to-cart-btn"
-                class="flex w-full items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-              >
-                {t.addToCart}
-              </button>
+              {haySesion ? (
+                <button
+                  type="button"
+                  id="add-to-cart-btn"
+                  class="flex w-full items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
+                >
+                  {t.addToCart}
+                </button>
+              ) : (
+                <a
+                  href={loginHref}
+                  class="flex w-full items-center justify-center rounded-md bg-primary px-8 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  {isEn ? 'Sign in to see prices and buy' : 'Inicia sesión para ver precios y comprar'}
+                </a>
+              )}
               <a
                 href={quoteWhatsappUrl}
                 target="_blank"

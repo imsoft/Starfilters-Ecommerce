@@ -8,6 +8,9 @@ import { getProductImages } from "@/lib/database";
 import { generateBreadcrumbSchema } from "@/lib/seo-utils";
 import { getExchangeRate } from "@/lib/currency-service";
 import { getProductPriceAndCurrency, formatPriceByCurrency } from "@/lib/i18n-helpers";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
+// Precios solo con sesión iniciada (petición del cliente, oct 2026).
+const haySesion = !!getAuthenticatedUser(Astro.cookies);
 import { getLangFromUrl } from "@/i18n/utils";
 import { getProductName, getProductDescription, getProductCategory } from "@/lib/i18n-helpers";
 
@@ -206,7 +209,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 class="group product-card relative flex flex-col"
                 data-product-uuid={product.uuid}
                 data-category={product.category}
-                data-price={product.price}
+                data-price={haySesion ? product.price : ''}
                 data-stock={product.stock}
                 data-currency={product.currency || 'MXN'}
               >
@@ -225,7 +228,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 <p class="mt-1 text-sm text-muted-foreground">{product.category}</p>
                 <div class="mt-2 flex items-center justify-between">
                   <p class="text-lg font-medium text-foreground">
-                    {formatPrice(product.price, product.currency as 'MXN' | 'USD')}
+                    {haySesion ? formatPrice(product.price, product.currency as 'MXN' | 'USD') : 'Inicia sesión para ver el precio'}
                   </p>
                   {product.stock > 0 ? (
                     <span class="text-xs text-green-600 font-medium">En stock</span>

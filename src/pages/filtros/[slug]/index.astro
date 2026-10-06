@@ -1,4 +1,5 @@
 ---
+import { getAuthenticatedUser } from '@/lib/auth-utils';
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
 import SEO from "@/components/shared/SEO.astro";
 import LazyImage from "@/components/shared/LazyImage.astro";
@@ -42,6 +43,8 @@ const pricesInMXN = await Promise.all(
     return v.price;
   })
 );
+// Precios solo con sesión iniciada (petición del cliente, oct 2026).
+const haySesion = !!getAuthenticatedUser(Astro.cookies);
 const minPrice = pricesInMXN.length > 0 ? Math.min(...pricesInMXN) : 0;
 const maxPrice = pricesInMXN.length > 0 ? Math.max(...pricesInMXN) : 0;
 
@@ -147,6 +150,13 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         </div>
 
         <!-- Precio -->
+        {!haySesion ? (
+          <div class="border-t border-border pt-6">
+            <p class="text-base text-muted-foreground">
+              <a href={`/login?redirect=${encodeURIComponent(Astro.url.pathname)}`} class="font-medium text-primary hover:underline">Inicia sesión</a> para ver los precios.
+            </p>
+          </div>
+        ) : (
         <div class="border-t border-border pt-6">
           <p class="text-3xl font-bold text-foreground">
             {minPrice === maxPrice 
@@ -160,6 +170,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             </p>
           )}
         </div>
+        )}
 
         <!-- Selector de variantes -->
         {activeVariants.length > 0 && (
@@ -170,10 +181,10 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                 <div
                   class="variant-option flex items-center justify-between p-4 border-2 border-border rounded-lg cursor-pointer hover:border-primary transition-colors"
                   data-variant-id={variant.id}
-                  data-price={variant.currency === 'USD' && variant.price_usd ? convertPriceToMXN(variant.price_usd) : variant.price}
-                  data-original-price={variant.price}
+                  data-price={!haySesion ? '' : variant.currency === 'USD' && variant.price_usd ? convertPriceToMXN(variant.price_usd) : variant.price}
+                  data-original-price={haySesion ? variant.price : ''}
                   data-currency={variant.currency || 'MXN'}
-                  data-price-usd={variant.price_usd || ''}
+                  data-price-usd={haySesion ? (variant.price_usd || '') : ''}
                   data-stock={variant.stock}
                   data-bind-code={variant.bind_code}
                 >
@@ -184,7 +195,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                       Disponible
                     </p>
                   </div>
-                  <div class="text-right">
+                  {haySesion && <div class="text-right">
                     {variant.currency === 'USD' && variant.price_usd ? (
                       <>
                         <p class="variant-price-mxn text-lg font-bold text-foreground" data-price-usd={variant.price_usd}>{formatPrice(convertPriceToMXN(variant.price_usd))}</p>
@@ -193,7 +204,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
                     ) : (
                       <p class="text-lg font-bold text-foreground">{formatPrice(variant.price)}</p>
                     )}
-                  </div>
+                  </div>}
                 </div>
               ))}
             </div>
@@ -201,6 +212,11 @@ const breadcrumbSchema = generateBreadcrumbSchema([
         )}
 
         <!-- Botón de agregar al carrito -->
+        {!haySesion ? (
+          <div class="border-t border-border pt-6">
+            <a href={`/login?redirect=${encodeURIComponent(Astro.url.pathname)}`} class="block w-full text-center bg-primary text-primary-foreground py-3 px-6 rounded-lg font-medium hover:bg-primary/90 transition-colors">Inicia sesión para ver precios y comprar</a>
+          </div>
+        ) : (
         <div class="border-t border-border pt-6">
           <button
             id="add-to-cart-btn"
@@ -213,6 +229,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
             Por favor, selecciona un tamaño para continuar
           </p>
         </div>
+        )}
 
       </div>
     </div>
