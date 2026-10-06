@@ -664,7 +664,10 @@ const recommendedProductsWithImages = await Promise.all(
                     </div>` 
                   : ""}
                 ${item.bind_code ? `<p class="mt-1 text-xs text-muted-foreground">Código: ${item.bind_code}</p>` : ""}
-                ${item.efficiency ? `<p class="mt-1 text-xs text-muted-foreground">Eficiencia: ${item.efficiency}</p>` : ""}
+                                <!-- La eficiencia del producto es la lista de TODAS sus opciones
+                     ("50% blanco - 65% verde…"); si el modelo elegido ya trae su
+                     eficiencia ("24 x 24 x 15 / 45-50%"), repetir la lista confunde. -->
+${item.efficiency && !/%/.test(String(item.size || "")) ? `<p class="mt-1 text-xs text-muted-foreground">Eficiencia: ${item.efficiency}</p>` : ""}
                 
                 <!-- Cantidad -->
                 <div class="mt-3 flex items-center gap-3">
