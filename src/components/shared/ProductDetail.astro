@@ -802,8 +802,10 @@ const codigoInicial: string =
 
           <!-- Formulario de compra -->
           <form class="mt-10 space-y-6">
-            <!-- Tamaño y Cantidad en la misma fila -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Tamaño y Cantidad en la misma fila. El selector toma todo el
+                 ancho que sobra: a la mitad, medidas como "9.125 X 9.125 X 3 /
+                 231 X 231 X 75 mm" se cortaban. La cantidad solo ocupa lo suyo. -->
+            <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-6">
               <!-- Selector de Tamaño (nominal / real) -->
               {sizeOptions.length > 0 && (
                 <div>
