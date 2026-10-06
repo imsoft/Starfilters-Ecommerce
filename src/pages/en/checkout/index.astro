@@ -1,6 +1,6 @@
 ---
 import WebsiteLayout from "@/layouts/websiteLayout.astro";
-import { DELIVERY_OPTIONS } from "@/lib/delivery-options";
+import { DELIVERY_OPTIONS, esSoloCotizacion } from "@/lib/delivery-options";
 import { pakkeConfigurado } from "@/lib/pakke";
 
 // Con Pakke activo, la paquetería no tiene precio fijo: mostrar los $350
@@ -54,7 +54,18 @@ const waNumber = (await getWhatsAppNumber()) || '523322569541';
             <div class="mt-10 border-t border-border pt-10">
               <h2 class="text-lg font-medium text-foreground">Delivery Method</h2>
               <div class="mt-4 space-y-3" id="delivery-options">
-                {DELIVERY_OPTIONS.map((option) => (
+                {DELIVERY_OPTIONS.map((option) => esSoloCotizacion(option.value) ? (
+                  <!-- Carrier shipping: not paid online, quoted over WhatsApp.
+                       No radio on purpose: it must not be selectable. -->
+                  <div class="relative flex rounded-lg border border-dashed border-border bg-muted/40 p-4">
+                    <span class="flex flex-col">
+                      <span class="block text-sm font-medium text-foreground">{option.label['en']}</span>
+                      <span class="mt-1 text-sm text-muted-foreground">
+                        <a href={`https://wa.me/${waNumber}?text=${encodeURIComponent('Hi, I would like a quote for carrier shipping of my order.')}`} target="_blank" rel="noopener" class="font-medium text-primary hover:underline">Contact us</a> and we will send you a quote.
+                      </span>
+                    </span>
+                  </div>
+                ) : (
                   <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 shadow-sm focus:outline-none has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
                     <input type="radio" name="delivery-method" value={option.value} class="sr-only" id={`delivery-${option.value}`} />
                     <span class="flex flex-1">

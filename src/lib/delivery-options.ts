@@ -23,6 +23,22 @@ export type DeliveryMethod =
   | 'metro-cdmx'
   | 'paqueteria';
 
+/**
+ * Envío por paquetería: solo cotización por WhatsApp, sin cobro en línea.
+ *
+ * El cliente pidió (oct 2026) que esta opción no se pueda pagar en el sitio:
+ * para el envío nacional prefiere mandar la cotización a mano, porque armar
+ * toda la información que necesita el cálculo automático es demasiado
+ * trabajo hoy. La cotización en vivo con Pakke queda intacta para cuando
+ * quieran volver a activarla: basta con poner esto en false.
+ */
+export const PAQUETERIA_SOLO_COTIZACION = true;
+
+/** true si el método solo se cotiza por WhatsApp y no se puede pagar en línea. */
+export function esSoloCotizacion(method: DeliveryMethod): boolean {
+  return method === 'paqueteria' && PAQUETERIA_SOLO_COTIZACION;
+}
+
 /** Umbral de envío gratis (MXN). Solo aplica a las entregas metropolitanas. */
 export const FREE_SHIPPING_THRESHOLD = 5000;
 

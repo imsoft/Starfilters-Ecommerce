@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { cotizarEnvio, armarPaqueteDesdeBD, pakkeConfigurado } from '@/lib/pakke';
 import { createCheckoutPaymentIntent, validateCheckoutData, type CheckoutData, type BillingData, type DiscountData, type DeliveryMethod, type ResolvedCartItem } from '@/lib/payment-utils';
+import { esSoloCotizacion } from '@/lib/delivery-options';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { getProductByUuid, getProductPrimaryImage } from '@/lib/database';
 import { getBindProductById } from '@/lib/bind';
@@ -10,9 +11,12 @@ import { getExchangeRate } from '@/lib/currency-service';
 
 // Métodos de entrega que ofrece el checkout. Cualquier otro valor del body
 // se rechaza: el costo de envío se calcula en el servidor a partir de esto.
-const ALLOWED_SHIPPING_METHODS: DeliveryMethod[] = [
-  'pickup-gdl', 'pickup-cdmx', 'metro-gdl', 'metro-cdmx', 'paqueteria',
-];
+// La paquetería se excluye mientras solo se cotice por WhatsApp (ver
+// PAQUETERIA_SOLO_COTIZACION): quitarla de la pantalla no basta, cualquiera
+// podría mandarla en el body.
+const ALLOWED_SHIPPING_METHODS: DeliveryMethod[] = (
+  ['pickup-gdl', 'pickup-cdmx', 'metro-gdl', 'metro-cdmx', 'paqueteria'] as DeliveryMethod[]
+).filter((m) => !esSoloCotizacion(m));
 
 const isUUID = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim());
@@ -164,7 +168,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Solo se aceptan los métodos de entrega que ofrece la UI; el costo se
     // calcula en el servidor.
-    const shippingMethodFromBody = (body.shippingMethod || 'paqueteria') as DeliveryMethod;
+    // Sin método en el body no se asume ninguno: antes caía a paquetería.
+    const shippingMethodFromBody = String(body.shippingMethod || '') as DeliveryMethod;
     if (!ALLOWED_SHIPPING_METHODS.includes(shippingMethodFromBody)) {
       return new Response(JSON.stringify({
         error: 'Datos inválidos',
