@@ -1,0 +1,21 @@
+---
+import ProductDetail from "@/components/shared/ProductDetail.astro";
+import { getProductBySlug } from "@/lib/product-service";
+import { urlDeProducto } from "@/lib/product-url";
+
+export const prerender = false;
+
+// Ficha de producto por URL legible. Acepta el slug de cualquiera de los dos
+// idiomas (el selector de idioma solo cambia el prefijo) y, si no es el
+// canónico de este idioma, redirige a él.
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect('/en/products');
+
+const product = await getProductBySlug(slug);
+if (!product) return Astro.redirect('/en/products');
+
+const canonica = urlDeProducto(product, 'en');
+if (canonica !== Astro.url.pathname) return Astro.redirect(canonica, 301);
+---
+
+<ProductDetail product={product} lang="en" />

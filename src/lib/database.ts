@@ -17,6 +17,9 @@ export const generateUUID = (): string => {
 export interface Product {
   id: number;
   uuid: string;
+  /** URL legible (/productos/<slug>). Se genera del nombre y no cambia al renombrar. */
+  slug?: string | null;
+  slug_en?: string | null;
   product_type?: 'filter' | 'special';
   filter_category_id?: number | null;
   bind_id?: string | null;

@@ -1,3 +1,4 @@
+import { urlDeProducto } from '@/lib/product-url';
 /**
  * Utilidades para generar metaetiquetas SEO dinámicas
  */
@@ -204,7 +205,7 @@ export function generateProductSchema(product: {
     },
     "offers": {
       "@type": "Offer",
-      "url": `${siteUrl}/product/${product.uuid}`,
+      "url": `${siteUrl}${urlDeProducto(product)}`,
       "priceCurrency": "MXN",
       // precioMXN gana sobre product.price: los productos capturados con
       // tamaños tienen su fila en cero y el precio real vive en cada tamaño,

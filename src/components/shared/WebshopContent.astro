@@ -13,6 +13,7 @@ import {
 import { getProductsByFilterCategory } from "@/lib/product-service";
 import { getProductImages } from "@/lib/database";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
+import { urlDeProducto } from "@/lib/product-url";
 import { getExchangeRate } from "@/lib/currency-service";
 import { getBindInventoryByCode } from "@/lib/bind";
 import { getMoneda, precioEnMoneda } from "@/lib/currency-preference";
@@ -30,8 +31,6 @@ const isEn = lang === "en";
 const moneda = getMoneda(Astro.cookies, lang);
 
 const productsRoute = isEn ? "/en/products" : "/productos";
-const productDetailRoute = (uuid: string) =>
-  isEn ? `/en/product/${uuid}` : `/product/${uuid}`;
 
 // Parámetro de categoría: slug (preferido) o filter_category_id (compat EN)
 const slugParam = Astro.url.searchParams.get("category");
@@ -173,6 +172,8 @@ const products = await Promise.all(
     return {
       id: product.id,
       uuid: product.uuid,
+      slug: product.slug ?? null,
+      slug_en: product.slug_en ?? null,
       name: getProductName(product, lang),
       category: product.category || "",
       price: finalPrice,
@@ -346,7 +347,7 @@ void rellenarPreciosFaltantes().catch(() => {});
               class="group product-card relative flex flex-col"
               data-name={product.name.toLowerCase()}
             >
-              <a href={productDetailRoute(product.uuid)} class="block flex-shrink-0">
+              <a href={urlDeProducto(product, lang)} class="block flex-shrink-0">
                 <div class="w-full aspect-square overflow-hidden rounded-xl bg-muted">
                   <LazyImage
                     src={product.imageUrl}
@@ -371,7 +372,7 @@ void rellenarPreciosFaltantes().catch(() => {});
               <div class="mt-auto pt-2.5">
                 {hayExistencia(product) ? (
                   <a
-                    href={productDetailRoute(product.uuid)}
+                    href={urlDeProducto(product, lang)}
                     class="block w-full rounded-lg bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     {t.chooseModel}

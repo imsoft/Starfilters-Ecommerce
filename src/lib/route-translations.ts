@@ -66,6 +66,8 @@ const RUTAS_EN_A_ES: Record<string, string> = {
 const PREFIJOS_ES_A_EN: [string, string][] = [
   ['/blog/', '/en/blog/'],
   ['/product/', '/en/product/'],
+  // La ficha en el otro idioma acepta el slug de este y redirige al suyo.
+  ['/productos/', '/en/products/'],
   ['/pedidos/', '/en/orders/'],
   ['/orders/', '/en/orders/'],
   ['/casos-de-exito/', '/en/success-cases/'],
@@ -75,6 +77,7 @@ const PREFIJOS_ES_A_EN: [string, string][] = [
 const PREFIJOS_EN_A_ES: [string, string][] = [
   ['/en/blog/', '/blog/'],
   ['/en/product/', '/product/'],
+  ['/en/products/', '/productos/'],
   ['/en/orders/', '/orders/'],
   ['/en/success-cases/', '/casos-de-exito/'],
   ['/en/filters/', '/filtros/'],

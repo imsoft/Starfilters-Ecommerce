@@ -6,6 +6,7 @@ import { getProducts, getProductImages, getProductById } from "@/lib/database";
 import { getBindInventoryByCode } from "@/lib/bind";
 import { hayExistenciaDeProducto } from "@/lib/disponibilidad";
 import { getProductPlaceholderImage } from "@/lib/image-utils";
+import { urlDeProducto } from "@/lib/product-url";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 
 // Obtener algunos productos para mostrar como recomendados
@@ -182,7 +183,7 @@ const recommendedProductsWithImages = await Promise.all(
             recommendedProductsWithImages.map((product) => (
               <div class="group relative flex flex-col">
                 <a
-                  href={`/product/${product.uuid}`}
+                  href={urlDeProducto(product, 'es')}
                   class="block flex-shrink-0"
                 >
                   <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
@@ -199,7 +200,7 @@ const recommendedProductsWithImages = await Promise.all(
                 <div class="mt-3">
                   <h3 class="text-sm font-medium text-foreground line-clamp-2">
                       <a
-                        href={`/product/${product.uuid}`}
+                        href={urlDeProducto(product, 'es')}
                         class="hover:text-foreground transition-colors"
                       >
                         {product.name}
@@ -218,7 +219,7 @@ const recommendedProductsWithImages = await Promise.all(
                      agregar desde aquí metía el producto sin medida y con el precio base. -->
                 <div class="mt-auto pt-2.5">
                   <a
-                    href={`/product/${product.uuid}`}
+                    href={urlDeProducto(product, 'es')}
                     class="relative z-10 block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     Elegir modelo

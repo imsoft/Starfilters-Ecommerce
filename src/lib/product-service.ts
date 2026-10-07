@@ -1,3 +1,4 @@
+import { slugDe } from '@/lib/product-url';
 /**
  * Servicio de Productos - Base de datos local como fuente única
  *
@@ -34,6 +35,10 @@ const COLUMNAS_PRODUCTO: Array<{ nombre: string; ddl: string }> = [
   { nombre: 'sku', ddl: 'VARCHAR(100) NULL' },
   { nombre: 'product_code', ddl: 'VARCHAR(100) NULL' },
   { nombre: 'air_flow', ddl: 'VARCHAR(100) NULL' },
+  // URL legible de la ficha; ver lib/product-url.ts. Se rellena sola
+  // (ensureProductSlugs) para los productos que no la tengan.
+  { nombre: 'slug', ddl: 'VARCHAR(191) NULL' },
+  { nombre: 'slug_en', ddl: 'VARCHAR(191) NULL' },
   { nombre: 'efficiency', ddl: 'TEXT NULL' },
   { nombre: 'efficiency_en', ddl: 'TEXT NULL' },
   { nombre: 'efficiency_class', ddl: 'VARCHAR(100) NULL' },
@@ -86,6 +91,56 @@ export const ensureProductColumns = (): Promise<void> => {
   return columnasProductoAsguradas;
 };
 
+/** Slug que no choque con los que ya existen; añade -2, -3… si hace falta. */
+const slugUnico = (base: string, ocupados: Set<string>): string => {
+  const raiz = slugDe(base) || 'producto';
+  let candidato = raiz;
+  for (let n = 2; ocupados.has(candidato); n++) candidato = `${raiz}-${n}`;
+  ocupados.add(candidato);
+  return candidato;
+};
+
+let slugsAsegurados: Promise<void> | null = null;
+
+/**
+ * Da slug a todo producto que no lo tenga. Corre una vez por proceso, la
+ * primera vez que hace falta una ficha o el sitemap: así no hay que correr
+ * ninguna migración a mano en producción.
+ */
+export const ensureProductSlugs = (): Promise<void> => {
+  if (!slugsAsegurados) {
+    slugsAsegurados = (async () => {
+      await ensureProductColumns();
+      const filas = await query(
+        'SELECT id, name, name_en, slug, slug_en FROM products ORDER BY id'
+      ) as Array<{ id: number; name: string; name_en: string | null; slug: string | null; slug_en: string | null }>;
+      const ocupados = new Set<string>();
+      for (const f of filas) { if (f.slug) ocupados.add(f.slug); if (f.slug_en) ocupados.add(f.slug_en); }
+      for (const f of filas) {
+        if (f.slug && f.slug_en) continue;
+        const slug = f.slug || slugUnico(f.name, ocupados);
+        const slugEn = f.slug_en || (f.name_en && slugDe(f.name_en) !== slug ? slugUnico(f.name_en, ocupados) : slug);
+        await query('UPDATE products SET slug = ?, slug_en = ? WHERE id = ?', [slug, slugEn, f.id]);
+        console.log(`🔗 Slug asignado a producto ${f.id}: ${slug}`);
+      }
+    })().catch((error) => {
+      slugsAsegurados = null;
+      throw error;
+    });
+  }
+  return slugsAsegurados;
+};
+
+/** Producto por su URL legible, en cualquiera de los dos idiomas. */
+export const getProductBySlug = async (slug: string): Promise<Product | null> => {
+  await ensureProductSlugs();
+  const filas = await query(
+    'SELECT * FROM products WHERE slug = ? OR slug_en = ? LIMIT 1',
+    [slug, slug]
+  ) as Product[];
+  return filas[0] ?? null;
+};
+
 /**
  * Obtener todos los productos desde la base de datos local
  */
@@ -127,6 +182,9 @@ export const getProductByUuid = async (uuid: string): Promise<Product | null> =>
           fcv.id as id,
           CONCAT('variant-', fcv.id) as uuid,
           fcv.category_id as filter_category_id,
+          -- Producto dueño de la medida: la ruta vieja /product/variant-N
+          -- lo usa para redirigir a la ficha completa.
+          fcv.product_id as product_id,
           NULL as bind_id,
           fcv.bind_code as bind_code,
           NULL as sku,
@@ -232,6 +290,19 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
   try {
     console.log('✨ Creando producto en la base de datos...');
     await ensureProductColumns();
+    // URL legible: del nombre, sin chocar con las que ya existen.
+    if (!productData.slug || !productData.slug_en) {
+      await ensureProductSlugs();
+      const filas = await query('SELECT slug, slug_en FROM products') as Array<{ slug: string | null; slug_en: string | null }>;
+      const ocupados = new Set<string>();
+      for (const f of filas) { if (f.slug) ocupados.add(f.slug); if (f.slug_en) ocupados.add(f.slug_en); }
+      if (!productData.slug) productData.slug = slugUnico(productData.name || 'producto', ocupados);
+      if (!productData.slug_en) {
+        productData.slug_en = productData.name_en && slugDe(productData.name_en) !== productData.slug
+          ? slugUnico(productData.name_en, ocupados)
+          : productData.slug;
+      }
+    }
 
     // Construir INSERT dinámico con solo los campos que tienen valor
     const fields: string[] = [];
@@ -278,6 +349,8 @@ export const createProduct = async (productData: Partial<Product>): Promise<numb
       { field: 'weight', dbColumn: 'weight' },
       { field: 'material', dbColumn: 'material' },
       { field: 'warranty', dbColumn: 'warranty' },
+      { field: 'slug', dbColumn: 'slug' },
+      { field: 'slug_en', dbColumn: 'slug_en' },
       // Campos técnicos (pueden no existir en todas las BD)
       { field: 'efficiency', dbColumn: 'efficiency' },
       { field: 'efficiency_en', dbColumn: 'efficiency_en' },

@@ -1,6 +1,8 @@
 ---
 import ProductDetail from "@/components/shared/ProductDetail.astro";
-import { getProductByUuid } from "@/lib/product-service";
+import { getProductByUuid, ensureProductSlugs } from "@/lib/product-service";
+import { getProductById } from "@/lib/database";
+import { urlDeProducto } from "@/lib/product-url";
 
 // Get product UUID from URL
 const { id: uuid } = Astro.params;
@@ -16,6 +18,19 @@ const product = await getProductByUuid(uuid);
 // If the product doesn't exist, redirect
 if (!product) {
   return Astro.redirect('/en/products');
+}
+
+// Ruta vieja. La ficha vive ahora en /productos/<slug>: aquí solo se
+// redirige (301, para que buscadores y enlaces compartidos se actualicen).
+// Una medida suelta (variant-N) manda a su producto completo, que es la
+// ficha donde sí se puede cambiar de tamaño.
+await ensureProductSlugs();
+if (product.uuid.startsWith('variant-') && (product as any).product_id) {
+  const padre = await getProductById(Number((product as any).product_id));
+  if (padre?.slug) return Astro.redirect(urlDeProducto(padre, 'en'), 301);
+}
+if (product.slug) {
+  return Astro.redirect(urlDeProducto(product, 'en'), 301);
 }
 ---
 

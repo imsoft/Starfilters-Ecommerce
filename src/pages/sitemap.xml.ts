@@ -1,10 +1,13 @@
 import type { APIRoute } from 'astro';
 import { getProducts, getBlogPosts } from '@/lib/database';
+import { ensureProductSlugs } from '@/lib/product-service';
+import { urlDeProducto } from '@/lib/product-url';
 
 export const GET: APIRoute = async ({ site }) => {
   const siteUrl = site?.href || 'https://starfilters.mx';
   
   // Obtener productos y posts del blog
+  await ensureProductSlugs();
   const products = await getProducts(1000, 0);
   const blogPosts = await getBlogPosts(1000, 0);
   
@@ -51,9 +54,9 @@ export const GET: APIRoute = async ({ site }) => {
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
   </url>`).join('')}
-  ${products.map(product => `
+  ${products.flatMap(product => (['es', 'en'] as const).map(lang => `
   <url>
-    <loc>${siteUrl}product/${product.uuid}</loc>
+    <loc>${siteUrl}${urlDeProducto(product, lang).slice(1)}</loc>
     <lastmod>${new Date(product.updated_at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -62,7 +65,7 @@ export const GET: APIRoute = async ({ site }) => {
       <image:loc>${product.image_url}</image:loc>
       <image:title>${product.name}</image:title>
     </image:image>` : ''}
-  </url>`).join('')}
+  </url>`)).join('')}
   ${blogPosts.map(post => `
   <url>
     <loc>${siteUrl}blog/${post.uuid}</loc>

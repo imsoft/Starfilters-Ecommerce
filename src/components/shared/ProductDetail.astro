@@ -17,6 +17,7 @@ import { existenciaSegunBind, normalizarCodigosBind } from "@/lib/stock";
 import { getMoneda, precioEnMoneda, convertirMoneda } from "@/lib/currency-preference";
 import { getProductName, getProductDescription, getProductCategory, getProductPriceAndCurrency, formatPriceByCurrency, getCategoryName } from "@/lib/i18n-helpers";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { urlDeProducto } from "@/lib/product-url";
 
 // Los precios solo se muestran con sesión iniciada (petición del cliente,
 // oct 2026). Sin sesión la ficha enseña todo lo demás, pero en lugar del
@@ -44,7 +45,7 @@ const isEn = lang === 'en';
 // inglesa en /en/products).
 const homeHref = isEn ? '/en' : '/';
 const productsHref = isEn ? '/en/products' : '/productos';
-const productHref = (id: string) => (isEn ? `/en/product/${id}` : `/product/${id}`);
+const productHref = (p: { uuid: string; slug?: string | null; slug_en?: string | null }) => urlDeProducto(p, lang);
 
 const t = {
   home: isEn ? 'Home' : 'Inicio',
@@ -304,7 +305,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     name: crumb.name,
     url: `${siteUrl}${crumb.href.replace(/^\//, '')}`,
   })),
-  { name: productName, url: `${siteUrl}${productHref(product.uuid).replace(/^\//, '')}` }
+  { name: productName, url: `${siteUrl}${productHref(product).replace(/^\//, '')}` }
 ]);
 
 // Función helper para parsear campos que pueden ser JSON o texto
@@ -909,7 +910,7 @@ const codigoInicial: string =
           <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
             {relatedProductsWithImages.map((relatedProduct) => (
               <div class="group relative flex flex-col">
-                <a href={productHref(relatedProduct.uuid)} class="block flex-shrink-0">
+                <a href={productHref(relatedProduct)} class="block flex-shrink-0">
                   <div class="w-full h-80 overflow-hidden rounded-lg bg-muted">
                     <LazyImage
                       src={relatedProduct.imageUrl}
@@ -921,7 +922,7 @@ const codigoInicial: string =
                 <div class="mt-4 flex justify-between">
                   <div class="flex-1 min-w-0">
                     <h3 class="text-sm font-medium text-foreground line-clamp-2">
-                      <a href={productHref(relatedProduct.uuid)} class="hover:text-foreground transition-colors">
+                      <a href={productHref(relatedProduct)} class="hover:text-foreground transition-colors">
                         {relatedProduct.name}
                       </a>
                     </h3>
@@ -939,7 +940,7 @@ const codigoInicial: string =
                      desde aquí metía el producto sin medida y con el precio base. -->
                 <div class="mt-auto pt-3">
                   <a
-                    href={productHref(relatedProduct.uuid)}
+                    href={productHref(relatedProduct)}
                     class="relative z-10 block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     {isEn ? 'Choose model' : 'Elegir modelo'}
