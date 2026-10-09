@@ -18,7 +18,7 @@
  *    ahí sale publicado en 20 minutos.
  */
 import { query } from '@/config/database';
-import { getBindPreciosPorCodigo } from '@/lib/bind';
+import { getBindPreciosPorCodigo, completarMonedaNativa } from '@/lib/bind';
 import { ensureVariantProductColumn } from '@/lib/filter-category-service';
 
 export interface FilaPrecio {
@@ -35,6 +35,9 @@ export interface FilaPrecio {
   diferenciaPct: number | null;
   /** true si además de la cifra cambia la moneda */
   cambiaMoneda: boolean;
+  /** Moneda en la que el producto está capturado en BIND y su precio ahí. */
+  monedaNativaBind?: 'MXN' | 'USD';
+  precioNativoBind?: number;
 }
 
 export interface ComparacionPrecios {
@@ -123,6 +126,19 @@ export const compararPreciosConBind = async (): Promise<ComparacionPrecios> => {
         : ((fila.precioSitio - enBind.precio) / enBind.precio) * 100,
       cambiaMoneda,
     });
+  }
+
+  // Moneda y precio nativos de BIND, solo para lo que difiere: con eso el
+  // sitio puede guardar el USD exacto de BIND en vez de convertir él mismo.
+  try {
+    const soloDiferentes = new Map([...preciosBind].filter(([c]) => diferentes.some((d) => d.codigo === c)));
+    await completarMonedaNativa(soloDiferentes);
+    for (const d of diferentes) {
+      const pb = preciosBind.get(d.codigo);
+      if (pb?.monedaNativa) { d.monedaNativaBind = pb.monedaNativa; d.precioNativoBind = pb.precioNativo; }
+    }
+  } catch (error: any) {
+    console.warn('⚠️ No se pudo consultar la moneda nativa en BIND:', error?.message);
   }
 
   // Primero lo urgente: lo que hoy está en $0 en el sitio y ya tiene precio en
@@ -220,11 +236,23 @@ export const sincronizarPreciosConBind = async (simular: boolean): Promise<Resul
   for (const f of diferentes) {
     if (!(f.precioBind > 0)) { omitidos.push({ fila: f, motivo: 'BIND no tiene precio' }); continue; }
     if (f.precioBind > PRECIO_MAXIMO) { omitidos.push({ fila: f, motivo: 'precio fuera de rango' }); continue; }
+    // Error de captura en BIND: el sitio lo tiene en dólares y BIND en pesos
+    // con LA MISMA cifra (165 USD vs 165 MXN). Publicarlo vendería a precio
+    // de dólares en pesos. Se omite y se reporta para corregirlo en BIND.
+    if (f.monedaSitio === 'USD' && f.monedaNativaBind === 'MXN' && f.precioSitio > 0
+        && Math.abs(f.precioBind - f.precioSitio) <= f.precioSitio * 0.05) {
+      omitidos.push({ fila: f, motivo: `BIND lo tiene en MXN con la misma cifra que el USD del sitio (${f.precioSitio}): corregir la moneda en BIND` });
+      continue;
+    }
     const precio = Number(f.precioBind.toFixed(2));
+    // Capturado en dólares en BIND: se guarda también su USD exacto, para que
+    // la tienda en inglés muestre el mismo número que BIND y no una conversión.
+    const precioUsd = f.monedaNativaBind === 'USD' && f.precioNativoBind && f.precioNativoBind > 0
+      ? Number(f.precioNativoBind.toFixed(2)) : null;
     if (!simular) {
       const tabla = f.origen === 'variante' ? 'filter_category_variants' : 'products';
       try {
-        await query(`UPDATE ${tabla} SET price = ?, currency = 'MXN', price_usd = NULL WHERE id = ?`, [precio, f.id]);
+        await query(`UPDATE ${tabla} SET price = ?, currency = 'MXN', price_usd = ? WHERE id = ?`, [precio, precioUsd, f.id]);
         console.log(
           `💲 Precio sincronizado desde BIND: ${f.codigo} (${f.nombre}) ` +
           `${f.precioSitio} ${f.monedaSitio} → $${precio} MXN`

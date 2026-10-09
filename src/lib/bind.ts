@@ -668,8 +668,15 @@ export const getBindInventoryByCode = async (
  * de la lista habría multiplicado los precios por 17.
  */
 export interface PrecioBind {
+  /** Precio de la lista: BIND lo entrega SIEMPRE en pesos (convertido si el producto está en USD). */
   precio: number;
   moneda: 'MXN';
+  /** ID del producto en BIND (para pedir el detalle). */
+  id?: string;
+  /** Moneda en la que el producto está CAPTURADO en BIND (del detalle). */
+  monedaNativa?: 'MXN' | 'USD';
+  /** Precio en esa moneda nativa (del detalle, lista "A"). */
+  precioNativo?: number;
 }
 
 export const getBindPreciosPorCodigo = async (
@@ -686,9 +693,49 @@ export const getBindPreciosPorCodigo = async (
     const codigo = String(bp.Code ?? bp.code ?? '').trim().toUpperCase();
     if (!codigo || !buscados.has(codigo)) continue;
     const precio = Number(bp.Price ?? bp.price ?? 0) || 0;
-    if (precio > 0) resultado.set(codigo, { precio, moneda: 'MXN' });
+    const id = String(bp.ID ?? bp.Id ?? bp.id ?? '') || undefined;
+    if (precio > 0) resultado.set(codigo, { precio, moneda: 'MXN', id });
   }
 
   console.log(`💲 Precios de BIND resueltos: ${resultado.size} de ${buscados.size} códigos`);
   return resultado;
+};
+
+// Moneda y precio nativos: un detalle por producto, cacheado 24 h. La moneda
+// de captura casi nunca cambia, y así cada sincronización solo pide el
+// detalle de los códigos que de verdad difieren, no de los 777 del catálogo.
+const NATIVO_TTL_MS = 24 * 60 * 60 * 1000;
+const cacheNativo = new Map<string, { monedaNativa: 'MXN' | 'USD'; precioNativo: number; ts: number }>();
+
+/**
+ * Completa monedaNativa / precioNativo en las entradas que tengan id.
+ * Si BIND no responde para alguna, esa entrada queda sin datos nativos y el
+ * sincronizador la trata como capturada en pesos (el precio de lista).
+ */
+export const completarMonedaNativa = async (precios: Map<string, PrecioBind>): Promise<void> => {
+  const pendientes = [...precios.values()].filter((p) => p.id && !p.monedaNativa);
+  const ahora = Date.now();
+  const porPedir: PrecioBind[] = [];
+  for (const p of pendientes) {
+    const c = cacheNativo.get(p.id!);
+    if (c && ahora - c.ts < NATIVO_TTL_MS) {
+      p.monedaNativa = c.monedaNativa; p.precioNativo = c.precioNativo;
+    } else {
+      porPedir.push(p);
+    }
+  }
+  // De cinco en cinco para no saturar la API.
+  for (let i = 0; i < porPedir.length; i += 5) {
+    await Promise.all(porPedir.slice(i, i + 5).map(async (p) => {
+      const r = await getBindProductById(p.id!);
+      const d: any = r.success ? r.data : null;
+      if (!d) return;
+      const monedaNativa: 'MXN' | 'USD' = String(d.CurrencyCode ?? '').toUpperCase() === 'USD' ? 'USD' : 'MXN';
+      const items: any[] = d.Prices?.Items ?? [];
+      const listaA = items.find((x) => x?.Name === 'A') ?? items[0];
+      const precioNativo = Number(listaA?.Price ?? 0) || (monedaNativa === 'MXN' ? p.precio : 0);
+      p.monedaNativa = monedaNativa; p.precioNativo = precioNativo;
+      cacheNativo.set(p.id!, { monedaNativa, precioNativo, ts: ahora });
+    }));
+  }
 };

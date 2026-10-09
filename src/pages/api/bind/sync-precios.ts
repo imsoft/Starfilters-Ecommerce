@@ -27,6 +27,7 @@ export const GET: APIRoute = async ({ cookies, url }) => {
     const fila = (f: typeof r.aplicados[number]) => ({
       origen: f.origen, id: f.id, codigo: f.codigo, nombre: f.nombre,
       sitio: `${f.precioSitio} ${f.monedaSitio}`, bind: `${f.precioBind} MXN`,
+      capturadoEnBind: f.monedaNativaBind ? `${f.precioNativoBind} ${f.monedaNativaBind}` : '(sin detalle)',
       cambiaMoneda: f.cambiaMoneda, diferenciaPct: f.diferenciaPct === null ? null : Number(f.diferenciaPct.toFixed(1)),
     });
     return new Response(JSON.stringify({
