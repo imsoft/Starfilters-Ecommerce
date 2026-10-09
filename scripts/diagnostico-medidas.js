@@ -54,5 +54,28 @@ if (codigo) {
   for (const f of filas) console.log(`  medida #${f.id} "${f.nominal_size}" activa=${f.is_active} → producto ${f.product_id ?? '(heredada)'} "${f.producto ?? ''}" [${f.estado_producto ?? ''}] · categoría "${f.categoria}" · actualizada ${f.updated_at?.toISOString?.() ?? f.updated_at}`);
   const prods = await q('SELECT id, name, status, bind_code FROM products WHERE bind_code = ?', [codigo]);
   for (const p of prods) console.log(`  producto #${p.id} "${p.name}" [${p.status}] tiene ese código como código propio`);
+
+  // Toda la categoría de ese código: productos y medidas, para ver huérfanas
+  // (medidas cuyo producto ya no existe) y duplicados.
+  const cats = [...new Set(filas.map((f) => f.category_id).filter(Boolean))];
+  for (const catId of cats) {
+    const [c] = await q('SELECT id, name, slug FROM filter_categories WHERE id = ?', [catId]);
+    console.log(`\n== Categoría #${c.id} "${c.name}" (${c.slug}) ==`);
+    const ps = await q(
+      `SELECT p.id, p.name, p.status, p.bind_code, p.slug, p.updated_at,
+              (SELECT COUNT(*) FROM filter_category_variants v WHERE v.product_id = p.id AND v.is_active = 1) AS medidas
+       FROM products p WHERE p.filter_category_id = ? ORDER BY p.id`, [catId]);
+    console.log('  productos:');
+    for (const p of ps) console.log(`    #${p.id} "${p.name}" [${p.status}] código=${p.bind_code ?? '-'} slug=${p.slug ?? '-'} medidas activas=${p.medidas} · act. ${p.updated_at?.toISOString?.().slice(0, 10)}`);
+    const vs = await q(
+      `SELECT v.id, v.bind_code, v.nominal_size, v.is_active, v.product_id, p.id AS existe
+       FROM filter_category_variants v LEFT JOIN products p ON p.id = v.product_id
+       WHERE v.category_id = ? ORDER BY v.product_id, v.id`, [catId]);
+    console.log('  medidas:');
+    for (const v of vs) {
+      const dueno = v.product_id == null ? 'heredada por la categoría' : v.existe ? `producto #${v.product_id}` : `producto #${v.product_id} (¡YA NO EXISTE!)`;
+      console.log(`    #${v.id} ${v.bind_code ?? '-'} "${v.nominal_size}" activa=${v.is_active} → ${dueno}`);
+    }
+  }
 }
 await con.end();
