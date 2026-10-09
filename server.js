@@ -47,3 +47,10 @@ app.listen(PORT, HOSTNAME, () => {
   console.log(`📦 Environment: ${process.env.NODE_ENV || 'production'}`);
 });
 
+// La sincronización de precios con BIND la dispara cada visita al catálogo
+// (y corre como mucho cada 20 min; ver src/lib/bind-price-sync.ts). Para que
+// también ocurra en horas sin visitas, el servidor se visita a sí mismo.
+setInterval(() => {
+  fetch(`http://127.0.0.1:${PORT}/productos?category=filtros-de-aire`).catch(() => {});
+}, 30 * 60 * 1000).unref();
+

@@ -5,10 +5,17 @@
  * obligaba a repetir a mano el cambio anual de precios, producto por producto y
  * tamaño por tamaño, y con el tiempo los dos lados se desincronizaron.
  *
- * Aquí no se actualiza nada solo: se compara, se muestra la diferencia y el
- * administrador decide qué aplicar. Automatizarlo del todo era arriesgado
- * porque en BIND hay precios que no cuadran (un manómetro a $165 MXN que el
- * sitio cobra a $2,811) y saldrían publicados sin que nadie los revise.
+ * Dos modos:
+ *  - Revisión (por defecto): se compara, se muestra la diferencia y el
+ *    administrador decide qué aplicar. Solo se rellenan solos los precios en $0.
+ *  - Espejo (BIND_PRECIOS_AUTOMATICOS=true en el .env): el sitio refleja BIND.
+ *    Lo pidió el cliente en oct 2026 ("que todo sea automático y lo más
+ *    exacto"): toda diferencia se aplica sola, incluidos los productos que el
+ *    sitio tenía en dólares, que pasan a pesos con el precio de BIND. La única
+ *    regla fija: nunca se publica un precio en $0 ni fuera de rango; si BIND
+ *    no tiene precio para un código, el sitio conserva el suyo.
+ *    Consecuencia: BIND es la única fuente de verdad; un precio mal capturado
+ *    ahí sale publicado en 20 minutos.
  */
 import { query } from '@/config/database';
 import { getBindPreciosPorCodigo } from '@/lib/bind';
@@ -187,6 +194,51 @@ export const aplicarPreciosDeBind = async (
   return { aplicados, fallidos };
 };
 
+// ── Modo espejo ─────────────────────────────────────────────────────────────
+
+/** true cuando el sitio debe reflejar BIND sin revisión humana. */
+export const sincronizacionTotalActiva = (): boolean =>
+  String(import.meta.env.BIND_PRECIOS_AUTOMATICOS ?? process.env.BIND_PRECIOS_AUTOMATICOS ?? '')
+    .trim().toLowerCase() === 'true';
+
+export interface ResultadoSincronizacion {
+  simulado: boolean;
+  aplicados: FilaPrecio[];
+  omitidos: Array<{ fila: FilaPrecio; motivo: string }>;
+}
+
+/**
+ * Aplica TODAS las diferencias con BIND (o solo las lista, con `simular`).
+ * Las filas en dólares pasan a pesos. Lo que BIND no tiene o tiene en cero
+ * se deja como está en el sitio.
+ */
+export const sincronizarPreciosConBind = async (simular: boolean): Promise<ResultadoSincronizacion> => {
+  const { diferentes } = await compararPreciosConBind();
+  const aplicados: FilaPrecio[] = [];
+  const omitidos: Array<{ fila: FilaPrecio; motivo: string }> = [];
+
+  for (const f of diferentes) {
+    if (!(f.precioBind > 0)) { omitidos.push({ fila: f, motivo: 'BIND no tiene precio' }); continue; }
+    if (f.precioBind > PRECIO_MAXIMO) { omitidos.push({ fila: f, motivo: 'precio fuera de rango' }); continue; }
+    const precio = Number(f.precioBind.toFixed(2));
+    if (!simular) {
+      const tabla = f.origen === 'variante' ? 'filter_category_variants' : 'products';
+      try {
+        await query(`UPDATE ${tabla} SET price = ?, currency = 'MXN', price_usd = NULL WHERE id = ?`, [precio, f.id]);
+        console.log(
+          `💲 Precio sincronizado desde BIND: ${f.codigo} (${f.nombre}) ` +
+          `${f.precioSitio} ${f.monedaSitio} → $${precio} MXN`
+        );
+      } catch (error: any) {
+        omitidos.push({ fila: f, motivo: error?.sqlMessage || error?.message || 'error al guardar' });
+        continue;
+      }
+    }
+    aplicados.push(f);
+  }
+  return { simulado: simular, aplicados, omitidos };
+};
+
 // ── Precios faltantes ───────────────────────────────────────────────────────
 //
 // El cliente captura el código de BIND de un producto o de una medida y espera
@@ -217,6 +269,13 @@ export const rellenarPreciosFaltantes = async (forzar = false): Promise<number> 
 
   rellenoEnCurso = (async () => {
     try {
+      // Modo espejo: se aplica todo, no solo los huecos.
+      if (sincronizacionTotalActiva()) {
+        const r = await sincronizarPreciosConBind(false);
+        if (r.aplicados.length) console.log(`✅ ${r.aplicados.length} precio(s) sincronizados desde BIND (modo espejo)`);
+        return r.aplicados.length;
+      }
+
       const { diferentes } = await compararPreciosConBind();
       const huecos = diferentes.filter(
         (f) => !(f.precioSitio > 0) && !f.cambiaMoneda && f.precioBind > 0 && f.precioBind <= PRECIO_MAXIMO
