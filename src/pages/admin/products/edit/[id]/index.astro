@@ -285,9 +285,14 @@ if (Astro.request.method === "POST") {
           }
           
           console.log(`✅ ${savedCount} variantes guardadas, ${skippedCount} vacías omitidas, de ${sizes.length} totales (producto ${productId})`);
-        } catch (variantError) {
+        } catch (variantError: any) {
           console.error('Error sincronizando variantes de categoría:', variantError);
-          // No fallar el guardado del producto si hay error en variantes
+          // El producto sí se guarda, pero las medidas no: hay que decirlo.
+          // Antes esto solo iba al log y el admin mostraba el guardado como
+          // exitoso; el cliente reportó "no se guardan los cambios" sin aviso.
+          failedSizes.push(
+            `todas las medidas (${variantError?.sqlMessage || variantError?.message || 'error al sincronizar'})`
+          );
         }
       }
 
