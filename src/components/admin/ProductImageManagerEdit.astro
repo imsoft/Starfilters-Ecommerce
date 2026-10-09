@@ -202,6 +202,7 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
   </div>
 </div>
 
+<script is:inline src="/admin/comprimir-imagen.js"></script>
 <script is:inline define:vars={{ productId }}>
   console.log('🖼️ [ProductImageManagerEdit] Script iniciado, productId:', productId);
   
@@ -362,19 +363,19 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 
         console.log('🖼️ Procesando imagen principal:', file.name);
 
-        // Validar tamaño (10MB)
-        if (file.size > 10 * 1024 * 1024) {
-          if (primaryImageUploadStatus) {
-            primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
-            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-          }
-          return;
+        if (primaryImageUploadStatus) {
+          primaryImageUploadStatus.textContent = '⏳ Preparando imagen...';
+          primaryImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
         }
 
-        // Validar tipo
-        if (!file.type.startsWith('image/')) {
+        // Fotos grandes se comprimen en el navegador; si no se puede subir,
+        // se dice el motivo (antes solo "debe ser menor a 10MB").
+        let archivo;
+        try {
+          archivo = await window.prepararImagenParaSubir(file);
+        } catch (motivo) {
           if (primaryImageUploadStatus) {
-            primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
+            primaryImageUploadStatus.textContent = '❌ ' + (motivo && motivo.message ? motivo.message : 'No se pudo preparar la imagen');
             primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
           }
           return;
@@ -387,7 +388,7 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 
         try {
           const formData = new FormData();
-          formData.append('image', file);
+          formData.append('image', archivo);
           formData.append('productId', productIdNum.toString());
 
           const response = await fetch('/api/products/upload-image', {
@@ -473,20 +474,23 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 
         let successCount = 0;
         let errorCount = 0;
+        // Por qué no se subió cada archivo: antes se descartaban en silencio
+        // (una foto de cámara de 12 MB solo decía "Error al subir las imágenes").
+        const motivos = [];
+
+        if (carouselImageUploadStatus) {
+          carouselImageUploadStatus.textContent = '⏳ Preparando ' + filesToAdd.length + ' imagen(es)...';
+          carouselImageUploadStatus.className = 'mt-2 text-sm text-blue-600';
+        }
 
         for (let i = 0; i < filesToAdd.length; i++) {
-          const file = filesToAdd[i];
-          
-          // Validar tamaño (10MB)
-          if (file.size > 10 * 1024 * 1024) {
-            console.warn('⚠️ ' + file.name + ' es muy grande, saltando...');
-            errorCount++;
-            continue;
-          }
+          let file = filesToAdd[i];
 
-          // Validar tipo
-          if (!file.type.startsWith('image/')) {
-            console.warn('⚠️ ' + file.name + ' no es una imagen, saltando...');
+          try {
+            file = await window.prepararImagenParaSubir(file);
+          } catch (motivo) {
+            console.warn('⚠️ ' + file.name + ':', motivo && motivo.message);
+            motivos.push(motivo && motivo.message ? motivo.message : file.name + ': no se pudo preparar');
             errorCount++;
             continue;
           }
@@ -509,10 +513,12 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
             } else {
               errorCount++;
               console.error('❌ Error subiendo ' + file.name + ':', result.message);
+              motivos.push(file.name + ': ' + (result.message || 'el servidor no aceptó la imagen'));
             }
           } catch (error) {
             console.error('❌ Error procesando ' + file.name + ':', error);
             errorCount++;
+            motivos.push(file.name + ': no hubo respuesta del servidor');
           }
         }
 
@@ -525,7 +531,7 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
               window.location.reload();
             }, 1000);
           } else {
-            carouselImageUploadStatus.textContent = '❌ Error al subir las imágenes';
+            carouselImageUploadStatus.textContent = '❌ No se subió: ' + (motivos.join(' · ') || 'error desconocido');
             carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
           }
         }

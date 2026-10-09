@@ -137,6 +137,7 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
   </div>
 </div>
 
+<script is:inline src="/admin/comprimir-imagen.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     console.log('🖼️ ProductImageManagerCreate: Inicializando...');
@@ -321,19 +322,14 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 
         console.log('🖼️ Procesando imagen principal:', file.name);
 
-        // Validar tamaño (10MB)
-        if (file.size > 10 * 1024 * 1024) {
+        // Fotos grandes se comprimen en el navegador; si no se puede, se dice
+        // el motivo. Ver public/admin/comprimir-imagen.js.
+        let archivo: File;
+        try {
+          archivo = await (window as any).prepararImagenParaSubir(file);
+        } catch (motivo: any) {
           if (primaryImageUploadStatus) {
-            primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
-            primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-          }
-          return;
-        }
-
-        // Validar tipo
-        if (!file.type.startsWith('image/')) {
-          if (primaryImageUploadStatus) {
-            primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
+            primaryImageUploadStatus.textContent = '❌ ' + (motivo?.message || 'No se pudo preparar la imagen');
             primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
           }
           return;
@@ -345,7 +341,7 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(archivo);
           });
 
           primaryImageBase64 = base64;
@@ -417,16 +413,13 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
         }
 
         let addedCount = 0;
-        for (const file of filesToAdd) {
-          // Validar tamaño (10MB)
-          if (file.size > 10 * 1024 * 1024) {
-            console.warn(`⚠️ ${file.name} es muy grande, saltando...`);
-            continue;
-          }
-
-          // Validar tipo
-          if (!file.type.startsWith('image/')) {
-            console.warn(`⚠️ ${file.name} no es una imagen, saltando...`);
+        const motivos: string[] = [];
+        for (let file of filesToAdd) {
+          try {
+            file = await (window as any).prepararImagenParaSubir(file);
+          } catch (motivo: any) {
+            console.warn(`⚠️ ${file.name}:`, motivo?.message);
+            motivos.push(motivo?.message || `${file.name}: no se pudo preparar`);
             continue;
           }
 
@@ -454,8 +447,12 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
         updateCarouselCount();
         updateHiddenFields();
 
-        if (carouselImageUploadStatus && addedCount > 0) {
-          carouselImageUploadStatus.textContent = `✅ ${addedCount} imagen(es) lista(s) para subir. Total: ${carouselImagesData.length}`;
+        if (carouselImageUploadStatus && addedCount === 0 && motivos.length > 0) {
+          carouselImageUploadStatus.textContent = '❌ No se agregó: ' + motivos.join(' · ');
+          carouselImageUploadStatus.className = 'mt-2 text-sm text-red-600';
+        } else if (carouselImageUploadStatus && addedCount > 0) {
+          carouselImageUploadStatus.textContent = `✅ ${addedCount} imagen(es) lista(s) para subir. Total: ${carouselImagesData.length}`
+            + (motivos.length ? ' · No se agregó: ' + motivos.join(' · ') : '');
           carouselImageUploadStatus.className = 'mt-2 text-sm text-green-600';
         }
 

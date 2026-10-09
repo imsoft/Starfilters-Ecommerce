@@ -110,6 +110,7 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
   </div>
 </div>
 
+<script is:inline src="/admin/comprimir-imagen.js"></script>
 <script is:inline define:vars={{ categoryId }}>
   console.log('🖼️ [CategoryImageManager] Script iniciado, categoryId:', categoryId);
   
@@ -204,16 +205,13 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
           return;
         }
 
-        // Validar tamaño (10MB)
-        if (file.size > 10 * 1024 * 1024) {
-          primaryImageUploadStatus.textContent = '❌ La imagen debe ser menor a 10MB';
-          primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
-          return;
-        }
-
-        // Validar tipo
-        if (!file.type.startsWith('image/')) {
-          primaryImageUploadStatus.textContent = '❌ El archivo debe ser una imagen';
+        // Fotos grandes se comprimen en el navegador; si no se puede, se dice
+        // el motivo. Ver public/admin/comprimir-imagen.js.
+        let archivo;
+        try {
+          archivo = await window.prepararImagenParaSubir(file);
+        } catch (motivo) {
+          primaryImageUploadStatus.textContent = '❌ ' + (motivo && motivo.message ? motivo.message : 'No se pudo preparar la imagen');
           primaryImageUploadStatus.className = 'mt-2 text-sm text-red-600';
           return;
         }
@@ -224,7 +222,7 @@ import ConsejoImagen from "@/components/admin/ConsejoImagen.astro";
 
         try {
           const formData = new FormData();
-          formData.append('file', file);
+          formData.append('file', archivo);
           formData.append('categoryId', categoryIdNum.toString());
           formData.append('imageType', 'primary');
 
