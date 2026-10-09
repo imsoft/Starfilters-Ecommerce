@@ -542,6 +542,10 @@ export const deleteProduct = async (id: number): Promise<boolean> => {
   try {
     console.log('🗑️ Eliminando producto ID:', id);
 
+    // Sus medidas propias se van con él. Antes se quedaban apuntando a un
+    // producto inexistente (huérfanas): seguían contando como activas y
+    // reservaban su código BIND sin que nadie pudiera verlas en el admin.
+    await query('DELETE FROM filter_category_variants WHERE product_id = ?', [id]);
     await query('DELETE FROM products WHERE id = ?', [id]);
 
     console.log('✅ Producto eliminado');
