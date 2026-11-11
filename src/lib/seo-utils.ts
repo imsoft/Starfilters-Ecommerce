@@ -159,12 +159,15 @@ export function generateOrganizationSchema(siteUrl: string) {
     "name": "Star Filters",
     "url": siteUrl,
     "logo": `${siteUrl}/logos/logo-starfilters.png`,
-    "description": "Líder en diseño y construcción de cuartos limpios, filtros HEPA y sistemas de filtración industrial en Norteamérica. Más de 40 años de experiencia. Validación NEBB y calidad certificada.",
+    "description": "Fabricante de filtros de aire y líder en diseño y construcción de cuartos limpios, con sede en Guadalajara, Jalisco. Más de 40 años de experiencia. Validación NEBB y calidad certificada.",
     "foundingDate": "1984",
     "address": {
       "@type": "PostalAddress",
-      "addressCountry": "MX",
-      "addressRegion": "México"
+      "streetAddress": "Av. de las Américas 1500, Piso 17, Country Club",
+      "addressLocality": "Guadalajara",
+      "addressRegion": "Jalisco",
+      "postalCode": "44610",
+      "addressCountry": "MX"
     },
     "contactPoint": {
       "@type": "ContactPoint",

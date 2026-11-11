@@ -49,19 +49,20 @@ const defaultOgImage = new URL('/og-image.jpg', siteUrl).href;
 const ogImageUrl = ogImage || defaultOgImage;
 
 // Título completo con marca
-const fullTitle = `${title} | Star Filters`;
+// Si el título ya trae la marca no se repite (Google mostraba "Star Filters | Star Filters").
+const fullTitle = /star\s*filters/i.test(title) ? title : `${title} | Star Filters`;
 
 // Robots meta
-const robotsContent = `${noindex ? 'noindex' : 'index'}, ${nofollow ? 'nofollow' : 'follow'}`;
+const noindexFinal = noindex || import.meta.env.PUBLIC_NOINDEX === 'true';
+const robotsContent = `${noindexFinal ? 'noindex' : 'index'}, ${nofollow ? 'nofollow' : 'follow'}`;
 
-// Keywords del sitio
+// Keywords del sitio, en el idioma de la página
+const isEn = Astro.url.pathname === '/en' || Astro.url.pathname.startsWith('/en/');
 const siteKeywords = [
   'Star Filters',
-  'filtros industriales',
-  'cuartos limpios',
-  'filtros HEPA',
-  'purificación de aire',
-  'filtros México',
+  ...(isEn
+    ? ['air filters', 'air filters Guadalajara', 'cleanrooms', 'HEPA filters', 'air purification', 'filters Mexico']
+    : ['filtros de aire', 'filtros de aire Guadalajara', 'cuartos limpios', 'filtros HEPA', 'purificación de aire', 'filtros México']),
   ...keywords
 ];
 ---
@@ -92,8 +93,8 @@ const siteKeywords = [
 <meta property="og:image:type" content="image/jpeg" />
 {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
 <meta property="og:site_name" content="Star Filters" />
-<meta property="og:locale" content="es_MX" />
-<meta property="og:locale:alternate" content="en_US" />
+<meta property="og:locale" content={isEn ? 'en_US' : 'es_MX'} />
+<meta property="og:locale:alternate" content={isEn ? 'es_MX' : 'en_US'} />
 {alternateLanguages.length > 0 && alternateLanguages.map(alt => (
   <meta property="og:locale:alternate" content={alt.lang === 'en' ? 'en_US' : alt.lang} />
 ))}
@@ -134,13 +135,13 @@ const siteKeywords = [
 
 <!-- Additional SEO tags -->
 <meta name="author" content="Star Filters" />
-<meta name="language" content="Spanish" />
+<meta name="language" content={isEn ? 'English' : 'Spanish'} />
 <meta name="revisit-after" content="7 days" />
 <meta name="rating" content="general" />
 
 <!-- Geo tags -->
-<meta name="geo.region" content="MX" />
-<meta name="geo.placename" content="México" />
+<meta name="geo.region" content="MX-JAL" />
+<meta name="geo.placename" content="Guadalajara, Jalisco" />
 
 <!-- Mobile -->
 <meta name="mobile-web-app-capable" content="yes" />

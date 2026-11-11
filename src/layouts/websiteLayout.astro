@@ -29,6 +29,20 @@ const {
 
 // Si la variable PUBLIC_NOINDEX=true está en el entorno (staging), forzar noindex en todo el sitio
 const noindex = noindexProp || import.meta.env.PUBLIC_NOINDEX === 'true';
+
+// Las páginas meten <SEO slot="seo">, que trae su propio <title>, descripción,
+// keywords y robots. Este layout ya los emite, así que salían DOS de cada uno
+// en el <head>. Se quitan del slot los que el layout ya puso; lo demás (canonical,
+// Open Graph, hreflang, JSON-LD) se conserva.
+let seoSlot = Astro.slots.has('seo') ? await Astro.slots.render('seo') : '';
+if (seoSlot) {
+  const repetidos = ['robots', 'googlebot'];
+  if (description) repetidos.push('description');
+  if (keywords && keywords.length > 0) repetidos.push('keywords');
+  seoSlot = seoSlot
+    .replace(/<title>[\s\S]*?<\/title>/gi, '')
+    .replace(new RegExp(`<meta\\s+name="(?:${repetidos.join('|')})"[^>]*>`, 'gi'), '');
+}
 ---
 
 <html lang={lang} class="scroll-smooth">
@@ -46,7 +60,7 @@ const noindex = noindexProp || import.meta.env.PUBLIC_NOINDEX === 'true';
     {description && <meta name="description" content={description} />}
     {keywords && keywords.length > 0 && <meta name="keywords" content={keywords.join(', ')} />}
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
-    <slot name="seo" />
+    <Fragment set:html={seoSlot} />
     <ClientRouter />
   </head>
   <body>
